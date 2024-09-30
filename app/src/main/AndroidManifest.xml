@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-sdk />
+
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/logo_atom"
+        android:label="@string/app_name"
+        android:process=":atom_process"
+        android:requestLegacyExternalStorage="true"
+        android:localeConfig="@xml/locales"
+        android:enableOnBackInvokedCallback="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".AtomSpectraStart"
+            android:excludeFromRecents="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="text/plain" />
+                <data android:scheme="content" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".AtomSpectraSensitivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="org.fe57.atomspectra.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+
+            <!-- resource file to create -->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".AtomSpectraSelect"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
+        <activity
+            android:name=".AtomSpectraHelp"
+            android:label="@string/help" />
+        <activity
+            android:name=".AtomSpectra"
+            android:label="@string/app_name"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:documentLaunchMode="intoExisting"
+            tools:ignore="RedundantLabel">
+<!--            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="org.fe57.atomspectra.ACTION_CLOSE_APP" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter> -->
+<!--            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter> -->
+<!--            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_LOW" />
+                <action android:name="android.intent.action.BATTERY_OKAY"/>
+            </intent-filter> -->
+<!--            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:mimeType="text/plain" />
+                <data android:scheme="content" />
+            </intent-filter> -->
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_devices" />
+        </activity>
+        <activity
+            android:name=".AtomSpectraSettings"
+            android:label="@string/settings"
+            android:screenOrientation="portrait"
+            android:excludeFromRecents="true"
+            tools:ignore="LockedOrientationActivity" />
+        <activity
+            android:name=".AtomSpectraIsotopes"
+            android:excludeFromRecents="true"
+            android:label="@string/isotopes" />
+        <activity
+            android:name=".AtomSpectraFindIsotope"
+            android:label="@string/isotope_search"
+            android:screenOrientation="portrait"
+            android:excludeFromRecents="true"
+            tools:ignore="LockedOrientationActivity" />
+        <service
+            android:name=".AtomSpectraService"
+            android:enabled="true"
+            android:foregroundServiceType="microphone|location"
+            android:exported="false"
+            android:launchMode="singleInstance" />
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_LOW" />
+                <!-- <action android:name="android.intent.action.BATTERY_OKAY"/> -->
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>

@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <string name="app_name">Atom Spectra</string>
+    <string name="app_bar_audio_action">Lecture de données audio</string>
+    <string name="app_bar_usb_action">Lecture de données depuis USB</string>
+    <string name="app_bar_spectrum_update">(mise à jour du spectre)</string>
+    <string name="app_channel">Le Service d\'Atom Spectra</string>
+    <string name="settings">Les Paramètres d\'Atom Spectra</string>
+    <string name="isotope_search">Trouver un isotope d\'Atom Spectra</string>
+    <string name="app_bar_sensitivity">Atom Spectra Sensibilité</string>
+    <string name="action_settings">Les Paramètres</string>
+    <string name="action_select_interval">Définir l\'intervalle…</string>
+    <string name="action_restart">Effacer le Spectre</string>
+    <string name="action_save_options">Enregistrer les Options</string>
+    <string name="action_buy_spectrometer">Acheter un spectromètre</string>
+    <string name="action_exit">Quitter complètement</string>
+    <string name="action_usb_attached">L\'USB est connecté</string>
+    <string name="action_usb_detached">L\'USB est détaché</string>
+    <string name="action_usb_no_access">Impossible d\'ouvrir le périphérique USB</string>
+
+    <string name="histogram_menu">Spectre</string>
+    <string name="hist_save_file">Écrire dans…</string>
+    <string name="hist_load_file">Charger à partir…</string>
+    <string name="hist_add_file">Ajouter à partir…</string>
+    <string name="hist_export">Exporter</string>
+    <string name="hist_export_to_bqmoni">Exporter vers BqMoni…</string>
+    <string name="hist_export_to_spe">Exporter vers SPE…</string>
+    <string name="hist_export_to_N42">Exporter vers N42…</string>
+    <string name="hist_export_csv">Exporter vers CSV…</string>
+    <string name="hist_export_with_energy">Exporter vers (avec énergie)…</string>
+    <string name="hist_share_export">Partager</string>
+    <string name="hist_freeze_update">Suspendre l\'enregistrement</string>
+    <string name="hist_continue_update">Continuer l\'enregistrement</string>
+    <string name="hist_stop_record">L\'enregistrement est arrêté en raison d\'un changement d\'entréee!</string>
+    <string name="hist_ask_delete_title">Effacer le spectre</string>
+    <string name="hist_ask_delete_text">Êtes-vous sûr d\'effacer les données du spectre?</string>
+    <string name="hist_smooth">Lisse</string>
+    <string name="hist_unsmooth">Non lisse</string>
+    <string name="hist_delta">Changement de spectre</string>
+    <string name="hist_set_suffix">Entrez la description</string>
+    <string name="hist_suffix">Spectre</string>
+
+    <string name="background">Fond</string>
+    <string name="background_save">Écrire</string>
+    <string name="background_load">Charge</string>
+    <string name="background_load_from">Charge à partir…</string>
+    <string name="background_copy">Utiliser le spectre comme fond</string>
+    <string name="background_clear">Effacer le fond</string>
+    <string name="background_show">Afficher le fond</string>
+    <string name="background_subtract">Soustraire du spectre</string>
+    <string name="background_set_suffix">Entrez la description</string>
+    <string name="background_suffix">Fond</string>
+
+    <string name="notify_close">Fermer</string>
+
+    <string name="enable_pileup">Activer la correction d\'empilement</string>
+    <string name="invert">Inverser l\'entrée</string>
+    <string name="add_gps">Ajouter des coordonnées GPS aux fichiers</string>
+    <string name="update_isotopes">Recherche automatique d\'isotopes</string>
+    <string name="input_sound">Source:</string>
+    <string name="input_sound_absent">Aucune source d\'entrée! L\'utilisation par défaut.</string>
+    <string name="output_sound">Alarme sonore: </string>
+    <string name="output_sound_full">Complet</string>
+    <string name="output_sound_format">%1$.2f–%2$.2f keV</string>
+    <string name="output_sound_device">Audio:</string>
+    <string name="use_raw_audio_source">Utiliser une source audio brut</string>
+    <string name="no_audio_available">Impossible d\'utiliser l\'audio d\'entrée!</string>
+    <string name="no_usb_available">Impossible d\'utiliser l\'entrée USB!</string>
+    <string name="reset_data">Réinitialiser</string>
+    <string name="update_data_error">Impossible de mettre à jour les données de l\'appareil</string>
+    <string name="no_audio_output_available">Impossible d\'utiliser la sortie audio!</string>
+    <string name="audio_44100">La fréquence d\'entrée est réglée sur 44,1 kHz. Si vous voulez essayer 48 kHz, connectez le spectromètre et redémarrez le programme.</string>
+
+    <string name="reducedto">Montrer comme: 128 can.</string>
+    <string name="maxfront">Des points avant max: 10</string>
+    <string name="minfront">Des points avant min: 5</string>
+    <string name="noisediscriminator">Le discriminateur de bruit: 256</string>
+    <string name="ADCroundedto">ANC est arrondi à: 12 bits</string>
+    <string name="save_folder">Un répertoire par défaut: </string>
+    <string name="compress_graph">Spectre: Somme</string>
+
+    <string name="plus">\u2192</string>
+    <string name="minus">\u2190</string>
+
+    <string name="leftwards">\u221a</string>
+    <string name="rightwards">\u00d7</string>
+    <string name="updown">\u2195</string>
+
+    <string name="cps">cps: 0</string>
+
+    <string name="hint_keV_show">100.0</string>
+    <string name="hint_sens_show">1.00E+00</string>
+
+    <string name="cursortext">Le curseur: 0 can., 0 keV</string>
+    <string name="mode_fast">Rapide</string>
+    <string name="mode_medium">Moyen</string>
+    <string name="mode_slow">Lent</string>
+    <string name="mode_fast_button">R</string>
+    <string name="mode_medium_button">M</string>
+    <string name="mode_slow_button">L</string>
+    <string name="mode_compensated_button">C</string>
+    <string name="mode_uncompensated_button">N</string>
+    <string name="sensg_text">Sens:</string>
+    <string name="background_cnt_text">FondComp:</string>
+    <string name="fast_mode_sens">V:</string>
+    <string name="medium_mode_sens">M:</string>
+    <string name="slow_mode_sens">L:</string>
+    <string name="doserateUpdatePeriod">Fréq. de mise à jour du graphique, s⁻¹:</string>
+    <string name="save_channels">Enregistrer des canaux: 32768</string>
+    <string name="load_channels">Charger des canaux: 32768</string>
+    <string name="max_factor">Degré maximum: 1</string>
+    <string name="smoothness">Douceur: 1</string>
+    <string name="delta_spectrum">Diff. de temps: 1 s</string>
+    <string name="channel_compression">Compression des canaux: 1</string>
+    <string name="isotopes">Les isotopes d\'Atom Spectra</string>
+    <string name="isotopes_get">Afficher les Isotopes</string>
+    <string name="select_isotopes">Chaînes de désintégration:</string>
+
+    <string name="calibration_menu">Étalonnage</string>
+    <string name="calibration_add_point">Ajouter un point</string>
+    <string name="calibration_clear_points">Effacer les points</string>
+    <string name="calibration_calculate">Calculer</string>
+    <string name="calibration_load_from_file">Charger à partir…</string>
+    <string name="calibration_store">Stocker</string>
+    <string name="calibration_store_memory">Stocker au programme</string>
+    <string name="calibration_revert">Récupérer</string>
+    <string name="calibration_revert_memory">Récupérer de la mémoire</string>
+    <string name="none_cal_data">──────────</string>
+    <string name="calibration_device">L\'appareil</string>
+    <string name="calibration_save_device">Enregistrer l\'appareil…</string>
+    <string name="calibration_load_device">Charger l\'appareil…</string>
+    <string name="calibration_load_device_energy">Charger avec de l\'étalonnage…</string>
+    <string name="calibration_sensivity">Régler la sensibilité…</string>
+    <string name="calibration_channel">Durer: 8192</string>
+    <string name="calibration_channel_format">Durer: <xliff:g id="channel">%1$d</xliff:g></string>
+    <string name="calibration_add_nuclid_title">Add a calibration point</string>
+    <string name="calibration_add_nuclid_text">Ajouter un point d\'étalonnage pour le canal %1$d avec %2$s (%3$.2f keV)?</string>
+    <string name="calibration_add_nuclid2_text">Entrez une énergie (en keV) pour le canal %1$d (maintenant %2$s, %3$.2f keV):</string>
+
+    <string name="detector_sensitivity">Sensibilité de l\'appareil</string>
+    <string name="sense_energy_kev">Énergie, keV</string>
+    <string name="sense_sensitivity">Sensibilité</string>
+    <string name="sense_hint_energy">Énergie</string>
+    <string name="sense_hint_sensitivity">Sensibilité</string>
+
+    <string name="reduced_to_format">Montrer comme: <xliff:g id="channel_number">%1$d</xliff:g> can.</string>
+    <string name="min_front_points_format">Des points avant min: <xliff:g id="min_points">%1$d</xliff:g></string>
+    <string name="max_front_points_format">Des points avant max: <xliff:g id="max_points">%1$d</xliff:g></string>
+    <string name="noise_discriminator_format">Le discriminateur de bruit: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
+    <string name="adc_rounded_format">ANC est arrondi à: <xliff:g id="adc_high_bits">%1$d</xliff:g> bits</string>
+    <string name="save_channels_format">Écrirer canals: <xliff:g id="save_channels">%1$d</xliff:g></string>
+    <string name="load_channels_format">Charger canals: <xliff:g id="load_channels">%1$d</xliff:g></string>
+    <string name="max_factor_format">Degré maximum: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="smoothness_format">Douceur: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="delta_spectrum_format">Diff. de temps: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
+    <string name="channel_compression_format">Compression de canal: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="total_time_format">temps: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h</string>
+    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h</string>
+    <string name="cursor_format">Le curseur:\ncanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
+    <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
+    <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="compress_graph_format">Spectre: <xliff:g id="type">%1$s</xliff:g></string>
+    <string name="autosave_timeout">Sauver le delta chaque <xliff:g id="duration">%1$d</xliff:g> s</string>
+    <string-array name="compress_graph_array">
+        <item>Somme</item>
+        <item>Moyen</item>
+        <item>Crête</item>
+    </string-array>
+    <string-array name="file_name_array">
+        <item>Nom: Suffixe</item>
+        <item>Nom: Date-Suffixe</item>
+        <item>Nom: Temps-Suffixe</item>
+        <item>Nom: Date_Temps-Suffixe</item>
+        <item>Nom: Préfixe-Suffixe</item>
+        <item>Nom: Préfixe-Date-Suffixe</item>
+        <item>Nom: Préfixe-Temps-Suffixe</item>
+        <item>Nom: Préfixe-Date_Temps-Suffixe</item>
+    </string-array>
+
+    <string name="isotope_show_line"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>) (<xliff:g id="isotope_halflife">%6$.2f</xliff:g></string>
+    <string name="isotope_show_next_line">, <xliff:g id="another_energy">%1$.2f</xliff:g></string>
+    <string name="isotope_show_last_line"><xliff:g id="last_energy">%1$s</xliff:g> keV)</string>
+    <string name="isotope_show_decay_chain"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> chaîne de désintégration</string>
+    <string name="isotope_show_energy"><xliff:g id="isotope_energy">%1$7.2f</xliff:g> keV</string>
+    <string name="isotope_show_name_stable"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (stable)</string>
+    <string name="isotope_show_name_halflife"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>)</string>
+    <string name="period_year">a</string>
+    <string name="period_day">j</string>
+    <string name="period_hour">h</string>
+    <string name="period_minute">min</string>
+    <string name="period_second">s</string>
+
+    <string name="graph_show_cnt">cpt</string>
+    <string name="graph_show_log10">lg(cpt)</string>
+    <string name="graph_show_channel">can.</string>
+    <string name="graph_show_points">cpt</string>
+    <string name="graph_show_kev">keV</string>
+    <string name="graph_show_mkSv">μSv/h</string>
+    <string name="graph_show_mSv">mSv/h</string>
+    <string name="graph_log_info">Y-scale logarithmique</string>
+    <string name="graph_linear_info">Y-scale linéaire</string>
+    <string name="graph_max_gain">Le gain maximum est atteint</string>
+    <string name="graph_min_gain">Le gain minimum est atteint</string>
+    <string name="graph_max_zoom">Le zoom maximum est atteint</string>
+    <string name="graph_min_zoom">Le zoom minimum est atteint</string>
+
+    <string name="perm_ask_audio_title">Acquisition des autorisations AUDIO</string>
+    <string name="perm_ask_audio_text">Cette application a besoin de l\'autorisation RECORD_AUDIO pour capturer le signal du spectromètre. Sans cette autorisation, le programme ne peut afficher que les spectres précédents.</string>
+    <string name="perm_ask_power_title">Economie d\'énergie</string>
+    <string name="perm_ask_power_text">Veuillez accéder à une liste d\'exclusion de batterie et ajouter AtomSpectra afin de fonctionner correctement en fond.</string>
+    <string name="perm_ask_write_title">Acquisition des autorisations d\'ÉCRITURE</string>
+    <string name="perm_ask_write_text">Cette autorisation est nécessaire pour écrire un fichier sur un stockage externe</string>
+    <string name="perm_ask_read_title">LIRE l\'acquisition des autorisations</string>
+    <string name="perm_ask_read_text">Cette autorisation est nécessaire pour lire le fichier à partir du stockage externe</string>
+    <string name="perm_ask_share_text">Cette autorisation est nécessaire pour envoyer le fichier</string>
+    <string name="perm_ask_fine_gps_title">Acquisition d\'accès GPS</string>
+    <string name="perm_ask_fine_gps_text">Le programme doit accéder à l\'autorisation des coordonnées GPS pour les ajouter au fichier de sortie. Les coordonnées ne seront lues que si la fenêtre principale du programme est active et une case à cocher GPS est activée dans les paramètres.</string>
+    <string name="perm_ask_gps_off_title">Le GPS est éteint</string>
+    <string name="perm_ask_gps_off_text">Le GPS est désactivé. Veuillez activer le GPS pour ajouter des coordonnées au fichier de spectre</string>
+
+    <string name="perm_no_audio">Aucune autorisation d\'ouvrir l\'audio</string>
+    <string name="perm_no_read_histogram">Aucune permission de lire un spectre</string>
+    <string name="perm_no_read_background">Aucune autorisation de lire un fond</string>
+    <string name="perm_no_read_calibration">Aucune autorisation de lire un fichier d\'étalonnage</string>
+    <string name="perm_no_read_device">Aucune autorisation de lire un fichier de périphérique</string>
+    <string name="perm_no_write_directory">Impossible de créer le dossier /AtomSpectra sur le stockage externe, déplacez-vous vers votre propre répertoire</string>
+    <string name="perm_no_write_histogram">Aucune autorisation pour écrire un spectre</string>
+    <string name="perm_no_write_background">Aucune autorisation pour écrire un fond</string>
+    <string name="perm_no_write_device">Aucune autorisation d\'écrire un fichier de périphérique</string>
+    <string name="perm_no_write_bqmoni">Aucune autorisation d\'exporter un spectre vers Becquerel Monitor</string>
+    <string name="perm_no_write_spe">Aucune autorisation d\'exporter un spectre vers un fichier SPE</string>
+    <string name="perm_no_write_N42">Aucune autorisation d\'exporter un spectre vers un fichier N42</string>
+    <string name="perm_no_write_export">Aucune autorisation d\'exporter un spectre vers un fichier CSV</string>
+    <string name="perm_no_write_export_energy">Aucune autorisation d\'exporter un spectre avec de l\'énergie vers un fichier CSV</string>
+    <string name="perm_no_share">Aucune autorisation de lire un fichier pour un partage</string>
+    <string name="perm_no_outside">Un fichier est hors de ma portée</string>
+    <string name="perm_no_usb">Aucune autorisation d\'accès au périphérique USB</string>
+    <string name="perm_no_gps">Pas d\'accès GPS, les données GPS ne seront pas définies</string>
+
+    <string name="ask_select_histogram">Sélectionnez un spectre</string>
+    <string name="ask_select_background">Sélectionnez un spectre du fond</string>
+    <string name="ask_select_calibration">Sélectionnez un fichier d\'étalonnage</string>
+    <string name="ask_select_device_file">Sélectionnez un fichier de périphérique</string>
+    <string name="ask_spectrum_suffix">Suffixe de fichier pour un spectre</string>
+    <string name="ask_device_suffix">Suffixe de fichier pour un fichier de périphérique</string>
+    <string name="ask_export_bqmoni">Suffixe de fichier pour l\'exportation des données vers Becquerel Monitor</string>
+    <string name="ask_export_spe">Suffixe de fichier pour l\'exportation des données vers SPE</string>
+    <string name="ask_export_N42">Suffixe de fichier pour l\'exportation des données vers N42</string>
+    <string name="ask_export_suffix">Suffixe de fichier pour l\'exportation des données vers CSV</string>
+    <string name="ask_suffix_text">Entrez le suffixe du fichier:</string>
+    <string name="ask_share">Partager un fichier</string>
+    <string name="ask_share_text">Une donnée spectrale de <xliff:g id="file_share">%1$s</xliff:g></string>
+    <string name="ask_noise_title">Niveau du discriminateur de bruit</string>
+    <string name="ask_noise_text">Entrez une nouvelle valeur:</string>
+    <string name="ask_channel_title">Définir un canal de curseur</string>
+    <string name="ask_channel_text">Nouveau canal (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
+    <string name="ask_last_channel_title">Entrez le nombre de canal</string>
+    <string name="ask_last_channel_text">Nouvelle canal (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+    <string name="ask_delete_calibration_line_title">Supprimer la ligne</string>
+    <string name="ask_delete_calibration_line_text">Supprimer la canal %1$d (%2$.2f keV) de la liste?</string>
+    <string name="ask_select_interval_title">Sélectionnez l\'intervalle à rechercher</string>
+    <string name="ask_select_interval_text">Sélectionnez l\'intervalle en keV (ou définissez «\u202f-1\u202f» pour nettoyer)</string>
+
+    <string name="cal_point_title">Étalonnage du canal <xliff:g id="cal_channel">%1$d</xliff:g></string>
+    <string name="cal_no_more">Plus de place pour la ligne d\'étalonnage</string>
+    <string name="cal_have_channel">J\'ai déjà cette canal</string>
+    <string name="cal_no_enough_data">Pas assez de données pour calibrer</string>
+    <string name="cal_show_line">Can: <xliff:g id="channel">%1$d</xliff:g>, E: <xliff:g id="energy">%2$.2f</xliff:g> keV</string>
+    <string name="cal_show_function">Afficher la fonction</string>
+    <string name="cal_draw_function">Dessiner nouvelle</string>
+    <string name="cal_function_title">Étalonnage</string>
+    <string name="cal_function_message">Fonction d\'étalonnage:</string>
+    <string name="cal_coefficient_title">Coefficient d\'étalonnage <xliff:g id="factor">%1$d</xliff:g></string>
+    <string name="cal_coefficient_text">Entrer la nouvelle valeur d\'étalonnage:</string>
+    <string name="ask_point_in_kev">Entrez la valeur énergétique en keV:</string>
+    <string name="cal_error_number">Erreur dans la saisie du nombre</string>
+    <string name="cal_maybe_wrong">ATTENTION!\n\nVotre point %1$d - %2$.2f keV rend l\'étalonnage erroné!</string>
+    <string name="put_cursor_first">Mettez un curseur en premier</string>
+    <string name="strange_file_name">Un nom de fichier étrange</string>
+    <string name="hist_load_success">Un spectre est chargé avec succès</string>
+    <string name="hist_load_error">ÉCHEC du chargement du spectre!</string>
+    <string name="device_load_success">Les données d\'un appareil sont chargées avec succès</string>
+    <string name="device_load_error">Le chargement des données d\'un appareil a échoué!</string>
+    <string name="cal_load_success">L\'étalonnage est chargé avec succès</string>
+    <string name="cal_load_error">ÉCHEC du chargement de l\'étalonnage!</string>
+    <string name="cal_applied">L\'étalonnage est appliqué</string>
+    <string name="storage_required">Un stockage est requis</string>
+    <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> est écriré avec succès</string>
+    <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> écriré ÉCHEC!</string>
+    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> est écriré avec succès</string>
+    <string name="device_save_error"><xliff:g id="file_save">%1$s</xliff:g> écriré ÉCHEC!</string>
+    <string name="background_load_success">le fond est chargé avec succès</string>
+    <string name="background_load_error">Le chargement en fond a échoué!</string>
+    <string name="background_delete_error">Impossible de supprimer un fichier du fond</string>
+    <string name="background_no_data">Aucune donnée de fond</string>
+    <string name="background_save_success">Le fond est enregistré avec succès</string>
+    <string name="background_save_error">L\'enregistrement en fond a échoué!</string>
+    <string name="export_save_success"><xliff:g id="file_save">%1$s</xliff:g> est enregistrée avec succès</string>
+    <string name="export_save_error">L\'enregistrement de <xliff:g id="file_save">%1$s</xliff:g> a échoué!</string>
+    <string name="something_wrong">Quelque chose ne va pas!</string>
+    <string name="unknown_code">Vous avez un code inconnu de l\'appareil: <xliff:g id="code">%1$d</xliff:g></string>
+    <string name="cal_store_usb_wait">Attendez que l\'étalonnage soit stocké dans le périphérique USB</string>
+    <string name="cal_apply_usb">L\'étalonnage est appliqué à partir d\'un périphérique USB</string>
+    <string name="cal_wrong_usb">Mauvais calibrage à partir d\'un périphérique USB</string>
+    <string name="cal_wrong_checksum">Une mauvaise somme de contrôle d\'étalonnage à partir d\'un périphérique USB</string>
+    <string name="cal_timeout">Délai d\'expiration d\'un périphérique USB</string>
+    <string name="cal_store_usb">L\'étalonnage est stocké sur un périphérique USB</string>
+    <string name="cal_wrong_store_usb">Impossible de stocker l\'étalonnage sur un périphérique USB</string>
+    <string name="cal_load_anyway">Charger l\'étalonnage quand même ?</string>
+    <string name="usb_below_minimal_version">Mettre à jour le micrologiciel de l\'appareil vers la version <xliff:g id="version">%1$d</xliff:g> ou supérieure</string>
+    <string name="usb_version_read_error">Erreur de lecture de la version du micrologiciel de l\'appareil</string>
+    <string name="usb_version_unknown">Version du micrologiciel de l\'appareil inconnue</string>
+
+    <string name="searching_isotopes">Recherche d\'isotopes…</string>
+    <string name="autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
+    <string name="isotope_list">Isotopes</string>
+    <string name="action_find_isotopes">Trouver des isotopes</string>
+    <string name="find_isotopes">Trouver</string>
+    <string name="show_isotopes">Montrer</string>
+    <string name="show_no_isotopes">Cacher</string>
+    <string name="find_threshold">Seuil</string>
+    <string name="find_window_size">La taille de la fenêtre</string>
+    <string name="find_order">Ordre</string>
+    <string name="find_tolerance">Inexactitude</string>
+    <string name="find_sign_bits">Bits significatifs</string>
+    <string name="find_isotope_library">Bibliothèque</string>
+    <string name="find_error_window">Erreur dans la taille de la fenêtre</string>
+    <string name="find_error_bits">Erreur en nombre de bits significatifs</string>
+    <string name="find_error_tolerance">Erreur d\'inexactitude</string>
+    <string name="find_error_threshold">Erreur de seuil</string>
+    <string name="find_isotopes_all">Tout</string>
+    <string name="find_isotopes_known">Connu</string>
+    <string name="find_isotopes_medicine">Médical</string>
+    <string name="find_isotopes_industrial">Industriel</string>
+    <string name="find_isotopes_special">Spécial</string>
+    <string name="find_isotopes_normal">Ordinaire</string>
+    <string name="find_isotopes_info">%1$s (%2$.2f keV)</string>
+    <string-array name="find_isotopes_selection">
+        <item>Tout</item>
+        <item>Connu</item>
+        <item>Médical</item>
+        <item>Industriel</item>
+        <item>Spécial</item>
+        <item>Ordinaire</item>
+    </string-array>
+    <string-array name="isotopes_selection">
+        <item>Tout</item>
+        <item>Médical</item>
+        <item>Industriel</item>
+        <item>Spécial</item>
+        <item>Ordinaire</item>
+    </string-array>
+    <string-array name="find_isotopes_order">
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_13">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_14">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_15">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_16">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+    </string-array>
+
+    <string name="help_menu">Une Aide</string>
+    <string name="help">Aide rapide d\'Atom Spectra</string>
+    <string name="help_text1"><big><annotation foreground="caption">Un aperçu.</annotation></big>\n
+        Ce programme lit un signal d\'un spectromètre connecté à un téléphone à l\'aide d\'une entrée microphone (comme <u>AtomSpectra 3, 4</u> ou similaire), à partir d\'un spectromètre audio USB (comme <u>AtomSpectra Nano</u> ou similaire), ou depuis un spectromètre USB <u>AtomSpectra Pro</u>. Si aucun d\'entre eux n\'est connecté à un téléphone, le programme fonctionne en mode démo en lisant un microphone interne et en créant un spectre.\n
+		\n
+        REMARQUE: veuillez ajouter le programme à la liste d\'exclusion d\'alimentation pour un travail correct en fond ou lorsque l\'écran est éteint. Pour arrêter complètement le programme, veuillez utiliser l\'élément de menu «\u202f<annotation foreground="parameter">Quitter complètement</annotation>\u202f».\n
+		\n
+        <big><annotation foreground="caption">1. En fonctionnement:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez une pincée horizontale pour mettre à l\'échelle les canaux/énergies. Retirez les doigts de l\'écran pour appliquer une pincée.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez une pincée verticale pour mettre à l\'échelle les comptes. Retirez les doigts de l\'écran pour appliquer une pincée.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez une pincée diagonale pour mettre à l\'échelle les canaux/énergies et les comptages simultanément. Retirez les doigts de l\'écran pour appliquer une pincée.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez un balayage gauche/droite pour déplacer un spectre vers la gauche/droite.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez un balayage vers le bas pour afficher et masquer une étiquette isotopique.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez une simple pression pour afficher un curseur vert. Utilisez un curseur pour déplacer le curseur en douceur. Appuyez à gauche du spectre pour désactiver un curseur. Les coordonnées indiquent les valeurs actuelles pendant la mise à jour du spectre. Ils montrent la dernière position avant l\'arrêt du record. Ils montrent la position du dernier fichier lu. Appuyez brièvement sur les coordonnées pour accéder à un programme cartographique. Appuyez sur le texte du curseur pour définir directement le canal du curseur.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez deux fois pour sélectionner l\'échelle linéaire ou log10.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez longuement pour basculer entre les modes d\'affichage barre et ligne.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez le bouton «\u202f<annotation foreground="parameter">\u2195</annotation>\u202f» à droite du spectre pour basculer entre les modes canal et keV.\n
+        \u00A0\u00A0\u00A0\u00A0- Utilisez le bouton «\u202f<annotation foreground="parameter">CN</annotation>\u202f» à droite du spectre pour basculer entre les modes de sortie du spectre et du débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez brièvement sur «\u202f<annotation foreground="parameter">cps</annotation>\u202f» ou sur la sortie du débit de dose pour afficher tous les cps moyens de temps («\u202f<i>~cps</i>\u202f») et un total temps en secondes («\u202f<i>temps</i>\u202f»). Appuyez brièvement sur «\u202f<annotation foreground="parameter">~cps</annotation>\u202f» ou «\u202f<annotation foreground="parameter">heure</annotation>\u202f» pour afficher la base («\u202f<annotation foreground ="parameter">≈cps</annotation>\u202f») et les niveaux de signal («\u202f<annotation foreground="parameter">♪cps</annotation>\u202f»). Appuyez brièvement sur «\u202f<annotation foreground="parameter">≈cps</annotation>\u202f» ou «\u202f<annotation foreground="parameter">♪cps</annotation>\u202f» pour afficher les coordonnées. Les coordonnées indiquent les valeurs actuelles lors de la mise à jour du spectre. Ils montrent la dernière position avant l\'arrêt du record. Ils montrent la position depuis le dernier fichier lu. Appuyez longuement sur les coordonnées pour accéder à un programme cartographique. Appuyez à nouveau brièvement pour revenir en arrière.\n
+		\n
+        <big><annotation foreground="caption">2. Sortie des spectres:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Le programme peut afficher un spectre principal, un spectre principal avec un spectre du fond et une différence entre eux. Tous les modes sont sélectionnés dans le sous-menu «\u202f<annotation foreground="parameter">Fond</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- En mode d\'affichage à barres, le spectre principal est affiché en bleu, le fond est affiché en vert et la différence entre eux est affichée en rouge. Les couleurs sont estompées.\n
+        \u00A0\u00A0\u00A0\u00A0- Dans le mode d\'affichage de ligne, le spectre principal est affiché en blanc, le fond est affiché en vert et la différence entre eux est représentée en cyan. Les couleurs sont vives.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez effacer les données du fond dans le programme.\n
+        \u00A0\u00A0\u00A0\u00A0- Pour voir le spectre «\u202ftel quel\u202f», veuillez régler ANC au maximum et afficher comme 1024 canaux. D\'autres valeurs rendront le spectre et le fond lisses.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez lisser les spectres ou les rétablir en utilisant «\u202f<annotation foreground="parameter">Lisse</annotation>\u202f» dans un sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez indiquer la différence entre deux états du spectre à des moments différents en utilisant «\u202f<annotation foreground="parameter">Changement de spectre</annotation>\u202f» dans un sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f». Le temps de différence peut être choisi dans une plage de 1 à 10 secondes avec «\u202f<annotation foreground="parameter">Diff. de temps</annotation>\u202f» sous «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez modifier et voir les descriptions du spectre et de l\'arrière-plan pendant la sortie du curseur. Ces descriptions sont utilisées comme suffixe lors de la sauvegarde. Pour les modifier, utilisez «\u202f<annotation foreground="parameter">Entrez la description</annotation>\u202f» dans un sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f» ou «\u202f<annotation foreground="parameter">Fond</annotation>\u202f».\n
+		\n
+        <big><annotation foreground="caption">3. Étalonnage énergétique:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Le programme utilise un étalonnage d\'énergie.\n
+        \u00A0\u00A0\u00A0\u00A0- REMARQUE: il est préférable de passer à la sortie du canal avant de procéder à un étalonnage.\n
+        \u00A0\u00A0\u00A0\u00A0- Pour étalonner le spectre, pointez le curseur sur le premier point d\'étalonnage, puis appuyez sur un bouton «\u202f<annotation foreground="parameter">1</annotation>\u202f» au-dessus du spectre et entrez une valeur. Le bouton passe de «\u202f<annotation foreground="parameter">1</annotation>\u202f» à «\u202f<annotation foreground="parameter">2</annotation>\u202f» pour afficher le deuxième point d\'attente.\n
+        \u00A0\u00A0\u00A0\u00A0- Faites de même pour les prochains points d\'étalonnage. Le bouton deviendra «\u202f<annotation foreground="parameter">-</annotation>\u202f» s\'il n\'y a plus de points acceptables.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur le bouton «\u202f<annotation foreground="parameter">\u221a</annotation>\u202f» pour calculer un étalonnage. Utilisez «\u202f<annotation foreground="parameter">Stocker</annotation>\u202f» pour enregistrer les données d\'étalonnage pour le prochain démarrage du programme. Le programme récupère les données d\'étalonnage lorsqu\'il supprime un spectre actuel. Utilisez «\u202f<annotation foreground="parameter">Récupérer</annotation>\u202f» pour appliquer les données d\'étalonnage à un spectre à partir de la mémoire. <annotation foreground="highlight">REMARQUE</annotation> : si <u>AtomSpectra Pro</u> est connecté, le programme utilisera l\'étalonnage de l\'appareil ou stockera l\'étalonnage sur l\'appareil. L\'étalonnage du programme interne ne change pas et sera restauré après avoir débranché l\'appareil ou peut être modifié à l\'aide des commandes de menu appropriées.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur un indicateur de nucléide sur un graphique d\'une <u>liste de nucléides</u> pour définir un nouveau point d\'étalonnage avec l\'énergie du nucléide.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur un indicateur de nucléide sur un graphique de <u>la liste des pics trouvés</u> et entrez une valeur d\'énergie pour définir un nouveau point d\'étalonnage.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur les valeurs polinom dans le sous-menu «\u202f<annotation foreground="parameter">Étalonnage</annotation>\u202f» pour les modifier.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez définir l\'ordre de polinom le plus élevé dans «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur le bouton «\u202f<annotation foreground="parameter">\u00d7</annotation>\u202f» pour supprimer tous les points d\'entrée.\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur la nouvelle ligne d\'étalonnage dans un sous-menu «\u202f<annotation foreground="parameter">Étalonnage</annotation>\u202f» pour la supprimer de la liste.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez voir une fonction d\'étalonnage en utilisant l\'élément «\u202f<annotation foreground="parameter">Afficher la fonction</annotation>\u202f» dans le sous-menu «\u202f<annotation foreground="parameter">Étalonnage</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Appuyez sur «\u202f<annotation foreground="parameter">Dessiner nouvelle</annotation>\u202f» dans le sous-menu «\u202f<annotation foreground="parameter">Étalonnage</annotation>\u202f» pour voir une nouvelle fonction d\'étalonnage et des points d\'étalonnage sur un graphique. Les nouveaux points d\'étalonnage sont affichés en vert.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez charger des données d\'étalonnage à partir d\'un autre spectre.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez sélectionner le dernier numéro de canal à afficher sur l\'échelle d\'énergie. L\'échelle des canaux affiche toujours le spectre complet.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez voir et modifier les données d\'étalonnage pour un spectre actuel dans un sous-menu «\u202f<annotation foreground="parameter">Étalonnage</annotation>\u202f» au-dessus de la ligne horizontale.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez voir les nouvelles données d\'étalonnage dans un sous-menu «\u202f<annotation foreground="parameter">Étalonnage</annotation>\u202f» sous la ligne horizontale.\n
+		\n
+        <big><annotation foreground="caption">4. Un calculet une sortie du débit de dose:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Le programme effectue une mesure du débit de dose conformément à la sélection du canal ou de l\'axe X keV. Dans un mode de visualisation des canaux, le programme effectue un simple comptage en conversion de débit de dose. Dans un mode d\'affichage keV, le programme effectue une mesure du débit de dose à compensation d\'énergie.\n
+        \u00A0\u00A0\u00A0\u00A0- Le bouton «\u202f<annotation foreground="parameter">RML</annotation>\u202f» à droite du spectre sélectionne la moyenne du débit de dose. «\u202f<annotation foreground="parameter">R</annotation>\u202f» signifie «\u202fRapide\u202f», «\u202f<annotation foreground="parameter">M</annotation>\u202f» signifie «\u202fMoyen\u202f», «\u202f<annotation foreground="parameter">L</annotation>\u202f» signifie «\u202fLent\u202f». Les valeurs de comptage pour la moyenne de chaque type peuvent être définies dans les «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Vous devez définir un paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» dans «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f» pour convertir les comptages en débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- La courbe de sensibilité par défaut est définie pour le spectromètre <u>AtomSpectra Nano8</u> basé sur CsI(Tl) mais elle peut être appliquée pour un autre spectromètre au moyen du paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» pour estimer le débit de dose. Utilisez l\'élément de menu «\u202f<annotation foreground="parameter">Sensibilité…</annotation>\u202f» sous le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f» pour modifier cette courbe. La courbe est ajustée à 1 à 661,66keV ligne Cs-137.
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez définir un paramètre «\u202f<annotation foreground="parameter">FondComp</annotation>\u202f» à soustraire de cps dans le calcul simple du débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez voir un historique du débit de dose. Pour sélectionner l\'écran, appuyez sur le bouton «\u202f<annotation foreground="parameter">CN</annotation>\u202f». «\u202f<annotation foreground="parameter">C</annotation>\u202f» signifie «\u202fhistorique du débit de dose compensé\u202f». «\u202f<annotation foreground="parameter">N</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé\u202f».\n
+    </string>
+    <string name="help_text2"><big><annotation foreground="caption">5. Sortie isotope:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- La ligne verte du curseur montre l\'isotope avec une incertitude de 3% et sélectionne des isotopes plus importants. Pour voir les isotopes des lignes strictes, veuillez utiliser la boîte de dialogue de sélection des isotopes «\u202f<annotation foreground="parameter">Afficher les Isotopes</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Le programme affiche une information isotopique en fonction de la sélection du canal ou de l\'axe X keV. Dans un mode canal, le programme affiche les noms des isotopes. En mode keV, le programme affiche les énergies isotopiques.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez afficher les lignes isotopiques. Remarque : Certains des isotopes de la liste sont affichés dans différentes couleurs en fonction de leur rendement quantique relatif sur une ligne donnée. Avec un rendement quantique croissant : vert foncé, vert clair, jaune foncé, jaune clair, rouge. La couleur cyan clair est utilisée pour montrer les chaînes de désintégration et les groupes isotopiques.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez sélectionner toutes les lignes appartenant à une chaîne de désintégration donnée, toutes les lignes appartiennent à un isotope donné ou à une ligne isotopique individuelle.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez sélectionner une bibliothèque d\'isotopes. Les isotopes connus de cette bibliothèque deviennent plus gros que les autres.\n
+        \u00A0\u00A0\u00A0\u00A0- Une sélection de chaîne de désintégration sélectionne également des isotopes et des lignes isotopiques individuelles.\n
+        \u00A0\u00A0\u00A0\u00A0- Une sélection isotopique sélectionne également des lignes isotopiques individuelles.\n
+        \u00A0\u00A0\u00A0\u00A0- Une sélection de ligne isotopique individuelle ne change pas la chaîne de désintégration ou la sélection isotopique.\n
+        \u00A0\u00A0\u00A0\u00A0- Les lignes isotopiques de la liste sont affichées sur un graphique avec leurs couleurs.\n
+        \u00A0\u00A0\u00A0\u00A0- Chaque ligne isotopique individuelle dans une liste montre le nom de l\'isotope, sa ligne d\'énergie et une sortie de photon pour 100 désintégrations.\n
+		\n
+        <big><annotation foreground="caption">6. Détection isotopique:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez trouver des isotopes avec le programme. L\'algorithme est sensible aux paramètres d\'entrée, essayez donc de les modifier pour obtenir de meilleurs résultats. La liste créée peut être montrée sur le graphique ou être cachée. Vous pouvez modifier la visibilité en utilisant le bouton «\u202f<annotation foreground="parameter">Montrer</annotation>\u202f» (le bouton deviendra «\u202f<annotation foreground="parameter">Cacher</annotation>\u202f»). Toutes les lignes sont montrées en violet clair. Les énergies de ces lignes sont affichées calculées, elles ne sont pas extraites de la base de données interne. Le nom de l\'isotope est déterminé à l\'aide du paramètre «\u202f<i>Tolérance</i>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- The isotope list is hidden on graph when the spectrum is loaded or you make a new isotope search.\n
+        \u00A0\u00A0\u00A0\u00A0- Pour activer la fonction de recherche automatique d\'isotopes pendant une lecture de spectre, vous devez d\'abord l\'activer dans «\u202f<annotation foreground="parameter">Les Paramètres</annotation>\u202f». Ensuite, ouvrez «\u202f<annotation foreground="parameter">Trouver des isotopes</annotation>\u202f» et appuyez sur «\u202f<annotation foreground="parameter">Montrer</annotation>\u202f». Une fonction de mise à jour automatique ne fonctionne pas pendant une pause ou lorsque les isotopes trouvés sont sélectionnés pour être masqués. La liste est mise à jour toutes les secondes.\n
+        \u00A0\u00A0\u00A0\u00A0- Les paramètres d\'entrée sont:\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«\u202fSeuil\u202f» - un niveau de déclenchement pour ajouter un isotope trouvé à la liste (0,00-10 000,00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«\u202fLa taille de la fenêtre\u202f» - a number of channels to be used for estimation (1-200).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«\u202fOrdre\u202f» - ordre polynomial.\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«\u202fInexactitude\u202f» - à quel point sera grossier définition du nom de l\'isotope, en pourcentage d\'énergie (1,00-50,00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«\u202fBits significatifs\u202f» - nombre de bits du numéro de canal à utiliser. 13 signifie laisser tel quel. 12 moyens combinent deux canaux en un seul, 11 moyens combinent 4 canaux en un seul, et ainsi de suite.\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«\u202fBibliothèque\u202f» - bibliothèque d\'isotopes à utiliser. «\u202f<i>Tout</i>\u202f» signifie «\u202fmontrer même pas défini\u202f», «\u202f<i>Connu</i>\u202f» signifie «\u202fmontrer uniquement défini\u202f», les autres signifient le type d\'isotope correspondant utilisé par IAEA.\n
+        \n
+        <big><annotation foreground="caption">7. Stockage de données:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez enregistrer le spectre principal pour le voir plus tard. Le spectre est stocké dans un fichier de format propre nommé «\u202f<i>Spectrum-date.txt</i>\u202f», où «\u202fdate\u202f» est la date actuelle. Vous pouvez ajouter un suffixe après la date en tant que note.\n
+        \u00A0\u00A0\u00A0\u00A0- Un spectre enregistré peut être chargé dans le programme via le menu. Le chargement du spectre interrompt automatiquement une mise à jour du spectre, mais un cps et un débit de dose continuent de fonctionner.\n
+        \u00A0\u00A0\u00A0\u00A0- Le spectre principal peut être exporté au format «\u202f<i>.xml</i>\u202f» compatible avec «\u202fBecquerelMonitor\u202f». Les fichiers sont nommés comme «\u202f<i>Bq-date.xml</i>\u202f» où «\u202fdate\u202f» est la date actuelle. Vous pouvez ajouter un suffixe après la date en tant que note. Si le fond est affiché sur le graphique, il sera également ajouté au fichier de sortie en tant que spectre du fond.\n
+        \u00A0\u00A0\u00A0\u00A0- Le spectre principal peut être exporté au format «\u202f<i>.spe</i>\u202f» compatible avec d\'autres programmes spectroscopiques. Les fichiers sont nommés «\u202f<i>MCA-date.spe</i>\u202f» où «\u202fdate\u202f» est la date actuelle. Vous pouvez ajouter un suffixe après la date en tant que note.\n
+        \u00A0\u00A0\u00A0\u00A0- Le spectre principal peut être exporté au format «\u202f<i>.N42</i>\u202f» compatible avec d\'autres programmes spectroscopiques. Les fichiers sont nommés «\u202f<i>MCA-date.N42</i>\u202f» où «\u202fdate\u202f» est la date actuelle. Vous pouvez ajouter un suffixe après la date en tant que note.\n
+        \u00A0\u00A0\u00A0\u00A0- Le spectre principal peut être exporté au format «\u202f<i>.csv</i>\u202f» avec une division «\u202f;\u202f» entre les champs sans colonne d\'énergie compatible avec «\u202f<i>Microsoft Excel</i>\u202f». Les fichiers sont nommés «\u202f<i>Export-date.csv</i>\u202f» où «\u202fdate\u202f» est la date actuelle. Vous pouvez ajouter un suffixe après la date en tant que note.\n
+        \u00A0\u00A0\u00A0\u00A0- Le spectre principal peut être exporté au format «\u202f<i>.csv</i>\u202f» avec une division «\u202f;\u202f» entre les champs avec une colonne d\'énergie compatible avec «\u202f<i>Microsoft Excel</i>\u202f». Les fichiers sont nommés «\u202f<i>Export-date.csv</i>\u202f» où «\u202fdate\u202f» est la date actuelle. Vous pouvez ajouter un suffixe après la date en tant que note.\n
+        \u00A0\u00A0\u00A0\u00A0- Les noms des fichiers de sortie peuvent être modifiés par «\u202f<annotation foreground="parameter">Nom</annotation>\u202f» dans «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f». Le préfixe, la date ou le temps peuvent être supprimés indépendamment.\n
+	    \u00A0\u00A0\u00A0\u00A0- Le fond est stocké dans un seul fichier nommé «\u202f<i>Background</i>\u202f» et est chargé à partir de celui-ci ou de tout autre fichier. Vous pouvez également le charger dans le spectre principal, puis le déplacer en fond. Remarque: vous ne pouvez stocker le fond que si vous avez des données du fond, sinon la commande de menu sera désactivée.\n
+        \u00A0\u00A0\u00A0\u00A0- Vous pouvez arrêter la mise à jour du spectre en sélectionnant «\u202f<annotation foreground="parameter">Suspendre l\'enregistrement</annotation>\u202f» dans un menu principal ou sur une barre de raccourcis. Après la sélection, il devient «\u202f<annotation foreground="parameter">Continuer l\'enregistrement</annotation>\u202f». Toutes les impulsions reçues pendant la pause seront perdues. Ce mode n\'arrête pas les cps et le calcul du débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- Chaque fichier enregistré peut être envoyé à un autre programme, utilisateur ou via Internet au moyen d\'un autre programme avec l\'élément de menu «\u202f<annotation foreground="parameter">Partager un fichier</annotation>\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- Les paramètres de l\'appareil peuvent être stockés en utilisant «\u202f<annotation foreground="parameter">Enregistrer l\'appareil…</annotation>\u202f» dans le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f» au format «\u202f<i>.txt</i>\u202f». Les données de l\'appareil sont stockées dans un fichier de format propre nommé «\u202f<i>Device-suffix.txt</i>\u202f», où «\u202fsuffix\u202f» peut être défini ou être une date s\'il est vide. Les paramètres de périphérique stockés peuvent être chargés dans le programme en utilisant «\u202f<annotation foreground="parameter">Charger l\'appareil…</annotation>\u202f» dans le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f».\n
+        REMARQUE: les paramètres de l\'appareil contiennent une courbe de sensibilité, la plupart des paramètres dans «\u202f<annotation foreground="parameter">Les Paramètres d\'Atom Spectra</annotation>\u202f» et les paramètres d\'isotope de recherche à l\'exclusion du type de bibliothèque.\n
+        \n
+        <big><annotation foreground="caption">8. Les Paramètres:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Le graphique montre le signal d\'entrée «\u202ftel quel\u202f» ou «\u202fforme d\'impulsion\u202f». Sélectionnez-les en glissant vers la gauche/droite. Balayez vers le haut/bas pour mettre à l\'échelle le graphique. Il fonctionne uniquement avec l\'entrée audio et non avec le périphérique «\u202fAtom Nano Pro\u202f».\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fActiver la correction d\'empilement\u202f» - sélectionner pour détecter l\'empilement d\'impulsions. Ce paramètre tente de compenser la forme d\'impulsion si l\'impulsion est trop proche de la précédente.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fUtiliser une source audio brut\u202f» - essayez d\'utiliser l\'audio non traité disponible sur Android 7 et supérieur. Cette case à cocher est désactivée sur Android avant Android 7 ou si le système ne permet pas d\'utiliser l\'audio non traité.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fInverser l\'entrée\u202f» - choisir si la forme d\'impulsion est négative.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fAjouter des coordonnées GPS aux fichiers\u202f» - ajouter des informations GPS aux fichiers de sortie (spectre, fond et .csv).\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fRecherche automatique d\'isotopes\u202f» - recherche automatique et affichage des isotopes sur un spectre.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fSource:\u202f» - choisissez l\'entrée audio souhaitée (non utilisée avec les spectromètres USB directs comme «\u202f<u>AtomSpectra Nano Pro</u>\u202f»). Appuyez sur le texte pour changer la source audio.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fAlarme sonore\u202f» - fait une tonalité en fonction du niveau de cps. Le niveau de base est calculé en utilisant la valeur cps au cours des 5 dernières secondes. Le niveau peut être recalculé après avoir effacé le spectre ou en appuyant sur le bouton «\u202f<annotation foreground="parameter">≈</annotation>\u202f». Vous pouvez sélectionner l\'intervalle d\'énergie souhaité en keV (A-B) auquel faire attention. La valeur du taux de comptage de l\'intervalle sélectionné est indiquée entre parenthèses après la valeur du taux de comptage complet.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fAudio:\u202f» - sortie sonore souhaitée. Appuyez sur le texte pour sélectionner la sortie suivante.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fUn répertoire par défaut\u202f» - choisissez le dossier de destination pour tous les fichiers. S\'il indique <u>...</u> pour Android 8 et supérieur, il vous sera demandé un répertoire de destination. Ou vous pouvez appuyer sur <u>...</u> (ou le nom affiché) pour sélectionner manuellement l\'emplacement souhaité. Sur Android avant 8, ce paramètre ne peut pas être modifié. S\'il affiche toujours <u>...</u>, créez vous-même le dossier <u>AtomSpectra</u> à la racine du premier stockage (généralement le stockage du téléphone) et redémarrez le programme.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fMontrer comme\u202f» - compresser le spectre affiché à ce nombre de points. Le programme réduit 1024 canaux de spectre ou le débit de dose au nombre sélectionné et l\'affiche sur le graphique pour accélérer la sortie.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fDes points avant min\u202f» and «\u202fDes points avant max\u202f» - longueur minimale et maximale en comptage du front d\'impulsion à détecter. Les points jaunes sur le graphique indiquent la longueur minimale requise sur le front d\'impulsion, les points verts indiquent la longueur acceptable du front d\'impulsion entre le nombre minimum et maximum de comptages. Les paramètres par défaut sont optimaux pour tous les appareils <u>AtomSpectra</u>.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fLe discriminateur de bruit\u202f» - n\'enregistrez pas les chaînes sous ce nombre pour exclure les chaînes bruyantes.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fANC est arrondi à\u202f» - nombre de bits ANC supérieurs à utiliser.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fEnregistrer canaux\u202f» - combien de canaux du spectre à exporter. Remarque: son propre format stocke toutes les données.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fCharger des canaux\u202f» - combien de canaux de l\'ancien fichier de spectre à charger. S\'il y a plus de 8192 canaux, ils seront compressés en 8192 canaux ou moins. Remarque: le nouveau format propre a le numéro de canal lui-même.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fDegré maximum\u202f» - facteur polynomial maximal pour la fonction d\'étalonnagen\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fDouceur\u202f» - sélectionner une fenêtre de lissage en temps réel.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fDiff. de temps\u202f» - sélectionner le temps d\'accumulation entre les sorties de différence (1-10 s).\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fNom\u202f» - nommer les fichiers de sortie. Préfixe - type de fichier, date - date d\'enregistrement, temps - temps d\'enregistrement, suffixe - texte personnalisé.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fSauver chaque N s\u202f» - la fonction de sauvegarde automatique du fichier delta. 0 - pas de sauvegarde automatique.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fCompression des canaux\u202f» - réduire la quantité de canaux d\'exportation en combinant la valeur définie des canaux dans un canal.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fSpectre\u202f» - Choisissez la somme, la valeur de crête ou moyenne sur le graphique du spectre pendant la compression de valeur. Les valeurs de crête aident à ne pas perdre de petits pics, la moyenne fait un bon graphique, la somme montre un spectre car l\'appareil a moins de canaux.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fSens\u202f» - valeur d\'étalonnage pour le calcul du débit de dose. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fFondComp\u202f» - nombre de bruit soustrait d\'un simple calcul de débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fR\u202f», «\u202fM\u202f», «\u202fL\u202f» - compte pour une moyenne rapide, moyenne et lente du débit de dose.\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fFréq. de mise à jour du graphique, s⁻¹\u202f» - à quelle fréquence le programme met à jour les données de débit de dose par seconde et le spectre.</string>
+    <string name="help_version">Version: <xliff:g id="version">%1$s</xliff:g>, construction: <xliff:g id="build">%2$d</xliff:g>.</string>
+</resources>

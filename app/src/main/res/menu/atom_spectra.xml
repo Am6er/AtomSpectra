@@ -1,0 +1,369 @@
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/action_hist_freeze"
+        android:icon="@drawable/menu_block"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:title="@string/hist_freeze_update" />
+    <item
+        android:id="@+id/action_isotopes"
+        android:icon="@drawable/menu_agenda"
+        android:orderInCategory="101"
+        android:showAsAction="ifRoom"
+        android:title="@string/isotopes_get" />
+    <item
+        android:id="@+id/action_find_isotopes"
+        android:icon="@drawable/ic_isotope_search"
+        android:orderInCategory="106"
+        android:showAsAction="ifRoom"
+        android:title="@string/action_find_isotopes" />
+    <item
+        android:id="@+id/action_buy"
+        android:orderInCategory="111"
+        android:title="@string/action_buy_spectrometer" />
+    <item
+        android:id="@+id/action_exit"
+        android:icon="@android:drawable/btn_dialog"
+        android:orderInCategory="112"
+        android:showAsAction="ifRoom"
+        android:title="@string/action_exit" />
+    <item
+        android:orderInCategory="102"
+        android:title="@string/histogram_menu">
+        <menu>
+            <item
+                android:id="@+id/action_hist_to_file"
+                android:icon="@drawable/menu_save"
+                android:orderInCategory="301"
+                android:title="@string/hist_save_file" />
+            <item
+                android:id="@+id/action_hist_from_file"
+                android:icon="@drawable/menu_archive"
+                android:orderInCategory="302"
+                android:title="@string/hist_load_file" />
+            <item
+                android:id="@+id/action_hist_add_from_file"
+                android:enabled="false"
+                android:icon="@drawable/menu_add_file"
+                android:orderInCategory="303"
+                android:title="@string/hist_add_file"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_export_spectrum"
+                android:icon="@drawable/menu_set_as"
+                android:orderInCategory="304"
+                android:title="@string/hist_export">
+                <menu>
+
+                    <item
+                        android:id="@+id/action_export_to_BqMoni"
+                        android:icon="@drawable/menu_set_as_bq"
+                        android:orderInCategory="311"
+                        android:title="@string/hist_export_to_bqmoni" />
+                    <item
+                        android:id="@+id/action_export_to_SPE"
+                        android:icon="@drawable/menu_set_as_spe"
+                        android:orderInCategory="312"
+                        android:title="@string/hist_export_to_spe" />
+                    <item
+                        android:id="@+id/action_export_to_N42"
+                        android:icon="@drawable/menu_set_as_n42"
+                        android:orderInCategory="313"
+                        android:title="@string/hist_export_to_N42" />
+                    <item
+                        android:id="@+id/action_export"
+                        android:icon="@drawable/menu_set_as_csv"
+                        android:orderInCategory="314"
+                        android:title="@string/hist_export_csv" />
+                    <item
+                        android:id="@+id/action_export_with_energy"
+                        android:icon="@drawable/menu_set_as_e"
+                        android:orderInCategory="315"
+                        android:title="@string/hist_export_with_energy" />
+                </menu>
+            </item>
+            <item
+                android:id="@+id/action_hist_suffix"
+                android:icon="@drawable/menu_edit"
+                android:orderInCategory="305"
+                android:title="@string/hist_set_suffix" />
+            <item
+                android:id="@+id/action_clear_spectrum"
+                android:icon="@drawable/menu_clear_spectrum"
+                android:orderInCategory="306"
+                android:title="@string/action_restart" />
+            <item
+                android:id="@+id/action_hist_smooth"
+                android:icon="@drawable/menu_smooth"
+                android:orderInCategory="307"
+                android:title="@string/hist_smooth" />
+            <item
+                android:id="@+id/action_hist_delta"
+                android:checkable="true"
+                android:checked="false"
+                android:enabled="true"
+                android:icon="@drawable/menu_delta_time"
+                android:orderInCategory="308"
+                android:title="@string/hist_delta" />
+        </menu>
+    </item>
+    <item
+        android:orderInCategory="104"
+        android:title="@string/calibration_menu">
+        <menu>
+            <item
+                android:id="@+id/action_cal_load"
+                android:icon="@drawable/menu_edit"
+                android:orderInCategory="401"
+                android:title="@string/calibration_load_from_file" />
+            <item
+                android:id="@+id/action_cal_store"
+                android:icon="@drawable/menu_agenda"
+                android:orderInCategory="402"
+                android:title="@string/calibration_store" />
+            <item
+                android:id="@+id/action_cal_store_memory"
+                android:icon="@drawable/menu_agenda"
+                android:orderInCategory="403"
+                android:title="@string/calibration_store_memory" />
+            <item
+                android:id="@+id/action_cal_retrieve"
+                android:icon="@drawable/menu_set_as"
+                android:orderInCategory="404"
+                android:title="@string/calibration_revert" />
+            <item
+                android:id="@+id/action_cal_retrieve_memory"
+                android:icon="@drawable/menu_set_as"
+                android:orderInCategory="405"
+                android:title="@string/calibration_revert_memory" />
+            <item
+                android:id="@+id/action_cal_add_point"
+                android:icon="@drawable/menu_add_point"
+                android:orderInCategory="406"
+                android:title="@string/calibration_add_point" />
+            <item
+                android:id="@+id/action_cal_clear_point"
+                android:icon="@drawable/menu_erase"
+                android:orderInCategory="407"
+                android:title="@string/calibration_clear_points" />
+            <item
+                android:id="@+id/action_cal_calc"
+                android:enabled="false"
+                android:icon="@drawable/menu_calc"
+                android:orderInCategory="408"
+                android:title="@string/calibration_calculate" />
+            <item
+                android:id="@+id/action_cal_function"
+                android:icon="@drawable/menu_forward"
+                android:orderInCategory="409"
+                android:title="@string/cal_show_function" />
+            <item
+                android:id="@+id/action_cal_channel"
+                android:icon="@drawable/menu_back"
+                android:orderInCategory="410"
+                android:title="@string/calibration_channel" />
+            <item
+                android:id="@+id/action_cal_point_1"
+                android:enabled="true"
+                android:orderInCategory="411"
+                android:title="@string/none_cal_data" />
+            <item
+                android:id="@+id/action_cal_point_2"
+                android:enabled="true"
+                android:orderInCategory="412"
+                android:title="@string/none_cal_data" />
+            <item
+                android:id="@+id/action_cal_point_3"
+                android:enabled="true"
+                android:orderInCategory="413"
+                android:title="@string/none_cal_data"
+                android:visible="true" />
+            <item
+                android:id="@+id/action_cal_point_4"
+                android:enabled="true"
+                android:orderInCategory="414"
+                android:title="@string/none_cal_data"
+                android:visible="true" />
+            <item
+                android:id="@+id/action_cal_point_5"
+                android:enabled="true"
+                android:orderInCategory="415"
+                android:title="@string/none_cal_data"
+                android:visible="true" />
+            <item
+                android:id="@+id/action_cal_none"
+                android:enabled="false"
+                android:orderInCategory="419"
+                android:title="@string/none_cal_data" />
+            <item
+                android:id="@+id/action_cal_draw_function"
+                android:checkable="true"
+                android:icon="@drawable/ic_isotope_search"
+                android:orderInCategory="420"
+                android:title="@string/cal_draw_function" />
+            <item
+                android:id="@+id/action_cal_new_point1"
+                android:enabled="true"
+                android:orderInCategory="421"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point2"
+                android:enabled="true"
+                android:orderInCategory="422"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point3"
+                android:enabled="true"
+                android:orderInCategory="423"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point4"
+                android:enabled="true"
+                android:orderInCategory="424"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point5"
+                android:enabled="true"
+                android:orderInCategory="425"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point6"
+                android:enabled="true"
+                android:orderInCategory="426"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point7"
+                android:enabled="true"
+                android:orderInCategory="427"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point8"
+                android:enabled="true"
+                android:orderInCategory="428"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point9"
+                android:enabled="true"
+                android:orderInCategory="429"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_cal_new_point10"
+                android:enabled="true"
+                android:orderInCategory="430"
+                android:title="@string/none_cal_data"
+                android:visible="false" />
+        </menu>
+    </item>
+    <item
+        android:orderInCategory="105"
+        android:title="@string/calibration_device">
+        <menu>
+            <item
+                android:id="@+id/action_load_device"
+                android:icon="@drawable/menu_archive"
+                android:orderInCategory="500"
+                android:title="@string/calibration_load_device" />
+            <item
+                android:id="@+id/action_load_device_cal"
+                android:enabled="false"
+                android:icon="@drawable/menu_archive"
+                android:orderInCategory="500"
+                android:title="@string/calibration_load_device_energy"
+                android:visible="false" />
+            <item
+                android:id="@+id/action_save_device"
+                android:icon="@drawable/menu_save"
+                android:orderInCategory="502"
+                android:title="@string/calibration_save_device" />
+            <item
+                android:id="@+id/action_edit_sensivity"
+                android:icon="@drawable/menu_edit"
+                android:orderInCategory="503"
+                android:title="@string/calibration_sensivity" />
+        </menu>
+    </item>
+    <item
+        android:orderInCategory="103"
+        android:title="@string/background">
+        <menu>
+            <item
+                android:id="@+id/action_background_save"
+                android:icon="@drawable/menu_save"
+                android:orderInCategory="201"
+                android:title="@string/background_save" />
+            <item
+                android:id="@+id/action_background_load"
+                android:icon="@drawable/menu_archive"
+                android:orderInCategory="202"
+                android:title="@string/background_load" />
+            <item
+                android:id="@+id/action_background_load_from"
+                android:icon="@drawable/menu_archive"
+                android:orderInCategory="203"
+                android:title="@string/background_load_from" />
+            <item
+                android:id="@+id/action_background_copy"
+                android:icon="@drawable/menu_forward"
+                android:orderInCategory="204"
+                android:title="@string/background_copy" />
+            <item
+                android:id="@+id/action_background_clear"
+                android:enabled="false"
+                android:icon="@drawable/menu_erase"
+                android:orderInCategory="206"
+                android:title="@string/background_clear" />
+            <item
+                android:id="@+id/action_background_suffix"
+                android:enabled="false"
+                android:icon="@drawable/menu_edit"
+                android:orderInCategory="205"
+                android:title="@string/background_set_suffix" />
+            <item
+                android:id="@+id/action_background_show"
+                android:checkable="true"
+                android:checked="false"
+                android:enabled="false"
+                android:icon="@drawable/record"
+                android:orderInCategory="207"
+                android:title="@string/background_show" />
+            <item
+                android:id="@+id/action_background_subtract"
+                android:checkable="true"
+                android:checked="false"
+                android:enabled="false"
+                android:icon="@drawable/menu_calc"
+                android:orderInCategory="208"
+                android:title="@string/background_subtract" />
+        </menu>
+    </item>
+    <item
+        android:id="@+id/action_help"
+        android:icon="@drawable/menu_help"
+        android:orderInCategory="110"
+        android:title="@string/help_menu" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:orderInCategory="109"
+        android:showAsAction="ifRoom"
+        android:title="@string/action_settings" />
+    <item
+        android:id="@+id/action_share_export"
+        android:icon="@drawable/menu_share"
+        android:orderInCategory="108"
+        android:showAsAction="ifRoom"
+        android:title="@string/hist_share_export" />
+
+</menu>

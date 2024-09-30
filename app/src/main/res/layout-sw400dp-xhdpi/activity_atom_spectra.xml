@@ -1,0 +1,225 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/FrameLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/background4"
+    tools:context=".AtomSpectra">
+
+    <View
+        android:id="@+id/placeholder"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:alpha="0.85"
+        android:background="@android:color/black" />
+
+    <View
+        android:id="@+id/placeholder2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom"
+        android:alpha="0.85"
+        android:background="@android:color/black" />
+
+    <org.fe57.atomspectra.AtomSpectraShapeView
+        android:id="@+id/shape_area"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="50dp"
+        android:alpha="0.85"
+        android:background="@drawable/background4"
+        android:clickable="true"
+        android:onClick="onClickShape" />
+
+    <Button
+        android:id="@+id/addPointButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="right|top"
+        android:layout_marginRight="160dp"
+        android:onClick="onAddCalibrationPoint"
+        android:text="1"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/calibrateButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="right|top"
+        android:layout_marginRight="110dp"
+        android:enabled="false"
+        android:onClick="onCalibrateButton"
+        android:text="@string/leftwards"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/removeCalibrationButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="right|top"
+        android:layout_marginRight="60dp"
+        android:onClick="onClearCalibrationButton"
+        android:text="@string/rightwards"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <ImageButton
+        android:id="@+id/clearSpectrumButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="right|top"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/action_restart"
+        android:foregroundGravity="center"
+        android:onClick="onClickDeleteSpc"
+        android:scaleType="fitCenter"
+        android:src="@drawable/menu_clear_spectrum" />
+
+    <Button
+        android:id="@+id/channelButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|right"
+        android:onClick="onClick_UpDown"
+        android:text="@string/updown"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/fmsButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="50dp"
+        android:onClick="onClick_fms"
+        android:text="F"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/doseButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="100dp"
+        android:onClick="onClick_Dose"
+        android:text="D"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/nbrButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="150dp"
+        android:onClick="onClick_Sound"
+        android:text="≈"
+        android:textColor="#FFFFFFFF"
+        android:textSize="18sp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|top"
+        android:layout_marginTop="120dp"
+        android:orientation="horizontal">
+
+        <SeekBar
+            android:id="@+id/seekChannel"
+            style="@style/Widget.AppCompat.SeekBar.Discrete"
+            android:layout_width="300dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:max="50"
+            android:progress="25"
+            android:visibility="invisible" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/cursorView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginLeft="36dp"
+        android:layout_marginTop="70dp"
+        android:background="@color/colorCursorBackground"
+        android:gravity="center"
+        android:onClick="onClick_Channel"
+        android:text="@string/cursortext"
+        android:textColor="@color/colorCursorText" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="top|left"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/channelText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30sp"
+            android:clickable="true"
+            android:longClickable="true"
+            android:minWidth="100dp"
+            android:onClick="onClick_Coord"
+            android:text="@string/cps"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/doserateText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30sp"
+            android:clickable="true"
+            android:longClickable="true"
+            android:minWidth="100dp"
+            android:onClick="onClick_Coord"
+            android:text="12 uSv"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/suffixLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginTop="200dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/suffixView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:background="@color/colorCursorBackground"
+            android:gravity="right"
+            android:textColor="@color/colorButtonText" />
+
+        <TextView
+            android:id="@+id/backgroundSuffixView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:background="@color/colorCursorBackground"
+            android:gravity="right"
+            android:textColor="@color/colorBackground" />
+    </LinearLayout>
+
+</FrameLayout>

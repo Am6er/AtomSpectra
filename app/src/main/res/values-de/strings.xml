@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <string name="app_name">Atom Spectra</string>
+    <string name="app_bar_audio_action">Daten aus Audio lesen</string>
+    <string name="app_bar_usb_action">Daten von USB lesen</string>
+    <string name="app_bar_spectrum_update">(spektrum aktualisieren)</string>
+    <string name="app_channel">Atom Spectra Bedienung</string>
+    <string name="settings">Atom Spectra Einstellungen</string>
+    <string name="isotope_search">Atom Spectra Finde Isotope</string>
+    <string name="app_bar_sensitivity">Atom Spectra Empfindlichkeit</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="action_select_interval">Intervall einstellen…</string>
+    <string name="action_restart">Spektrum reinigen</string>
+    <string name="action_save_options">Optionen speichern</string>
+    <string name="action_buy_spectrometer">Kaufen ein Spektrometer</string>
+    <string name="action_exit">Beenden vollständig</string>
+    <string name="action_usb_attached">USB ist angeschlossen</string>
+    <string name="action_usb_detached">USB ist getrennt</string>
+    <string name="action_usb_no_access">USB-Gerät kann nicht geöffnet werden</string>
+
+    <string name="histogram_menu">Spektrum</string>
+    <string name="hist_save_file">Speichern unter…</string>
+    <string name="hist_load_file">Laden von…</string>
+    <string name="hist_add_file">Hinzufügen von…</string>
+    <string name="hist_export">Export</string>
+    <string name="hist_export_to_bqmoni">Export nach BqMoni…</string>
+    <string name="hist_export_to_spe">In SPE exportieren…</string>
+    <string name="hist_export_to_N42">In N42 exportieren…</string>
+    <string name="hist_export_csv">In CSV exportieren…</string>
+    <string name="hist_export_with_energy">Export (mit Energie)…</string>
+    <string name="hist_share_export">Aktie</string>
+    <string name="hist_freeze_update">Aufnahme anhalten</string>
+    <string name="hist_continue_update">Aufnahme fortsetzen</string>
+    <string name="hist_stop_record">Die Aufnahme wird aufgrund einer Eingangsänderung gestoppt!</string>
+    <string name="hist_ask_delete_title">Spektrum reinigen</string>
+    <string name="hist_ask_delete_text">Sind sicher, Spektrumsdaten zu löschen?</string>
+    <string name="hist_smooth">Glatt</string>
+    <string name="hist_unsmooth">Unglatt</string>
+    <string name="hist_delta">Spektrumänderung</string>
+    <string name="hist_set_suffix">Beschreibung eingeben</string>
+    <string name="hist_suffix">Spektrum</string>
+
+    <string name="background">Hintergrund</string>
+    <string name="background_save">Speichern</string>
+    <string name="background_load">Laden</string>
+    <string name="background_load_from">Laden von…</string>
+    <string name="background_copy">Das Spektrum als Hintergrund</string>
+    <string name="background_clear">Hintergrund reinigen</string>
+    <string name="background_show">Hintergrund anzeigen</string>
+    <string name="background_subtract">Vom Spektrum abziehen</string>
+    <string name="background_set_suffix">Beschreibung eingeben</string>
+    <string name="background_suffix">Hintergrund</string>
+
+    <string name="notify_close">Schließen</string>
+
+    <string name="enable_pileup">Aktivieren Sie die Stapelkorrektur</string>
+    <string name="invert">Eingabe umkehren</string>
+    <string name="add_gps">Fügen Dateien GPS-Koordinaten hinzu</string>
+    <string name="update_isotopes">Automatische Suche nach Isotopen</string>
+    <string name="input_sound">Quelle:</string>
+    <string name="input_sound_absent">Keine Eingangsquelle! Verwende den Standard.</string>
+    <string name="output_sound">Tonalarm: </string>
+    <string name="output_sound_full">Volles</string>
+    <string name="output_sound_format">%1$.2f–%2$.2f keV</string>
+    <string name="output_sound_device">Sound:</string>
+    <string name="use_raw_audio_source">Verwenden eine rohe Audioquelle</string>
+    <string name="no_audio_available">Eingangsaudio kann nicht verwendet werden!</string>
+    <string name="no_usb_available">USB-Eingang kann nicht verwendet werden!</string>
+    <string name="reset_data">Zurücksetzen</string>
+    <string name="update_data_error">Gerätedaten können nicht aktualisiert werden</string>
+    <string name="no_audio_output_available">Audioausgang kann nicht verwendet werden!</string>
+    <string name="audio_44100">Die Eingangsfrequenz ist auf 44,1 kHz eingestellt. Wenn Sie 48 kHz ausprobieren möchten, schließen Sie das Spektrometer an und starten Sie das Programm neu.</string>
+
+    <string name="reducedto">Zeigen als: 128 Kanäle</string>
+    <string name="maxfront">Max. Frontpunkte: 10</string>
+    <string name="minfront">Min. Frontpunkte: 5</string>
+    <string name="noisediscriminator">Geräuschdiskriminator: 256</string>
+    <string name="ADCroundedto">ADC ist gerundet auf: 12 Bits</string>
+    <string name="save_folder">Ordner speichern: </string>
+    <string name="compress_graph">Spektrum: Summe</string>
+
+    <string name="plus">\u2192</string>
+    <string name="minus">\u2190</string>
+
+    <string name="leftwards">\u221a</string>
+    <string name="rightwards">\u00d7</string>
+    <string name="updown">\u2195</string>
+
+    <string name="cps">cps: 0</string>
+
+    <string name="hint_keV_show">100.0</string>
+    <string name="hint_sens_show">1.00E+00</string>
+
+    <string name="cursortext">Cursor: 0 K., 0 keV</string>
+    <string name="mode_fast">Schnell</string>
+    <string name="mode_medium">Mittel</string>
+    <string name="mode_slow">Schleppend</string>
+    <string name="mode_fast_button">S</string>
+    <string name="mode_medium_button">M</string>
+    <string name="mode_slow_button">L</string>
+    <string name="mode_compensated_button">K</string>
+    <string name="mode_uncompensated_button">D</string>
+    <string name="sensg_text">Empf:</string>
+    <string name="background_cnt_text">HintZähl:</string>
+    <string name="fast_mode_sens">S:</string>
+    <string name="medium_mode_sens">M:</string>
+    <string name="slow_mode_sens">L:</string>
+    <string name="doserateUpdatePeriod">Grafikaktualisierungshäufigkeit, s⁻¹:</string>
+    <string name="save_channels">Kanäle speichern: 32768</string>
+    <string name="load_channels">Kanäle laden: 32768</string>
+    <string name="max_factor">Maximaler Grad: 1</string>
+    <string name="smoothness">Glätte: 1</string>
+    <string name="delta_spectrum">Differenzzeit: 1 s</string>
+    <string name="channel_compression">Kanalkomprimierung: 1</string>
+    <string name="isotopes">Atom Spectra Isotope</string>
+    <string name="isotopes_get">Isotope anzeigen</string>
+    <string name="select_isotopes">Zerfallsketten:</string>
+
+    <string name="calibration_menu">Kalibrierung</string>
+    <string name="calibration_add_point">Punkt hinzufügen</string>
+    <string name="calibration_clear_points">Klare Punkte</string>
+    <string name="calibration_calculate">Berechnung</string>
+    <string name="calibration_load_from_file">Laden von…</string>
+    <string name="calibration_store">Speichern</string>
+    <string name="calibration_store_memory">Im Programm speichern</string>
+    <string name="calibration_revert">Abrufen</string>
+    <string name="calibration_revert_memory">Aus dem Gedächtnis abrufen</string>
+    <string name="none_cal_data">──────────</string>
+    <string name="calibration_device">Gerät</string>
+    <string name="calibration_save_device">Gerät speichern…</string>
+    <string name="calibration_load_device">Gerät laden…</string>
+    <string name="calibration_load_device_energy">Laden mit Kalibrierung…</string>
+    <string name="calibration_sensivity">Empfindlichkeit einstellen…</string>
+    <string name="calibration_channel">Letzte: 8192</string>
+    <string name="calibration_channel_format">Letzte: <xliff:g id="channel">%1$d</xliff:g></string>
+    <string name="calibration_add_nuclid_title">Add a calibration point</string>
+    <string name="calibration_add_nuclid_text">Kalibrierpunkt für Kanal %1$d mit %2$s hinzufügen (%3$.2f keV)?</string>
+    <string name="calibration_add_nuclid2_text">Geben Sie eine Energie (in keV) für Kanal %1$d ein (jetzt %2$s, %3$.2f keV):</string>
+
+    <string name="detector_sensitivity">Geräteempfindlichkeit</string>
+    <string name="sense_energy_kev">Energie, keV</string>
+    <string name="sense_sensitivity">Empfindlichkeit</string>
+    <string name="sense_hint_energy">Energie</string>
+    <string name="sense_hint_sensitivity">Empfindlichkeit</string>
+
+    <string name="reduced_to_format">Zeigen als: <xliff:g id="channel_number">%1$d</xliff:g> Kanäle</string>
+    <string name="min_front_points_format">Min. Frontpunkte: <xliff:g id="min_points">%1$d</xliff:g></string>
+    <string name="max_front_points_format">Max. Frontpunkte: <xliff:g id="max_points">%1$d</xliff:g></string>
+    <string name="noise_discriminator_format">Geräuschdiskriminator: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
+    <string name="adc_rounded_format">ADC ist gerundet auf: <xliff:g id="adc_high_bits">%1$d</xliff:g> bits</string>
+    <string name="save_channels_format">Kanäle speichern: <xliff:g id="save_channels">%1$d</xliff:g></string>
+    <string name="load_channels_format">Kanäle laden: <xliff:g id="load_channels">%1$d</xliff:g></string>
+    <string name="max_factor_format">Maximaler Grad: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="smoothness_format">Glätte: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="delta_spectrum_format">Differenzzeit: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
+    <string name="channel_compression_format">Kanalkomprimierung: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="total_time_format">Zeit: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h</string>
+    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h</string>
+    <string name="cursor_format">Cursorposition:\nkanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
+    <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
+    <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="compress_graph_format">Spektrum: <xliff:g id="type">%1$s</xliff:g></string>
+    <string name="autosave_timeout">Alle <xliff:g id="duration">%1$d</xliff:g> s speichern</string>
+    <string-array name="compress_graph_array">
+        <item>Summe</item>
+        <item>Durchschnitt</item>
+        <item>Spitzenwert</item>
+    </string-array>
+    <string-array name="file_name_array">
+        <item>Name: Suffix</item>
+        <item>Name: Datum-Suffix</item>
+        <item>Name: Zeit-Suffix</item>
+        <item>Name: Datum_Zeit-Suffix</item>
+        <item>Name: Präfix-Suffix</item>
+        <item>Name: Präfix-Datum-Suffix</item>
+        <item>Name: Präfix-Zeit-Suffix</item>
+        <item>Name: Präfix-Datum_Zeit-Suffix</item>
+    </string-array>
+
+    <string name="isotope_show_line"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>) (<xliff:g id="isotope_halflife">%6$.2f</xliff:g></string>
+    <string name="isotope_show_next_line">, <xliff:g id="another_energy">%1$.2f</xliff:g></string>
+    <string name="isotope_show_last_line"><xliff:g id="last_energy">%1$s</xliff:g> keV)</string>
+    <string name="isotope_show_decay_chain"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> Zerfallskette</string>
+    <string name="isotope_show_energy"><xliff:g id="isotope_energy">%1$7.2f</xliff:g> keV</string>
+    <string name="isotope_show_name_stable"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (stable)</string>
+    <string name="isotope_show_name_halflife"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>)</string>
+    <string name="period_year">y</string>
+    <string name="period_day">d</string>
+    <string name="period_hour">h</string>
+    <string name="period_minute">min</string>
+    <string name="period_second">s</string>
+
+    <string name="graph_show_cnt">anz</string>
+    <string name="graph_show_log10">lg(anz)</string>
+    <string name="graph_show_channel">K.</string>
+    <string name="graph_show_points">anz</string>
+    <string name="graph_show_kev">keV</string>
+    <string name="graph_show_mkSv">μSv/h</string>
+    <string name="graph_show_mSv">mSv/h</string>
+    <string name="graph_log_info">Logarithmische Y-Skala</string>
+    <string name="graph_linear_info">Lineare Y-Skala</string>
+    <string name="graph_max_gain">Die maximale Verstärkung ist erreicht</string>
+    <string name="graph_min_gain">Die minimale Verstärkung ist erreicht</string>
+    <string name="graph_max_zoom">Der maximale Zoom ist erreicht</string>
+    <string name="graph_min_zoom">Der minimale Zoom ist erreicht</string>
+
+    <string name="perm_ask_audio_title">AUDIO-Erlaubniserwerb</string>
+    <string name="perm_ask_audio_text">Diese Anwendung benötigt die Berechtigung RECORD_AUDIO, um das Signal vom Spektrometer zu erfassen. Ohne diese Erlaubnis kann das Programm nur vorherige Spektren anzeigen.</string>
+    <string name="perm_ask_power_title">Energieeinsparung</string>
+    <string name="perm_ask_power_text">Bitte gehen Sie zu einer Batterieausschlussliste und fügen Sie AtomSpectra hinzu, um im Hintergrund ordnungsgemäß zu funktionieren.</string>
+    <string name="perm_ask_write_title">WRITE-Erlaubniserwerb</string>
+    <string name="perm_ask_write_text">Diese Berechtigung wird benötigt, um eine Datei in einen externen Speicher zu schreiben</string>
+    <string name="perm_ask_read_title">READ-Erlaubniserwerb</string>
+    <string name="perm_ask_read_text">Diese Berechtigung wird benötigt, um Dateien aus dem externen Speicher zu lesen</string>
+    <string name="perm_ask_share_text">Diese Berechtigung wird zum Senden der Datei benötigt</string>
+    <string name="perm_ask_fine_gps_title">GPS-Zugangserfassung</string>
+    <string name="perm_ask_fine_gps_text">Das Programm benötigt die Berechtigung für den Zugriff auf GPS-Koordinaten, um sie der Ausgabedatei hinzuzufügen. Die Koordinaten werden nur gelesen, wenn das Hauptprogrammfenster aktiv ist und in den Parametern eine GPS-Checkbox eingeschaltet ist.</string>
+    <string name="perm_ask_gps_off_title">GPS ist ausgeschaltet</string>
+    <string name="perm_ask_gps_off_text">GPS ist ausgeschaltet. Bitte schalten Sie GPS ein, um der Spektrumsdatei Koordinaten hinzuzufügen</string>
+
+    <string name="perm_no_audio">Keine Erlaubnis zum Öffnen von Audio</string>
+    <string name="perm_no_read_histogram">Keine Erlaubnis zum Lesen eines Spektrums</string>
+    <string name="perm_no_read_background">Keine Erlaubnis, einen Hintergrund zu lesen</string>
+    <string name="perm_no_read_calibration">Keine Berechtigung zum Lesen einer Kalibrierungsdatei</string>
+    <string name="perm_no_read_device">Keine Berechtigung zum Lesen einer Gerätedatei</string>
+    <string name="perm_no_write_directory">Ordner / AtomSpectra kann nicht im externen Speicher erstellt werden, sondern in ein eigenes Verzeichnis verschieben</string>
+    <string name="perm_no_write_histogram">Keine Erlaubnis, ein Spektrum zu schreiben</string>
+    <string name="perm_no_write_background">Keine Erlaubnis, einen Hintergrund zu schreiben</string>
+    <string name="perm_no_write_device">Keine Berechtigung zum Schreiben einer Gerätedatei</string>
+    <string name="perm_no_write_bqmoni">Keine Berechtigung zum Exportieren eines Spektrums nach Becquerel Monitor</string>
+    <string name="perm_no_write_spe">Keine Berechtigung zum Exportieren eines Spektrums in eine SPE-Datei</string>
+    <string name="perm_no_write_N42">Keine Berechtigung zum Exportieren eines Spektrums in eine N42-Datei</string>
+    <string name="perm_no_write_export">Keine Berechtigung zum Exportieren eines Spektrums in eine CSV-Datei</string>
+    <string name="perm_no_write_export_energy">Keine Berechtigung zum Exportieren eines Spektrums mit Energie in eine CSV-Datei</string>
+    <string name="perm_no_share">Keine Berechtigung zum Lesen einer zu teilenden Datei</string>
+    <string name="perm_no_outside">Eine Datei liegt außerhalb meines Bereichs</string>
+    <string name="perm_no_usb">Keine Berechtigung zum Zugriff auf ein USB-Gerät</string>
+    <string name="perm_no_gps">Kein GPS-Zugang, GPS-Daten sind undefiniert</string>
+
+    <string name="ask_select_histogram">Wählen Sie ein Spektrum</string>
+    <string name="ask_select_background">Wählen Sie ein Hintergrundspektrum</string>
+    <string name="ask_select_calibration">Wählen Sie eine Kalibrierungsdatei</string>
+    <string name="ask_select_device_file">Wählen Sie eine Gerätedatei aus</string>
+    <string name="ask_spectrum_suffix">Dateisuffix für ein Spektrum</string>
+    <string name="ask_device_suffix">Dateisuffix für eine Gerätedatei</string>
+    <string name="ask_export_bqmoni">Dateisuffix für den Export von Daten nach Becquerel Monitor</string>
+    <string name="ask_export_spe">Dateisuffix zum Exportieren von Daten in SPE</string>
+    <string name="ask_export_N42">Dateisuffix zum Exportieren von Daten in N42</string>
+    <string name="ask_export_suffix">Dateisuffix zum Exportieren von Daten in CSV</string>
+    <string name="ask_suffix_text">Geben Sie das Dateisuffix ein:</string>
+    <string name="ask_share">Teilen Sie eine Datei</string>
+    <string name="ask_share_text">Ein Spektrum Daten aus <xliff:g id="file_share">%1$s</xliff:g></string>
+    <string name="ask_noise_title">Rauschunterscheidungspegel</string>
+    <string name="ask_noise_text">Geben Sie den neuen Wert:</string>
+    <string name="ask_channel_title">Stellen Sie einen Cursorkanal ein</string>
+    <string name="ask_channel_text">Neuer Kanal (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
+    <string name="ask_last_channel_title">Geben Sie die Kanalnummer ein</string>
+    <string name="ask_last_channel_text">Neuer Kanal (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+    <string name="ask_delete_calibration_line_title">Zeile löschen</string>
+    <string name="ask_delete_calibration_line_text">Kanal %1$d (%2$.2f keV) aus der Liste löschen?</string>
+    <string name="ask_select_interval_title">Intervall für die Suche auswählen</string>
+    <string name="ask_select_interval_text">Intervall in keV wählen (oder „-1“ zum Reinigen einstellen)</string>
+
+    <string name="cal_point_title">Kalibrierung der Kanall <xliff:g id="cal_channel">%1$d</xliff:g></string>
+    <string name="cal_no_more">Kein Platz mehr für Kalibrierleitung</string>
+    <string name="cal_have_channel">Habe diesen Kanal schon</string>
+    <string name="cal_no_enough_data">Nicht genügend Daten zum Kalibrieren</string>
+    <string name="cal_show_line">K: <xliff:g id="channel">%1$d</xliff:g>, E: <xliff:g id="energy">%2$.2f</xliff:g> keV</string>
+    <string name="cal_show_function">Funktion anzeigen</string>
+    <string name="cal_draw_function">Zeichnen neue</string>
+    <string name="cal_function_title">Kalibrierung</string>
+    <string name="cal_function_message">Kalibrierungsfunktion:</string>
+    <string name="cal_coefficient_title">Kalibrierung <xliff:g id="factor">%1$d</xliff:g>-Koeffizient</string>
+    <string name="cal_coefficient_text">Neuen Kalibrierwert eingeben:</string>
+    <string name="ask_point_in_kev">Geben Sie den Energiewert in keV ein:</string>
+    <string name="cal_error_number">Fehler bei der Zahleneingabe</string>
+    <string name="cal_maybe_wrong">BEACHTUNG!\n\nIhr Punkt %1$d - %2$.2f keV macht die Kalibrierung falsch!</string>
+    <string name="put_cursor_first">Setzen Sie zuerst einen Cursor</string>
+    <string name="strange_file_name">Ein seltsamer Dateiname</string>
+    <string name="hist_load_success">Ein Spektrum wird erfolgreich geladen</string>
+    <string name="hist_load_error">Eine Spektrumbelastung ist fehlgeschlagen!</string>
+    <string name="device_load_success">Gerätedaten werden erfolgreich geladen</string>
+    <string name="device_load_error">Das Laden von Gerätedaten ist fehlgeschlagen!</string>
+    <string name="cal_load_success">Die Kalibrierung wurde erfolgreich geladen</string>
+    <string name="cal_load_error">Das Laden der Kalibrierung ist fehlgeschlagen!</string>
+    <string name="cal_applied">Die Kalibrierung wird angewendet</string>
+    <string name="storage_required">Speicher ist erforderlich</string>
+    <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> wurde erfolgreich gespeichert</string>
+    <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> Speichern ist fehlgeschlagen!</string>
+    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> wurde erfolgreich gespeichert</string>
+    <string name="device_save_error"><xliff:g id="file_save">%1$s</xliff:g> Speichern ist fehlgeschlagen!</string>
+    <string name="background_load_success">Hintergrund wurde erfolgreich geladen</string>
+    <string name="background_load_error">Das Laden im Hintergrund ist fehlgeschlagen!</string>
+    <string name="background_delete_error">Hintergrunddatei kann nicht gelöscht werden</string>
+    <string name="background_no_data">Keine Hintergrunddaten</string>
+    <string name="background_save_success">Hintergrund wird erfolgreich gespeichert</string>
+    <string name="background_save_error">Das Speichern des Hintergrunds ist fehlgeschlagen!</string>
+    <string name="export_save_success"><xliff:g id="file_save">%1$s</xliff:g> wurde erfolgreich exportiert</string>
+    <string name="export_save_error"><xliff:g id="file_save">%1$s</xliff:g> Export ist fehlgeschlagen!</string>
+    <string name="something_wrong">Etwas läuft schief!</string>
+    <string name="unknown_code">Ich habe unbekannten Code vom Gerät erhalten: <xliff:g id="code">%1$d</xliff:g></string>
+    <string name="cal_store_usb_wait">Warten Sie, bis die Kalibrierung im USB-Gerät gespeichert wird</string>
+    <string name="cal_apply_usb">Die Kalibrierung wird von einem USB-Gerät angewendet</string>
+    <string name="cal_wrong_usb">Falsche Kalibrierung von einem USB-Gerät</string>
+    <string name="cal_wrong_checksum">Eine schlechte Kalibrierungsprüfsumme von einem USB-Gerät</string>
+    <string name="cal_timeout">Timeout von einem USB-Gerät</string>
+    <string name="cal_store_usb">Die Kalibrierung wird auf einem USB-Gerät gespeichert</string>
+    <string name="cal_wrong_store_usb">Die Kalibrierung kann nicht auf einem USB-Gerät gespeichert werden</string>
+    <string name="cal_load_anyway">Kalibrierung trotzdem laden?</string>
+    <string name="usb_below_minimal_version">Aktualisieren Sie die Gerätefirmware auf 11 <xliff:g id="version">%1$d</xliff:g> oder höher</string>
+    <string name="usb_version_read_error">Fehler beim Lesen der Firmware-Version des Geräts</string>
+    <string name="usb_version_unknown">Geräte-Firmware-Version unbekannt</string>
+
+    <string name="searching_isotopes">Isotope suchen…</string>
+    <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
+    <string name="isotope_list">Isotope</string>
+    <string name="action_find_isotopes">Finde Isotope</string>
+    <string name="find_isotopes">Finde</string>
+    <string name="show_isotopes">Zeigen</string>
+    <string name="show_no_isotopes">Ausblenden</string>
+    <string name="find_threshold">Schwelle</string>
+    <string name="find_window_size">Fenstergröße</string>
+    <string name="find_order">Ordnung</string>
+    <string name="find_tolerance">Ungenauigkeit</string>
+    <string name="find_sign_bits">Bedeutende Bits</string>
+    <string name="find_isotope_library">Bibliothek</string>
+    <string name="find_error_window">Fehler in der Fenstergröße</string>
+    <string name="find_error_bits">Fehler in der Anzahl der signifikanten Bits</string>
+    <string name="find_error_tolerance">Fehler in der Ungenauigkeit</string>
+    <string name="find_error_threshold">Fehler in der Schwelle</string>
+    <string name="find_isotopes_all">Alle</string>
+    <string name="find_isotopes_known">Bekannt</string>
+    <string name="find_isotopes_medicine">Medizinisch</string>
+    <string name="find_isotopes_industrial">Industriell</string>
+    <string name="find_isotopes_special">Besondere</string>
+    <string name="find_isotopes_normal">Normal</string>
+    <string name="find_isotopes_info">%1$s (%2$.2f keV)</string>
+    <string-array name="find_isotopes_selection">
+        <item>Alle</item>
+        <item>Bekannt</item>
+        <item>Medizinisch</item>
+        <item>Industriell</item>
+        <item>Besondere</item>
+        <item>Normal</item>
+    </string-array>
+    <string-array name="isotopes_selection">
+        <item>Alle</item>
+        <item>Medizinisch</item>
+        <item>Industriell</item>
+        <item>Besondere</item>
+        <item>Normal</item>
+    </string-array>
+    <string-array name="find_isotopes_order">
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_13">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_14">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_15">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_16">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+    </string-array>
+
+    <string name="help_menu">Hilfe</string>
+    <string name="help">Atom Spectra Schnelle Hilfe</string>
+    <string name="help_text1"><big><annotation foreground="caption">Überblick.</annotation></big>\n
+        Dieses Programm liest ein Signal von einem Spektrometer, das über einen Mikrofoneingang (wie <u>AtomSpectra 3, 4</u> oder ähnliches) an ein Telefon angeschlossen ist, von einem USB-Audio-Spektrometer (wie <u>AtomSpectra Nano</u>) oder ähnlich) oder von einem USB-Spektrometer <u>AtomSpectra Pro</u>. Wenn keiner von ihnen mit einem Telefon verbunden ist, arbeitet das Programm in einem Demo-Modus, liest ein internes Mikrofon und erstellt ein Spektrum.\n
+		\n
+        HINWEIS: Bitte fügen Sie das Programm zur Stromausschlussliste hinzu, damit Sie im Hintergrund oder bei ausgeschaltetem Bildschirm ordnungsgemäß arbeiten können. Um das Programm vollständig zu stoppen, verwenden Sie bitte den Menüpunkt „<annotation foreground="parameter">Beenden vollständig</annotation>“.\n
+		\n
+        <big><annotation foreground="caption">1. Betriebs:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie eine horizontale Prise, um Kanäle/Energien zu skalieren. Nehmen Sie die Finger vom Bildschirm, um eine Prise aufzutragen.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie eine vertikale Prise, um die Anzahl zu skalieren. Nehmen Sie die Finger vom Bildschirm, um eine Prise aufzutragen.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie eine diagonale Prise, um Kanäle / Energien zu skalieren und gleichzeitig zu zählen. Nehmen Sie die Finger vom Bildschirm, um eine Prise aufzutragen.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie einen Wisch nach links / rechts, um ein Spektrum nach links / rechts zu verschieben.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie einen Wisch nach unten, um ein Isotopenetikett ein- und auszublenden.\n
+        \u00A0\u00A0\u00A0\u00A0- Zeigen Sie mit einem einzigen Tastendruck auf einen grünen Cursor. Verwenden Sie einen Schieberegler, um den Cursor sanft zu verschieben. Tippen Sie links neben dem Spektrum auf, um einen Cursor auszuschalten. Tippen Sie auf Cursortext, um den Cursorkanal direkt einzustellen.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie ein doppeltes Tippen, um die lineare oder log10-Skala auszuwählen.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie ein langes Tippen, um zwischen dem Balken- und dem Linienansichtsmodus zu wechseln.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben dem Spektrum, um zwischen dem Kanal- und dem keV-Modus zu wechseln.\n
+        \u00A0\u00A0\u00A0\u00A0- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">KD</annotation>“ rechts neben dem Spektrum, um zwischen den Ausgabemodi Spektrum und Dosisleistung umzuschalten.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie kurz auf „<annotation foreground="parameter">cps</annotation>“ oder auf die Ausgabe der Dosisleistung, um alle zeitlichen Durchschnitts-cps („<i>~cps</i>“) und eine Gesamtsumme anzuzeigen Zeit in Sekunden („<i>Zeit</i>“). Drücken Sie kurz auf „<annotation foreground="parameter">~cps</annotation>“ oder „<annotation foreground="parameter">Zeit</annotation>“, um die Basis- („<i>≈cps</i>“) und Signalpegel („<i>♪cps</i>“) anzuzeigen. Drücken Sie kurz auf „<annotation foreground="parameter">≈cps</annotation>“ oder „<annotation foreground="parameter">♪cps</annotation>“, um die Koordinaten anzuzeigen. Die Koordinaten zeigen die aktuellen Werte während der Spektrumaktualisierung. Sie zeigen die letzte Position an, bevor die Aufzeichnung gestoppt wurde. Sie zeigen die Position der zuletzt gelesenen Datei. Drücken Sie lange auf die Koordinaten, um zu einem Kartenprogramm zu springen. Drücken Sie erneut kurz, um zurückzukehren.\n
+		\n
+        <big><annotation foreground="caption">2. Spektrenausgabe:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Das Programm kann ein Hauptspektrum, ein Hauptspektrum mit einem Hintergrundspektrum und einen Unterschied zwischen ihnen zeigen. Alle Modi werden im Untermenü „<annotation foreground="parameter">Hintergrund</annotation>“ ausgewählt.\n
+        \u00A0\u00A0\u00A0\u00A0- Im Balkenansichtsmodus wird das Hauptspektrum blau, der Hintergrund grün und der Unterschied zwischen ihnen rot angezeigt. Die Farben sind abgeblendet.\n
+        \u00A0\u00A0\u00A0\u00A0- Im Linienansichtsmodus wird das Hauptspektrum weiß angezeigt, der Hintergrund wird grün angezeigt und der Unterschied zwischen ihnen wird cyan angezeigt. Die Farben sind hell.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können Hintergrunddaten im Programm löschen.\n
+        \u00A0\u00A0\u00A0\u00A0- Um das Spektrum „wie es ist“ zu sehen, stellen Sie den ADC auf Maximum und zeigen Sie ihn als 1024 Kanäle an. Andere Werte machen das Spektrum und den Hintergrund glatt.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können Spektren glätten oder rückgängig machen, indem Sie „<annotation foreground="parameter">Glatt</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“-Untermenü verwenden.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können den Unterschied zwischen zwei Spektralzuständen zu unterschiedlichen Zeiten anzeigen, indem Sie „<annotation foreground="parameter">Spektrumänderung</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“-Untermenü verwenden. Die Differenzzeit kann mit „<annotation foreground="parameter">Differenzzeit</annotation>“ unter „<annotation foreground="parameter">Einstellungen</annotation>“ im Bereich von 1 bis 10 Sekunden gewählt werden.\n
+        \u00A0\u00A0\u00A0\u00A0- Während der Cursorausgabe können Sie Beschreibungen für Spektrum und Hintergrund bearbeiten und anzeigen. Diese Beschreibungen werden beim Speichern als Suffix verwendet. Um sie zu ändern, verwenden Sie „<annotation foreground="parameter">Beschreibung eingeben</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“- oder „<annotation foreground="parameter">Hintergrund</annotation>“-Untermenü.\n
+		\n
+        <big><annotation foreground="caption">3. Energiekalibrierung:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Das Programm verwendet eine Energiekalibrierung.\n
+        \u00A0\u00A0\u00A0\u00A0- HINWEIS: Es ist besser, vor einer Kalibrierung auf Kanalausgang umzuschalten.\n
+        \u00A0\u00A0\u00A0\u00A0- Um den Spektrumpunkt zu kalibrieren, bewegen Sie den Cursor auf den ersten Kalibrierungspunkt. Drücken Sie dann eine „<annotation foreground="parameter">1</annotation>“ -Taste über dem Spektrum und geben Sie einen Wert ein. Die Schaltfläche wechselt von „<annotation foreground="parameter">1</annotation>“ zu „<annotation foreground="parameter">2</annotation>“, um den zweiten wartenden Punkt anzuzeigen.\n
+        \u00A0\u00A0\u00A0\u00A0- Machen Sie dasselbe für die nächsten Kalibrierungspunkte. Die Schaltfläche ändert sich in „<annotation foreground="parameter">-</annotation>“, wenn keine akzeptablen Punkte mehr vorhanden sind.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie die Taste „<annotation foreground="parameter">\u221a</annotation>“, um eine Kalibrierung zu berechnen. Verwenden Sie „<annotation foreground="parameter">Speichern</annotation>“, um die Kalibrierungsdaten für den nächsten Programmstart zu speichern. Das Programm ruft die Kalibrierungsdaten ab, wenn es ein aktuelles Spektrum löscht. Verwenden Sie „<annotation foreground="parameter">Abrufen</annotation>“, um Kalibrierungsdaten auf ein Spektrum aus dem Speicher anzuwenden. <annotation foreground="highlight">HINWEIS</annotation>: Wenn <u>AtomSpectra Pro</u> angeschlossen ist, verwendet das Programm die Kalibrierung vom Gerät oder speichert die Kalibrierung auf dem Gerät. Die interne Programmkalibrierung ändert sich nicht und wird nach dem Trennen des Geräts wiederhergestellt oder kann mit entsprechenden Menübefehlen geändert werden.\n
+        \u00A0\u00A0\u00A0\u00A0- Tippen Sie auf eine Nuklid-Flag in einem Diagramm aus einer <u>Nuklidliste</u>, um einen neuen Kalibrierpunkt mit der Nuklidenergie zu setzen.\n
+        \u00A0\u00A0\u00A0\u00A0- Tippen Sie auf ein Nuklid-Flag in einem Diagramm aus <u>der Liste der gefundenen Peaks</u> und geben Sie einen Energiewert ein, um einen neuen Kalibrierungspunkt festzulegen.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie im Untermenü „<annotation foreground="parameter">Kalibrierung</annotation>“ auf Polinomwerte, um sie zu bearbeiten.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können die höchste Polinom-Reihenfolge in den „<annotation foreground="parameter">Einstellungen</annotation>“ einstellen.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie die Taste „<annotation foreground="parameter">\u00d7</annotation>“, um alle Eingabepunkte zu löschen.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie im Untermenü „<annotation foreground="parameter">Kalibrierung</annotation>“ auf „<annotation foreground="parameter">Neu zeichnen</annotation>“, um eine neue Kalibrierungsfunktion und Kalibrierungspunkte in einem Diagramm anzuzeigen. Neue Kalibrierpunkte werden grün dargestellt.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie auf die neue Kalibrierungszeile im Menü, um sie aus der Liste zu löschen.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können eine Kalibrierungsfunktion über das Element „<annotation foreground="parameter">Funktion anzeigen</annotation>“ im Untermenü „<annotation foreground="parameter">Kalibrierung</annotation>“ anzeigen.\n
+        \u00A0\u00A0\u00A0\u00A0- Drücken Sie in einem Untermenü „<annotation foreground="parameter">Kalibrierung</annotation>“ auf die neue Kalibrierungszeile, um sie aus der Liste zu löschen.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können die letzte Kanalnummer auswählen, die auf der Energieskala angezeigt werden soll. Die Kanalskala zeigt immer das gesamte Spektrum.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können Kalibrierungsdaten für ein aktuelles Spektrum in einem Untermenü „<annotation foreground="parameter">Kalibrierung</annotation>“ über der horizontalen Linie anzeigen und bearbeiten.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können neue Kalibrierungsdaten in einem Untermenü „<annotation foreground="parameter">Kalibrierung</annotation>“ unterhalb der horizontalen Linie sehen.\n
+		\n
+        <big><annotation foreground="caption">4. Eine Dosisleistungsberechnung und -ausgabe:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Das Programm führt eine Dosisleistungsmessung gemäß der Auswahl der Kanal- oder keV-x-Achse durch. In einem Kanalansichtsmodus führt das Programm eine einfache Umrechnung der Dosisleistung in eine Dosisrate durch. In einem keV-Ansichtsmodus führt das Programm eine energiekompensierte Dosisleistungsmessung durch.\n
+        \u00A0\u00A0\u00A0\u00A0- Die Schaltfläche „<annotation foreground="parameter">SML</annotation>“ rechts neben dem Spektrum wählt die Mittelung der Dosisleistung aus. „<annotation foreground="parameter">S</annotation>“ bedeutet „Schnell“, „<annotation foreground="parameter">M</annotation>“ bedeutet „Mittel“, „<annotation foreground="parameter">L</annotation>“ bedeutet „Schleppend“. Die Zählwerte für die Mittelwertbildung für jeden Typ können im „<annotation foreground="parameter">Einstellungen</annotation>“ festgelegt werden.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
+        \u00A0\u00A0\u00A0\u00A0- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können einen „<annotation foreground="parameter">HintZähl</annotation>“-Parameter festlegen, der bei der einfachen Berechnung der Dosisleistung von cps subtrahiert wird.\n
+        \u00A0\u00A0\u00A0\u00A0- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">CD</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">D</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“.\n
+    </string>
+    <string name="help_text2"><big><annotation foreground="caption">5. Isotopenausgabe:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Die grüne Cursorlinie zeigt das Isotop mit 3% Unsicherheit und wählt wichtigere Isotope aus. Um strenge Linienisotope anzuzeigen, verwenden Sie bitte das Dialogfeld „<annotation foreground="parameter">Isotope anzeigen</annotation>“.\n
+        \u00A0\u00A0\u00A0\u00A0- Das Programm zeigt eine Isotopeninformation gemäß der Kanal- oder keV-x-Achsenauswahl. In einem Kanalmodus zeigt das Programm Isotopennamen an. In einem keV-Modus zeigt das Programm Isotopenenergien an.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können Isotopenlinien anzeigen. Hinweis: Einige der Isotope in der Liste sind entsprechend ihrer relativen Quantenausbeute auf einer bestimmten Linie in verschiedenen Farben dargestellt. Mit steigender Quantenausbeute: dunkelgrün, hellgrün, dunkelgelb, hellgelb, rot. Helle Cyanfarbe Farbe wird verwendet, um Zerfallsketten und Isotopengruppen anzuzeigen.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können auswählen, ob alle Linien zu einer bestimmten Zerfallskette gehören, alle Linien zu einem bestimmten Isotop gehören oder eine einzelne Isotopenlinie.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können eine Isotopenbibliothek auswählen. Die bekannten Isotope aus dieser Bibliothek werden größer als die anderen.\n
+        \u00A0\u00A0\u00A0\u00A0- Eine Zerfallskettenauswahl wählt auch Isotope und einzelne Isotopenlinien aus.\n
+        \u00A0\u00A0\u00A0\u00A0- Eine Isotopenauswahl wählt auch einzelne Isotopenlinien aus.\n
+        \u00A0\u00A0\u00A0\u00A0- Eine einzelne Isotopenlinienauswahl ändert weder die Zerfallskette noch die Isotopenauswahl.\n
+        \u00A0\u00A0\u00A0\u00A0- Isotopenlinien aus der Liste werden in einem Diagramm mit ihren Farben angezeigt.\n
+        \u00A0\u00A0\u00A0\u00A0- Jede einzelne Isotopenlinie in einer Liste zeigt den Isotopennamen, ihre Energielinie und eine Photonenausgabe pro 100 Zerfälle.\n
+		\n
+        <big><annotation foreground="caption">6. Isotopendetektion:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können Isotope mit dem Programm finden. Der Algorithmus reagiert empfindlich auf Eingabeparameter. Versuchen Sie daher, diese zu ändern, um bessere Ergebnisse zu erzielen. Die erstellte Liste kann im Diagramm angezeigt oder ausgeblendet werden. Sie können die Sichtbarkeit mit der Schaltfläche „<annotation foreground="parameter">Zeigen</annotation>“ ändern (die Schaltfläche ändert sich in „<annotation foreground="parameter">Ausblenden</annotation>“). Alle Linien sind hellviolett dargestellt. Die Energien dieser Linien werden berechnet angezeigt, sie werden nicht aus der internen Datenbank entnommen. Der Isotopenname wird mit dem Parameter <i>Ungenauigkeit</i> bestimmt.\n
+        \u00A0\u00A0\u00A0\u00A0- Die Isotopenliste wird im Diagramm ausgeblendet, wenn das Spektrum geladen wird oder Sie eine neue Isotopensuche durchführen.\n
+        \u00A0\u00A0\u00A0\u00A0- Um die automatische Isotopensuchfunktion während einer Spektrumsmessung zu aktivieren, müssen Sie sie zuerst in „<annotation foreground="parameter">Einstellungen</annotation>“ aktivieren. Öffnen Sie dann „<annotation foreground="parameter">Finde Isotope</annotation>“ und klicken Sie auf „<annotation foreground="parameter">Zeigen</annotation>“. Eine Auto-Update-Funktion funktioniert nicht während einer Pause oder wenn gefundene Isotope ausgeblendet werden. Listenaktualisierungen jede Sekunde.\n
+        \u00A0\u00A0\u00A0\u00A0- Eingabeparameter sind:\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0„Schwelle“ - eine Triggerstufe zum Hinzufügen eines gefundenen Isotops zur Liste (0.00-10,000.00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0„Fenstergröße“ - eine Anzahl von Kanälen, die zur Schätzung verwendet werden sollen (1-200).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0„Ordnung“ - Polynomordnung (1-5).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0„Ungenauigkeit“ - Ungenauigkeit bei der Definition des Isotopennamens in Prozent der Energie (1.00-50.00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0„Bedeutende Bits“ - Anzahl der zu verwendenden Bits in der Kanalnummer. 13 bedeutet unverändert lassen. 12 bedeutet, zwei Kanäle zu einem zu kombinieren, 11 bedeutet, 4 Kanäle zu einem zu kombinieren und so weiter.\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0„Bibliothek“ - Bibliothek der zu verwendenden Isotope. „<i>Alle“</i> bedeutet „sogar nicht definiert anzeigen“, „<i>Bekannt</i>“ bedeutet „nur definiert anzeigen“, andere bedeuten den entsprechenden Isotopentyp, der von verwendet wird IAEO.\n
+        \n
+        <big><annotation foreground="caption">7. Datenspeicher:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können das Hauptspektrum speichern, um es später anzuzeigen. Das Spektrum wird in einer eigenen Formatdatei mit dem Namen „<i>Spectrum-date.txt</i>“ gespeichert, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
+        \u00A0\u00A0\u00A0\u00A0- Ein gespeichertes Spektrum kann über das Menü in das Programm geladen werden. Beim Laden des Spektrums wird eine Spektrumaktualisierung automatisch angehalten, aber ein cps und eine Dosisleistung funktionieren weiterhin.\n
+        \u00A0\u00A0\u00A0\u00A0- Das Hauptspektrum kann in einem „<i>.xml</i>“-Format exportiert werden, das mit „BecquerelMonitor“ kompatibel ist. Die Dateien heißen „<i>Bq-date.xml</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen. Wenn der Hintergrund in der Grafik angezeigt wird, wird er auch als Hintergrundspektrum zur Ausgabedatei hinzugefügt.\n
+        \u00A0\u00A0\u00A0\u00A0- Das Hauptspektrum kann in einem „<i>.spe</i>“-Format exportiert werden, das mit anderen spektroskopischen Programmen kompatibel ist. Die Dateien heißen „<i>MCA-date.spe</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
+        \u00A0\u00A0\u00A0\u00A0- Das Hauptspektrum kann in einem „<i>.N42</i>“-Format exportiert werden, das mit anderen spektroskopischen Programmen kompatibel ist. Die Dateien heißen „<i>MCA-date.N42</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
+        \u00A0\u00A0\u00A0\u00A0- Das Hauptspektrum kann in einem „<i>.csv</i>“-Format mit einer „;“ Aufteilung zwischen Feldern ohne Energiespalte exportiert werden, die mit „<i>Microsoft Excel</i>“ kompatibel ist. Die Dateien heißen „<i>Export-date.csv</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
+        \u00A0\u00A0\u00A0\u00A0- Das Hauptspektrum kann in einem „<i>.csv</i>“-Format mit einer „;“ Aufteilung zwischen Feldern mit einer mit „<i>Microsoft Excel</i>“ kompatiblen Energiespalte exportiert werden. Die Dateien heißen „Export-date.csv“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
+        \u00A0\u00A0\u00A0\u00A0- Die Namen der Ausgabedateien können unter „<annotation foreground="parameter">Name</annotation>“ in den „<annotation foreground="parameter">Einstellungen</annotation>“ geändert werden. Präfix, Datum oder Zeit können unabhängig voneinander entfernt werden.\n
+	    \u00A0\u00A0\u00A0\u00A0- Der Hintergrund wird in einer einzelnen Datei mit dem Namen „<i>Background</i>“ gespeichert und von dieser oder einer anderen Datei geladen. Sie können es auch in das Hauptspektrum laden und dann in den Hintergrund verschieben. Hinweis: Sie können Hintergrund nur speichern, wenn Sie Hintergrunddaten haben, andernfalls wird der Menübefehl deaktiviert.\n
+        \u00A0\u00A0\u00A0\u00A0- Sie können die Spektrumaktualisierung stoppen, indem Sie in einem Hauptmenü oder in einer Verknüpfungsleiste „<annotation foreground="parameter">Aufnahme anhalten</annotation>“ auswählen. Nach der Auswahl wechselt es zu „<annotation foreground="parameter">Aufnahme fortsetzen</annotation>“. Alle während der Pause empfangenen Impulse gehen verloren. Dieser Modus stoppt cps und die Berechnung der Dosisleistung nicht.\n
+        \u00A0\u00A0\u00A0\u00A0- Jede gespeicherte Datei kann über ein anderes Programm mit dem Menüpunkt „<annotation foreground="parameter">Datei freigeben</annotation>“ an ein anderes Programm, einen anderen Benutzer oder über das Internet gesendet werden.\n
+        \u00A0\u00A0\u00A0\u00A0- Geräteeinstellungen können über das „<annotation foreground="parameter">Save device…</annotation>“ im „<annotation foreground="parameter">Gerät</annotation>“-Untermenü in einem gespeichert werden Format „<i>.txt</i>“. Gerätedaten werden in einer eigenen Formatdatei mit dem Namen „<i>Device-Suffix.txt</i>“ gespeichert, wobei „Suffix“ festgelegt werden kann oder ein Datum sein kann, wenn es leer ist. Gespeicherte Geräteeinstellungen können über das Untermenü „<annotation foreground="parameter">Gerät laden…</annotation>“ im Untermenü „<annotation foreground="parameter">Gerät</annotation>“ in das Programm geladen werden.\n
+        HINWEIS: Die Geräteeinstellungen enthalten eine Empfindlichkeitskurve, die meisten Parameter in „<annotation foreground="parameter">Atom Spectra Einstellungen</annotation>“ und Suchisotopenparameter ohne Bibliothekstyp.\n
+		\n
+        <big><annotation foreground="caption">8. Einstellungen:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Die Grafik zeigt das Eingangssignal „wie besehen“ oder „Impulsform“. Wählen Sie sie aus, indem Sie nach links/rechts wischen. Wischen Sie nach oben/unten, um das Diagramm zu skalieren.\n
+        \u00A0\u00A0\u00A0\u00A0- „Aktivieren Sie die Stapelkorrektur“ - Wählen Sie diese Option, um Impulsstapel zu erkennen. Dieser Parameter versucht, die Impulsform zu kompensieren, wenn der Impuls zu nahe an der vorherigen liegt.\n
+        \u00A0\u00A0\u00A0\u00A0- „Verwenden eine rohe Audioquelle“ - Versuchen Sie, unverarbeitetes Audio zu verwenden, das unter Android 7 und höher verfügbar ist. Dieses Kontrollkästchen ist unter Android vor Android 7 deaktiviert, wenn das System die Verwendung von unverarbeitetem Audio nicht zulässt.\n
+        \u00A0\u00A0\u00A0\u00A0- „Eingabe umkehren“ - Wählen Sie, ob die Pulsform negativ ist.\n
+        \u00A0\u00A0\u00A0\u00A0- „Quelle:“ - Wählen Sie den gewünschten Audioeingang (wird nicht mit direkten USB-Spektrometern wie „<u>AtomSpectra Nano Pro</u>“ verwendet). Drücken Sie auf Text, um die Audioquelle zu ändern.\n
+        \u00A0\u00A0\u00A0\u00A0- „Fügen Dateien GPS-Koordinaten hinzu“ - Hinzufügen von GPS-Informationen zu Ausgabedateien (Spektrum, Hintergrund und CSV).\n
+        \u00A0\u00A0\u00A0\u00A0- „Isotope suchen“ - Isotope in einem Spektrum automatisch finden und anzeigen.\n
+        \u00A0\u00A0\u00A0\u00A0- „Sound:“ - gewünschte Tonausgabe. Drücken Sie auf Text, um die nächste Ausgabe auszuwählen.\n
+        \u00A0\u00A0\u00A0\u00A0- „Tonalarm“ - Es macht einen Ton entsprechend der cps-Stufe. Der Basispegel wird anhand des cps-Werts in den letzten 5 Sekunden berechnet. Der Pegel kann nach Löschen des Spektrums oder durch Drücken der Taste „<annotation foreground="parameter">≈</annotation>“ neu berechnet werden. Sie können das gewünschte Energieintervall in keV auswählen (A-B), auf das Sie achten müssen. Der Zählratenwert des ausgewählten Intervalls wird in Klammern hinter dem vollen Zählratenwert angezeigt.\n
+        \u00A0\u00A0\u00A0\u00A0- „Ordner speichern“ - Wählen Sie den Zielordner für alle Dateien. Wenn <u>...</u> für Android 8 und höher angezeigt wird, werden Sie nach einem Zielverzeichnis gefragt. Oder Sie drücken <u>...</u> (oder den angezeigten Namen), um den gewünschten Ort manuell auszuwählen. Unter Android vor 8 kann dieser Parameter nicht geändert werden. Wenn weiterhin <u>...</u> angezeigt wird, erstellen Sie den Ordner <u>AtomSpectra</u> im Stammverzeichnis des ersten Speichers (normalerweise des Telefonspeichers) selbst und starten Sie das Programm neu.\n
+        \u00A0\u00A0\u00A0\u00A0- „Zeigen als“ - Komprimierungsspektrum auf diese Anzahl von Punkten angezeigt. Das Programm reduziert den 1024-Kanal des Spektrums oder die Dosisleistung auf die ausgewählte Zahl und zeigt sie in der Grafik an, um die Ausgabe zu beschleunigen.\n
+        \u00A0\u00A0\u00A0\u00A0- „Min. Frontpunkte“ and „Max. Frontpunkte“ - minimale und maximale Länge in Zählungen der zu erfassenden Impulsfront. Gelbe Punkte in der Grafik zeigen die minimal erforderliche Länge an der Impulsfront, grüne Punkte zeigen eine akzeptable Länge der Impulsfront zwischen der minimalen und maximalen Anzahl von Zählungen. Die Standardparameter sind für alle <u>AtomSpectra</u>-Geräte optimal.\n
+        \u00A0\u00A0\u00A0\u00A0- „Geräuschdiskriminator“ - Registrieren Sie keine Kanäle unterhalb dieser Nummer, um verrauschte Kanäle auszuschließen.\n
+        \u00A0\u00A0\u00A0\u00A0- „ADC ist gerundet auf“ - Anzahl der zu verwendenden oberen ADC-Bits.\n
+        \u00A0\u00A0\u00A0\u00A0- „Kanäle speichern“ - Wie viele Kanäle aus dem Spektrum sollen exportiert werden? Hinweis: Das eigene Format speichert alle Daten.\n
+        \u00A0\u00A0\u00A0\u00A0- „Kanäle laden“ - Wie viele Kanäle aus der alten Spektrumdatei sollen geladen werden? Wenn mehr als 8192 Kanäle vorhanden sind, werden diese auf 8192 Kanäle oder weniger komprimiert. Hinweis: Das neue eigene Format hat die Kanalnummer selbst.\n
+        \u00A0\u00A0\u00A0\u00A0- „Maximaler Grad“ - maximaler Polnomfaktor für die Kalibrierfunktion\n
+        \u00A0\u00A0\u00A0\u00A0- „Glätte“ - Wählen Sie ein Echtzeit-Glattheitsfenster.\n
+        \u00A0\u00A0\u00A0\u00A0- „Differenzzeit“ - select the accumulation time between difference output (1-10 s).\n
+        \u00A0\u00A0\u00A0\u00A0- „Name“ - Benennen der Ausgabedateien. Präfix – Dateityp, Datum – Aufnahmedatum, Zeit – Aufnahmezeit, Suffix – benutzerdefinierter Text.\n
+        \u00A0\u00A0\u00A0\u00A0- „Alle N s speichern“ - die Funktion zum automatischen Speichern von Deltadateien. 0 - keine automatische Speicherung.\n
+        \u00A0\u00A0\u00A0\u00A0- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
+        \u00A0\u00A0\u00A0\u00A0- „Spektrum“ - Wählen Sie während der Wertekomprimierung den Summen-, Spitzen- oder Durchschnittswert im Spektraldiagramm. Spitzenwerte helfen dabei, kleine Spitzen nicht zu verlieren. Die Mittelwertbildung ergibt ein richtiges Diagramm. Die Summe zeigt das Gespenst, da das Gerät weniger Kanäle hat.\n
+        \u00A0\u00A0\u00A0\u00A0- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
+        \u00A0\u00A0\u00A0\u00A0- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
+        \u00A0\u00A0\u00A0\u00A0- „HintZähl“ - Rauschzahl von einer einfachen Dosisleistungsberechnung abgezogen.\n
+        \u00A0\u00A0\u00A0\u00A0- „S“, „M“, „L“ - zählt für die Mittelung der schnellen, mittleren und langsamen Dosisleistung.\n
+        \u00A0\u00A0\u00A0\u00A0- „Grafikaktualisierungshäufigkeit, s⁻¹“ - Programmaktualisierungshäufigkeit der Dosisleistung und der Spektrumsdaten pro Sekunde.</string>
+    <string name="help_version">Ausführung: <xliff:g id="version">%1$s</xliff:g>, Stellung: <xliff:g id="build">%2$d</xliff:g>.</string>
+</resources>

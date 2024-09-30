@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <string name="app_name">Atom Spectra</string>
+	<string name="app_bar_audio_action">Читаю аудио-данные</string>
+	<string name="app_bar_usb_action">Читаю данные с USB</string>
+	<string name="app_bar_spectrum_update">(обновляю спектр)</string>
+	<string name="app_channel">Сервис Atom Spectra</string>
+	<string name="settings">Atom Spectra Параметры</string>
+	<string name="isotope_search">Atom Spectra Поиск изотопов</string>
+	<string name="app_bar_sensitivity">Atom Spectra Чувствительность</string>
+	<string name="action_settings">Параметры</string>
+	<string name="action_select_interval">Выбрать интервал…</string>
+	<string name="action_restart">Сброс спектра</string>
+	<string name="action_save_options">Сохранить параметры</string>
+	<string name="action_buy_spectrometer">Купить спектрометр</string>
+	<string name="action_exit">Завершить программу</string>
+	<string name="action_usb_attached">USB подключён</string>
+	<string name="action_usb_detached">USB отключён</string>
+	<string name="action_usb_no_access">Не могу открыть устройство USB</string>
+
+	<string name="histogram_menu">Спектр</string>
+	<string name="hist_save_file">Сохранить…</string>
+	<string name="hist_load_file">Загрузить из…</string>
+	<string name="hist_add_file">Добавить из…</string>
+	<string name="hist_export">Экспорт</string>
+	<string name="hist_export_to_bqmoni">Экспорт в BqMoni…</string>
+	<string name="hist_export_to_spe">Экспорт в SPE…</string>
+	<string name="hist_export_to_N42">Export to N42…</string>
+	<string name="hist_export_csv">Экспорт в CSV…</string>
+	<string name="hist_export_with_energy">Экспорт (с энергией)…</string>
+	<string name="hist_share_export">Поделиться</string>
+	<string name="hist_freeze_update">Пауза</string>
+	<string name="hist_continue_update">Продолжить</string>
+	<string name="hist_stop_record">Запись остановлена из-за изменения параметров входа!</string>
+	<string name="hist_ask_delete_title">Очистить спектр</string>
+	<string name="hist_ask_delete_text">Вы действительно хотите очистить данные спектра?</string>
+	<string name="hist_smooth">Сгладить</string>
+	<string name="hist_unsmooth">Восстановить</string>
+	<string name="hist_delta">Изменение спектра</string>
+	<string name="hist_set_suffix">Ввести описание</string>
+	<string name="hist_suffix">Спектр</string>
+
+	<string name="background">Фон</string>
+	<string name="background_save">Сохранить</string>
+	<string name="background_load">Загрузить</string>
+	<string name="background_load_from">Загрузить из…</string>
+	<string name="background_copy">Спектр в фон</string>
+	<string name="background_clear">Очистить фон</string>
+	<string name="background_show">Показать фон</string>
+	<string name="background_subtract">Вычесть из спектра</string>
+	<string name="background_set_suffix">Ввести описание</string>
+	<string name="background_suffix">Фон</string>
+
+	<string name="notify_close">Закрыть</string>
+
+	<string name="enable_pileup">Включить анализ импульсов</string>
+	<string name="invert">Инвертировать вход</string>
+	<string name="add_gps">Добавлять координаты GPS в файлы</string>
+	<string name="update_isotopes">Автоматический поиск изотопов</string>
+	<string name="input_sound">Вход:</string>
+	<string name="input_sound_absent">Нет источника! Использую по-умолчанию.</string>
+	<string name="output_sound">Звуковой сигнал: </string>
+	<string name="output_sound_full">Полный</string>
+	<string name="output_sound_format">%1$.2f–%2$.2f кэВ</string>
+	<string name="output_sound_device">Звук:</string>
+	<string name="use_raw_audio_source">Использовать необработанный звук</string>
+	<string name="no_audio_available">Не могу использовать аудио-вход!</string>
+	<string name="no_usb_available">Не могу использовать вход USB!</string>
+	<string name="reset_data">Сброс</string>
+	<string name="update_data_error">Не могу обновить данные устройства</string>
+	<string name="no_audio_output_available">Не могу вывести звук!</string>
+	<string name="audio_44100">Входная частота установлена в 44,1 кГц. Если Вы хотите попробовать 48 кГц подключите спектрометр и перезапустите программу.</string>
+
+	<string name="reducedto">Вывод: 128 к.</string>
+	<string name="maxfront">Макс точек фронта: 10</string>
+	<string name="minfront">Мин точек фронта: 5</string>
+	<string name="noisediscriminator">Дискриминатор шума: 256</string>
+	<string name="ADCroundedto">Округление АЦП до: 12 бит</string>
+	<string name="save_folder">Сохранение: </string>
+	<string name="compress_graph">Спектр: Сумма</string>
+
+	<string name="plus">\u2192</string>
+	<string name="minus">\u2190</string>
+
+	<string name="leftwards">\u221a</string>
+	<string name="rightwards">\u00d7</string>
+	<string name="updown">\u2195</string>
+
+	<string name="cps">cps: 0</string>
+
+	<string name="hint_keV_show">100.0</string>
+	<string name="hint_sens_show">1.00E+00</string>
+
+	<string name="cursortext">Курсор: 0 к., 0 кэВ</string>
+    <string name="mode_fast">Быстрый</string>
+	<string name="mode_medium">Средний</string>
+	<string name="mode_slow">Медленный</string>
+	<string name="mode_fast_button">Б</string>
+	<string name="mode_medium_button">С</string>
+	<string name="mode_slow_button">М</string>
+	<string name="mode_compensated_button">К</string>
+	<string name="mode_uncompensated_button">Н</string>
+    <string name="sensg_text">Чувств:</string>
+	<string name="background_cnt_text">СчФона:</string>
+	<string name="fast_mode_sens">Б:</string>
+	<string name="medium_mode_sens">С:</string>
+	<string name="slow_mode_sens">М:</string>
+	<string name="doserateUpdatePeriod">Частота обновл. графика, с⁻¹:</string>
+	<string name="save_channels">Сохр. каналов: 32768</string>
+	<string name="load_channels">Загр. каналов: 65536</string>
+	<string name="max_factor">Макс. степень: 1</string>
+	<string name="smoothness">Сглаживание: 1</string>
+	<string name="delta_spectrum">Дельта-время: 1 с</string>
+	<string name="channel_compression">Сжатие каналов: 1</string>
+	<string name="isotopes">Atom Spectra Изотопы</string>
+	<string name="isotopes_get">Показать изотопы</string>
+	<string name="select_isotopes">Ряды распада:</string>
+
+	<string name="calibration_menu">Калибровка</string>
+	<string name="calibration_add_point">Добавить точку</string>
+	<string name="calibration_clear_points">Очистить точки</string>
+	<string name="calibration_calculate">Рассчитать</string>
+	<string name="calibration_load_from_file">Загрузить из…</string>
+	<string name="calibration_store">Запомнить</string>
+	<string name="calibration_store_memory">Запомнить в программу</string>
+	<string name="calibration_revert">Восстановить</string>
+	<string name="calibration_revert_memory">Восстановить из программы</string>
+	<string name="none_cal_data">──────────</string>
+	<string name="calibration_device">Устройство</string>
+	<string name="calibration_save_device">Сохранить устройство…</string>
+	<string name="calibration_load_device">Загрузить устройство…</string>
+	<string name="calibration_load_device_energy">Загрузить с калибровкой…</string>
+	<string name="calibration_sensivity">Чувствительность…</string>
+	<string name="calibration_channel">Поcледний: 8192</string>
+	<string name="calibration_channel_format">Поcледний: <xliff:g id="channel">%1$d</xliff:g></string>
+	<string name="calibration_add_nuclid_title">Добавить точку калибровки</string>
+	<string name="calibration_add_nuclid_text">Добавить точку калибровки для канала %1$d с %2$s (%3$.2f кэВ)?</string>
+	<string name="calibration_add_nuclid2_text">Введите энергию (в кэВ) для канала %1$d (сейчас %2$s, %3$.2f кэВ):</string>
+
+	<string name="detector_sensitivity">Чувствительность прибора</string>
+	<string name="sense_energy_kev">Энергия, кэВ</string>
+	<string name="sense_sensitivity">Чувствит.</string>
+	<string name="sense_hint_energy">Энергия</string>
+	<string name="sense_hint_sensitivity">Чувствительность</string>
+
+	<string name="reduced_to_format">Вывод: <xliff:g id="channel_number">%1$d</xliff:g> к.</string>
+	<string name="min_front_points_format">Мин точек фронта: <xliff:g id="min_points">%1$d</xliff:g></string>
+	<string name="max_front_points_format">Макс точек фронта: <xliff:g id="max_points">%1$d</xliff:g></string>
+	<string name="noise_discriminator_format">Дискриминатор шума: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
+	<string name="adc_rounded_format">Округление АЦП до: <xliff:g id="adc_high_bits">%1$d</xliff:g> бит</string>
+	<string name="save_channels_format">Сохр. каналов: <xliff:g id="save_channels">%1$d</xliff:g></string>
+	<string name="load_channels_format">Загр. каналов: <xliff:g id="load_channels">%1$d</xliff:g></string>
+	<string name="max_factor_format">Макс. степень: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+	<string name="smoothness_format">Сглаживание: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+	<string name="delta_spectrum_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
+	<string name="channel_compression_format">Сжатие каналов: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+	<string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
+	<string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мкЗв/ч</string>
+	<string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мЗв/ч</string>
+	<string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
+	<string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
+	<string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+	<string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+	<string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+	<string name="compress_graph_format">Спектр: <xliff:g id="type">%1$s</xliff:g></string>
+	<string name="autosave_timeout">Сохр. дельту кажд. <xliff:g id="duration">%1$d</xliff:g> с</string>
+	<string-array name="compress_graph_array">
+		<item>Сумма</item>
+		<item>Среднее</item>
+		<item>Пик</item>
+	</string-array>
+	<string-array name="file_name_array">
+		<item>Имя: Суффикс</item>
+		<item>Имя: Дата-Суффикс</item>
+		<item>Имя: Время-Суффикс</item>
+		<item>Имя: Дата_Время-Суффикс</item>
+		<item>Имя: Префикс-Суффикс</item>
+		<item>Имя: Префикс-Дата-Суффикс</item>
+		<item>Имя: Префикс-Время-Суффикс</item>
+		<item>Имя: Префикс-Дата_Время-Суффикс</item>
+	</string-array>
+
+	<string name="isotope_show_line"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>) (<xliff:g id="isotope_halflife">%6$.2f</xliff:g></string>
+	<string name="isotope_show_next_line">, <xliff:g id="another_energy">%1$.2f</xliff:g></string>
+	<string name="isotope_show_last_line"><xliff:g id="last_energy">%1$s</xliff:g> кэВ)</string>
+	<string name="isotope_show_decay_chain">Ряд <xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g></string>
+	<string name="isotope_show_energy"><xliff:g id="isotope_energy">%1$7.2f</xliff:g> кэВ</string>
+	<string name="isotope_show_name_stable"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (стабильный)</string>
+	<string name="isotope_show_name_halflife"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>)</string>
+	<string name="period_year">л</string>
+	<string name="period_day">д</string>
+	<string name="period_hour">час</string>
+	<string name="period_minute">мин</string>
+	<string name="period_second">с</string>
+
+	<string name="graph_show_cnt">счт</string>
+	<string name="graph_show_log10">lg(счт)</string>
+	<string name="graph_show_channel">к.</string>
+	<string name="graph_show_points">тчк</string>
+	<string name="graph_show_kev">кэВ</string>
+	<string name="graph_show_mkSv">мкЗв/ч</string>
+	<string name="graph_show_mSv">мЗв/ч</string>
+	<string name="graph_log_info">Логарифмическая шкала по Y</string>
+	<string name="graph_linear_info">Линейная шкала по Y</string>
+	<string name="graph_max_gain">Достигнуто максимальное усиление</string>
+	<string name="graph_min_gain">Достигнуто минимальное усиление</string>
+	<string name="graph_max_zoom">Достигнут максимальный зум</string>
+	<string name="graph_min_zoom">Достигнут минимальный зум</string>
+
+	<string name="perm_ask_audio_title">Запрос разрешения AUDIO</string>
+	<string name="perm_ask_audio_text">Этому приложению необходимо разрешение RECORD_AUDIO для получения сигнала от спектрометра. Без этого разрешения программа может только показывать ранее полученные спектры.</string>
+	<string name="perm_ask_power_title">Сохранение питания</string>
+	<string name="perm_ask_power_text">Пожалуйста, откройте список исключений питания и добавьте AtomSpectra для корректной работы программы в фоновом режиме.</string>
+	<string name="perm_ask_write_title">Запрос разрешения WRITE</string>
+	<string name="perm_ask_write_text">Данное разрешение необходимо для записи файл на внешний носитель</string>
+	<string name="perm_ask_read_title">Запрос разрешения READ</string>
+	<string name="perm_ask_read_text">Данное разрешение необходимо для чтения с внешнего носителя</string>
+	<string name="perm_ask_share_text">Данное разрешение необходимо для отправки файла</string>
+	<string name="perm_ask_fine_gps_title">Запрос доступа к GPS</string>
+	<string name="perm_ask_fine_gps_text">Программе необходимо получить разрешение на доступ к координатам GPS, чтобы добавить их в выходной файл. Координаты будут считываться только в том случае, если активно главное окно программы и в параметрах установлен флажок GPS.</string>
+	<string name="perm_ask_gps_off_title">GPS выключен</string>
+	<string name="perm_ask_gps_off_text">GPS выключен. Пожалуйста, включите GPS для добавления координат в файл со спектром</string>
+
+	<string name="perm_no_audio">Нет разрешения на чтение аудио</string>
+	<string name="perm_no_read_histogram">Нет разрешения на чтение спектра</string>
+	<string name="perm_no_read_background">Нет разрешения на чтение фона</string>
+	<string name="perm_no_read_calibration">Нет разрешения на чтение калибровки из файла</string>
+	<string name="perm_no_read_device">Нет разрешения на чтение файла устройства</string>
+	<string name="perm_no_write_directory">Не могу создать каталог /AtomSpectra на внешнем носителе, перемещаюсь во внутренний каталог</string>
+	<string name="perm_no_write_histogram">Нет разрешения на запись спектра</string>
+	<string name="perm_no_write_background">Нет разрешения на запись фона</string>
+	<string name="perm_no_write_device">Нет разрешения на запись файла устройства</string>
+	<string name="perm_no_write_bqmoni">Нет разрешения на экспорт спектра в Beсquerel Monitor</string>
+	<string name="perm_no_write_spe">Нет разрешения на экспорт спектра в SPE</string>
+	<string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
+	<string name="perm_no_write_export">Нет разрешения на экспорт спектра в СSV</string>
+	<string name="perm_no_write_export_energy">Нет разрешения на экспорт спектра с энергией в CSV</string>
+	<string name="perm_no_share">Нет разрешения на чтение файла для отправки</string>
+	<string name="perm_no_outside">Файл вне моего доступа</string>
+	<string name="perm_no_usb">Нет прав для доступа к устройству USB</string>
+	<string name="perm_no_gps">Нет доступа к GPS, GPS-данные будут отсутствовать</string>
+
+	<string name="ask_select_histogram">Выбрать спектр</string>
+	<string name="ask_select_background">Выбрать спектр фона</string>
+	<string name="ask_select_calibration">Выбрать файл калибровки</string>
+	<string name="ask_select_device_file">Выбрать файл устройства</string>
+	<string name="ask_spectrum_suffix">Выберите суффикс для спектра</string>
+	<string name="ask_device_suffix">Выберите суффикс для файла устройства</string>
+	<string name="ask_export_bqmoni">Суффикс для экспорта в Becquerel Monitor</string>
+	<string name="ask_export_spe">Суффикс для экспорта в SPE</string>
+	<string name="ask_export_N42">Суффикс для экспорта в N42</string>
+	<string name="ask_export_suffix">Суффикс для экспорта в CSV</string>
+	<string name="ask_suffix_text">Введите суффикс файла:</string>
+	<string name="ask_share">Отправить файл</string>
+	<string name="ask_share_text">Файл спектра <xliff:g id="file_share">%1$s</xliff:g></string>
+	<string name="ask_noise_title">Уровень дискриминатора шума</string>
+	<string name="ask_noise_text">Введите новое значение:</string>
+	<string name="ask_channel_title">Выбрать канал курсора</string>
+	<string name="ask_channel_text">Новый канал (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
+	<string name="ask_last_channel_title">Введите номер канала</string>
+	<string name="ask_last_channel_text">Новый канал (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+	<string name="ask_delete_calibration_line_title">Удалить линию</string>
+	<string name="ask_delete_calibration_line_text">Удалить канал %1$d (%2$.2f кэВ) из списка?</string>
+	<string name="ask_select_interval_title">Выбрать интервал для поиска</string>
+	<string name="ask_select_interval_text">Выберите интервал в кэВ (или введите «-1» для сброса)</string>
+
+	<string name="cal_point_title">Калибровка канала <xliff:g id="cal_channel">%1$d</xliff:g></string>
+	<string name="cal_no_more">Больше нет места для линий калибровки</string>
+	<string name="cal_have_channel">Этот канал уже есть</string>
+	<string name="cal_no_enough_data">Недостаточно данных для калибровки</string>
+	<string name="cal_show_line">Лин: <xliff:g id="channel">%1$d</xliff:g>, E: <xliff:g id="energy">%2$.2f</xliff:g> кэВ</string>
+	<string name="cal_show_function">Показать функцию</string>
+	<string name="cal_draw_function">График новой</string>
+	<string name="cal_function_title">Калибровка</string>
+	<string name="cal_function_message">Функция калибровки:</string>
+	<string name="cal_coefficient_title"><xliff:g id="factor">%1$d</xliff:g>-коэффициент калибровки</string>
+	<string name="cal_coefficient_text">Новое значение калибровки:</string>
+	<string name="cal_maybe_wrong">ВНИМАНИЕ!\n\Точка %1$d - %2$.2f кэВ сделала калибровку неправильной!</string>
+	<string name="ask_point_in_kev">Введите значение в кэВ:</string>
+	<string name="cal_error_number">Ошибка при вводе числа</string>
+	<string name="put_cursor_first">Сначала поставьте курсор</string>
+	<string name="strange_file_name">Странное имя файла</string>
+	<string name="hist_load_success">Спектр успешно загружен</string>
+	<string name="hist_load_error">Загрузка спектра НЕУДАЧНА!</string>
+	<string name="device_load_success">Данные устройства успешно загружены</string>
+	<string name="device_load_error">Заугрузка даннных устойства НЕУДАЧНА!</string>
+	<string name="cal_load_success">Калибровка загружена</string>
+	<string name="cal_load_error">Загрузка калибровки НЕУДАЧНА!</string>
+	<string name="cal_applied">Калибровка принята</string>
+	<string name="storage_required">Требуется носитель</string>
+	<string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно сохранён</string>
+	<string name="hist_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
+	<string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно сохранён</string>
+	<string name="device_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
+	<string name="background_load_success">Фон успешно загружен</string>
+	<string name="background_load_error">Загрузка фона НЕУДАЧНА!</string>
+	<string name="background_delete_error">Не могу удалить файл фона</string>
+	<string name="background_no_data">Нет данных фона</string>
+	<string name="background_save_success">Фон успешно сохранён</string>
+	<string name="background_save_error">Сохранение фона НЕУДАЧНО!</string>
+	<string name="export_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно экспортирован</string>
+	<string name="export_save_error">Экспортирование <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
+	<string name="something_wrong">Что-то пошло не так!</string>
+	<string name="unknown_code">Получен неизвестный код от устройства: <xliff:g id="code">%1$d</xliff:g></string>
+	<string name="cal_store_usb_wait">Подождите для сохранения калибровки в устройстве USB</string>
+	<string name="cal_apply_usb">Калибровка принята из устройства USB</string>
+	<string name="cal_wrong_usb">Неверная калибровка в устройстве USB</string>
+	<string name="cal_wrong_checksum">Плохая контрольная сумма в устройстве USB</string>
+	<string name="cal_timeout">Таймаут устройства USB</string>
+	<string name="cal_store_usb">Калибровка сохранена в устройстве USB</string>
+	<string name="cal_wrong_store_usb">Не могу сохранить калибровку в устройстве USB</string>
+	<string name="cal_load_anyway">Загрузить калибровку в любом случае?</string>
+	<string name="usb_below_minimal_version">Обновите версию прошивки до <xliff:g id="version">%1$d</xliff:g> или выше</string>
+	<string name="usb_version_read_error">Ошибка чтения версии прошивки</string>
+	<string name="usb_version_unknown">Неизвестная версия прошивки</string>
+
+	<string name="searching_isotopes">Обнаружение изотопов…</string>
+	<string name="autosave_start">Функция автозаписи дельт включена.</string>
+	<string name="isotope_list">Изотопы</string>
+	<string name="action_find_isotopes">Найти изотопы</string>
+	<string name="find_isotopes">Найти</string>
+	<string name="show_isotopes">Показать</string>
+	<string name="show_no_isotopes">Скрыть</string>
+	<string name="find_threshold">Порог</string>
+	<string name="find_window_size">Размер окна</string>
+	<string name="find_order">Степень</string>
+	<string name="find_tolerance">Неточность определения</string>
+	<string name="find_sign_bits">Значимые биты</string>
+	<string name="find_isotope_library">Библиотека</string>
+	<string name="find_error_window">Ошибка в размере окна</string>
+	<string name="find_error_bits">Ошибка в значащих битах</string>
+	<string name="find_error_tolerance">Ошибка в величине неточности</string>
+	<string name="find_error_threshold">Ошибка в пороге</string>
+	<string name="find_isotopes_all">Все</string>
+	<string name="find_isotopes_known">Известные</string>
+	<string name="find_isotopes_medicine">Медицинские</string>
+	<string name="find_isotopes_industrial">Промышленные</string>
+	<string name="find_isotopes_special">Специальные</string>
+	<string name="find_isotopes_normal">Природные</string>
+	<string name="find_isotopes_info">%1$s (%2$.2f кэВ)</string>
+	<string-array name="find_isotopes_selection">
+		<item>Все</item>
+		<item>Известные</item>
+		<item>Медицинские</item>
+		<item>Промышленные</item>
+		<item>Специальные</item>
+		<item>Природные</item>
+	</string-array>
+	<string-array name="isotopes_selection">
+		<item>Все</item>
+		<item>Медицинские</item>
+		<item>Промышленные</item>
+		<item>Специальные</item>
+		<item>Природные</item>
+	</string-array>
+	<string-array name="find_isotopes_order">
+		<item>2</item>
+		<item>3</item>
+		<item>4</item>
+		<item>5</item>
+		<item>6</item>
+	</string-array>
+	<string-array name="find_isotopes_bits_13">
+		<item>10</item>
+		<item>11</item>
+		<item>12</item>
+		<item>13</item>
+	</string-array>
+	<string-array name="find_isotopes_bits_14">
+		<item>10</item>
+		<item>11</item>
+		<item>12</item>
+		<item>13</item>
+		<item>14</item>
+	</string-array>
+	<string-array name="find_isotopes_bits_15">
+		<item>10</item>
+		<item>11</item>
+		<item>12</item>
+		<item>13</item>
+		<item>14</item>
+		<item>15</item>
+	</string-array>
+	<string-array name="find_isotopes_bits_16">
+		<item>10</item>
+		<item>11</item>
+		<item>12</item>
+		<item>13</item>
+		<item>14</item>
+		<item>15</item>
+		<item>16</item>
+	</string-array>
+
+	<string name="help_menu">Помощь</string>
+	<string name="help">Atom Spectra Краткая помощь</string>
+	<string name="help_text1"><big><annotation foreground="caption">Общее</annotation></big>\n
+		Данная программа читает сигнал со спектрометра, подключённого к телефону через микрофонный вход (например <u>AtomSpectra 3, 4</u> или похожие), с USB-аудио спектрометра (например <u>AtomSpectra Nano</u> или похожие) или с USB спектрометра <u>AtomSpectra Pro</u>. Если ни один из них не подключён к телефону, то программа работает в демонстрационном режиме, читая внутренний микрофон и выводя его спектр.\n
+        \n
+		ВНИМАНИЕ: Пожалуйста, добавьте программу в список исключения питания для корректной работы программы в фоне или при выключенном экране телефона. Для полной остановки программы используйте пункт меню «<annotation foreground="parameter">Завершить программу</annotation>».\n
+        \n
+		<big><annotation foreground="caption">1. Управление:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Горизонтальный щипок для масштабирования шкалы каналов/энергий. Для применения действия уберите пальцы с экрана.\n
+        \u00A0\u00A0\u00A0\u00A0- Вертикальный щипок для масштабирования шкалы значений. Для применения действия уберите пальцы с экрана.\n
+        \u00A0\u00A0\u00A0\u00A0- Диагональный щипок для масштабирования шкал каналов/энергий и значений одновременно. Для применения действия уберите пальцы с экрана.\n
+        \u00A0\u00A0\u00A0\u00A0- Движение влево/вправо для смещения спектра влево/вправо.\n
+        \u00A0\u00A0\u00A0\u00A0- Движение вниз для вывода/отключения линии изотопа.\n
+        \u00A0\u00A0\u00A0\u00A0- Однократное касание для вывода зелёного курсора. Слайдером можно более точно установить курсор. Коснитесь левее области графика для отключения курсора. Коснитесь описания курсора для ввода значения канала.\n
+        \u00A0\u00A0\u00A0\u00A0- Двойное касание для выбора линейного или логарифмического по основанию 10 вывода шкалы значений.\n
+        \u00A0\u00A0\u00A0\u00A0- Длительное нажатие для переключения между линейчатым и столбцовым выводами.\n
+        \u00A0\u00A0\u00A0\u00A0- Кнопка «<annotation foreground="parameter">\u2195</annotation>» справа от графика для переключения между отображением каналов и энергий.\n
+		\u00A0\u00A0\u00A0\u00A0- Кнопка «<annotation foreground="parameter">КН</annotation>» справа от графика для переключения между отображением спектра и мощности дозы.\n
+		\u00A0\u00A0\u00A0\u00A0- Короткое касание на «<annotation foreground="parameter">cps</annotation>» или вывод мощности дозы для отображения средней скорости счёта за весь период («<i>~cps</i>») и полного времени накопления в секундах («<i>время</i>»). Короткое касание на «<annotation foreground="parameter">~cps</annotation>» или «<annotation foreground="parameter">время</annotation>» отобразит фоновый порог («<i>≈cps</i>») и порог срабатывания звука («<i>♪cps</i>»). Короткое касание на «<annotation foreground="parameter">≈cps</annotation>» или «<annotation foreground="parameter">♪cps</annotation>» отобразит текущие координаты. Координаты показывают текущее состояние во время набора спектра. Они показывают последнее полученное значение перед остановкой набора спектра. Они показывают значение из прочитанного файла. Долгое нажатие на координатах позволит перейти к картографической программе. Повторное короткое касание вернёт обратно.\n
+        \n
+		<big><annotation foreground="caption">2. Отображение спектров:</annotation></big>\n
+		\u00A0\u00A0\u00A0\u00A0- Программа может вывести основной спектр, основной спектр вместе с фоном и разницу между ними. Все режимы выбираются в подменю «<annotation foreground="parameter">Фон</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- В столбцовом выводе основной спектр отображается синим, фон зелёным, а разница красным цветом. Цвета приглушены.\n
+        \u00A0\u00A0\u00A0\u00A0- В линейчатом выводе основной спектр выводится белым, фон зелёным, а разница голубым. Все цвета яркие.\n
+        \u00A0\u00A0\u00A0\u00A0- Данные фона в программе можно очистить.\n
+		\u00A0\u00A0\u00A0\u00A0- Для вывода спектров «как есть», пожалуйста, установите АЦП на максимум и выведите 1024 точек графика. Другие значения будут сглаживать основной спектр и спектр фона.\n
+        \u00A0\u00A0\u00A0\u00A0- Можно сгладить спектр командой «<annotation foreground="parameter">Сгладить</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- Можно вывести изменение между двумя состояниями спектра в разное время через «<annotation foreground="parameter">Изменение спектра</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>». Разницу времени можно выбрать в диапазоне от 1 до 10 с в параметре «<annotation foreground="parameter">Дельта-время</annotation>» в «<annotation foreground="parameter">Настройках</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- Можно редактировать и смотреть описания для спектра и фона при выводе курсора. Эти описания используются как суффиксы при сохранении. Для их изменения используется «<annotation foreground="parameter">Ввести описание</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>» или «<annotation foreground="parameter">Фон</annotation>».\n
+        \n
+		<big><annotation foreground="caption">3. Калибровка по энергиям:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Программа использует калибровку по энергиям.\n
+        \u00A0\u00A0\u00A0\u00A0- ПРИМЕЧАНИЕ: Лучше включить режим отображения каналов перед выполнением калибровки.\n
+		\u00A0\u00A0\u00A0\u00A0- Для калибровки спектра сначала расположите курсор в первой точке калибровки, нажмите кнопку «<annotation foreground="parameter">1</annotation>» над графиком и введите значение. Значение на кнопке изменится с «<annotation foreground="parameter">1</annotation>» на «<annotation foreground="parameter">2</annotation>», показывая на ожидание второй точки калибровки.\n
+		\u00A0\u00A0\u00A0\u00A0- Повторите те же шаги для следующих точек калибровки. Кнопка сменится на «<annotation foreground="parameter">-</annotation>» при отсутствии дополнительных точек.\n
+		\u00A0\u00A0\u00A0\u00A0- Нажмите на кнопку «<annotation foreground="parameter">\u221a</annotation>» для расчёта калибровки. Используйте «<annotation foreground="parameter">Запомнить</annotation>» для запоминания данных калибровки при следующем старте программы. Программа запрашивает данные по калибровке при удалении текущего спектра. Используйте «<annotation foreground="parameter">Восстановить</annotation>» для применения данных калибровки из памяти. <annotation foreground="highlight">ПРИМЕЧАНИЕ</annotation>: если подключен <u>AtomSpectra Pro</u>, то программа будет использовать калибровку из устройства USB или сохранять калибровку на устройство. Внутренная калибровка не изменяется и будет восстановлена после отключения устройства или может быть изменена соответствующими командами меню.\n
+		\u00A0\u00A0\u00A0\u00A0- Нажмите на флаг с изотопом на графике из <u>списка изотопов</u>, чтобы задать точку калибровки с энергией изотопа.\n
+        \u00A0\u00A0\u00A0\u00A0- Нажмите на флаг с изотопом на графике из <u>списка найденных пиков</u> и введите значение энергии, чтобы задать точку калибровки.\n
+        \u00A0\u00A0\u00A0\u00A0- Нажмите на коэффициенты полинома в подменю «<annotation foreground="parameter">Calibration</annotation>» для их редактирования.\n
+        \u00A0\u00A0\u00A0\u00A0- Вы можете указать старшую степень полинома в «<annotation foreground="parameter">Настройках</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- Нажмите на кнопку «<annotation foreground="parameter">\u00d7</annotation>» для удаления всех введённых точек.\n
+        \u00A0\u00A0\u00A0\u00A0- Нажмите в меню на линию новой калибровки для её удаления из списка.\n
+		\u00A0\u00A0\u00A0\u00A0- Можно посмотреть текущую функцию калибровки через пункт «<annotation foreground="parameter">Показать функцию</annotation>» в подменю «<annotation foreground="parameter">Калибровка</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- Нажмите на «<annotation foreground="parameter">Вывести новую</annotation>» в подменю «<annotation foreground="parameter">Калибровка</annotation>» для вывода новой калибровочной функции и калибровочных точек на графике. Новые калибровочные точки отображены зелёным.\n
+        \u00A0\u00A0\u00A0\u00A0- Можно загрузить данные по калибровке из другого спектра.\n
+        \u00A0\u00A0\u00A0\u00A0- Можно указать номер канала для вывода на шкале энергий. Шкала каналов всегда показывает полный спектр.\n
+		\u00A0\u00A0\u00A0\u00A0- Текущие данные калибровки можно посмотреть в подменю «<annotation foreground="parameter">Калибровка</annotation>» выше горизонтальной линии.\n
+		\u00A0\u00A0\u00A0\u00A0- Введёные точки калибровки можно посмотреть в подменю «<annotation foreground="parameter">Калибровка</annotation>» ниже горизонтальной линии.\n
+        \n
+		<big><annotation foreground="caption">4. Расчёт и отображение мощности дозы:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Программа выполняет расчёт мощности дозы в зависимости от выбора горизонтальной шкалы. В режиме вывода каналов программа выполняет простой пересчёт количества импульсов в мощность дозы. В режиме вывода энергий программа выполняет расчёт компенсированной мощности дозы.\n
+		\u00A0\u00A0\u00A0\u00A0- Кнопка «<annotation foreground="parameter">БСМ</annotation>» справа от графика выбирает режим усреднения мощности дозы. «<annotation foreground="parameter">Б</annotation>» означает «быстрый», «<annotation foreground="parameter">С</annotation>» означает «средний», «<annotation foreground="parameter">М</annotation>» означает «медленный». Значения для усреднения по каждому типу можно задать в «<annotation foreground="parameter">Настройках</annotation>».\n
+		\u00A0\u00A0\u00A0\u00A0- Необходимо задать параметр «<annotation foreground="parameter">Чувств</annotation>» в «<annotation foreground="parameter">Настройках</annotation>» для пересчёта импульсов в мощность дозы.\n
+		\u00A0\u00A0\u00A0\u00A0- Кривая чувствительности по умолчанию определена для спектрометра <u>AtomSpectra Nano8</u> на основе CsI(Tl), но может быть применена для других спектрометров для оценки мощности дозы, задав параметр «<annotation foreground="parameter">Чувств</annotation>». Используйте пункт меню «<annotation foreground="parameter">Чувствительность…</annotation>» в подменю «<annotation foreground="parameter">Устройство</annotation>» для изменения этой кривой. Кривая приведена к 1 на линии 661,62кэВ линии Cs-137.\n
+		\u00A0\u00A0\u00A0\u00A0- Можно задать параметр «<annotation foreground="parameter">СчФона</annotation>» для вычитания фона из показаний cps при простом расчёте мощности дозы.\n
+		\u00A0\u00A0\u00A0\u00A0- Можно увидеть историю мощности дозы. Для переключения нажмите кнопку «<annotation foreground="parameter">КН</annotation>». «<annotation foreground="parameter">К</annotation>» означает «история компенсированной мощности дозы». «<annotation foreground="parameter">Н</annotation>» означает «история некомпенсированной мощности дозы».\n
+	</string>
+	<string name="help_text2"><big><annotation foreground="caption">5. Отображение изотопов:</annotation></big>\n
+		\u00A0\u00A0\u00A0\u00A0- Зелёная линия курсора показывает изотоп с погрешностью 3% с предпочтительным отображением более важных изотопов. Для точного отображения линий изотопов используйте диалог «<annotation foreground="parameter">Выбрать изотопы</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- Программа показывает информацию об изотопе в зависимости от выбора режима отображения горизонтальной оси (канал/энергия). В режиме отображения каналов программа показывает имена изотопов. В режиме отображения энергий программа показывает энергии изотопов.\n
+        \u00A0\u00A0\u00A0\u00A0- Можно выбрать линии изотопов. Примечание: некоторые изотопы в списке отображены разными цветами в соответствии с их относительным квантовым выходом на данной линии. С увеличением квантового выхода: тёмно-зелёный, светло-зелёный, тёмно-жёлтый, светло-жёлтый, красный. Светло-голубой цвет используется для радиоактивных рядов и групп линий по изотопам.\n
+        \u00A0\u00A0\u00A0\u00A0- Можно выбрать все линии, относящиеся к конкретному радиоактивному ряду, все линии, принадлежащие конкретному изотопу или отдельные линии изотопов.\n
+        \u00A0\u00A0\u00A0\u00A0- Можно выбрать библиотеку изотопов. Известные изотопы из этой библиотеки становятся больше остальных.\n
+        \u00A0\u00A0\u00A0\u00A0- Выбор радиоактивного ряда также выбирает изотопы и индивидуальные линии изотопов.\n
+        \u00A0\u00A0\u00A0\u00A0- Выбор изотопов также выбирает индивидуальные линии изотопов.\n
+        \u00A0\u00A0\u00A0\u00A0- Выбор индивидуальных линий изотопов не влияет на выбор радиактивных рядов или изотопов.\n
+        \u00A0\u00A0\u00A0\u00A0- Линии изотопов из списка на графике показаны линиями своего цвета.\n
+        \u00A0\u00A0\u00A0\u00A0- Для каждой линии изотопа в списке показано его имя, энергия линии и количество фотонов на 100 распадов.\n
+        \n
+		<big><annotation foreground="caption">6. Поиск изотопов:</annotation></big>\n
+		\u00A0\u00A0\u00A0\u00A0- МОжно выполнить поиск изотопов. Алгоритм чувствителен к входным параметрам, поэтому попробуйте их изменить для получения наилучших результатов. Полученный список может быть отображён на графике или скрыт. Сменить видимость линий можно с помощью кнопки «<annotation foreground="parameter">Показать</annotation>» (кнопка сменится на «<annotation foreground="parameter">Скрыть</annotation>»). Все линии выведены светло-фиолетовым цветом. Энергии линий расчётные, а не взяты из внутренней базы данных. Имена изотопов рассчитываются с учётом параметра «<i>Неточность определения</i>».\n
+        \u00A0\u00A0\u00A0\u00A0- Отображение линий на графике выключается при стирании спектра или загрузке его из файла.\n
+        \u00A0\u00A0\u00A0\u00A0- Для активации функции автоматического поиска изотопов при наборе спектра сначала необходимо её активировать в разеделе «<annotation foreground="parameter">Параметры</annotation>». Затем открыть «<annotation foreground="parameter">Найти изотопы</annotation>» и нажать «<annotation foreground="parameter">Показать</annotation>». Функция автоматического поиска не работает во время паузы или когда вывод найденных изотопов выключен. Список обновляется каждую секунду.\n
+        \u00A0\u00A0\u00A0\u00A0- Входные параметры:\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«Порог» - уровень срабатывания для добавления изотопа к списку (0,00-10 000,00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«Размер окна» - число каналов для оценки (1-200).\n
+		\u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«Степень» - степень полинома (1-5).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«Неточность определения» - насколько далеко может быть линия от эталона при определении изотопа, в процентах от энергии (1,00-50,00)\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«Значимые биты» - число значимых бит в номере канала. 13 означает «как есть». 12 означет объединить 2 канала в один, 11 означает объединить 4 канала в один и так далее.\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0«Библиотека» - библиотека используемых изотопов. «<i>Все</i>» означает «показать даже неопределившиеся», «<i>Известные</i>» означает «показать только определившиеся», остальные варианты соответствуют требованиями МАГАТЭ.\n
+        \n
+		<big><annotation foreground="caption">7. Сохранение данных:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Можно сохранить основной спектр для просмотра его позднее. Спектр сохраняется в собственном формате под именем «<i>Spectrum-date.txt</i>», где «date» - текущая дата. После даты можно вставить суффикс как заметку.\n
+        \u00A0\u00A0\u00A0\u00A0- Сохранённый спетр может быть загружен в программу через меню. Загрузка спектра автоматически останавливает обновление спектра, но расчёт cps и мощности дозы не прекращается.\n
+        \u00A0\u00A0\u00A0\u00A0- Основной спектр может быть экспортирован в формате «<i>.xml</i>» в формате, совместимым с программой «<i>Becquerel Monitor</i>». Файлы именуются в виде «<i>Bq-date.xml</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку. Если на графике выведен фон, то он тоже будет добавлен в выходной файл.\n
+        \u00A0\u00A0\u00A0\u00A0- Основной спектр может быть экспортирован в формате «<i>.spe</i>» в формате, совместимым с другими спектрометрическими программами. Файлы именуются в виде «<i>MCA-date.spe</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
+        \u00A0\u00A0\u00A0\u00A0- Основной спектр может быть экспортирован в формате «<i>.N42</i>» в формате, совместимым с другими спектрометрическими программами. Файлы именуются в виде «<i>MCA-date.N42</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
+        \u00A0\u00A0\u00A0\u00A0- Основной спектр может быть экспортирован в формате «<i>.csv</i>» с разделением полей при помощи «;» без столбца энергий в формате, совместимым с программой «<i>Microsoft Excel</i>». Файлы именуются в виде «<i>Export-date.csv</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
+        \u00A0\u00A0\u00A0\u00A0- Основной спектр может быть экспортирован в формате «<i>.csv</i>» с разделением полей при помощи «;» со столбцом энергий в формате, совместимым с программой «<i>Microsoft Excel</i>». Файлы именуются в виде «<i>Export-date.csv</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
+        \u00A0\u00A0\u00A0\u00A0- Выходные имена файлов могут быть изменены параметром «<annotation foreground="parameter">Имя</annotation>» в разделе «<annotation foreground="parameter">Параметры</annotation>». Можно независимо убрать префикс, дату или время.\n
+	    \u00A0\u00A0\u00A0\u00A0- Фон сохраняется в файле с именем «<i>Background</i>» и загружается только из него. Для использования другого фона сначала загрузите его как основной, а потом отправьте его в фон. Примечание: сохранить фон можно только при наличии данных фона, в противном случае команда будет отключена.\n
+		\u00A0\u00A0\u00A0\u00A0- Обновление спектра может быть остановлено при выборе «<annotation foreground="parameter">Пауза</annotation>» в основном меню или в разделе иконок. После выбора пункт меняется на «<annotation foreground="parameter">Продолжить</annotation>». Все импульсы, полученные во время паузы, будут утеряны. Данный режим не останавливает расчёт cps и мощности дозы.\n
+		\u00A0\u00A0\u00A0\u00A0- Любой сохранённый файл может быть отправлен в другую программу, другому человеку или через интернет посредством другой программы при помощи пункта меню «<annotation foreground="parameter">Поделиться</annotation>».\n
+        \u00A0\u00A0\u00A0\u00A0- Данные устройства могут быть сохранены через «<annotation foreground="parameter">Сохранить устройство…</annotation>» в подменю «<annotation foreground="parameter">Устройство</annotation>» в формате «<i>.txt</i>». Данные устройства сохраняются в собственном формате под именем «<i>Device-suffix.txt</i>», где «suffix» может быть задан или быть временем, если не задан. Сохранённые данные устройства можно загрузить в программу через «<annotation foreground="parameter">Загрузить устройство…</annotation>» в подменю «<annotation foreground="parameter">Устройство</annotation>».\n
+		ПРИМЕЧАНИЕ: параметры устройства включают кривую чувствительности, большинство параметров из раздела «<annotation foreground="parameter">Atom Spectra Параметры</annotation>» и параметры поиска изотопов, кроме типа библиотеки.\n
+		\n
+		<big><annotation foreground="caption">8. Параметры:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- График показывает входной сигнал как он принят или в режиме вывода импульса. Выбор режимов отображения путём движения влево/вправо. Используйте движение вверх/вниз для масштабирования значений.\n
+        \u00A0\u00A0\u00A0\u00A0- «Включить анализ импульсов» - включить отслеживание наложения импульсов. Данный параметр пытается компенсировать форму импульса, если он оказался слишком близко к предыдущему.\n
+        \u00A0\u00A0\u00A0\u00A0- «Использовать необработанный звук» - постараться использовать необработанный звук на Android 7 или выше. Данный выбор недоступен в системах до Android 7 или если система сообщает о невозможности использовать необработанный звук.\n
+        \u00A0\u00A0\u00A0\u00A0- «Инвертировать вход» - выберите, если импульсы имеют отрицательную полярность.\n
+        \u00A0\u00A0\u00A0\u00A0- «Добавить координаты GPS в файлы» - добавить информацию GPS в выходные файлы (спектр, фон и .csv).\n
+        \u00A0\u00A0\u00A0\u00A0- «Автоматический поиск изотопов» - автоматически искать и показывать изотопы на спектре.\n
+		\u00A0\u00A0\u00A0\u00A0- «Вход:» - выбор требуемого аудиовхода (Не работает с истинными USB-спектрометрами, например «<u>AtomSpectra Nano Pro</u>»). нажмите на текст для изменения источника звука.\n
+        \u00A0\u00A0\u00A0\u00A0- «Звуковой сигнал» - вывести тон в соответствии с уровнем cps. Опорный уровень рассчитывается на основе последних 5 секунд cps. Уровень можно пересчитать при очистке спектра или по нажатию на кнопку «<annotation foreground="parameter">≈</annotation>». Можно задать интересуемый интервал энергий в кэВ (A-B). Скорость счёта в выбранном интервале отображается в круглых скобках после общей скоорсти счёта.\n
+        \u00A0\u00A0\u00A0\u00A0- «Звук:» - требуемое устройство для вывода звука. Нажмите на текст для выбора другого устройства.\n
+        \u00A0\u00A0\u00A0\u00A0- «Сохранение» - выбрать конечный каталог для всех файлов. Если он отображает <u>...</u> на Android 8 и выше, там Вам будет задан вопрос о выборе месте сохранения. Или Вы можете нажать на <u>...</u> (или на отображаемое имя) для выбора вручную места сохранения. На Android до 8 данный параметр нельзя сменить. Если он всё ещё показывает <u>...</u>, пожалуйста создайте папку <u>AtomSpectra</u> в корне первого накопителя (обычно накопителя телефона) самостоятельно и перезапустите программу.\n
+		\u00A0\u00A0\u00A0\u00A0- «Вывод» - сжать спектр и отображать в виде такого количества точек. Программа уменьшает 1024 канала спектра или мощности дозы до указанного количества точек и отображает на графике для ускорения вывода.\n
+        \u00A0\u00A0\u00A0\u00A0- «Мин точек фронта» and «Макс точек фронта» - минимальная и максимальная длина переднего фронта в отсчётах для регистрации импульса. Жёлтые точки на графике показывают требуемую минимальную ширину переднего фронта, зелёные точки показывают приемлемую ширину переднего фронта импульса между минимальным и максимальным значениями. Параметры по умолчанию подходят для всех приборов серии <u>AtomSpectra</u>.\n
+        \u00A0\u00A0\u00A0\u00A0- «Дискриминатор шума» - не регистрировать импульсы ниже заданного канала для исключения зашумлённых каналов.\n
+        \u00A0\u00A0\u00A0\u00A0- «Округление АЦП к» - сколько старших бит АЦП будет использовано.\n
+        \u00A0\u00A0\u00A0\u00A0- «Сохр. каналов» - сколько каналов спектра экспортировать. Примечание: родной формат сохраняет все данные.\n
+        \u00A0\u00A0\u00A0\u00A0- «Загр. каналов» - сколько каналов спектра импортировать из файла старого формата. Если задано более, чем 8192 канала, то они будут сжаты в 8192 канала или меньше. Примечание: новый формат содержит в себе число каналов.\n
+        \u00A0\u00A0\u00A0\u00A0- «Макс. степень» - максимальная степень полинома функции калибровки\n
+        \u00A0\u00A0\u00A0\u00A0- «Сглаживание» - выбор окна сглаживания в реальном времени.\n
+        \u00A0\u00A0\u00A0\u00A0- «Дельта-время» - выбор время накопления спектра между выводом разницы (1-10 с).\n
+        \u00A0\u00A0\u00A0\u00A0- «Имя» - именование выходных файлов. Префикс - тип файла, дата - дата записи, время - время записи, суффикс - пользовательский текст.\n
+        \u00A0\u00A0\u00A0\u00A0- «Сохр. кажд. N с» - функция автосохранения дельты спектра. 0 - нет автосохранения.\n
+        \u00A0\u00A0\u00A0\u00A0- «Сжатие каналов» - уменьшить количество экспортируемых каналов путём объединения нескольких каналов в один.\n
+        \u00A0\u00A0\u00A0\u00A0- «Спектр» - выбрать суммарное, среднее или пиковое значение на графике спектра при сжатии графика. Пиковые значения позволяют не потерять слабые пики, средние показывают корректный график, суммы представляют прибор с меньшим количеством каналов.\n
+        \u00A0\u00A0\u00A0\u00A0- «Language» - выбор языка программы. Для использования программу надо перезапустить.\n
+        \u00A0\u00A0\u00A0\u00A0- «Чувств» - калибровочный коэффициент для расчёта мощности дозы. Значение подбирается самостоятельно для получения правильной мощности дозы.\n
+        \u00A0\u00A0\u00A0\u00A0- «СчФона» - значение фона, вычитаемое из cps при простом расчёте мощности дозы.\n
+        \u00A0\u00A0\u00A0\u00A0- «Б», «С», «М» - значения отсчётов для быстрого (Б), среднего (С) и медленного (М) усреднения расчёта мощности дозы.\n
+        \u00A0\u00A0\u00A0\u00A0- «Частота обновл. графика, с⁻¹» - сколько раз в секунду программа обновляет показания мощности дозы и спектр.</string>
+	<string name="help_version">Версия: <xliff:g id="version">%1$s</xliff:g>, сборка: <xliff:g id="build">%2$d</xliff:g>.</string>
+</resources>

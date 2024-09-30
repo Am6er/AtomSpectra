@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <string name="app_name">Atom Spectra</string>
+    <string name="app_bar_audio_action">Reading data from audio</string>
+    <string name="app_bar_usb_action">Reading data from USB</string>
+    <string name="app_bar_spectrum_update">(updating spectrum)</string>
+    <string name="app_channel">Atom Spectra Service</string>
+    <string name="settings">Atom Spectra Settings</string>
+    <string name="isotope_search">Atom Spectra Find Isotopes</string>
+    <string name="app_bar_sensitivity">Atom Spectra Sensitivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_select_interval">Set interval…</string>
+    <string name="action_restart">Clear spectrum</string>
+    <string name="action_save_options">Save options</string>
+    <string name="action_buy_spectrometer">Buy a spectrometer</string>
+    <string name="action_exit">Exit completely</string>
+    <string name="action_usb_attached">USB is attached</string>
+    <string name="action_usb_detached">USB is detached</string>
+    <string name="action_usb_no_access">Can\'t open USB device</string>
+
+    <string name="histogram_menu">Spectrum</string>
+    <string name="hist_save_file">Save to…</string>
+    <string name="hist_load_file">Load from…</string>
+    <string name="hist_add_file">Add from…</string>
+    <string name="hist_export">Export</string>
+    <string name="hist_export_to_bqmoni">Export to BqMoni…</string>
+    <string name="hist_export_to_spe">Export to SPE…</string>
+    <string name="hist_export_to_N42">Export to N42…</string>
+    <string name="hist_export_csv">Export to CSV…</string>
+    <string name="hist_export_with_energy">Export (with energy)…</string>
+    <string name="hist_share_export">Share</string>
+    <string name="hist_freeze_update">Pause recording</string>
+    <string name="hist_continue_update">Continue recording</string>
+    <string name="hist_stop_record">Recording is stopped due to input change!</string>
+    <string name="hist_ask_delete_title">Clear spectrum</string>
+    <string name="hist_ask_delete_text">Are you sure to clear spectrum data?</string>
+    <string name="hist_smooth">Smooth</string>
+    <string name="hist_unsmooth">Unsmooth</string>
+    <string name="hist_delta">Spectrum change</string>
+    <string name="hist_set_suffix">Set description</string>
+    <string name="hist_suffix">Spectrum</string>
+
+    <string name="background">Background</string>
+    <string name="background_save">Save</string>
+    <string name="background_load">Load</string>
+    <string name="background_load_from">Load from…</string>
+    <string name="background_copy">Spectrum as background</string>
+    <string name="background_clear">Clear background</string>
+    <string name="background_show">Show background</string>
+    <string name="background_subtract">Subtract from spectrum</string>
+    <string name="background_set_suffix">Set description</string>
+    <string name="background_suffix">Background</string>
+
+    <string name="notify_close">Close</string>
+
+    <string name="enable_pileup">Enable pile-up correction</string>
+    <string name="invert">Invert input</string>
+    <string name="add_gps">Add GPS coordinates to files</string>
+    <string name="update_isotopes">Auto search isotopes</string>
+    <string name="input_sound">Source:</string>
+    <string name="input_sound_absent">No input source! Use default.</string>
+    <string name="output_sound">Sound alarm: </string>
+    <string name="output_sound_full">Full</string>
+    <string name="output_sound_format">%1$.2f–%2$.2f keV</string>
+    <string name="output_sound_device">Sound:</string>
+    <string name="use_raw_audio_source">Use raw audio source</string>
+    <string name="no_audio_available">Can\'t use audio input!</string>
+    <string name="no_usb_available">Can\'t use USB input!</string>
+    <string name="reset_data">Reset</string>
+    <string name="update_data_error">Can\'t update device data</string>
+    <string name="no_audio_output_available">Can\'t use audio output!</string>
+    <string name="audio_44100">Input frequency is set to 44.1 kHz. If you want to try 48 kHz connect the spectrometer and restart the program.</string>
+
+    <string name="reducedto">Show as: 128 ch.</string>
+    <string name="maxfront">Max front points: 10</string>
+    <string name="minfront">Min front points: 5</string>
+    <string name="noisediscriminator">Noise discriminator: 256</string>
+    <string name="ADCroundedto">ADC is rounded to: 12 bits</string>
+    <string name="save_folder">Save folder: </string>
+    <string name="compress_graph">Spectrum: Sum</string>
+
+    <string name="plus">\u2192</string>
+    <string name="minus">\u2190</string>
+
+    <string name="leftwards">\u221a</string>
+    <string name="rightwards">\u00d7</string>
+    <string name="updown">\u2195</string>
+
+    <string name="cps">cps: 0</string>
+
+    <string name="hint_keV_show">100.0</string>
+    <string name="hint_sens_show">1.00E+00</string>
+
+    <string name="cursortext">Cursor: 0 ch., 0 keV</string>
+    <string name="mode_fast">Fast</string>
+    <string name="mode_medium">Medium</string>
+    <string name="mode_slow">Slow</string>
+    <string name="mode_fast_button">F</string>
+    <string name="mode_medium_button">M</string>
+    <string name="mode_slow_button">S</string>
+    <string name="mode_compensated_button">C</string>
+    <string name="mode_uncompensated_button">D</string>
+    <string name="sensg_text">Sens:</string>
+    <string name="background_cnt_text">BckgCnt:</string>
+    <string name="fast_mode_sens">F:</string>
+    <string name="medium_mode_sens">M:</string>
+    <string name="slow_mode_sens">S:</string>
+    <string name="doserateUpdatePeriod">Graph update frequency, s⁻¹:</string>
+    <string name="save_channels">Save channels: 32768</string>
+    <string name="load_channels">Load channels: 32768</string>
+    <string name="max_factor">Maximum factor: 1</string>
+    <string name="smoothness">Smoothness: 1</string>
+    <string name="delta_spectrum">Diff time: 1 s</string>
+    <string name="channel_compression">Channel compression: 1</string>
+    <string name="isotopes">Atom Spectra Isotopes</string>
+    <string name="isotopes_get">Show Isotopes</string>
+    <string name="select_isotopes">Decay chains:</string>
+
+    <string name="calibration_menu">Calibration</string>
+    <string name="calibration_add_point">Add point</string>
+    <string name="calibration_clear_points">Clear points</string>
+    <string name="calibration_calculate">Calculate</string>
+    <string name="calibration_load_from_file">Load from…</string>
+    <string name="calibration_store">Store</string>
+    <string name="calibration_store_memory">Store to the program</string>
+    <string name="calibration_revert">Retrieve</string>
+    <string name="calibration_revert_memory">Retrieve from the program</string>
+    <string name="none_cal_data">──────────</string>
+    <string name="calibration_device">Device</string>
+    <string name="calibration_save_device">Save device…</string>
+    <string name="calibration_load_device">Load device…</string>
+    <string name="calibration_load_device_energy">Load with calibration…</string>
+    <string name="calibration_sensivity">Set sensitivity…</string>
+    <string name="calibration_channel">Last: 8192</string>
+    <string name="calibration_channel_format">Last: <xliff:g id="channel">%1$d</xliff:g></string>
+    <string name="calibration_add_nuclid_title">Add a calibration point</string>
+    <string name="calibration_add_nuclid_text">Add a calibration point for channel %1$d with %2$s (%3$.2f keV)?</string>
+    <string name="calibration_add_nuclid2_text">Enter an energy (in keV) for channel %1$d (now %2$s, %3$.2f keV):</string>
+
+    <string name="detector_sensitivity">Device Sensitivity</string>
+    <string name="sense_energy_kev">Energy, keV</string>
+    <string name="sense_sensitivity">Sensitivity</string>
+    <string name="sense_hint_energy">Energy</string>
+    <string name="sense_hint_sensitivity">Sensitivity</string>
+
+    <string name="reduced_to_format">Show as: <xliff:g id="channel_number">%1$d</xliff:g> ch.</string>
+    <string name="min_front_points_format">Min front points: <xliff:g id="min_points">%1$d</xliff:g></string>
+    <string name="max_front_points_format">Max front points: <xliff:g id="max_points">%1$d</xliff:g></string>
+    <string name="noise_discriminator_format">Noise discriminator: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
+    <string name="adc_rounded_format">ADC is rounded to: <xliff:g id="adc_high_bits">%1$d</xliff:g> bits</string>
+    <string name="save_channels_format">Save channels: <xliff:g id="save_channels">%1$d</xliff:g></string>
+    <string name="load_channels_format">Load channels: <xliff:g id="load_channels">%1$d</xliff:g></string>
+    <string name="max_factor_format">Maximum factor: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="smoothness_format">Smoothness: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="delta_spectrum_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
+    <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h</string>
+    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h</string>
+    <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
+    <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
+    <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="compress_graph_format">Spectrum: <xliff:g id="type">%1$s</xliff:g></string>
+    <string name="autosave_timeout">Save delta every <xliff:g id="duration">%1$d</xliff:g> s</string>
+    <string-array name="compress_graph_array">
+        <item>Sum</item>
+        <item>Average</item>
+        <item>Peak</item>
+    </string-array>
+    <string-array name="file_name_array">
+        <item>Name: Suffix</item>
+        <item>Name: Date-Suffix</item>
+        <item>Name: Time-Suffix</item>
+        <item>Name: Date_Time-Suffix</item>
+        <item>Name: Prefix-Suffix</item>
+        <item>Name: Prefix-Date-Suffix</item>
+        <item>Name: Prefix-Time-Suffix</item>
+        <item>Name: Prefix-Date_Time-Suffix</item>
+    </string-array>
+
+    <string name="isotope_show_line"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>) (<xliff:g id="isotope_halflife">%6$.2f</xliff:g></string>
+    <string name="isotope_show_next_line">, <xliff:g id="another_energy">%1$.2f</xliff:g></string>
+    <string name="isotope_show_last_line"><xliff:g id="last_energy">%1$s</xliff:g> keV)</string>
+    <string name="isotope_show_decay_chain"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> decay chain</string>
+    <string name="isotope_show_energy"><xliff:g id="isotope_energy">%1$7.2f</xliff:g> keV</string>
+    <string name="isotope_show_name_stable"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (stable)</string>
+    <string name="isotope_show_name_halflife"><xliff:g id="isotope_name">%1$s</xliff:g>-<xliff:g id="isotope_weight">%2$d</xliff:g><xliff:g id="isotope_mod">%3$s</xliff:g> (<xliff:g id="isotope_halflife">%4$.4g</xliff:g> <xliff:g id="isotope_dimen">%5$s</xliff:g>)</string>
+    <string name="period_year">y</string>
+    <string name="period_day">d</string>
+    <string name="period_hour">h</string>
+    <string name="period_minute">min</string>
+    <string name="period_second">s</string>
+
+    <string name="graph_show_cnt">cnt</string>
+    <string name="graph_show_log10">lg(cnt)</string>
+    <string name="graph_show_channel">ch.</string>
+    <string name="graph_show_points">pts</string>
+    <string name="graph_show_kev">keV</string>
+    <string name="graph_show_mkSv">μSv/h</string>
+    <string name="graph_show_mSv">mSv/h</string>
+    <string name="graph_log_info">Logarithmic Y-scale</string>
+    <string name="graph_linear_info">Linear Y-scale</string>
+    <string name="graph_max_gain">Maximum gain is reached</string>
+    <string name="graph_min_gain">Minimum gain is reached</string>
+    <string name="graph_max_zoom">Maximum zoom is reached</string>
+    <string name="graph_min_zoom">Minimum zoom is reached</string>
+
+    <string name="perm_ask_audio_title">AUDIO permission acquisition</string>
+    <string name="perm_ask_audio_text">This application needs RECORD_AUDIO permission to capture signal from spectrometer. Without this permission the program can shows previous spectra only.</string>
+    <string name="perm_ask_power_title">Power saving</string>
+    <string name="perm_ask_power_text">Please go to a battery exclusion list and add AtomSpectra in order to work properly in a background.</string>
+    <string name="perm_ask_write_title">WRITE permission acquisition</string>
+    <string name="perm_ask_write_text">This permission is needed to write a file on external storage</string>
+    <string name="perm_ask_read_title">READ permission acquisition</string>
+    <string name="perm_ask_read_text">This permission is needed to read file from external storage</string>
+    <string name="perm_ask_share_text">This permission is needed to send file</string>
+    <string name="perm_ask_fine_gps_title">GPS access acquisition</string>
+    <string name="perm_ask_fine_gps_text">The program needs to access GPS coordinates permission to add them to the output file. The coordinates will be read only if the main program window is active and a GPS checkbox is switched on in the parameters.</string>
+    <string name="perm_ask_gps_off_title">GPS is off</string>
+    <string name="perm_ask_gps_off_text">GPS is switched off. Please switch on GPS to add coordinates to the spectrum file</string>
+
+    <string name="perm_no_audio">No permission to open audio</string>
+    <string name="perm_no_read_histogram">No permission to read a spectrum</string>
+    <string name="perm_no_read_background">No permission to read a background</string>
+    <string name="perm_no_read_calibration">No permission to read a calibration file</string>
+    <string name="perm_no_read_device">No permission to read a device file</string>
+    <string name="perm_no_write_directory">Can\'t create folder /AtomSpectra on external storage, move to own directory</string>
+    <string name="perm_no_write_histogram">No permission to write a spectrum</string>
+    <string name="perm_no_write_background">No permission to write a background</string>
+    <string name="perm_no_write_device">No permission to write a device file</string>
+    <string name="perm_no_write_bqmoni">No permission to export a spectrum to Becquerel Monitor</string>
+    <string name="perm_no_write_spe">No permission to export a spectrum to a SPE file</string>
+    <string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
+    <string name="perm_no_write_export">No permission to export a spectrum to a CSV file</string>
+    <string name="perm_no_write_export_energy">No permission to export a spectrum with an energy to a CSV file</string>
+    <string name="perm_no_share">No permission to read a file to share</string>
+    <string name="perm_no_outside">A file is outside of my scope</string>
+    <string name="perm_no_usb">No permission to access USB device</string>
+    <string name="perm_no_gps">No GPS access, GPS data will be undefined</string>
+
+    <string name="ask_select_histogram">Select a spectrum</string>
+    <string name="ask_select_background">Select a background spectrum</string>
+    <string name="ask_select_calibration">Select a calibration file</string>
+    <string name="ask_select_device_file">Select a device file</string>
+    <string name="ask_spectrum_suffix">File suffix for a spectrum</string>
+    <string name="ask_device_suffix">File suffix to a device file</string>
+    <string name="ask_export_bqmoni">File suffix to export data to Becquerel Monitor</string>
+    <string name="ask_export_spe">File suffix to export data to SPE</string>
+    <string name="ask_export_N42">File suffix to export data to N42</string>
+    <string name="ask_export_suffix">File suffix to export data to CSV</string>
+    <string name="ask_suffix_text">Enter file suffix:</string>
+    <string name="ask_share">Share a file</string>
+    <string name="ask_share_text">A spectrum data from <xliff:g id="file_share">%1$s</xliff:g></string>
+    <string name="ask_noise_title">Noise discriminator level</string>
+    <string name="ask_noise_text">Enter new value:</string>
+    <string name="ask_channel_title">Set a cursor channel</string>
+    <string name="ask_channel_text">New channel (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
+    <string name="ask_last_channel_title">Enter channel number</string>
+    <string name="ask_last_channel_text">New channel (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+    <string name="ask_delete_calibration_line_title">Delete a line</string>
+    <string name="ask_delete_calibration_line_text">Delete a channel %1$d (%2$.2f keV) from the list?</string>
+    <string name="ask_select_interval_title">Select interval to search</string>
+    <string name="ask_select_interval_text">Select interval in keV (or set \'-1\' to clean)</string>
+
+    <string name="cal_point_title">Calibration of the channel <xliff:g id="cal_channel">%1$d</xliff:g></string>
+    <string name="cal_no_more">No more place for calibration line</string>
+    <string name="cal_have_channel">Already have this channel</string>
+    <string name="cal_no_enough_data">No enough data to calibrate</string>
+    <string name="cal_show_line">Ch: <xliff:g id="channel">%1$d</xliff:g>, E: <xliff:g id="energy">%2$.2f</xliff:g> keV</string>
+    <string name="cal_show_function">Show a function</string>
+    <string name="cal_draw_function">Draw new</string>
+    <string name="cal_function_title">Calibration</string>
+    <string name="cal_function_message">Calibration function:</string>
+    <string name="cal_coefficient_title">Calibration <xliff:g id="factor">%1$d</xliff:g>-coefficient</string>
+    <string name="cal_coefficient_text">Enter new calibration value:</string>
+    <string name="ask_point_in_kev">Enter the energy value in keV:</string>
+    <string name="cal_error_number">Error in number input</string>
+    <string name="cal_maybe_wrong">ATTENTION!\n\nYour point %1$d - %2$.2f keV makes calibration wrong!</string>
+    <string name="put_cursor_first">Put a cursor first</string>
+    <string name="strange_file_name">A strange file name</string>
+    <string name="hist_load_success">A spectrum is loaded successfully</string>
+    <string name="hist_load_error">A spectrum loading is FAILED!</string>
+    <string name="device_load_success">A device data is loaded successfully</string>
+    <string name="device_load_error">A device data loading is FAILED!</string>
+    <string name="cal_load_success">Calibration is loaded successfully</string>
+    <string name="cal_load_error">Calibration loading is FAILED!</string>
+    <string name="cal_applied">Calibration is applied</string>
+    <string name="storage_required">Storage is required</string>
+    <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> is saved successfully</string>
+    <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving is FAILED!</string>
+    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> is saved successfully</string>
+    <string name="device_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving is FAILED!</string>
+    <string name="background_load_success">Background is loaded successfully</string>
+    <string name="background_load_error">Background loading is FAILED!</string>
+    <string name="background_delete_error">Can\'t delete a background file</string>
+    <string name="background_no_data">No background data</string>
+    <string name="background_save_success">Background is saved successfully</string>
+    <string name="background_save_error">Background saving is FAILED!</string>
+    <string name="export_save_success"><xliff:g id="file_save">%1$s</xliff:g> is exported successfully</string>
+    <string name="export_save_error"><xliff:g id="file_save">%1$s</xliff:g> export is FAILED!</string>
+    <string name="something_wrong">Something goes wrong!</string>
+    <string name="unknown_code">Got unknown code from the device: <xliff:g id="code">%1$d</xliff:g></string>
+    <string name="cal_store_usb_wait">Wait for calibration to store into USB device</string>
+    <string name="cal_apply_usb">Calibration is applied from a USB device</string>
+    <string name="cal_wrong_usb">Wrong calibration from a USB device</string>
+    <string name="cal_wrong_checksum">A bad calibration checksum from a USB device</string>
+    <string name="cal_timeout">Timeout from a USB device</string>
+    <string name="cal_store_usb">Calibration is stored to a USB device</string>
+    <string name="cal_wrong_store_usb">Can\'t store calibration to a USB device</string>
+    <string name="cal_load_anyway">Load calibration anyway?</string>
+    <string name="usb_below_minimal_version">Update device firmware to <xliff:g id="version">%1$d</xliff:g> or higher</string>
+    <string name="usb_version_read_error">Device firmware version read error</string>
+    <string name="usb_version_unknown">Device firmware version in unknown</string>
+
+    <string name="searching_isotopes">Searching isotopes…</string>
+    <string name="autosave_start">Delta auto save function is started.</string>
+    <string name="isotope_list">Isotopes</string>
+    <string name="action_find_isotopes">Find isotopes</string>
+    <string name="find_isotopes">Find</string>
+    <string name="show_isotopes">Show</string>
+    <string name="show_no_isotopes">Hide</string>
+    <string name="find_threshold">Threshold</string>
+    <string name="find_window_size">Window size</string>
+    <string name="find_order">Order</string>
+    <string name="find_tolerance">Inaccuracy</string>
+    <string name="find_sign_bits">Significant bits</string>
+    <string name="find_isotope_library">Library</string>
+    <string name="find_error_window">Error in window size</string>
+    <string name="find_error_bits">Error in number of significant bits</string>
+    <string name="find_error_tolerance">Error in inaccuracy</string>
+    <string name="find_error_threshold">Error in threshold</string>
+    <string name="find_isotopes_all">All</string>
+    <string name="find_isotopes_known">Known</string>
+    <string name="find_isotopes_medicine">Medical</string>
+    <string name="find_isotopes_industrial">Industrial</string>
+    <string name="find_isotopes_special">Special</string>
+    <string name="find_isotopes_normal">Normal</string>
+    <string name="find_isotopes_info">%1$s (%2$.2f keV)</string>
+    <string-array name="find_isotopes_selection">
+        <item>All</item>
+        <item>Known</item>
+        <item>Medical</item>
+        <item>Industrial</item>
+        <item>Special</item>
+        <item>Normal</item>
+    </string-array>
+    <string-array name="isotopes_selection">
+        <item>All</item>
+        <item>Medical</item>
+        <item>Industrial</item>
+        <item>Special</item>
+        <item>Normal</item>
+    </string-array>
+    <string-array name="find_isotopes_order">
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_13">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_14">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_15">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+    </string-array>
+    <string-array name="find_isotopes_bits_16">
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+    </string-array>
+
+    <string name="help_menu">Help</string>
+    <string name="help">Atom Spectra Quick Help</string>
+    <string name="help_text1"><big><annotation foreground="caption">Overview.</annotation></big>\n
+        This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), or from an USB spectrometer <u>AtomSpectra Pro</u>. If none of them is connected to a phone the program works in a demo mode reading an internal microphone and creating a spectrum.\n
+		\n
+        NOTE: Please add the program to the power exclusion list for a proper work in a background or when the screen is switched off. To fully stop the program please use \'<annotation foreground="parameter">Exit completely</annotation>\' menu item.\n
+		\n
+        <big><annotation foreground="caption">1. Operating:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Use a horizontal pinch to scale channels/energies. Take the fingers off the screen to apply a pinch.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a vertical pinch to scale counts.  Take the fingers off the screen to apply a pinch.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a diagonal pinch to scale channels/energies and counts simultaneously. Take the fingers off the screen to apply a pinch.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a left/right swipe to move a spectrum left/right.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a down swipe to show and hide an isotope label.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a single tap to point a green cursor. Use a slider to smoothly shift the cursor. Tap to the left of spectrum to switch off a cursor. Tap on cursor text to set the cursor channel directly.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a double tap to select linear or log10 scale.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a long tap to switch between bar and line view modes.\n
+        \u00A0\u00A0\u00A0\u00A0- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the spectrum to switch between channel and keV modes.\n
+        \u00A0\u00A0\u00A0\u00A0- Use \'<annotation foreground="parameter">CD</annotation>\' button to the right of the spectrum to switch between spectrum and dose rate output modes.\n
+        \u00A0\u00A0\u00A0\u00A0- Use a short press on \'<annotation foreground="parameter">cps</annotation>\' or dose rate output to show all time average cps (\'<i>~cps</i>\') and a total time in seconds (\'<i>time</i>\'). Use a short press on \'<annotation foreground="parameter">~cps</annotation>\' or \'<annotation foreground="parameter">time</annotation>\' to show base (\'<annotation foreground="parameter">≈cps</annotation>\') and signal (\'<annotation foreground="parameter">♪cps</annotation>\') levels. Use a short press on \'<annotation foreground="parameter">≈cps</annotation>\' or \'<annotation foreground="parameter">♪cps</annotation>\' to show coordinates. The coordinates shows current values during spectrum update. They show last position before the record stopped. They shows position from last read file. Use a long press on coordinates to jump to a map program. Use a short press again to return back.\n
+		\n
+        <big><annotation foreground="caption">2. Spectra output:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- The program can show a main spectrum, a main spectrum with a background spectrum, and a difference between them. All modes are selected using \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
+        \u00A0\u00A0\u00A0\u00A0- In the bar view mode the main spectrum is shown blue, the background is shown green, and the difference between them is shown red. The colours are dimmed.\n
+        \u00A0\u00A0\u00A0\u00A0- In the line view mode the main spectrum is shown white, the background is shown green, and the difference between them is shown cyan. The colours are bright.\n
+        \u00A0\u00A0\u00A0\u00A0- You can clear background data in the program.\n
+        \u00A0\u00A0\u00A0\u00A0- To see spectrum \'as is\' please set ADC to maximum and show as 1024 channels. Other values will make spectrum and background smooth.\n
+        \u00A0\u00A0\u00A0\u00A0- You may smooth spectra or revert it by using \'<annotation foreground="parameter">Smooth</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu.\n
+        \u00A0\u00A0\u00A0\u00A0- You may indicate the difference between two spectrum states at different time by using \'<annotation foreground="parameter">Spectrum change</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu. The difference time can be chosen from 1 to 10 seconds range with \'<annotation foreground="parameter">Diff time</annotation>\' under \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \u00A0\u00A0\u00A0\u00A0- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use \'<annotation foreground="parameter">Set description</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' or \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
+		\n
+        <big><annotation foreground="caption">3. Energy calibration:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- The program uses an energy calibration.\n
+        \u00A0\u00A0\u00A0\u00A0- NOTE: It is better to switch to channel output before making a calibration.\n
+        \u00A0\u00A0\u00A0\u00A0- To calibrate the spectrum point the cursor to the first calibration point, then press a \'<annotation foreground="parameter">1</annotation>\' button above the spectrum and enter a value. The button changes from \'<annotation foreground="parameter">1</annotation>\' to \'<annotation foreground="parameter">2</annotation>\' to show for the second point waiting.\n
+        \u00A0\u00A0\u00A0\u00A0- Do the same for the next calibration points. The button will change to \'<annotation foreground="parameter">-</annotation>\' if there is no more acceptable points.\n
+        \u00A0\u00A0\u00A0\u00A0- Press \'<annotation foreground="parameter">\u221a</annotation>\' button to calculate a calibration. Use \'<annotation foreground="parameter">Store</annotation>\' to save the calibration data for the next program start. The program retrieves the calibration data when it deletes a current spectrum. Use \'<annotation foreground="parameter">Retrieve</annotation>\' to apply calibration data to a spectrum from memory. <annotation foreground="highlight">NOTE</annotation>: if <u>AtomSpectra Pro</u>> is attached, the program will use calibration from the device or store calibration to the device. Internal program calibration does not change and will be restored after unplugging the device or may be changed using appropriate menu commands.\n
+        \u00A0\u00A0\u00A0\u00A0- Tap on a nuclide flag on a graph from a <u>nuclide list</u> to set a new calibration point with the nuclide energy.\n
+        \u00A0\u00A0\u00A0\u00A0- Tap on a nuclide flag on a graph from <u>found peaks list</u> and enter an energy value to set a new calibration point.\n
+        \u00A0\u00A0\u00A0\u00A0- Press on polinom values in \'<annotation foreground="parameter">Calibration</annotation>\' submenu to edit it.\n
+        \u00A0\u00A0\u00A0\u00A0- You can set the highest polinom order in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \u00A0\u00A0\u00A0\u00A0- Press \'<annotation foreground="parameter">\u00d7</annotation>\' button to drop all input points.\n
+        \u00A0\u00A0\u00A0\u00A0- Press on a new calibration line in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu to delete it from the list.\n
+        \u00A0\u00A0\u00A0\u00A0- You can see a calibration function using \'<annotation foreground="parameter">Show a function</annotation>\' item in \'<annotation foreground="parameter">Calibration</annotation>\' submenu.\n
+        \u00A0\u00A0\u00A0\u00A0- Press on \'<annotation foreground="parameter">Draw new</annotation>\' in \'<annotation foreground="parameter">Calibration</annotation>\' submenu to see a new calibration function and calibration points on a graph. New calibration points are shown in green.\n
+        \u00A0\u00A0\u00A0\u00A0- You can load a calibration data from another spectrum.\n
+        \u00A0\u00A0\u00A0\u00A0- You can select the last channel number to show on energy scale. Channel scale always shows the full spectrum.\n
+        \u00A0\u00A0\u00A0\u00A0- You can see and edit calibration data for a current spectrum in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu above the horizontal line.\n
+        \u00A0\u00A0\u00A0\u00A0- You can see new calibration data in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu below the horizontal line.\n
+		\n
+        <big><annotation foreground="caption">4. A dose rate calculation and output:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- The program makes a dose rate measurement in accordance with the channel or keV x-axis selection. In a channel view mode the program makes a simple count to dose rate conversion. In a keV view mode the program makes an energy compensated dose rate measurement.\n
+        \u00A0\u00A0\u00A0\u00A0- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \u00A0\u00A0\u00A0\u00A0- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the dose rate.\n
+        \u00A0\u00A0\u00A0\u00A0- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens</annotation>\' parameter to estimate the dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
+        \u00A0\u00A0\u00A0\u00A0- You can set a \'<annotation foreground="parameter">BckgCnt</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
+        \u00A0\u00A0\u00A0\u00A0- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CD</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">D</annotation>\' means \'uncompensated dose rate history\'.\n
+    </string>
+    <string name="help_text2"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Green cursor line shows the isotope with 3% uncertainty and selects more important isotopes. To see strict line isotopes please use the \'<annotation foreground="parameter">Show isotopes</annotation>\' isotope selection dialog.\n
+        \u00A0\u00A0\u00A0\u00A0- The program shows an isotope information in accordance with the channel or keV x-axis selection. In a channel mode the program shows isotope names. In a keV mode the program shows isotope energies.\n
+        \u00A0\u00A0\u00A0\u00A0- You can show isotope lines. Note: some isotopes in the list are shown in different colors according to their relative quantum yield on a given line. With increasing quantum yield: dark green, light green, dark yellow, light yellow, red. Light cyan colour is used to show decay chains and isotope groups.\n
+        \u00A0\u00A0\u00A0\u00A0- You can select all lines belongs to a given decay chain, all lines belong to a given isotope, or an individual isotope line.\n
+        \u00A0\u00A0\u00A0\u00A0- You can select an isotope library. The known isotopes from this library becomes bigger than the others.\n
+        \u00A0\u00A0\u00A0\u00A0- A decay chain selection also selects isotopes and individual isotope lines.\n
+        \u00A0\u00A0\u00A0\u00A0- An isotope selection also selects individual isotope lines.\n
+        \u00A0\u00A0\u00A0\u00A0- An individual isotope line selection doesn\'t change decay chain or isotope selection.\n
+        \u00A0\u00A0\u00A0\u00A0- Isotope lines from the list are shown on a graph with their colors.\n
+        \u00A0\u00A0\u00A0\u00A0- Each individual isotope line in a list shows the isotope name, its energy line and a photon output per 100 decays.\n
+		\n
+        <big><annotation foreground="caption">6. Isotope detection:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- You can find isotopes with the program. The algorithm is sensitive to input parameters, so try to change them to get better results. Created list can be shown on the graph or be hidden. You can change the visibility using \'<annotation foreground="parameter">Show</annotation>\' button (the button will change to \'<annotation foreground="parameter">Hide</annotation>\'). All lines are shown light-purple. The energies of these lines are shown calculated, they are not taken from the internal database. Isotope name is determined using \'<annotation foreground="parameter">Inaccuracy</annotation>\' parameter.\n
+        \u00A0\u00A0\u00A0\u00A0- The isotope list is hidden on graph when the spectrum is loaded or you make a new isotope search.\n
+        \u00A0\u00A0\u00A0\u00A0- To activate auto isotope search function during a spectrum reading you first need to activate it in \'<annotation foreground="parameter">Settings</annotation>\'. Then open \'<annotation foreground="parameter">Find isotopes</annotation>\' and press \'<annotation foreground="parameter">Show</annotation>\'. An auto update function does not work during a pause or when found isotopes are selected to be hidden. List updates every second.\n
+        \u00A0\u00A0\u00A0\u00A0- Input parameters are:\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Threshold\' - a trigger level to add a found isotope to the list (0.00-10,000.00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Window size\' - a number of channels to be used for estimation (1-200).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Order\' - polynomial order (1-5).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Inaccuracy\' - how coarse will be isotope name definition, in percent of energy (1.00-50.00).\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Significant bits\' - number of bits in channel number to be used. 13 means leave as-is. 12 means combine two channels into one, 11 means combine 4 channels into one, and so on.\n
+        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Library\' - library of isotopes to be used. \'<i>All</i>\' means \'show even not defined\', \'<i>Known</i>\' means \'show only defined\', others mean corresponding isotope type used by IAEA.\n
+        \n
+        <big><annotation foreground="caption">7. Data storage:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- You can save main spectrum to view it later. The spectrum is stored in own format file named \'<i>Spectrum-date.txt</i>\', where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \u00A0\u00A0\u00A0\u00A0- A saved spectrum can be loaded in the program via menu. Loading spectrum automatically pauses a spectrum update but a cps and a dose rate continue to work.\n
+        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.xml</i>\' format compatible with \'BecquerelMonitor\'. The files are named as \'Bq-date.xml\' where \'date\' is the current date. You can add a suffix after date as a note. If the background is shown on graph it will be also added to the output file as background spectrum.\n
+        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.spe</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.spe</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.N42</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.N42</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields without energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields with energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \u00A0\u00A0\u00A0\u00A0- Output file names can be modified by \'<annotation foreground="parameter">Name</annotation>\' in \'<annotation foreground="parameter">Settings</annotation>\'. Prefix, date and time can be removed independently.\n
+	    \u00A0\u00A0\u00A0\u00A0- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file. Also you may load it to the main spectrum and then move it the background. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
+        \u00A0\u00A0\u00A0\u00A0- You can stop spectrum update by selecting \'<annotation foreground="parameter">Pause recording</annotation>\' in a main menu or on a shortcut bar. After selecting it changes to \'<annotation foreground="parameter">Continue recording</annotation>\'. All impulses received during pause will be lost. This mode doesn\'t stop cps and the dose rate calculation.\n
+        \u00A0\u00A0\u00A0\u00A0- Each saved file can be sent to another program, user or via internet by means of another program with \'<annotation foreground="parameter">Share a file</annotation>\' menu item.\n
+        \u00A0\u00A0\u00A0\u00A0- Device settings can be stored using \'<annotation foreground="parameter">Save device…</annotation>\' in \'<annotation foreground="parameter">Device</annotation>\' submenu in a \'<i>.txt</i>\' format. Device data is stored in an own format file named \'<i>Device-suffix.txt</i>\', where \'suffix\' can be set or be a date if empty. Stored device settings can be loaded into the program using \'<annotation foreground="parameter">Load device…</annotation>\' in \'<annotation foreground="parameter">Device</annotation>\' submenu.\n
+        NOTE: Device settings contain a sensitivity curve, most of the parameters in \'<annotation foreground="parameter">Atom Spectra Settings</annotation>\', and search isotope parameters excluding library type.\n
+		\n
+        <big><annotation foreground="caption">8. Settings:</annotation></big>\n
+        \u00A0\u00A0\u00A0\u00A0- Graph shows \'as-is\' or \'pulse shape\' input signal. Select them by swipe left/right. Swipe up/down to scale the graph.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Enable pile-up correction\' - select to detect impulse pile-up. This parameter tries to compensate the impulse form if the impulse is too close to the previous one.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Use raw audio source\' - try to use unprocessed audio available on Android 7 and higher. This checkbox is disabled on Android before Android 7 of if the system does not allow to use unprocessed audio.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Invert input\' - choose if pulse shape is negative.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Add GPS coordinates to files\' - add GPS information to output files (spectrum, background and .csv).\n
+        \u00A0\u00A0\u00A0\u00A0- \'Auto search isotopes\' - auto find and show isotopes on a spectrum.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Source:\' - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Sound:\' - desired sound output. Press on text to select next output.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Save folder\' - choose the destination folder for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create folder <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Show as\' - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Min front points\' and \'Max front points\' - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Noise discriminator\' - do not register channels below this number to exclude noisy channels.\n
+        \u00A0\u00A0\u00A0\u00A0- \'ADC is rounded to\' - number of upper ADC bits to be used.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Save channels\' - how many channels from the spectrum to be exported. Note: own format stores all data.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Load channels\' - how many channels from the old spectrum file to be loaded. If there are more than 8192 channels they will be compressed into 8192 channels or less. Note: new own format has channel number itself.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Maximum factor\' - a maximum polinomial factor for the calibration function\n
+        \u00A0\u00A0\u00A0\u00A0- \'Smoothness\' - select a realtime smoothness window.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Diff time\' - select the accumulation time between difference output (1-10 s).\n
+        \u00A0\u00A0\u00A0\u00A0- \'Name\' -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Save every N s\' -  the auto save delta file function. 0 - no auto save.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Channel compression\' - reduce export channels quantity by combining set value of channels into one channel.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Spectrum\' - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Language\' - select a program language. To fully apply the program must be restarted.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Sens\' - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
+        \u00A0\u00A0\u00A0\u00A0- \'BckgCnt\' - noise count subtracted from a simple dose rate calculation.\n
+        \u00A0\u00A0\u00A0\u00A0- \'F\', \'M\', \'S\' - counts for fast, medium and slow dose rate averaging.\n
+        \u00A0\u00A0\u00A0\u00A0- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.</string>
+    <string name="help_version">Version: <xliff:g id="version">%1$s</xliff:g>, build: <xliff:g id="build">%2$d</xliff:g>.</string>
+</resources>

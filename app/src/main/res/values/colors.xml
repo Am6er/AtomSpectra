@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+        <color name="colorPrimary">#FF202020</color>
+        <color name="colorMenuText">#FFFFFFFF</color>
+        <color name="colorMenuAppearance">#FF202020</color>
+        <color name="colorButtonBackground">#FF202020</color>
+        <color name="colorButtonText">#FFFFFFFF</color>
+        <color name="colorEmpty">#00000000</color>
+        <color name="colorDisabled">#FF808080</color>
+        <color name="colorHeader">#FFDFCB1E</color>
+        <color name="colorDivider">#FF00BCD4</color>
+        <color name="colorBlend">#FFB9DDDD</color>
+        <color name="colorRed">#FFFF9090</color>
+        <color name="colorWhite">#FFFFFFFF</color>
+        <color name="colorCaption">#FFFF9090</color>
+        <color name="colorParameter">#FF3DF048</color>
+        <color name="colorParameter2">#FFB9DDDD</color>
+        <color name="colorHighlight">#FFDFCB1E</color>
+        <color name="colorStrokes">#FF6B7476</color>
+        <color name="colorStrokes2">#FFDEAD7F</color>
+        <color name="colorGradientDeltaFrom">#A0FF8888</color>
+        <color name="colorGradientDeltaTo">#A0FFFF88</color>
+        <color name="colorGradientMainFrom">#A08888FF</color>
+        <color name="colorGradientMainTo">#A08888FF</color>
+        <color name="colorGradientBackFrom">#8888FF88</color>
+        <color name="colorGradientBackTo">#8888FFFF</color>
+        <color name="colorBackground">#FF3DF048</color>
+        <color name="colorIntervalBackground">#70505050</color> <!-- #88FFA000 --> <!-- #D0505050 -->
+        <color name="colorCursorBackground">#ff333333</color>
+        <color name="colorCursorText">#90ffffff</color>
+        <!--Isotope colours-->
+        <!--Intensity-->
+        <color name="colorIntensity1">#FF79B174</color>
+        <color name="colorIntensity2">#FFC8FDC4</color>
+        <color name="colorIntensity3">#FF9F9116</color>
+        <color name="colorIntensity4">#FFDFCB1E</color>
+        <color name="colorIntensity5">#FFFF5656</color>
+        <!--Isotope chain-->
+        <color name="colorChain">#FFB9DDDD</color>
+        <!--Isotope found-->
+        <color name="colorFound">#FFFFA3C5</color>
+</resources>
