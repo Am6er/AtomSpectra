@@ -13,7 +13,7 @@
         android:alpha="0.85"
         android:background="@android:color/black" />
 
-    <org.fe57.atomspectra.AtomSpectraShapeView
+    <org.fe57.atomspectra.ui.AtomSpectraShapeView
         android:id="@+id/shape_area"
         android:layout_width="match_parent"
         android:layout_height="fill_parent"

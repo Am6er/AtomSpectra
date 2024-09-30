@@ -164,7 +164,6 @@
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spectrum: <xliff:g id="type">%1$s</xliff:g></string>
-    <string name="autosave_timeout">Save delta every <xliff:g id="duration">%1$d</xliff:g> s</string>
     <string-array name="compress_graph_array">
         <item>Sum</item>
         <item>Average</item>
@@ -316,7 +315,6 @@
     <string name="usb_version_unknown">Device firmware version in unknown</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
-    <string name="autosave_start">Delta auto save function is started.</string>
     <string name="isotope_list">Isotopes</string>
     <string name="action_find_isotopes">Find isotopes</string>
     <string name="find_isotopes">Find</string>
@@ -394,7 +392,7 @@
 
     <string name="help_menu">Help</string>
     <string name="help">Atom Spectra Quick Help</string>
-    <string name="help_text1"><big><annotation foreground="caption">Overview.</annotation></big>\n
+    <string name="help_text"><big><annotation foreground="caption">Overview.</annotation></big>\n
         This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), or from an USB spectrometer <u>AtomSpectra Pro</u>. If none of them is connected to a phone the program works in a demo mode reading an internal microphone and creating a spectrum.\n
 		\n
         NOTE: Please add the program to the power exclusion list for a proper work in a background or when the screen is switched off. To fully stop the program please use \'<annotation foreground="parameter">Exit completely</annotation>\' menu item.\n
@@ -448,8 +446,8 @@
         \u00A0\u00A0\u00A0\u00A0- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens</annotation>\' parameter to estimate the dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
         \u00A0\u00A0\u00A0\u00A0- You can set a \'<annotation foreground="parameter">BckgCnt</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
         \u00A0\u00A0\u00A0\u00A0- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CD</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">D</annotation>\' means \'uncompensated dose rate history\'.\n
-    </string>
-    <string name="help_text2"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
+		\n
+        <big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
         \u00A0\u00A0\u00A0\u00A0- Green cursor line shows the isotope with 3% uncertainty and selects more important isotopes. To see strict line isotopes please use the \'<annotation foreground="parameter">Show isotopes</annotation>\' isotope selection dialog.\n
         \u00A0\u00A0\u00A0\u00A0- The program shows an isotope information in accordance with the channel or keV x-axis selection. In a channel mode the program shows isotope names. In a keV mode the program shows isotope energies.\n
         \u00A0\u00A0\u00A0\u00A0- You can show isotope lines. Note: some isotopes in the list are shown in different colors according to their relative quantum yield on a given line. With increasing quantum yield: dark green, light green, dark yellow, light yellow, red. Light cyan colour is used to show decay chains and isotope groups.\n
@@ -509,7 +507,6 @@
         \u00A0\u00A0\u00A0\u00A0- \'Smoothness\' - select a realtime smoothness window.\n
         \u00A0\u00A0\u00A0\u00A0- \'Diff time\' - select the accumulation time between difference output (1-10 s).\n
         \u00A0\u00A0\u00A0\u00A0- \'Name\' -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Save every N s\' -  the auto save delta file function. 0 - no auto save.\n
         \u00A0\u00A0\u00A0\u00A0- \'Channel compression\' - reduce export channels quantity by combining set value of channels into one channel.\n
         \u00A0\u00A0\u00A0\u00A0- \'Spectrum\' - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
         \u00A0\u00A0\u00A0\u00A0- \'Language\' - select a program language. To fully apply the program must be restarted.\n

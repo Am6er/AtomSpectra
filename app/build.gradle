@@ -2,19 +2,14 @@ apply plugin: "com.android.application"
 
 android {
     compileSdk 34
+//buildToolsVersion '29.0.3'
 
     defaultConfig {
         applicationId "org.fe57.atomspectra"
         minSdkVersion 21
         targetSdk 34
-        versionCode 111
-        versionName '6.6.15'
-    }
-
-    allprojects {
-        tasks.withType(JavaCompile){
-            options.compilerArgs <<"-Xlint:deprecation"
-        }
+        versionCode 102
+        versionName '6.6.8a2'
     }
 
     buildTypes {
@@ -24,21 +19,23 @@ android {
             signingConfig signingConfigs.release
         }
     }
+//    namespace 'org.fe57.atomspectra'
+    buildFeatures {
+        viewBinding true
+    }
     namespace 'org.fe57.atomspectra'
 }
 
 dependencies {
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'com.github.mik3y:usb-serial-for-android:3.8.0'
-    implementation 'androidx.annotation:annotation:1.8.2'
-    implementation 'androidx.annotation:annotation-experimental:1.4.1'
-    implementation 'com.google.android.material:material:1.12.0'
-}
-
-android {
-    buildFeatures {
-        buildConfig = true
-    }
+    implementation 'androidx.appcompat:appcompat:1.7.0-alpha03'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0-alpha13'
+    implementation 'com.github.mik3y:usb-serial-for-android:3.7.0'
+    implementation 'androidx.annotation:annotation:1.7.1'
+    implementation 'androidx.annotation:annotation-experimental:1.4.0'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+    implementation 'androidx.navigation:navigation-fragment:2.7.7'
+    implementation 'androidx.navigation:navigation-ui:2.7.7'
 }

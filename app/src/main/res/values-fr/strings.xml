@@ -164,7 +164,6 @@
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spectre: <xliff:g id="type">%1$s</xliff:g></string>
-    <string name="autosave_timeout">Sauver le delta chaque <xliff:g id="duration">%1$d</xliff:g> s</string>
     <string-array name="compress_graph_array">
         <item>Somme</item>
         <item>Moyen</item>
@@ -316,7 +315,6 @@
     <string name="usb_version_unknown">Version du micrologiciel de l\'appareil inconnue</string>
 
     <string name="searching_isotopes">Recherche d\'isotopes…</string>
-    <string name="autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
     <string name="isotope_list">Isotopes</string>
     <string name="action_find_isotopes">Trouver des isotopes</string>
     <string name="find_isotopes">Trouver</string>
@@ -394,7 +392,7 @@
 
     <string name="help_menu">Une Aide</string>
     <string name="help">Aide rapide d\'Atom Spectra</string>
-    <string name="help_text1"><big><annotation foreground="caption">Un aperçu.</annotation></big>\n
+    <string name="help_text"><big><annotation foreground="caption">Un aperçu.</annotation></big>\n
         Ce programme lit un signal d\'un spectromètre connecté à un téléphone à l\'aide d\'une entrée microphone (comme <u>AtomSpectra 3, 4</u> ou similaire), à partir d\'un spectromètre audio USB (comme <u>AtomSpectra Nano</u> ou similaire), ou depuis un spectromètre USB <u>AtomSpectra Pro</u>. Si aucun d\'entre eux n\'est connecté à un téléphone, le programme fonctionne en mode démo en lisant un microphone interne et en créant un spectre.\n
 		\n
         REMARQUE: veuillez ajouter le programme à la liste d\'exclusion d\'alimentation pour un travail correct en fond ou lorsque l\'écran est éteint. Pour arrêter complètement le programme, veuillez utiliser l\'élément de menu «\u202f<annotation foreground="parameter">Quitter complètement</annotation>\u202f».\n
@@ -448,8 +446,8 @@
         \u00A0\u00A0\u00A0\u00A0- La courbe de sensibilité par défaut est définie pour le spectromètre <u>AtomSpectra Nano8</u> basé sur CsI(Tl) mais elle peut être appliquée pour un autre spectromètre au moyen du paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» pour estimer le débit de dose. Utilisez l\'élément de menu «\u202f<annotation foreground="parameter">Sensibilité…</annotation>\u202f» sous le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f» pour modifier cette courbe. La courbe est ajustée à 1 à 661,66keV ligne Cs-137.
         \u00A0\u00A0\u00A0\u00A0- Vous pouvez définir un paramètre «\u202f<annotation foreground="parameter">FondComp</annotation>\u202f» à soustraire de cps dans le calcul simple du débit de dose.\n
         \u00A0\u00A0\u00A0\u00A0- Vous pouvez voir un historique du débit de dose. Pour sélectionner l\'écran, appuyez sur le bouton «\u202f<annotation foreground="parameter">CN</annotation>\u202f». «\u202f<annotation foreground="parameter">C</annotation>\u202f» signifie «\u202fhistorique du débit de dose compensé\u202f». «\u202f<annotation foreground="parameter">N</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé\u202f».\n
-    </string>
-    <string name="help_text2"><big><annotation foreground="caption">5. Sortie isotope:</annotation></big>\n
+		\n
+        <big><annotation foreground="caption">5. Sortie isotope:</annotation></big>\n
         \u00A0\u00A0\u00A0\u00A0- La ligne verte du curseur montre l\'isotope avec une incertitude de 3% et sélectionne des isotopes plus importants. Pour voir les isotopes des lignes strictes, veuillez utiliser la boîte de dialogue de sélection des isotopes «\u202f<annotation foreground="parameter">Afficher les Isotopes</annotation>\u202f».\n
         \u00A0\u00A0\u00A0\u00A0- Le programme affiche une information isotopique en fonction de la sélection du canal ou de l\'axe X keV. Dans un mode canal, le programme affiche les noms des isotopes. En mode keV, le programme affiche les énergies isotopiques.\n
         \u00A0\u00A0\u00A0\u00A0- Vous pouvez afficher les lignes isotopiques. Remarque : Certains des isotopes de la liste sont affichés dans différentes couleurs en fonction de leur rendement quantique relatif sur une ligne donnée. Avec un rendement quantique croissant : vert foncé, vert clair, jaune foncé, jaune clair, rouge. La couleur cyan clair est utilisée pour montrer les chaînes de désintégration et les groupes isotopiques.\n
@@ -507,9 +505,8 @@
         \u00A0\u00A0\u00A0\u00A0- «\u202fCharger des canaux\u202f» - combien de canaux de l\'ancien fichier de spectre à charger. S\'il y a plus de 8192 canaux, ils seront compressés en 8192 canaux ou moins. Remarque: le nouveau format propre a le numéro de canal lui-même.\n
         \u00A0\u00A0\u00A0\u00A0- «\u202fDegré maximum\u202f» - facteur polynomial maximal pour la fonction d\'étalonnagen\n
         \u00A0\u00A0\u00A0\u00A0- «\u202fDouceur\u202f» - sélectionner une fenêtre de lissage en temps réel.\n
-        \u00A0\u00A0\u00A0\u00A0- «\u202fDiff. de temps\u202f» - sélectionner le temps d\'accumulation entre les sorties de différence (1-10 s).\n
+        \u00A0\u00A0\u00A0\u00A0- «\u202fDiff. de temps\u202f» - select the accumulation time between difference output (1-10 s).\n
         \u00A0\u00A0\u00A0\u00A0- «\u202fNom\u202f» - nommer les fichiers de sortie. Préfixe - type de fichier, date - date d\'enregistrement, temps - temps d\'enregistrement, suffixe - texte personnalisé.\n
-        \u00A0\u00A0\u00A0\u00A0- «\u202fSauver chaque N s\u202f» - la fonction de sauvegarde automatique du fichier delta. 0 - pas de sauvegarde automatique.\n
         \u00A0\u00A0\u00A0\u00A0- «\u202fCompression des canaux\u202f» - réduire la quantité de canaux d\'exportation en combinant la valeur définie des canaux dans un canal.\n
         \u00A0\u00A0\u00A0\u00A0- «\u202fSpectre\u202f» - Choisissez la somme, la valeur de crête ou moyenne sur le graphique du spectre pendant la compression de valeur. Les valeurs de crête aident à ne pas perdre de petits pics, la moyenne fait un bon graphique, la somme montre un spectre car l\'appareil a moins de canaux.\n
         \u00A0\u00A0\u00A0\u00A0- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n

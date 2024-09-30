@@ -27,7 +27,7 @@
         android:layout_height="match_parent"
         android:layout_marginRight="100dp">
 
-        <org.fe57.atomspectra.AtomSpectraShapeView
+        <org.fe57.atomspectra.ui.AtomSpectraShapeView
             android:id="@+id/shape_area"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

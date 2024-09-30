@@ -16,8 +16,6 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
@@ -92,33 +90,8 @@
             android:exported="false"
             android:launchMode="singleTask"
             android:documentLaunchMode="intoExisting"
+            android:theme="@style/AppTheme"
             tools:ignore="RedundantLabel">
-<!--            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <action android:name="org.fe57.atomspectra.ACTION_CLOSE_APP" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter> -->
-<!--            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:mimeType="text/plain" />
-            </intent-filter> -->
-<!--            <intent-filter>
-                <action android:name="android.intent.action.BATTERY_LOW" />
-                <action android:name="android.intent.action.BATTERY_OKAY"/>
-            </intent-filter> -->
-<!--            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:mimeType="text/plain" />
-                <data android:scheme="content" />
-            </intent-filter> -->
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
@@ -143,11 +116,11 @@
             android:screenOrientation="portrait"
             android:excludeFromRecents="true"
             tools:ignore="LockedOrientationActivity" />
+
         <service
             android:name=".AtomSpectraService"
             android:enabled="true"
-            android:foregroundServiceType="microphone|location"
-            android:exported="false"
+            android:foregroundServiceType="location"
             android:launchMode="singleInstance" />
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

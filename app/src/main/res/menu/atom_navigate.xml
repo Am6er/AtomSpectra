@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="nav_view">
+
+    <group android:checkableBehavior="single" >
+        <item
+            android:id="@+id/nav_spectrum"
+            android:title="Spectrum" />
+        <item
+            android:id="@+id/nav_dose"
+            android:title="Dose" />
+        <item
+            android:id="@+id/nav_fall"
+            android:title="Fall" />
+        <item
+            android:id="@+id/nav_function"
+            android:title="Calibration Function" />
+        <item
+            android:id="@+id/nav_configuration"
+            android:title="Parameters" />
+    </group>
+</menu>

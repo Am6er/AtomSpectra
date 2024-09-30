@@ -1,8 +1,8 @@
 package org.fe57.atomspectra;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
 import android.graphics.drawable.Icon;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -26,7 +25,6 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,11 +39,16 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.PermissionChecker;
 import androidx.core.util.Pair;
-import androidx.documentfile.provider.DocumentFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import org.fe57.atomspectra.data.AtomSpectraSerial;
+import org.fe57.atomspectra.data.Calibration;
+import org.fe57.atomspectra.data.Constants;
+import org.fe57.atomspectra.data.GPSLocator;
+import org.fe57.atomspectra.data.Spectrum;
+import org.fe57.atomspectra.files.SpectrumFile;
+import org.fe57.atomspectra.files.SpectrumFileAS;
+
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -95,7 +98,7 @@ public class AtomSpectraService extends Service {
     public static Spectrum ForegroundSpectrum = new Spectrum();
     public static Spectrum ForegroundSaveSpectrum = new Spectrum();
     public static Spectrum BackgroundSpectrum = new Spectrum();
-//    private GPSLocator Locator = null;
+    private GPSLocator Locator = null;
     private boolean addGPS = false;
 
 
@@ -125,15 +128,11 @@ public class AtomSpectraService extends Service {
     private static int cps = 0;
     private static int cpsInterval = 0;
     public static double total_energy_cps = 0.0;
-    private static int autosaveTimeout = 0;
-    private static int autosaveIncrement = 0;
-    private Spectrum autosaveSpectrum = null;
-    private Pair<OutputStreamWriter, Uri> autosavePair = null;
 
     private static int scale_factor = Constants.SCALE_DEFAULT;
     private static int main_scale_factor = Constants.SCALE_DEFAULT;
     private static final Integer sync_factor = 1;
-    private final int mutabilityFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
+    private final int mutabilityFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_MUTABLE : 0;
 
     public final static String ACTION_DATA_AVAILABLE =
             "org.fe57.atomspectra.ACTION_DATA_AVAILABLE";
@@ -159,8 +158,8 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_INT_SOUND_LENGTH";
     public final static String EXTRA_DATA_TOTAL_TIME =
             "org.fe57.atomspectra.EXTRA_DATA_TOTAL_TIME";
-    public final static String EXTRA_DATA_DOSERATE_SEARCH =
-            "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH";
+    public final static String EXTRA_DATA_DOSE_RATE_SEARCH =
+            "org.fe57.atomspectra.EXTRA_DATA_DOSE_RATE_SEARCH";
     public final static String EXTRA_DATA_SCOPE_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_SCOPE_COUNTS";
     private final static String SERVICE_ID = "Service";
@@ -221,8 +220,6 @@ public class AtomSpectraService extends Service {
 
     private AtomSpectraSerial usbDevice = null;
 
-    private GPSLocator Locator = null;
-
 //    private static FileOutputStream trace;
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -233,7 +230,7 @@ public class AtomSpectraService extends Service {
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
                 super.onAudioDevicesAdded(addedDevices);
                 if (startExecution) {
-                    context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
+                    context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED));
                     releaseAR();
                 } else {
                     startExecution = true;
@@ -244,7 +241,7 @@ public class AtomSpectraService extends Service {
             public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
                 super.onAudioDevicesRemoved(removedDevices);
                 if (startExecution) {
-                    context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
+                    context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED));
                     releaseAR();
                 } else {
                     startExecution = true;
@@ -265,7 +262,7 @@ public class AtomSpectraService extends Service {
         DeleteSpc();
         Log.d(TAG, "onDestroy");
         context = null;
-        BackgroundSpectrum.initSpectrumData();
+        BackgroundSpectrum.initSpectrumData(Constants.NUM_HIST_POINTS);
 //        background_time = 0;
         background_show = false;
         freeze_update_data = true;
@@ -273,8 +270,8 @@ public class AtomSpectraService extends Service {
         sp.unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
         usbDevice.Destroy();
         isStarted = false;
-//        Locator.stopUsingGPS();
-//        Locator = null;
+        Locator.stopUsingGPS();
+        Locator = null;
     }
 
     @Override
@@ -291,20 +288,11 @@ public class AtomSpectraService extends Service {
         }
         Notification notification = createNewServiceNotification();
         NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            startForeground(FOREGROUND_PROCESS_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE|ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
-        } else {
-            startForeground(FOREGROUND_PROCESS_ID, notification);
-        }
+        startForeground(FOREGROUND_PROCESS_ID, notification);
         if (isStarted)
             return START_NOT_STICKY;
         if (intent != null) {
-            UsbDevice device;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                device = intent.getParcelableExtra(Constants.USB_DEVICE, UsbDevice.class);
-            } else {
-                device = intent.getParcelableExtra(Constants.USB_DEVICE);
-            }
+            UsbDevice device = intent.getParcelableExtra(Constants.ACTION_PARAMETERS.USB_DEVICE);
             if (device != null) {
                 SystemClock.sleep(USB_WAIT_DEVICE);
                 if (usbDevice.isOpened() || usbDevice.Open(device)) {
@@ -354,7 +342,7 @@ public class AtomSpectraService extends Service {
                                 releaseAR();
                             }
                             setFreeze(false);
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
 //                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
                         } else {
                             Toast.makeText(this, getString(R.string.action_usb_no_access), Toast.LENGTH_LONG).show();
@@ -372,7 +360,7 @@ public class AtomSpectraService extends Service {
                 }
             }
         }
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
         isStarted = true;
         return START_NOT_STICKY;
     }
@@ -399,7 +387,7 @@ public class AtomSpectraService extends Service {
         Notification notification;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //            Intent exitIntent = new Intent(this, AtomSpectraService.class).setAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
-            Intent exitIntent = new Intent(Constants.ACTION.ACTION_STOP_FOREGROUND).setPackage(Constants.PACKAGE_NAME);
+            Intent exitIntent = new Intent(Constants.ACTION.ACTION_STOP_FOREGROUND);
 //            exitIntent.setAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
             PendingIntent exitPendingIntent =
                     PendingIntent.getBroadcast(this, 0, exitIntent, mutabilityFlag);
@@ -426,6 +414,9 @@ public class AtomSpectraService extends Service {
 
     private final SharedPreferences.OnSharedPreferenceChangeListener onSharedPreferenceChangeListener = (sharedPreferences, s) -> loadSettings();
 
+    /**
+     * Update all settings used after changing them in activities
+     */
     private void loadSettings() {
         try {
             SensG = sp.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT);
@@ -436,9 +427,9 @@ public class AtomSpectraService extends Service {
             editor.apply();
         }
         try {
-            backgroundCount = sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CNT_DEFAULT);
+            backgroundCount = sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGROUND_CNT_DEFAULT);
         } catch (Exception e) {
-            backgroundCount = (int) sp.getFloat(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CNT_DEFAULT);
+            backgroundCount = (int) sp.getFloat(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGROUND_CNT_DEFAULT);
             SharedPreferences.Editor editor = sp.edit();
             editor.putInt(Constants.CONFIG.CONF_BACKGROUND, backgroundCount);
             editor.apply();
@@ -458,7 +449,6 @@ public class AtomSpectraService extends Service {
         inversion = sp.getBoolean(Constants.CONFIG.CONF_INVERSION, Constants.INVERSE_DEFAULT);
         pileup = sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, Constants.PILE_UP_DEFAULT);
         periodUpdate = 10 / doseRateUpdateFreq;
-        autosaveTimeout = sp.getInt(Constants.CONFIG.CONF_AUTOSAVE, Constants.AUTOSAVE_DEFAULT);
         try {
             compressGraph = sp.getInt(Constants.CONFIG.CONF_COMPRESS_GRAPH, Constants.COMPRESS_GRAPH_SUM);
         } catch (Exception e) {
@@ -478,7 +468,6 @@ public class AtomSpectraService extends Service {
         if (inputS != inputSound || inputSID != inputSoundID || !inputSN.equals(inputSoundName)) {
             synchronized (ARLock) {
                 if (AR != null) {
-                    AR.stop();
                     AR.release();
                     AR = null;
                 }
@@ -629,35 +618,6 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private final Timer autosaveTimer = new Timer();
-    private final TimerTask autosaveTask = new TimerTask() {
-        @Override
-        public void run() {
-            synchronized (autosaveTimer) {
-                if (autosaveTimeout > 0) {
-                    if (!freeze_update_data) {
-                        autosaveIncrement += 1;
-                        if (autosaveIncrement >= autosaveTimeout) {
-                            autosaveHist();
-                            autosaveIncrement = 0;
-                        }
-                    } else {
-                        autosaveIncrement = 0;
-                        if (autosaveSpectrum != null) {
-                            autosaveSpectrum = null;
-                            try {
-                                autosavePair.first.close();
-                            } catch (IOException e) {
-                                //
-                            }
-                            autosavePair = null;
-                        }
-                    }
-                }
-            }
-        }
-    };
-
     private final Timer serialTimer = new Timer();
     private final TimerTask serialTask = new TimerTask() {
         @Override
@@ -669,7 +629,7 @@ public class AtomSpectraService extends Service {
                     inputSelectNext = INPUT_NONE;
 //                    new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test1: "+ForegroundSpectrum.getSpectrumTime(), Toast.LENGTH_SHORT).show());
                     if (ForegroundSpectrum.getSpectrumTime() == 0) {
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true).setPackage(Constants.PACKAGE_NAME));
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
 //                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test2", Toast.LENGTH_SHORT).show());
                     }
                     freeze_update_data = false;
@@ -698,7 +658,6 @@ public class AtomSpectraService extends Service {
     private Context context = null;
     private static int basic_window = 7;
 
-    @SuppressLint({"UnspecifiedRegisterReceiverFlag", "DiscouragedApi"})
     public void Start(final Context context) {
         this.context = context;
         synchronized (inputSync) {
@@ -726,12 +685,12 @@ public class AtomSpectraService extends Service {
                 Locator.startUsingGPS();
                 if (!Locator.hasGPS) {
                     Locator.stopUsingGPS();
-//                    final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-//                            .setTitle(getString(R.string.perm_ask_gps_off_title))
-//                            .setMessage(getString(R.string.perm_ask_gps_off_text))
-//                            .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-//                            });
-//                    alert.show();
+                    final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+                            .setTitle(getString(R.string.perm_ask_gps_off_title))
+                            .setMessage(getString(R.string.perm_ask_gps_off_text))
+                            .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+                            });
+                    alert.show();
                 }
             }
         }
@@ -779,13 +738,8 @@ public class AtomSpectraService extends Service {
 
         loadSettings();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver,
-                    makeAtomSpectraServiceIntentFilter(), Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(broadcastReceiver,
-                    makeAtomSpectraServiceIntentFilter());
-        }
+        registerReceiver(broadcastReceiver,
+                makeAtomSpectraServiceIntentFilter());
 
         BufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT) * 2; //read two buffers at a time to reduce time consumption
         AudioBytes = new byte[BufferSize]; //Array containing the audio data bytes
@@ -806,7 +760,6 @@ public class AtomSpectraService extends Service {
         audioTaskTimeout = 1000L * BufferSize / 2 / SAMPLE_RATE;
         audioTimer.scheduleAtFixedRate(captureAudioTask, 0, audioTaskTimeout);
         serialTimer.scheduleAtFixedRate(serialTask, 0, 300);
-        autosaveTimer.scheduleAtFixedRate(autosaveTask, 0, 1000);
         sendDataTimer = new Timer();
         sendDataTimer.scheduleAtFixedRate(sendData, 0, 100);
         timerExec.scheduleAtFixedRate(periodicTask, 0, Constants.UPDATE_PERIOD);
@@ -815,7 +768,7 @@ public class AtomSpectraService extends Service {
             if (manager != null)
                 manager.registerAudioDeviceCallback(audioChanged, null);
         }
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
         Log.d(TAG, "recording START");
     }
 
@@ -898,20 +851,6 @@ public class AtomSpectraService extends Service {
                             device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET ||
                             device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
                             device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
-//                        boolean isFound = false;
-//                        for (int i = 0; i < device.getEncodings().length; i++) {
-//                            if (device.getEncodings()[i] == AudioFormat.ENCODING_PCM_FLOAT)
-//                                isFound = true;
-//                        }
-//                        if (!isFound)
-//                            continue;
-//                        isFound = false;
-//                        for (int i = 0; i < device.getSampleRates().length; i++) {
-//                            if (device.getSampleRates()[i] == 44100)
-//                                isFound = true;
-//                        }
-//                        if (!isFound && (device.getSampleRates().length > 0))
-//                            continue;
                         //find device with minimal id not less than desired
                         if (same) {
                             if (lastID == device.getId() || device.getProductName().equals(lastName)) {
@@ -1040,8 +979,8 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_CLEAR_SPECTRUM.equals(action)) {
                 setFreeze(true);
                 DeleteSpc();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false));
                 return;
             }
             if (Constants.ACTION.ACTION_CLEAR_IMPULSE.equals(action)) {
@@ -1060,7 +999,7 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_FREEZE_DATA.equals(action)) {
-                setFreeze(intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true));
+                setFreeze(intent.getBooleanExtra(Constants.ACTION_PARAMETERS.FREEZE_STATE, true));
                 if (freeze_update_data) {
                     ForegroundSpectrum.updateComments();
                 }
@@ -1105,7 +1044,7 @@ public class AtomSpectraService extends Service {
 //                    inputLastState = INPUT_AUDIO;
                 }
                 usbDevice.Close();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
                 NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
                 return;
             }
@@ -1117,12 +1056,7 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_SOURCE_CHANGED.equals(action)) {
                 if (EXTRA_SOURCE_USB.equals(intent.getStringExtra(EXTRA_SOURCE))) {
                     UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
-                    UsbDevice device;
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                        device = intent.getParcelableExtra(Constants.USB_DEVICE, UsbDevice.class);
-                    } else {
-                        device = intent.getParcelableExtra(Constants.USB_DEVICE);
-                    }
+                    UsbDevice device = intent.getParcelableExtra(Constants.ACTION_PARAMETERS.USB_DEVICE);
                     if (device != null && usbManager != null) {
                         usbDevice.Close();
                         SystemClock.sleep(USB_WAIT_DEVICE);
@@ -1138,14 +1072,13 @@ public class AtomSpectraService extends Service {
 //                                if (temp_time == 0)
 //                                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
                                 usbDevice.sendTextCommand("-sta", SERVICE_ID);
-//                                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                                ForegroundSaveSpectrum.Clone(ForegroundSpectrum);
+//                                ForegroundSaveSpectrum.Clone(ForegroundSpectrum);
+//                                ForegroundSpectrum.moveToBackup();
                                 synchronized (inputSync) {
                                     if (inputType != INPUT_SERIAL)
                                         Toast.makeText(context, getString(R.string.action_usb_attached), Toast.LENGTH_SHORT).show();
 //                                    inputLastState = INPUT_SERIAL;
                                     inputSelectNext = INPUT_SERIAL;
-                                    freeze_update_data = true;
                                 }
                             } else {
                                 usbDevice.Close();
@@ -1167,7 +1100,7 @@ public class AtomSpectraService extends Service {
 //                        inputLastState = INPUT_AUDIO;
                     }
                 }
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
                 NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
                 return;
             }
@@ -1178,11 +1111,10 @@ public class AtomSpectraService extends Service {
                         cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
                         long new_time = intent.getIntExtra(EXTRA_DATA_TOTAL_TIME, 1);
                         if (new_histogram != null) {
-                            long[] histogram_all_backup = ForegroundSaveSpectrum.getDataArray();
+                            long[] histogram_all_backup = ForegroundSaveSpectrum.getSpectrum();
                             if (new_time > (ForegroundSpectrum.getSpectrumTime() - ForegroundSaveSpectrum.getSpectrumTime()) / 1000.0 * Constants.UPDATE_PERIOD) {
-                                long count = 0, count_interval = 0;
-                                double count_e = 0;
-                                long[] histogram_all = ForegroundSpectrum.getDataArray();
+                                int count = 0, count_interval = 0, count_e = 0;
+                                long[] histogram_all = ForegroundSpectrum.getSpectrum();
                                 for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
                                     long value = (new_histogram[i] + histogram_all_backup[i] - histogram_all[i]);
                                     count += value;
@@ -1190,12 +1122,12 @@ public class AtomSpectraService extends Service {
                                         count_interval += value;
                                     count_e += value * getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
                                 }
-                                cpsInterval = (int) count_interval;
+                                cpsInterval = count_interval;
                                 doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - (ForegroundSpectrum.getSpectrumTime() - ForegroundSaveSpectrum.getSpectrumTime()) / 1000.0 * Constants.UPDATE_PERIOD, AtomSpectra.XCalibrated);
                             }
                             if (!freeze_update_data) {
-//                                if (Locator != null && addGPS)
-//                                    ForegroundSpectrum.setLocationOnly(Locator.getLocation());
+                                if (Locator != null && addGPS)
+                                    ForegroundSpectrum.setLocationOnly(Locator.getLocation());
                                 ForegroundSpectrum.setSpectrum(new_histogram).setRealSpectrumTime(new_time).addSpectrum(ForegroundSaveSpectrum).updateComments();
                             }
                         } else {
@@ -1229,14 +1161,6 @@ public class AtomSpectraService extends Service {
 //                    Toast.makeText(context, "Service got answer: " + intent.getStringExtra(AtomSpectraSerial.EXTRA_DATA_PACKET), Toast.LENGTH_LONG).show();
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT))) {
                         //nothing to do
-                    }else {
-                        if ("-sta".equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_COMMAND))) {
-                            freeze_update_data = false;
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        } else if ("-sto".equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_COMMAND))) {
-                            freeze_update_data = true;
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        }
                     }
                 }
                 if (SERVICE_VERSION_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
@@ -1286,7 +1210,6 @@ public class AtomSpectraService extends Service {
             sendDataTimer.cancel();
         audioTimer.cancel();
         serialTimer.cancel();
-        autosaveTimer.cancel();
         usbDevice.Close();
         usbDevice.Destroy();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1306,17 +1229,13 @@ public class AtomSpectraService extends Service {
         AtomSpectraIsotopes.foundList.clear();
         AtomSpectraIsotopes.showFoundIsotopes = false;
         newCalibration.clear();
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH).setPackage(Constants.PACKAGE_NAME));
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES).setPackage(Constants.PACKAGE_NAME));
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_HELP).setPackage(Constants.PACKAGE_NAME));
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SENSITIVITY).setPackage(Constants.PACKAGE_NAME));
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_APP).setPackage(Constants.PACKAGE_NAME));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE);
-        } else {
-            stopForeground(true);
-        }
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SETTINGS));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_HELP));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SENSITIVITY));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_APP));
+        stopForeground(true);
         stopSelf();
     }
 
@@ -1326,19 +1245,10 @@ public class AtomSpectraService extends Service {
                 usbDevice.ClearHistogram();
             }
         }
-        synchronized (autosaveTimer) {
-            autosaveSpectrum = null;
-            try {
-                autosavePair.first.close();
-            } catch (Exception e) {
-                //
-            }
-            autosavePair = null;
-        }
         Arrays.fill(histogram, 0);
         Arrays.fill(referencePulse, 0);
-        ForegroundSpectrum.initSpectrumData().setSuffix(getString(R.string.hist_suffix));
-        ForegroundSaveSpectrum.initSpectrumData();
+        ForegroundSpectrum.initSpectrumData(Constants.NUM_HIST_POINTS).setSuffix(getString(R.string.hist_suffix));
+        ForegroundSaveSpectrum.initSpectrumData(Constants.NUM_HIST_POINTS);
         Arrays.fill(histogram_all_delta, 0);
         Arrays.fill(histogram_all_prev_time, 0);
         total_pulses = 0;
@@ -1384,7 +1294,7 @@ public class AtomSpectraService extends Service {
                     usbDevice.sendTextCommand("-sta", SERVICE_ID);
             }
         }
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
         NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
     }
 
@@ -1638,8 +1548,6 @@ public class AtomSpectraService extends Service {
 
     //this task is used to read from audio input and update information
     private final Timer audioTimer = new Timer();
-    int audioZeroDataCount = 0;
-    final int audioZeroDataMaxCount = 5;
     private final TimerTask captureAudioTask = new TimerTask() {
         @Override
         public void run() {
@@ -1652,7 +1560,7 @@ public class AtomSpectraService extends Service {
                     NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
                     if (ForegroundSpectrum.getSpectrumTime() == 0) {
 //                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test4", Toast.LENGTH_SHORT).show());
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false));
                     }
                 }
                 if (inputType != INPUT_AUDIO)
@@ -1679,6 +1587,7 @@ public class AtomSpectraService extends Service {
             }
             synchronized (ARLock) {
                 if (canOpenAudio && (AR == null)) {
+//                debugText += ": new";
                     AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         if (inputSound) {
@@ -1720,10 +1629,6 @@ public class AtomSpectraService extends Service {
                     if (AudioBytesRead < 0) {
                         switch (AudioBytesRead) {
                             case AudioRecord.ERROR_INVALID_OPERATION:             //object is not initialized
-                                if (AR != null) {
-                                    AR.stop();
-                                    AR.release();
-                                }
                                 AR = null;
                                 break;
                             case AudioRecord.ERROR_DEAD_OBJECT:                   //object is not accessible now, try to reopen
@@ -1743,23 +1648,6 @@ public class AtomSpectraService extends Service {
                     AudioBytesRead = 0;
                 }
             }
-
-            if (AudioBytesRead == 0) {
-                audioZeroDataCount++;
-
-                if (audioZeroDataCount >= audioZeroDataMaxCount) {
-                    audioZeroDataCount = 0;
-                    if (AR != null) {
-                        AR.stop();
-                        AR.release();
-                        AR = null;
-                    }
-                }
-                return;
-            } else {
-                audioZeroDataCount = 0;
-            }
-
             //First we will pass the 2 bytes into one sample
             //It's an extra loop but avoids repeating the same sum many times later during the filter
 //            int Mask = ((-1) << (Constants.ADC_MAX - adc_effective_bits));
@@ -1886,13 +1774,13 @@ public class AtomSpectraService extends Service {
             if (toUpdateIsotopes) {
                 if (AtomSpectraIsotopes.autoUpdateIsotopes && !freeze_update_data && AtomSpectraIsotopes.showFoundIsotopes) {
                     AtomSpectraFindIsotope.updateFoundIsotopes();
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST));
                 }
             }
             deltaTimeAccumulator++;
             if (deltaTimeAccumulator >= (delta_time * 1000 / Constants.UPDATE_PERIOD)) {
                 deltaTimeAccumulator = 0;
-                long[] temp = Arrays.copyOf(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getDataArray().length);
+                long[] temp = Arrays.copyOf(ForegroundSpectrum.getSpectrum(), ForegroundSpectrum.getSpectrum().length);
                 for (int i = 0; i < temp.length; i++) {
                     histogram_all_delta[i] = temp[i] - histogram_all_prev_time[i];
                     histogram_all_prev_time[i] = temp[i];
@@ -1904,9 +1792,9 @@ public class AtomSpectraService extends Service {
                 }
                 countTime = 0;
             }
-            final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
+            final Intent intent = new Intent(ACTION_DATA_AVAILABLE);
             Bundle mBundle = new Bundle();
-            mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, doseRateValue);
+            mBundle.putDouble(EXTRA_DATA_DOSE_RATE_SEARCH, doseRateValue);
             mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_pulses);
             mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
             mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
@@ -2019,7 +1907,7 @@ public class AtomSpectraService extends Service {
                         }
                     } else {
                         if (isCalibrated) {
-                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getSpectrum(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
                             double sum_element;
                             switch (compressGraph) {
                                 case Constants.COMPRESS_GRAPH_SUM:
@@ -2058,7 +1946,7 @@ public class AtomSpectraService extends Service {
                                     break;
                             }
                         } else {
-                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getSpectrum(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
                             switch (compressGraph) {
                                 case Constants.COMPRESS_GRAPH_SUM:
                                     for (int i = 0; i < 1024; i++) {
@@ -2095,7 +1983,7 @@ public class AtomSpectraService extends Service {
                         if (background_show && (!BackgroundSpectrum.isEmpty())) {
                             double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
                             if (isCalibrated) {
-                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getSpectrum(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                                 double sum_element;
                                 switch (compressGraph) {
                                     case Constants.COMPRESS_GRAPH_SUM:
@@ -2129,7 +2017,7 @@ public class AtomSpectraService extends Service {
                                         break;
                                 }
                             } else {
-                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getSpectrum(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                                 switch (compressGraph) {
                                     case Constants.COMPRESS_GRAPH_SUM:
                                         for (int i = 0; i < 1024; i++) {
@@ -2178,13 +2066,13 @@ public class AtomSpectraService extends Service {
                         }
                     } else {
                         if (isCalibrated) {
-                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getSpectrum(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
                             for (int i = 0; i < 512; i++) {
                                 histogram[2 * i] = histogram_e_all[num_first_channel + i];
                                 histogram[2 * i + 1] = histogram_e_all[num_first_channel + i];
                             }
                         } else {
-                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getSpectrum(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
                             for (int i = 0; i < 512; i++) {
                                 histogram[2 * i] = histogram_temp[num_first_channel + i];
                                 histogram[2 * i + 1] = histogram_temp[num_first_channel + i];
@@ -2193,13 +2081,13 @@ public class AtomSpectraService extends Service {
                         if (background_show && (!BackgroundSpectrum.isEmpty())) {
                             double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
                             if (isCalibrated) {
-                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getSpectrum(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                                 for (int i = 0; i < 512; i++) {
                                     background_histogram[2 * i] = background_data_e_total[num_first_channel + i] * backgroundScale;
                                     background_histogram[2 * i + 1] = background_data_e_total[num_first_channel + i] * backgroundScale;
                                 }
                             } else {
-                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getSpectrum(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                                 for (int i = 0; i < 512; i++) {
                                     background_histogram[2 * i] = data[num_first_channel + i] * backgroundScale;
                                     background_histogram[2 * i + 1] = data[num_first_channel + i] * backgroundScale;
@@ -2469,13 +2357,13 @@ public class AtomSpectraService extends Service {
         boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
         boolean fileNameDate = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
         boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
-        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, "battery_low", ".txt", "text/plain", fileNameDate, fileNameTime, false);
+        Pair<OutputStream, String> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, "battery_low", ".txt", "text/plain", fileNameDate, fileNameTime, false);
         if (returnPair == null) {
             Toast.makeText(this, getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show();
             return;
         }
 
-        OutputStreamWriter docStream = returnPair.first;
+        OutputStream docStream = returnPair.first;
 //        String spectrumFileName = returnPair.second;
 
         Spectrum spectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
@@ -2489,84 +2377,37 @@ public class AtomSpectraService extends Service {
         SpectrumFileAS saveFile = new SpectrumFileAS();
         saveFile.
                 addSpectrum(spectrum).
-                setChannels(spectrum.getDataArray().length).
+                setChannels(spectrum.getSpectrum().length).
                 setChannelCompression(1).
                 saveSpectrum(docStream, this);
     }
 
-    private void autosaveHist() {
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
-
-        if (autosaveSpectrum == null) {
-            autosaveSpectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
-            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, autosaveSpectrum.getSuffix() +"_auto", ".txt", "text/plain", true, true, false);
-
-            if (autosavePair == null) {
-                new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getApplicationContext().getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show());
-                autosaveSpectrum = null;
-                return;
-            }
-
-            OutputStreamWriter docStream = autosavePair.first;
-            SpectrumFileAS saveFile = new SpectrumFileAS();
-            saveFile.
-                    addSpectrum(autosaveSpectrum).
-                    setChannels(autosaveSpectrum.getDataArray().length).
-                    setChannelCompression(1).
-                    saveSpectrum(docStream, this);
-            new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getApplicationContext().getString(R.string.autosave_start), Toast.LENGTH_LONG).show());
-            return;
-        }
-
-        Spectrum newSpectrum = new Spectrum(ForegroundSpectrum);
-        Spectrum deltaSpectrum = new Spectrum(newSpectrum).subtractSpectrum(autosaveSpectrum);
-        autosaveSpectrum = newSpectrum;
-
-        if (!sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
-            deltaSpectrum.setLocation(null);
-        }
-
-        deltaSpectrum.updateComments();
-        OutputStreamWriter docStream;
-        try {
-//            DocumentFile fileDoc = DocumentFile.fromSingleUri(this, new File(autosavePair.second).toURI());
-            docStream = new OutputStreamWriter(context.getContentResolver().openOutputStream(autosavePair.second, "wa"));// new (new Uri.Builder().build());
-            SpectrumFileAS saveFile = new SpectrumFileAS();
-            saveFile.
-                    addSpectrum(deltaSpectrum).
-                    setChannels(deltaSpectrum.getDataArray().length).
-                    setChannelCompression(1).
-                    saveIncrementalSpectrum(docStream, this);
-        } catch (Exception e) {
-            new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), String.format("!%s: %s", e.getMessage(), autosavePair.second), Toast.LENGTH_LONG).show());
-        }
-    }
-
-    private void checkGPS() {
+    private boolean checkGPS() {
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        addGPS = sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
 
         if ((hasFeatureGPS || hasFeatureNetwork) && addGPS) {
-            if (PermissionChecker.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
+            if (PermissionChecker.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
                 Locator.startUsingGPS();
                 if (!Locator.hasGPS) {
                     SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
                     editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
                     editor.apply();
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS));
+                    return false;
                 }
             } else {
                 Locator.stopUsingGPS();
                 SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
                 editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
                 editor.apply();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS));
+                return false;
             }
         } else {
             Locator.stopUsingGPS();
+            return false;
         }
+        return true;
     }
 }

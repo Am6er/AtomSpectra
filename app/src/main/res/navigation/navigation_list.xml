@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_list"
+    app:startDestination="@id/nav_spectrum">
+
+    <fragment
+        android:id="@+id/nav_dose"
+        android:name="org.fe57.atomspectra.ui.Dose.DoseFragment"
+        android:label="fragment_dose"
+        tools:layout="@layout/fragment_dose" />
+    <fragment
+        android:id="@+id/nav_function"
+        android:name="org.fe57.atomspectra.ui.Function.FunctionFragment"
+        android:label="fragment_function"
+        tools:layout="@layout/fragment_function" />
+    <fragment
+        android:id="@+id/nav_spectrum"
+        android:name="org.fe57.atomspectra.ui.Spectrum.SpectrumFragment"
+        android:label="fragment_spectrum"
+        tools:layout="@layout/fragment_spectrum" />
+    <fragment
+        android:id="@+id/nav_fall"
+        android:name="org.fe57.atomspectra.ui.Fall.FallFragment"
+        android:label="fragment_fall"
+        tools:layout="@layout/fragment_fall" />
+    <fragment
+        android:id="@+id/nav_configuration"
+        android:name="org.fe57.atomspectra.ui.Configuration.ConfigurationFragment"
+        android:label="fragment_configuration"
+        tools:layout="@layout/fragment_configuration" />
+</navigation>

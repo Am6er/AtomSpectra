@@ -8,10 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.DocumentsContract;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,34 +23,22 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.documentfile.provider.DocumentFile;
+import org.fe57.atomspectra.data.Constants;
+import org.fe57.atomspectra.data.Isotope;
+import org.fe57.atomspectra.data.Matrix;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+/**
+ * Created by S. Epiphanov.
+ */
 public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedListener {
 //    final static String LIST_ISOTOPE_CHANNELS = "Isotope channels";
     private int compression = Constants.ADC_MAX;
     private int poli_order = 5;
     private int library = 0;
     private final static double IRREG_COEFF = 1.5;
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
-    }
 
     @SuppressLint("RtlHardcoded")
     @Override
@@ -115,11 +100,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SEARCH);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(mDataUpdateReceiver, intentFilter);
-        }
+        registerReceiver(mDataUpdateReceiver, intentFilter);
     }
 
     @Override
@@ -197,15 +178,15 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 
         if (AtomSpectra.background_subtract) {
             double backgroundScale = (double) AtomSpectraService.ForegroundSpectrum.getSpectrumTime() / (double) AtomSpectraService.BackgroundSpectrum.getSpectrumTime();
-            long[] data = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraService.BackgroundSpectrum.getDataArray(), adc_effective_bits, AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration(), AtomSpectraService.lastCalibrationChannel);
+            long[] data = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraService.BackgroundSpectrum.getSpectrum(), adc_effective_bits, AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration(), AtomSpectraService.lastCalibrationChannel);
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
-                    chan_raw[i] += StrictMath.max(0.0, AtomSpectraService.ForegroundSpectrum.getDataArray()[j] - data[j] * backgroundScale);
+                    chan_raw[i] += StrictMath.max(0.0, AtomSpectraService.ForegroundSpectrum.getSpectrum()[j] - data[j] * backgroundScale);
             }
         } else {
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
-                    chan_raw[i] += AtomSpectraService.ForegroundSpectrum.getDataArray()[j];
+                    chan_raw[i] += AtomSpectraService.ForegroundSpectrum.getSpectrum()[j];
             }
         }
         //filter for high single peaks or drops

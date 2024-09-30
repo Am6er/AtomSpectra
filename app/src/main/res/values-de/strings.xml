@@ -164,7 +164,6 @@
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spektrum: <xliff:g id="type">%1$s</xliff:g></string>
-    <string name="autosave_timeout">Alle <xliff:g id="duration">%1$d</xliff:g> s speichern</string>
     <string-array name="compress_graph_array">
         <item>Summe</item>
         <item>Durchschnitt</item>
@@ -316,7 +315,6 @@
     <string name="usb_version_unknown">Geräte-Firmware-Version unbekannt</string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
-    <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
     <string name="isotope_list">Isotope</string>
     <string name="action_find_isotopes">Finde Isotope</string>
     <string name="find_isotopes">Finde</string>
@@ -394,7 +392,7 @@
 
     <string name="help_menu">Hilfe</string>
     <string name="help">Atom Spectra Schnelle Hilfe</string>
-    <string name="help_text1"><big><annotation foreground="caption">Überblick.</annotation></big>\n
+    <string name="help_text"><big><annotation foreground="caption">Überblick.</annotation></big>\n
         Dieses Programm liest ein Signal von einem Spektrometer, das über einen Mikrofoneingang (wie <u>AtomSpectra 3, 4</u> oder ähnliches) an ein Telefon angeschlossen ist, von einem USB-Audio-Spektrometer (wie <u>AtomSpectra Nano</u>) oder ähnlich) oder von einem USB-Spektrometer <u>AtomSpectra Pro</u>. Wenn keiner von ihnen mit einem Telefon verbunden ist, arbeitet das Programm in einem Demo-Modus, liest ein internes Mikrofon und erstellt ein Spektrum.\n
 		\n
         HINWEIS: Bitte fügen Sie das Programm zur Stromausschlussliste hinzu, damit Sie im Hintergrund oder bei ausgeschaltetem Bildschirm ordnungsgemäß arbeiten können. Um das Programm vollständig zu stoppen, verwenden Sie bitte den Menüpunkt „<annotation foreground="parameter">Beenden vollständig</annotation>“.\n
@@ -448,8 +446,8 @@
         \u00A0\u00A0\u00A0\u00A0- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
         \u00A0\u00A0\u00A0\u00A0- Sie können einen „<annotation foreground="parameter">HintZähl</annotation>“-Parameter festlegen, der bei der einfachen Berechnung der Dosisleistung von cps subtrahiert wird.\n
         \u00A0\u00A0\u00A0\u00A0- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">CD</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">D</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“.\n
-    </string>
-    <string name="help_text2"><big><annotation foreground="caption">5. Isotopenausgabe:</annotation></big>\n
+		\n
+        <big><annotation foreground="caption">5. Isotopenausgabe:</annotation></big>\n
         \u00A0\u00A0\u00A0\u00A0- Die grüne Cursorlinie zeigt das Isotop mit 3% Unsicherheit und wählt wichtigere Isotope aus. Um strenge Linienisotope anzuzeigen, verwenden Sie bitte das Dialogfeld „<annotation foreground="parameter">Isotope anzeigen</annotation>“.\n
         \u00A0\u00A0\u00A0\u00A0- Das Programm zeigt eine Isotopeninformation gemäß der Kanal- oder keV-x-Achsenauswahl. In einem Kanalmodus zeigt das Programm Isotopennamen an. In einem keV-Modus zeigt das Programm Isotopenenergien an.\n
         \u00A0\u00A0\u00A0\u00A0- Sie können Isotopenlinien anzeigen. Hinweis: Einige der Isotope in der Liste sind entsprechend ihrer relativen Quantenausbeute auf einer bestimmten Linie in verschiedenen Farben dargestellt. Mit steigender Quantenausbeute: dunkelgrün, hellgrün, dunkelgelb, hellgelb, rot. Helle Cyanfarbe Farbe wird verwendet, um Zerfallsketten und Isotopengruppen anzuzeigen.\n
@@ -509,7 +507,6 @@
         \u00A0\u00A0\u00A0\u00A0- „Glätte“ - Wählen Sie ein Echtzeit-Glattheitsfenster.\n
         \u00A0\u00A0\u00A0\u00A0- „Differenzzeit“ - select the accumulation time between difference output (1-10 s).\n
         \u00A0\u00A0\u00A0\u00A0- „Name“ - Benennen der Ausgabedateien. Präfix – Dateityp, Datum – Aufnahmedatum, Zeit – Aufnahmezeit, Suffix – benutzerdefinierter Text.\n
-        \u00A0\u00A0\u00A0\u00A0- „Alle N s speichern“ - die Funktion zum automatischen Speichern von Deltadateien. 0 - keine automatische Speicherung.\n
         \u00A0\u00A0\u00A0\u00A0- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
         \u00A0\u00A0\u00A0\u00A0- „Spektrum“ - Wählen Sie während der Wertekomprimierung den Summen-, Spitzen- oder Durchschnittswert im Spektraldiagramm. Spitzenwerte helfen dabei, kleine Spitzen nicht zu verlieren. Die Mittelwertbildung ergibt ein richtiges Diagramm. Die Summe zeigt das Gespenst, da das Gerät weniger Kanäle hat.\n
         \u00A0\u00A0\u00A0\u00A0- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n

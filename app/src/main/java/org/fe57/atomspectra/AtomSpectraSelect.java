@@ -1,9 +1,7 @@
 package org.fe57.atomspectra;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,10 +15,14 @@ import android.widget.TextView;
 
 import androidx.core.content.res.ResourcesCompat;
 
+import org.fe57.atomspectra.data.Constants;
+
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Locale;
 
+/**
+ * Created by S. Epiphanov.
+ */
 public class AtomSpectraSelect extends Activity implements OnClickListener {
     private String fileDir = null;
     public static final String CAPTION_INTENT = "Selection";
@@ -32,18 +34,6 @@ public class AtomSpectraSelect extends Activity implements OnClickListener {
     private String start = "";
     private String end = "";
     ArrayList<String> files = null;
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

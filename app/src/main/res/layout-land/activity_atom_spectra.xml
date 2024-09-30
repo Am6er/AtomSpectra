@@ -13,7 +13,7 @@
         android:scaleType="fitXY"
         android:src="@drawable/background_land4" />
 
-    <org.fe57.atomspectra.AtomSpectraShapeView
+    <org.fe57.atomspectra.ui.AtomSpectraShapeView
         android:id="@+id/shape_area"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

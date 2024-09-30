@@ -6,11 +6,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MenuItem;
@@ -26,10 +24,17 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import org.fe57.atomspectra.data.Constants;
+import org.fe57.atomspectra.data.Isotope;
+import org.fe57.atomspectra.data.IsotopeList;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Locale;
 
+/**
+ * Created by S. Epiphanov.
+ */
 public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemSelectedListener {
     public static final String ISOTOPE_CHAIN_STATE = "Isotope chain ";   //save chains
     public static final String ISOTOPE_STATE = "Isotope ";               //save isotope energies state
@@ -606,7 +611,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addToChain("Po-210").
                     addToChain("Tl-206"),
     };
-    public static ArrayList<LinkedList<Integer>> Chains = new ArrayList<>();
+    public static LinkedList<Integer>[] Chains = new LinkedList[decayChains.length];
     public static boolean[] checkedChains = new boolean[decayChains.length];
 
     public static LinkedList<Isotope> energyList = new LinkedList<>();
@@ -618,18 +623,6 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
     public static boolean showFoundIsotopes = false;
     public static boolean autoUpdateIsotopes = false;
     public static int isotopeLibrary = 0;
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -649,7 +642,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
             int num = v.getId();
             if ((num >= Constants.GROUPS.GROUP_ID_ALIGN) && (num < Constants.GROUPS.ENERGY_ID_ALIGN)) {
                 checkedChains[num - Constants.GROUPS.GROUP_ID_ALIGN] = ((CheckBox) v).isChecked();
-                for (int pos : Chains.get(num - Constants.GROUPS.GROUP_ID_ALIGN)) {
+                for (int pos : Chains[num - Constants.GROUPS.GROUP_ID_ALIGN]) {
                     checkedIsotopeLine[pos] = ((CheckBox) v).isChecked();
                     ((CheckBox) findViewById(pos + Constants.GROUPS.BUTTON_ID_ALIGN)).setChecked(((CheckBox) v).isChecked());
                 }
@@ -674,11 +667,11 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
         };
         //Fill decay chains with indexes
         for (int i = 0; i < decayChains.length; i++) {
-            Chains.add(new LinkedList<>());
+            Chains[i] = new LinkedList<>();
             for (String j : decayChains[i].Chain) {
                 for (int k = 0; k < isotopeLineArray.size(); k++) {
                     if (j.equals(isotopeLineArray.get(k).getName()))
-                        Chains.get(i).addLast(k);
+                        Chains[i].addLast(k);
                 }
             }
         }
@@ -874,11 +867,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_ISOTOPES);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(mDataUpdateReceiver, intentFilter);
-        }
+        registerReceiver(mDataUpdateReceiver, intentFilter);
     }
 
     @Override

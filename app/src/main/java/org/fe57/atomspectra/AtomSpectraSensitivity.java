@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
 import android.text.method.NumberKeyListener;
@@ -25,21 +24,14 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import org.fe57.atomspectra.data.Constants;
+
 import java.util.Locale;
 
+/**
+ * Created by S. Epiphanov.
+ */
 public class AtomSpectraSensitivity extends Activity {
-
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,11 +46,7 @@ public class AtomSpectraSensitivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SENSITIVITY);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(mDataUpdateReceiver, intentFilter);
-        }
+        registerReceiver(mDataUpdateReceiver, intentFilter);
     }
 
     @Override
