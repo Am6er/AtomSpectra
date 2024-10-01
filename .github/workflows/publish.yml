@@ -3,7 +3,7 @@
 name: "Development build"
 
 on:
-  push:
+  commit:
     branches:
       - master
 
