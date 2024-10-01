@@ -1277,6 +1277,7 @@ public class AtomSpectraService extends Service {
         canOpenAudio = false;
         isRecording = false;
         isStarted = false;
+        showDelta = false;
 
         Log.d(TAG, "recording Stop");
         releaseAR();
