@@ -3,9 +3,9 @@
 name: "Development build"
 
 on:
-  commit:
-    branches:
-      - master
+  push:
+    tags:
+      - "*"
 
 jobs:
   build:
