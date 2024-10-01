@@ -2501,7 +2501,7 @@ public class AtomSpectraService extends Service {
 
         if (autosaveSpectrum == null) {
             autosaveSpectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
-            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, autosaveSpectrum.getSuffix() +"_auto", ".txt", "text/plain", true, true, false);
+            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix,"auto", ".txt", "text/plain", true, true, false);
 
             if (autosavePair == null) {
                 new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getApplicationContext().getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show());
