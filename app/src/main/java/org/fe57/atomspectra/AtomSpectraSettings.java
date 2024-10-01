@@ -1468,7 +1468,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
         int r = settings.getInt(Constants.CONFIG.CONF_DELTA_TIME, Constants.DEFAULT_DELTA_TIME);
 
-        if (r > 1) {
+        if (r > 10) {
+            r = r - 5;
+        } else if (r > 1) {
             r = r - 1;
         } else {
             r = 1;
@@ -1489,8 +1491,10 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
         if (r < 10) {
             r = r + 1;
+        } else if (r < 60) {
+            r = r + 5;
         } else {
-            r = 10;
+            r = 60;
         }
 
         SharedPreferences.Editor prefEditor = settings.edit();
