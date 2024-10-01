@@ -432,18 +432,8 @@ public class AtomSpectraShapeView extends View {
 					squareColor.setShader(null);
 				} else if (AtomSpectraService.showDelta) {
 					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;//Color.YELLOW;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						colorFrom = getResources().getColor(R.color.colorGradientMainFrom, null);
-					} else {
-						colorFrom = getResources().getColor(R.color.colorGradientMainFrom);
-					}
-					int colorTo = 0;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						colorTo = getResources().getColor(R.color.colorGradientMainTo, null);
-					} else {
-						colorTo = getResources().getColor(R.color.colorGradientMainTo);
-					}
+					int colorFrom = Color.YELLOW;
+					int colorTo = Color.YELLOW;
 					LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
 					squareColor.setShader(linearGradientShader);
 					for (int i = 2; i < N; i++)
