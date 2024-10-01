@@ -109,7 +109,7 @@ public class AtomSpectraService extends Service {
     //data for spectrum
     private static final double[] histogram = new double[1024];
     public static long[] histogram_all_delta = new long[Constants.NUM_HIST_POINTS];       //array to save delta
-    public static long[] histogram_all_prev_time = new long[Constants.NUM_HIST_POINTS];       //array to save delta
+    public static final LinkedList<long[]> histogram_all_queue = new LinkedList<long[]>();      //array to save delta window
     private static final long[] referencePulse = new long[1024];
     private static final double[] referenceDoublePulse = new double[1024];
     private static final double[] realTimeX = new double[1024];
@@ -1341,7 +1341,9 @@ public class AtomSpectraService extends Service {
         ForegroundSpectrum.initSpectrumData().setSuffix(getString(R.string.hist_suffix));
         ForegroundSaveSpectrum.initSpectrumData();
         Arrays.fill(histogram_all_delta, 0);
-        Arrays.fill(histogram_all_prev_time, 0);
+        synchronized (histogram_all_queue) {
+            histogram_all_queue.clear();
+        }
         total_pulses = 0;
         synchronized (windowCps) {
             windowCps.clear();
@@ -1891,13 +1893,32 @@ public class AtomSpectraService extends Service {
                 }
             }
             deltaTimeAccumulator++;
-            if (deltaTimeAccumulator >= (delta_time * 1000 / Constants.UPDATE_PERIOD)) {
-                deltaTimeAccumulator = 0;
-                long[] temp = Arrays.copyOf(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getDataArray().length);
-                for (int i = 0; i < temp.length; i++) {
-                    histogram_all_delta[i] = temp[i] - histogram_all_prev_time[i];
-                    histogram_all_prev_time[i] = temp[i];
+            if (deltaTimeAccumulator >= (1000 / Constants.UPDATE_PERIOD)) { // each second
+                if (showDelta && !freeze_update_data) {
+                    long[] currentState = Arrays.copyOf(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getDataArray().length);
+                    long[] previousState = currentState;
+                    synchronized (histogram_all_queue) {
+                        histogram_all_queue.add(currentState);
+                        while (histogram_all_queue.size() > delta_time + 1) {
+                            histogram_all_queue.remove();
+                        }
+
+                        previousState = histogram_all_queue.peek();
+                    }
+
+                    for (int i = 0; i < currentState.length; i++) {
+                        histogram_all_delta[i] = currentState[i] - previousState[i];
+                    }
+                } else {
+                    // cleanup queue
+                    if (!histogram_all_queue.isEmpty()) {
+                        synchronized (histogram_all_queue) {
+                            histogram_all_queue.clear();
+                        }
+                    }
                 }
+
+                deltaTimeAccumulator = 0;
             }
             synchronized (countTimeSync) {
                 if (countTime < periodUpdate) {
@@ -2501,7 +2522,7 @@ public class AtomSpectraService extends Service {
 
         if (autosaveSpectrum == null) {
             autosaveSpectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
-            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix,"auto", ".txt", "text/plain", true, true, false);
+            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
 
             if (autosavePair == null) {
                 new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getApplicationContext().getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show());
