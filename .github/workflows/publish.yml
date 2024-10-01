@@ -28,17 +28,14 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew assemble
 
-    # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
-    # the publishing section of your build.gradle
-    - name: Publish to GitHub Release
-      uses: softprops/action-gh-release@v2
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
-          tag_name: "nightly"
-          name: "Nightly release"
-          generate_release_notes: true
-          files: |
-            app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/debug/output-metadata.json
-      env:
-        USERNAME: ${{ github.actor }}
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: output-metadata.json
+        path: app/build/outputs/apk/debug/output-metadata.json
