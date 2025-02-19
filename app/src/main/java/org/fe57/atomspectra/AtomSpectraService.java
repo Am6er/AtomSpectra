@@ -41,13 +41,10 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.PermissionChecker;
 import androidx.core.util.Pair;
-import androidx.documentfile.provider.DocumentFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -93,7 +90,6 @@ public class AtomSpectraService extends Service {
 
     public static Calibration newCalibration = new Calibration();
     public static Spectrum ForegroundSpectrum = new Spectrum();
-    public static Spectrum ForegroundSaveSpectrum = new Spectrum();
     public static Spectrum BackgroundSpectrum = new Spectrum();
 //    private GPSLocator Locator = null;
     private boolean addGPS = false;
@@ -101,8 +97,7 @@ public class AtomSpectraService extends Service {
 
     public static boolean setSmooth = false;
     public static boolean showDelta = false;
-    private int deltaTimeAccumulator = 0;
-    private int delta_time = Constants.DEFAULT_DELTA_TIME;
+    private static int delta_time = Constants.DEFAULT_DELTA_TIME;
     public static boolean isStarted = false;
     public static boolean showCalibrationFunction = false;
 
@@ -124,6 +119,7 @@ public class AtomSpectraService extends Service {
     public static long total_pulses = 0;
     private static int cps = 0;
     private static int cpsInterval = 0;
+    private int skip_next_cps_int_usb_calc = 0;
     public static double total_energy_cps = 0.0;
     private static int autosaveTimeout = 0;
     private static int autosaveIncrement = 0;
@@ -135,6 +131,9 @@ public class AtomSpectraService extends Service {
     private static final Integer sync_factor = 1;
     private final int mutabilityFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
 
+    // sent by AtomSpectraService with all the calculated values
+    // read by AtomSpectra (histogram, cps, etc.)
+    // read by AtomSpectraSettings (audio pulse data)
     public final static String ACTION_DATA_AVAILABLE =
             "org.fe57.atomspectra.ACTION_DATA_AVAILABLE";
     public final static String EXTRA_DATA =
@@ -163,23 +162,23 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH";
     public final static String EXTRA_DATA_SCOPE_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_SCOPE_COUNTS";
-    private final static String SERVICE_ID = "Service";
-    private final static String SERVICE_VERSION_ID = "Service version";
-
-    public final static String EXTRA_SOURCE = "Data source";
-    public final static String EXTRA_SOURCE_USB = "USB";
-    public final static String EXTRA_SOURCE_AUDIO = "Audio";
+    private final static String SERVICE_INF_ID = "Service command -inf";
+    private final static String SERVICE_STA_ID = "Service command -sta";
+    private final static String SERVICE_STO_ID = "Service command -sto";
+    private final static String SERVICE_STT_ID = "Service command -stt";
+    private final static String SERVICE_MODE_ID = "Service command -mode 0";
 
     public final static String CHANNEL_ID = "AtomSpectraService";
 
     private static final int USB_WAIT_DEVICE = 600;
+    private static final Integer data_from_usb_sync = 1;
     // RECORDING VARIABLES  
     private static AudioRecord AR = null;
     private static final Integer ARLock = 1;        //Locker for AudioRecord
+    private static final Integer audioCaptureSync = 1; // lock for managing audio capturing timer
     private static boolean ARShowAbsentMessage = true;
     private static int BufferSize;                    // Length of the chunks read from the hardware audio buffer
     //    private static Thread Record_Thread = null;      // The thread filling up the audio buffer (queue)
-    public static boolean isRecording = false;
     private static final int AUDIO_SOURCE_VOICE = MediaRecorder.AudioSource.VOICE_RECOGNITION;
     private static final int AUDIO_SOURCE_RAW = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? MediaRecorder.AudioSource.UNPROCESSED : MediaRecorder.AudioSource.VOICE_RECOGNITION;      //only from API>=24
     private static int SAMPLE_RATE = 44100;
@@ -192,27 +191,22 @@ public class AtomSpectraService extends Service {
     private static int SearchFSM = 0; //0 - fast, 1 - medium, 2 - slow
 
     private static double doseRateValue = 0.0;
-    private int doseRateUpdateFreq = 1;
-    private int periodUpdate = 10;
+    private int dataFromAudioSourceUpdatePeriod = 1000; // ms
 
-    private static int timer = 0;
-    private static int doseRateTimer = 0;
-    private static final int[] cpsArray = new int[1000 / Constants.UPDATE_PERIOD];
-    private static final int[] cpsArrayInterval = new int[1000 / Constants.UPDATE_PERIOD];
+    private static final int[] cpsArray = new int[1000 / Constants.UPDATE_PERIOD]; // number of counts during last second, measured approximately each 0.1 sec
+    private static final int[] cpsArrayInterval = new int[1000 / Constants.UPDATE_PERIOD]; // same as above but for energy range
     private static final double[] cpsArrayEnergy = new double[1000 / Constants.UPDATE_PERIOD];
     private static long audioCaptureTimer = 0;
     private static long audioCaptureOldTimer = 0;
-    private static long audioTaskTimeout = 0;
+    private static long captureAudioTaskInterval = 0;
     private static int cpsPos = 0;
     private static int compressGraph = Constants.COMPRESS_GRAPH_SUM;
-    //private double cps_energy_sec = 0.0;
 
     public final static int INPUT_NONE = 0;             //Nothing
     public final static int INPUT_SERIAL = 1;           //Use serial for NanoPro
     public final static int INPUT_AUDIO = 2;            //Use audio channel
-    private static int inputSelectNext = INPUT_NONE;    //Select type on next work (do not switch if INPUT_NONE)
-    public static int inputType = INPUT_AUDIO;           //synchronisation data value
-//    public static int inputLastState = INPUT_NONE;
+    public static int inputType = INPUT_NONE;           // current input type
+    // TODO: verify it actually requires sync
     private static final Integer inputSync = 1;
 
     private SharedPreferences sp;
@@ -234,7 +228,7 @@ public class AtomSpectraService extends Service {
                 super.onAudioDevicesAdded(addedDevices);
                 if (startExecution) {
                     context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
-                    releaseAR();
+                    stopCapturingAudioSource();
                 } else {
                     startExecution = true;
                 }
@@ -245,7 +239,7 @@ public class AtomSpectraService extends Service {
                 super.onAudioDevicesRemoved(removedDevices);
                 if (startExecution) {
                     context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
-                    releaseAR();
+                    stopCapturingAudioSource();
                 } else {
                     startExecution = true;
                 }
@@ -260,18 +254,15 @@ public class AtomSpectraService extends Service {
     }
 
     public void onDestroy() {
+        Log.d(TAG, "onDestroy");
         super.onDestroy();
         Stop();
         DeleteSpc();
-        Log.d(TAG, "onDestroy");
         context = null;
         BackgroundSpectrum.initSpectrumData();
-//        background_time = 0;
         background_show = false;
         freeze_update_data = true;
-        releaseAR();
         sp.unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
-        usbDevice.Destroy();
         isStarted = false;
 //        Locator.stopUsingGPS();
 //        Locator = null;
@@ -307,71 +298,29 @@ public class AtomSpectraService extends Service {
             }
             if (device != null) {
                 SystemClock.sleep(USB_WAIT_DEVICE);
-                if (usbDevice.isOpened() || usbDevice.Open(device)) {
-                    usbDevice.sendTextCommand("-inf", SERVICE_VERSION_ID);
-                    usbDevice.sendTextCommand("-mode 0", SERVICE_ID);
-//                    usbDevice.sendTextCommand("-sta", SERVICE_ID);
-                    synchronized (inputSync) {
-                        if (inputType != INPUT_SERIAL)
-                            Toast.makeText(this, getString(R.string.action_usb_attached), Toast.LENGTH_LONG).show();
-                        inputSelectNext = INPUT_SERIAL;
-//                        inputLastState = INPUT_SERIAL;
-                        releaseAR();
-                    }
-                    setFreeze(false);
-//                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU));
-//                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
-                } else {
-                    Toast.makeText(this, getString(R.string.action_usb_no_access), Toast.LENGTH_LONG).show();
-                    synchronized (inputSync) {
-                        inputSelectNext = INPUT_AUDIO;
-//                        inputLastState = INPUT_AUDIO;
-                    }
-                }
+                onUSBAttached(device);
+            } else {
+                inputType = INPUT_AUDIO;
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
+                sendDataToUI();
             }
         } else {
             UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-            if (manager != null) {
-                HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-                for (UsbDevice device : deviceList.values()) {
-                    if (device.getVendorId() != 1027)
-                        continue;
-                    if (!manager.hasPermission(device)) {
-//                        Toast.makeText(this, device.getDeviceName() + " is not permitted", Toast.LENGTH_LONG).show();
-                        continue;
-                    }
-                    if (device.getProductId() == 24577 || device.getProductId() == 1002) {
-                        SystemClock.sleep(USB_WAIT_DEVICE);
-                        if (usbDevice.isOpened() || usbDevice.Open(device)) {
-                            usbDevice.sendTextCommand("-inf", SERVICE_VERSION_ID);
-                            usbDevice.sendTextCommand("-mode 0", SERVICE_ID);
-                            usbDevice.sendTextCommand("-sta", SERVICE_ID);
-                            synchronized (inputSync) {
-                                if (inputType != INPUT_SERIAL)
-                                    Toast.makeText(this, getString(R.string.action_usb_attached), Toast.LENGTH_LONG).show();
-                                inputSelectNext = INPUT_SERIAL;
-//                                inputLastState = INPUT_SERIAL;
-                                releaseAR();
-                            }
-                            setFreeze(false);
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-//                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
-                        } else {
-                            Toast.makeText(this, getString(R.string.action_usb_no_access), Toast.LENGTH_LONG).show();
-                            synchronized (inputSync) {
-                                inputSelectNext = INPUT_AUDIO;
-//                                inputLastState = INPUT_AUDIO;
-                            }
-                        }
-                    }
+            UsbDevice device = AtomSpectraSerial.scanForSpectraProDevice(manager);
+            if (device != null) {
+                if (manager.hasPermission(device)) {
+                    SystemClock.sleep(USB_WAIT_DEVICE);
+                    onUSBAttached(device);
+                } else {
+                    onUSBNoAccess();
                 }
             } else {
-                synchronized (inputSync) {
-                    inputSelectNext = INPUT_AUDIO;
-//                    inputLastState = INPUT_AUDIO;
-                }
+                inputType = INPUT_AUDIO;
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
+                sendDataToUI();
             }
         }
+
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
         isStarted = true;
         return START_NOT_STICKY;
@@ -379,13 +328,11 @@ public class AtomSpectraService extends Service {
 
     private Notification createNewServiceNotification() {
         String notifyString = "";
-        synchronized (inputSync) {
-            if (inputType == INPUT_AUDIO) {
-                notifyString = getString(R.string.app_bar_audio_action);
-            }
-            if (inputType == INPUT_SERIAL) {
-                notifyString = getString(R.string.app_bar_usb_action);
-            }
+        if (inputType == INPUT_AUDIO) {
+            notifyString = getString(R.string.app_bar_audio_action);
+        }
+        if (inputType == INPUT_SERIAL) {
+            notifyString = getString(R.string.app_bar_usb_action);
         }
         if (!freeze_update_data) {
             notifyString += " " + getString(R.string.app_bar_spectrum_update);
@@ -450,14 +397,13 @@ public class AtomSpectraService extends Service {
         SEARCH_FAST = sp.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT);
         SEARCH_SLOW = sp.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT);
         SEARCH_MEDIUM = sp.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT);
-        doseRateUpdateFreq = sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
+        dataFromAudioSourceUpdatePeriod = 1000 / sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
         adc_effective_bits = Constants.MinMax(sp.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
         frontCountsMin = sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
         frontCountsMax= sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
         histogramMinChannel = sp.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
         inversion = sp.getBoolean(Constants.CONFIG.CONF_INVERSION, Constants.INVERSE_DEFAULT);
         pileup = sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, Constants.PILE_UP_DEFAULT);
-        periodUpdate = 10 / doseRateUpdateFreq;
         autosaveTimeout = sp.getInt(Constants.CONFIG.CONF_AUTOSAVE, Constants.AUTOSAVE_DEFAULT);
         try {
             compressGraph = sp.getInt(Constants.CONFIG.CONF_COMPRESS_GRAPH, Constants.COMPRESS_GRAPH_SUM);
@@ -629,11 +575,11 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private final Timer autosaveTimer = new Timer();
-    private final TimerTask autosaveTask = new TimerTask() {
+    private final Timer spgAutosaveTimer = new Timer();
+    private final TimerTask spgAutosaveTask = new TimerTask() {
         @Override
         public void run() {
-            synchronized (autosaveTimer) {
+            synchronized (spgAutosaveTimer) {
                 if (autosaveTimeout > 0) {
                     if (!freeze_update_data) {
                         autosaveIncrement += 1;
@@ -658,33 +604,6 @@ public class AtomSpectraService extends Service {
         }
     };
 
-    private final Timer serialTimer = new Timer();
-    private final TimerTask serialTask = new TimerTask() {
-        @Override
-        public void run() {
-            //TODO:
-            synchronized (inputSync) {
-                if (inputSelectNext == INPUT_SERIAL) {
-                    inputType = inputSelectNext;
-                    inputSelectNext = INPUT_NONE;
-//                    new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test1: "+ForegroundSpectrum.getSpectrumTime(), Toast.LENGTH_SHORT).show());
-                    if (ForegroundSpectrum.getSpectrumTime() == 0) {
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true).setPackage(Constants.PACKAGE_NAME));
-//                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test2", Toast.LENGTH_SHORT).show());
-                    }
-                    freeze_update_data = false;
-                    NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-                    releaseAR();
-                }
-
-                if (inputType != INPUT_SERIAL)
-                    return;
-            }
-
-            total_pulses = ForegroundSpectrum.getTotalCounts();
-        }
-    };
-
     //Audio input data
     public static final int SET_AUDIO_RAW = 2;
     public static final int SET_AUDIO_VOICE = 1;
@@ -701,14 +620,12 @@ public class AtomSpectraService extends Service {
     @SuppressLint({"UnspecifiedRegisterReceiverFlag", "DiscouragedApi"})
     public void Start(final Context context) {
         this.context = context;
-        synchronized (inputSync) {
-            inputType = INPUT_AUDIO;
-        }
 
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-        if (Locator == null)
+        if (Locator == null) {
             Locator = new GPSLocator(getApplicationContext());
+        }
         if ((hasFeatureGPS || hasFeatureNetwork) && getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 final Context id = this;
@@ -787,11 +704,6 @@ public class AtomSpectraService extends Service {
                     makeAtomSpectraServiceIntentFilter());
         }
 
-        BufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT) * 2; //read two buffers at a time to reduce time consumption
-        AudioBytes = new byte[BufferSize]; //Array containing the audio data bytes
-        AudioData = new int[BufferSize / 2]; //Array containing the audio samples
-        AudioSource = AUDIO_SOURCE_VOICE;
-
         try {
             //Some devices says they have this ability by it doesn't work. Switched off for a delay
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -802,21 +714,17 @@ public class AtomSpectraService extends Service {
         } catch (IllegalArgumentException e) {
             Toast.makeText(context, getString(R.string.no_audio_available), Toast.LENGTH_LONG).show();
         }
-        isRecording = true;
-        audioTaskTimeout = 1000L * BufferSize / 2 / SAMPLE_RATE;
-        audioTimer.scheduleAtFixedRate(captureAudioTask, 0, audioTaskTimeout);
-        serialTimer.scheduleAtFixedRate(serialTask, 0, 300);
-        autosaveTimer.scheduleAtFixedRate(autosaveTask, 0, 1000);
-        sendDataTimer = new Timer();
-        sendDataTimer.scheduleAtFixedRate(sendData, 0, 100);
-        timerExec.scheduleAtFixedRate(periodicTask, 0, Constants.UPDATE_PERIOD);
+
+        spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, 0, 1000);
+        alarmTimer.scheduleAtFixedRate(alarmTimerTask, Constants.UPDATE_PERIOD, Constants.UPDATE_PERIOD);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (manager != null)
                 manager.registerAudioDeviceCallback(audioChanged, null);
         }
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-        Log.d(TAG, "recording START");
+
+        inputType = INPUT_NONE;
+        Log.d(TAG, "AtomSpectraService START");
     }
 
     private void outputSoundInit() {
@@ -1011,9 +919,10 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
         intentFilter.addAction(Constants.ACTION.ACTION_START_FOREGROUND);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_NOTIFICATION);
-        intentFilter.addAction(Constants.ACTION.ACTION_SOURCE_CHANGED);
-        intentFilter.addAction(Constants.ACTION.ACTION_HAS_DATA);
-        intentFilter.addAction(Constants.ACTION.ACTION_HAS_ANSWER);
+        intentFilter.addAction(Constants.ACTION.ACTION_USB_ATTACHED);
+        intentFilter.addAction(Constants.ACTION.ACTION_USB_DETACHED);
+        intentFilter.addAction(Constants.ACTION.ACTION_USB_HAS_DATA);
+        intentFilter.addAction(Constants.ACTION.ACTION_USB_HAS_ANSWER);
         intentFilter.addAction(Constants.ACTION.ACTION_FREEZE_DATA);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_IMPULSE);
@@ -1022,6 +931,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
         intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
         intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
+        intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GRAPH);
         return intentFilter;
     }
 
@@ -1042,6 +952,7 @@ public class AtomSpectraService extends Service {
                 DeleteSpc();
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
+                sendDataToUI();
                 return;
             }
             if (Constants.ACTION.ACTION_CLEAR_IMPULSE.equals(action)) {
@@ -1049,14 +960,14 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_SEND_USB_COMMAND.equals(action)) {
-                synchronized (inputSync) {
-                    if (inputType != INPUT_SERIAL || usbDevice == null || !usbDevice.isOpened())
-                        return;
+                if (inputType != INPUT_SERIAL || usbDevice == null || !usbDevice.isOpened()) {
+                    return;
                 }
                 String command = intent.getStringExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA);
                 String id = intent.getStringExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID);
-                if (command != null && id != null)
+                if (command != null && id != null) {
                     usbDevice.sendTextCommand(command, id);
+                }
                 return;
             }
             if (Constants.ACTION.ACTION_FREEZE_DATA.equals(action)) {
@@ -1069,7 +980,6 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
                 Log.i(TAG, "Received Stop Foreground Intent");
                 canOpenAudio = false;
-                isRecording = false;
                 if (soundTrack != null) {
                     synchronized (soundSync) {
                         soundTrack.pause();
@@ -1080,7 +990,6 @@ public class AtomSpectraService extends Service {
                         soundBufferSwitch = 0;
                     }
                 }
-                releaseAR();
                 Log.d(TAG, "recording Stop");
                 Stop();
                 return;
@@ -1095,18 +1004,14 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY.equals(action)) {
                 checkGPS();
             }
+            if (Constants.ACTION.ACTION_UPDATE_GRAPH.equals(action)) {
+                sendDataToUI();
+            }
             if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                synchronized (inputSync) {
-                    if (inputType != INPUT_AUDIO) {
-                        freeze_update_data = true;
-                        Toast.makeText(context, getString(R.string.action_usb_detached), Toast.LENGTH_SHORT).show();
-                        inputSelectNext = INPUT_AUDIO;
-                    }
-//                    inputLastState = INPUT_AUDIO;
+                if (inputType == INPUT_SERIAL) {
+                    onUSBDetached();
                 }
-                usbDevice.Close();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
+
                 return;
             }
             if (Constants.ACTION.ACTION_UPDATE_GPS.equals(action)) {
@@ -1114,93 +1019,94 @@ public class AtomSpectraService extends Service {
                     ForegroundSpectrum.setLocation(Locator.getLocation()).updateComments();
                 }
             }
-            if (Constants.ACTION.ACTION_SOURCE_CHANGED.equals(action)) {
-                if (EXTRA_SOURCE_USB.equals(intent.getStringExtra(EXTRA_SOURCE))) {
-                    UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
-                    UsbDevice device;
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                        device = intent.getParcelableExtra(Constants.USB_DEVICE, UsbDevice.class);
+            if (Constants.ACTION.ACTION_USB_ATTACHED.equals(action)) {
+                UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+                UsbDevice device;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    device = intent.getParcelableExtra(Constants.USB_DEVICE, UsbDevice.class);
+                } else {
+                    device = intent.getParcelableExtra(Constants.USB_DEVICE);
+                }
+                if (device != null && usbManager != null) {
+                    usbDevice.Close();
+                    SystemClock.sleep(USB_WAIT_DEVICE);
+                    if (!usbManager.hasPermission(device)) {
+                        //Toast.makeText(context, "Asking permissions", Toast.LENGTH_LONG).show();
+                        PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
+                        usbManager.requestPermission(device, pi);
                     } else {
-                        device = intent.getParcelableExtra(Constants.USB_DEVICE);
-                    }
-                    if (device != null && usbManager != null) {
-                        usbDevice.Close();
-                        SystemClock.sleep(USB_WAIT_DEVICE);
-                        if (!usbManager.hasPermission(device)) {
-                            //Toast.makeText(context, "Asking permissions", Toast.LENGTH_LONG).show();
-                            PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
-                            usbManager.requestPermission(device, pi);
-                        } else {
-//                            long temp_time = ForegroundSpectrum.getSpectrumTime();
-                            if (usbDevice.Open(device)) {
-                                usbDevice.sendTextCommand("-inf", SERVICE_VERSION_ID);
-                                usbDevice.sendTextCommand("-mode 0", SERVICE_ID);
-//                                if (temp_time == 0)
-//                                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
-                                usbDevice.sendTextCommand("-sta", SERVICE_ID);
-//                                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                                ForegroundSaveSpectrum.Clone(ForegroundSpectrum);
-                                synchronized (inputSync) {
-                                    if (inputType != INPUT_SERIAL)
-                                        Toast.makeText(context, getString(R.string.action_usb_attached), Toast.LENGTH_SHORT).show();
-//                                    inputLastState = INPUT_SERIAL;
-                                    inputSelectNext = INPUT_SERIAL;
-                                    freeze_update_data = true;
-                                }
-                            } else {
-                                usbDevice.Close();
-                                Toast.makeText(context, getString(R.string.action_usb_no_access), Toast.LENGTH_LONG).show();
-                                synchronized (inputSync) {
-                                    inputSelectNext = INPUT_AUDIO;
-                                }
-                            }
-                        }
+                        onUSBAttached(device);
                     }
                 }
-                if (EXTRA_SOURCE_AUDIO.equals(intent.getStringExtra(EXTRA_SOURCE))) {
-                    synchronized (inputSync) {
-                        if (inputType != INPUT_AUDIO) {
-                            freeze_update_data = true;
-                            Toast.makeText(context, getString(R.string.action_usb_detached), Toast.LENGTH_SHORT).show();
-                            inputSelectNext = INPUT_AUDIO;
-                        }
-//                        inputLastState = INPUT_AUDIO;
-                    }
-                }
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
                 return;
             }
-            if (Constants.ACTION.ACTION_HAS_DATA.equals(action)) {
+            if (Constants.ACTION.ACTION_USB_DETACHED.equals(action)) {
+                onUSBDetached();
+                return;
+            }
+            if (Constants.ACTION.ACTION_USB_HAS_DATA.equals(action)) {
                 switch (intent.getIntExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, AtomSpectraSerial.CODE_NONE)) {
                     case AtomSpectraSerial.CODE_DATA:
-                        long[] new_histogram = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_COUNTS);
-                        cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
-                        long new_time = intent.getIntExtra(EXTRA_DATA_TOTAL_TIME, 1);
-                        if (new_histogram != null) {
-                            long[] histogram_all_backup = ForegroundSaveSpectrum.getDataArray();
-                            if (new_time > (ForegroundSpectrum.getSpectrumTime() - ForegroundSaveSpectrum.getSpectrumTime()) / 1000.0 * Constants.UPDATE_PERIOD) {
-                                long count = 0, count_interval = 0;
-                                double count_e = 0;
-                                long[] histogram_all = ForegroundSpectrum.getDataArray();
-                                for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
-                                    long value = (new_histogram[i] + histogram_all_backup[i] - histogram_all[i]);
-                                    count += value;
-                                    if (i >= leftChannelInterval && i <= rightChannelInterval)
-                                        count_interval += value;
-                                    count_e += value * getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
-                                }
-                                cpsInterval = (int) count_interval;
-                                doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - (ForegroundSpectrum.getSpectrumTime() - ForegroundSaveSpectrum.getSpectrumTime()) / 1000.0 * Constants.UPDATE_PERIOD, AtomSpectra.XCalibrated);
-                            }
-                            if (!freeze_update_data) {
-//                                if (Locator != null && addGPS)
-//                                    ForegroundSpectrum.setLocationOnly(Locator.getLocation());
-                                ForegroundSpectrum.setSpectrum(new_histogram).setRealSpectrumTime(new_time).addSpectrum(ForegroundSaveSpectrum).updateComments();
-                            }
-                        } else {
-                            cpsInterval = 0;
+                        if (freeze_update_data) {
+                            return;
                         }
+
+                        long new_time;
+                        double old_time;
+                        long[] new_histogram;
+                        long[] old_histogram;
+                        synchronized (data_from_usb_sync) {
+                            old_time = ForegroundSpectrum.getRealSpectrumTime();
+                            old_histogram = ForegroundSpectrum.getDataArray();
+                            old_histogram = Arrays.copyOf(old_histogram, old_histogram.length);
+
+                            new_time = intent.getIntExtra(EXTRA_DATA_TOTAL_TIME, 1);
+                            new_histogram = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_COUNTS);
+                            if (new_histogram != null) {
+                                new_histogram = Arrays.copyOf(new_histogram, new_histogram.length);
+                                ForegroundSpectrum.setSpectrum(new_histogram).setRealSpectrumTime(new_time).updateComments();
+                            }
+
+                            /* debugging of serial data
+                            long old_count = 0;
+                            long new_count = 0;
+                            for (int i = 0; i < new_histogram.length; i++) {
+                                old_count += old_histogram[i];
+                                new_count += new_histogram[i];
+                            }
+                            Toast.makeText(context, "old_time: " + old_time + " new_time: " + new_time + " old_count: " + old_count + " new_count: " + new_count, Toast.LENGTH_SHORT).show();
+                             */
+                        }
+
+                        cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
+                        total_pulses = 0;
+
+                        if (new_histogram != null) {
+                            long count = 0, count_interval = 0;
+                            double count_e = 0;
+                            for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
+                                total_pulses += new_histogram[i];
+                                long value = 0;
+                                if (skip_next_cps_int_usb_calc == 0) {
+                                    value = new_histogram[i] - old_histogram[i];
+                                }
+
+                                count += value;
+                                if (i >= leftChannelInterval && i <= rightChannelInterval) {
+                                    count_interval += value;
+                                }
+                                count_e += value * getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
+                            }
+                            if (skip_next_cps_int_usb_calc > 0) {
+                                skip_next_cps_int_usb_calc--;
+                            }
+                            cpsInterval = (int) count_interval;
+                            doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time, AtomSpectra.XCalibrated);
+                        }
+
+                        calcAndSendFoundIsotopesData();
+                        calcSpectrumChangeData();
+                        sendDataToUI();
                         break;
 
                     case AtomSpectraSerial.CODE_SCOPE:
@@ -1222,25 +1128,20 @@ public class AtomSpectraService extends Service {
 
                 }
             }
-            if (Constants.ACTION.ACTION_HAS_ANSWER.equals(action)) {
-                //We get answer from device
-//                Toast.makeText(context, "Full got answer: " + intent.getStringExtra(AtomSpectraSerial.EXTRA_DATA_PACKET), Toast.LENGTH_LONG).show();
-                if (SERVICE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
-//                    Toast.makeText(context, "Service got answer: " + intent.getStringExtra(AtomSpectraSerial.EXTRA_DATA_PACKET), Toast.LENGTH_LONG).show();
-                    if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT))) {
-                        //nothing to do
-                    }else {
-                        if ("-sta".equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_COMMAND))) {
-                            freeze_update_data = false;
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        } else if ("-sto".equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_COMMAND))) {
-                            freeze_update_data = true;
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        }
+            if (Constants.ACTION.ACTION_USB_HAS_ANSWER.equals(action)) {
+                // answer from USB device
+                if (SERVICE_INF_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
+                    String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
+                    // Toast.makeText(context, "AtomSpectraService -inf answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
+                        Toast.makeText(context, "-inf command failed", Toast.LENGTH_LONG).show();
+                        return;
                     }
-                }
-                if (SERVICE_VERSION_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
-                    if (AtomSpectraSerial.COMMAND_RESULT_OK.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT))) {
+                    if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
+                        Toast.makeText(context, "-inf command timeout", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (AtomSpectraSerial.COMMAND_RESULT_OK.equals(commandResult)) {
                         String data = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
                         String version;
                         if (data != null) {
@@ -1256,6 +1157,75 @@ public class AtomSpectraService extends Service {
                                 new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "Device version in unknown", Toast.LENGTH_SHORT).show());
                             }
                         }
+                    }
+                }
+                if (SERVICE_MODE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
+                    String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
+                    // Toast.makeText(context, "AtomSpectraService -mode 0 answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
+                        Toast.makeText(context, "-mode 0 command failed", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
+                        Toast.makeText(context, "-mode 0 command timeout", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
+                if (SERVICE_STT_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
+                    String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
+                    // Toast.makeText(context, "AtomSpectraService -stt answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
+                        Toast.makeText(context, "-stt command failed", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
+                        Toast.makeText(context, "-stt command timeout", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (AtomSpectraSerial.COMMAND_RESULT_OK_COLLECTING.equals(commandResult)) {
+                        resetCpsData();
+                        resetDoseRateData();
+                        // HACK! when started AtomSpectraSerial often sends wrong data for 1-2 seconds
+                        // calculate spectrum based values (cps interval ,dose rate etc.) only when data is more stable
+                        skip_next_cps_int_usb_calc = 3;
+                        setFreeze(false);
+                    } else {
+                        freeze_update_data = true;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                    }
+
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
+                }
+                if (SERVICE_STA_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
+                    String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
+                    // Toast.makeText(context, "AtomSpectraService -sta answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
+                        freeze_update_data = true;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                        Toast.makeText(context, "-sta command failed", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
+                        freeze_update_data = true;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                        Toast.makeText(context, "-sta command timeout", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
+                if (SERVICE_STO_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
+                    String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
+                    // Toast.makeText(context, "AtomSpectraService -sto answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
+                        freeze_update_data = true;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                        Toast.makeText(context, "-sto command failed", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
+                        freeze_update_data = true;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+                        Toast.makeText(context, "-sto command timeout", Toast.LENGTH_LONG).show();
+                        return;
                     }
                 }
             }
@@ -1275,19 +1245,13 @@ public class AtomSpectraService extends Service {
         notify_cancel_all();
 //        stopForeground(true);
         canOpenAudio = false;
-        isRecording = false;
         isStarted = false;
         showDelta = false;
 
         Log.d(TAG, "recording Stop");
-        releaseAR();
-//        if (timerTask_started)
-            timerExec.cancel();
-        if (sendDataTimer != null)
-            sendDataTimer.cancel();
-        audioTimer.cancel();
-        serialTimer.cancel();
-        autosaveTimer.cancel();
+        stopCapturingAudioSource();
+        alarmTimer.cancel();
+        spgAutosaveTimer.cancel();
         usbDevice.Close();
         usbDevice.Destroy();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1322,44 +1286,31 @@ public class AtomSpectraService extends Service {
     }
 
     public void DeleteSpc() {
-        synchronized (inputSync) {
-            if (inputType == INPUT_SERIAL) {
-                usbDevice.ClearHistogram();
-            }
+        if (inputType == INPUT_SERIAL) {
+            usbDevice.ClearHistogram();
         }
-        synchronized (autosaveTimer) {
+        synchronized (spgAutosaveTimer) {
             autosaveSpectrum = null;
             try {
                 autosavePair.first.close();
             } catch (Exception e) {
-                //
+                // TODO: report exception?
             }
             autosavePair = null;
         }
+
+        resetCpsData();
+        resetDoseRateData();
+
         Arrays.fill(histogram, 0);
         Arrays.fill(referencePulse, 0);
         ForegroundSpectrum.initSpectrumData().setSuffix(getString(R.string.hist_suffix));
-        ForegroundSaveSpectrum.initSpectrumData();
         Arrays.fill(histogram_all_delta, 0);
         synchronized (histogram_all_queue) {
             histogram_all_queue.clear();
         }
         total_pulses = 0;
-        synchronized (windowCps) {
-            windowCps.clear();
-            windowEnergy.clear();
-            deltaTime.clear();
-            window.clear();
-        }
-        synchronized (doseHistory) {
-            doseHistory.clear();
-            doseEnergyHistory.clear();
-        }
-        timer = 0;
-        doseRateTimer = 0;
-        synchronized (countTimeSync) {
-            countTime = 10;
-        }
+
         synchronized (soundSync) {
             cpsBaseLevel = 0;
             cpsBaseSignal = 0;
@@ -1372,21 +1323,31 @@ public class AtomSpectraService extends Service {
     }
 
     public static void freeze (boolean freeze) {
+        // TODO: looks like a hack to immediately stop everything on spectrum load
         freeze_update_data = freeze;
     }
+
+    // method used to start/stop data collecting timers
     private void setFreeze(boolean freeze) {
         freeze_update_data = freeze;
-        if (freeze) {
-            releaseAR();
-        }
         synchronized (inputSync) {
             if (inputType == INPUT_SERIAL) {
-                if (freeze_update_data)
-                    usbDevice.sendTextCommand("-sto", SERVICE_ID);
-                else
-                    usbDevice.sendTextCommand("-sta", SERVICE_ID);
+                if (freeze_update_data) {
+                    usbDevice.sendTextCommand("-sto", SERVICE_STO_ID);
+                } else {
+                    resetSpectrumChangeData();
+                    usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
+                }
+            }
+            if (inputType == INPUT_AUDIO) {
+                if (freeze_update_data) {
+                    stopCapturingAudioSource();
+                } else {
+                    startCapturingAudioSource();
+                }
             }
         }
+
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
         NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
     }
@@ -1399,6 +1360,30 @@ public class AtomSpectraService extends Service {
     private static final LinkedList<Double> doseEnergyHistory = new LinkedList<>();
     private static final LinkedList<Double> deltaTime = new LinkedList<>();
     private static double exp_T = 0.1;
+
+    private static void resetCpsData() {
+        Arrays.fill(cpsArray, 0);
+        Arrays.fill(cpsArrayInterval, 0);
+        Arrays.fill(cpsArrayEnergy, 0);
+        cps = 0;
+        cpsInterval = 0;
+    }
+
+    private static void resetDoseRateData() {
+        synchronized (windowCps) {
+            deltaTime.clear();
+            windowEnergy.clear();
+            windowCps.clear();
+            window.clear();
+        }
+
+        synchronized (doseHistory) {
+            doseHistory.clear();
+            doseEnergyHistory.clear();
+        }
+
+        doseRateValue = 0;
+    }
 
     private static double doseRateSearch(double pulses, double pulses_interval, double pulses_e, double time, boolean useEnergy) {
 
@@ -1628,7 +1613,7 @@ public class AtomSpectraService extends Service {
         return StrictMath.max(0.0, (energy - EnergyList[energy_pos - 1]) / (EnergyList[energy_pos] - EnergyList[energy_pos - 1]) * (ETomSv[energy_pos] - ETomSv[energy_pos - 1]) + ETomSv[energy_pos - 1]);
     }
 
-    //this function is used to release sound input
+    // this function is used to release sound input
     private void releaseAR () {
         synchronized (ARLock) {
             if (AR != null) {
@@ -1639,664 +1624,630 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    //this task is used to read from audio input and update information
-    private final Timer audioTimer = new Timer();
+    // this task is used to read from audio input and update cps and spectrum information
     int audioZeroDataCount = 0;
     final int audioZeroDataMaxCount = 5;
-    private final TimerTask captureAudioTask = new TimerTask() {
-        @Override
-        public void run() {
-            synchronized (inputSync) {
-                if (inputSelectNext == INPUT_AUDIO) {
-                    inputType = inputSelectNext;
-                    inputSelectNext = INPUT_NONE;
-                    releaseAR();
-//                    new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test3: "+ForegroundSpectrum.getSpectrumTime(), Toast.LENGTH_SHORT).show());
-                    NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-                    if (ForegroundSpectrum.getSpectrumTime() == 0) {
-//                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "test4", Toast.LENGTH_SHORT).show());
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
-                    }
-                }
-                if (inputType != INPUT_AUDIO)
-                    return;
-            }
-            if(freeze_update_data) {
-                return;
-            }
-            if (SetAudioSource == SET_AUDIO_VOICE) {
-                AudioSource = AUDIO_SOURCE_VOICE;
-                releaseAR();
+    private void captureAudioTask() {
+        if (inputType != INPUT_AUDIO) {
+            return;
+        }
+        if (freeze_update_data) {
+            return;
+        }
+        if (SetAudioSource == SET_AUDIO_VOICE) {
+            AudioSource = AUDIO_SOURCE_VOICE;
+            releaseAR();
+            SetAudioSource = SET_AUDIO_OK;
+        }
+        if (SetAudioSource == SET_AUDIO_RAW && context != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null)
+                    AudioSource = AUDIO_SOURCE_RAW;
                 SetAudioSource = SET_AUDIO_OK;
+                releaseAR();
+            } else {
+                SetAudioSource = SET_AUDIO_ERROR;
             }
-            if (SetAudioSource == SET_AUDIO_RAW && context != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                    if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null)
-                        AudioSource = AUDIO_SOURCE_RAW;
-                    SetAudioSource = SET_AUDIO_OK;
-                    releaseAR();
-                } else {
-                    SetAudioSource = SET_AUDIO_ERROR;
-                }
-            }
-            synchronized (ARLock) {
-                if (canOpenAudio && (AR == null)) {
-                    AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        if (inputSound) {
-                            AudioDeviceInfo device = getDeviceInput(context, inputSoundID, inputSoundName, true);
-                            if (device != null) {
-                                AR.setPreferredDevice(device);
-                                ARShowAbsentMessage = true;
-                            } else {
-                                if (ARShowAbsentMessage) {
-                                    new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getString(R.string.input_sound_absent), Toast.LENGTH_SHORT).show());
-                                    ARShowAbsentMessage = false;
-                                }
-                                AR.setPreferredDevice(null);
-                            }
+        }
+        synchronized (ARLock) {
+            if (canOpenAudio && (AR == null)) {
+                AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (inputSound) {
+                        AudioDeviceInfo device = getDeviceInput(context, inputSoundID, inputSoundName, true);
+                        if (device != null) {
+                            AR.setPreferredDevice(device);
+                            ARShowAbsentMessage = true;
                         } else {
+                            if (ARShowAbsentMessage) {
+                                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getString(R.string.input_sound_absent), Toast.LENGTH_SHORT).show());
+                                ARShowAbsentMessage = false;
+                            }
                             AR.setPreferredDevice(null);
                         }
-                    }
-                    if (AR.getState() == AudioRecord.STATE_UNINITIALIZED) {
-                        AR = null;
                     } else {
-                        try {
-//                            if (AutomaticGainControl.isAvailable()) {
-//                                AutomaticGainControl.create(AR.getAudioSessionId()).setEnabled(false);
-//                            }
-                            AR.startRecording();
-                        } catch (IllegalStateException e) {
-                            AR.release();
-                            AR = null;
-                        }
+                        AR.setPreferredDevice(null);
                     }
                 }
-                if (AR != null) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        AudioBytesRead = AR.read(AudioBytes, 0, BufferSize, AudioRecord.READ_NON_BLOCKING); // This is the guy reading the bytes out of the buffer!!
-                    } else {
-                        AudioBytesRead = AR.read(AudioBytes, 0, BufferSize); // This is the guy reading the bytes out of the buffer!!
-                    }
-                    if (AudioBytesRead < 0) {
-                        switch (AudioBytesRead) {
-                            case AudioRecord.ERROR_INVALID_OPERATION:             //object is not initialized
-                                if (AR != null) {
-                                    AR.stop();
-                                    AR.release();
-                                }
-                                AR = null;
-                                break;
-                            case AudioRecord.ERROR_DEAD_OBJECT:                   //object is not accessible now, try to reopen
-                            case AudioRecord.ERROR:                               //other errors found
-                                if (AR != null) {
-                                    AR.stop();
-                                    AR.release();
-                                }
-                                AR = null;
-                                break;
-                            case AudioRecord.ERROR_BAD_VALUE:                     //error in input parameters, must not happen
-                                break;
-                        }
-                        AudioBytesRead = 0;
-                    }
+                if (AR.getState() == AudioRecord.STATE_UNINITIALIZED) {
+                    AR = null;
                 } else {
-                    AudioBytesRead = 0;
-                }
-            }
-
-            if (AudioBytesRead == 0) {
-                audioZeroDataCount++;
-
-                if (audioZeroDataCount >= audioZeroDataMaxCount) {
-                    audioZeroDataCount = 0;
-                    if (AR != null) {
-                        AR.stop();
+                    try {
+                        // if (AutomaticGainControl.isAvailable()) {
+                        //    AutomaticGainControl.create(AR.getAudioSessionId()).setEnabled(false);
+                        // }
+                        AR.startRecording();
+                    } catch (IllegalStateException e) {
                         AR.release();
                         AR = null;
                     }
                 }
-                return;
-            } else {
-                audioZeroDataCount = 0;
             }
+            if (AR != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    AudioBytesRead = AR.read(AudioBytes, 0, BufferSize, AudioRecord.READ_NON_BLOCKING); // This is the guy reading the bytes out of the buffer!!
+                } else {
+                    AudioBytesRead = AR.read(AudioBytes, 0, BufferSize); // This is the guy reading the bytes out of the buffer!!
+                }
+                if (AudioBytesRead < 0) {
+                    switch (AudioBytesRead) {
+                        case AudioRecord.ERROR_INVALID_OPERATION:             //object is not initialized
+                            if (AR != null) {
+                                AR.stop();
+                                AR.release();
+                            }
+                            AR = null;
+                            break;
+                        case AudioRecord.ERROR_DEAD_OBJECT:                   //object is not accessible now, try to reopen
+                        case AudioRecord.ERROR:                               //other errors found
+                            if (AR != null) {
+                                AR.stop();
+                                AR.release();
+                            }
+                            AR = null;
+                            break;
+                        case AudioRecord.ERROR_BAD_VALUE:                     //error in input parameters, must not happen
+                            break;
+                    }
+                    AudioBytesRead = 0;
+                }
+            } else {
+                AudioBytesRead = 0;
+            }
+        }
 
-            //First we will pass the 2 bytes into one sample
-            //It's an extra loop but avoids repeating the same sum many times later during the filter
-//            int Mask = ((-1) << (Constants.ADC_MAX - adc_effective_bits));
-            int HighBitsShift = Math.max(0, 15 - Constants.ADC_MAX);
-            for (int i = 0, r = 0; i < AudioBytesRead - 2; i += 2, r++) {// Before the 8 we had the end of the previous data
-                if (AudioBytes[i] < 0)
-                    AudioData[r] = AudioBytes[i] + 256;
-                else
-                    AudioData[r] = AudioBytes[i];
-                AudioData[r] = AudioData[r] + 256 * AudioBytes[i + 1];//+32768;
+        if (AudioBytesRead == 0) {
+            audioZeroDataCount++;
 
-                if (inversion) AudioData[r] = -AudioData[r];
+            if (audioZeroDataCount >= audioZeroDataMaxCount) {
+                audioZeroDataCount = 0;
+                if (AR != null) {
+                    AR.stop();
+                    AR.release();
+                    AR = null;
+                }
+            }
+            return;
+        } else {
+            audioZeroDataCount = 0;
+        }
+
+        // First we will pass the 2 bytes into one sample
+        // It's an extra loop but avoids repeating the same sum many times later during the filter
+        // int Mask = ((-1) << (Constants.ADC_MAX - adc_effective_bits));
+        int HighBitsShift = Math.max(0, 15 - Constants.ADC_MAX);
+        for (int i = 0, r = 0; i < AudioBytesRead - 2; i += 2, r++) {// Before the 8 we had the end of the previous data
+            if (AudioBytes[i] < 0)
+                AudioData[r] = AudioBytes[i] + 256;
+            else
+                AudioData[r] = AudioBytes[i];
+            AudioData[r] = AudioData[r] + 256 * AudioBytes[i + 1];//+32768;
+
+            if (inversion) AudioData[r] = -AudioData[r];
 //                    AudioData[r] = Constants.MinMax(AudioData[r] >> (Math.max(0, 15 - Constants.ADC_MAX)), 0, Constants.NUM_HIST_POINTS - 1);
-                AudioData[r] = (AudioData[r] >> HighBitsShift);// & Mask;
+            AudioData[r] = (AudioData[r] >> HighBitsShift);// & Mask;
 //                    AudioData[r] = ((AudioData[r] >> (Math.max(0, 15 - Constants.ADC_MAX))) >> (Constants.ADC_MAX - adc_effective_bits)) << (Constants.ADC_MAX - adc_effective_bits);
 //                    AudioData[r] = Constants.MinMax(((AudioData[r] >> (Math.max(0, 15 - Constants.ADC_MAX))) >> (Constants.ADC_MAX - adc_effective_bits)) << (Constants.ADC_MAX - adc_effective_bits), 0, Constants.NUM_HIST_POINTS - 1);
 //                    AudioData[r] = (AudioData[r] >> (16 - adc_effective_bits)) << (16 - adc_effective_bits);
-            }
+        }
 
 //-----------------LPF started--------------------------------------------------
-             /*
-             float f_cutting = (float) 15000.0;
-             AudioData[0]=(int)(AudioData[BufferSize/2-1]*(SAMPLE_RATE/(SAMPLE_RATE+f_cutting))
-            		 +AudioData[0]*(f_cutting/(SAMPLE_RATE+f_cutting)));
-             for (int k=1;k<BufferSize/2;k++)
-             {
-            	 AudioData[k]=(int)(AudioData[k-1]*(SAMPLE_RATE/(SAMPLE_RATE+f_cutting))+AudioData[k]*(f_cutting/(SAMPLE_RATE+f_cutting)));
-             }
+         /*
+         float f_cutting = (float) 15000.0;
+         AudioData[0]=(int)(AudioData[BufferSize/2-1]*(SAMPLE_RATE/(SAMPLE_RATE+f_cutting))
+                 +AudioData[0]*(f_cutting/(SAMPLE_RATE+f_cutting)));
+         for (int k=1;k<BufferSize/2;k++)
+         {
+             AudioData[k]=(int)(AudioData[k-1]*(SAMPLE_RATE/(SAMPLE_RATE+f_cutting))+AudioData[k]*(f_cutting/(SAMPLE_RATE+f_cutting)));
+         }
 */
-            //for (int k=0;k<BufferSize/2;k++) AudioData[k]=((65535-AudioData[k])>>4)<<3;
-            //for (int k=0;k<BufferSize/2;k++) AudioData[k]=(AudioData[k]>>4)<<3;
+        //for (int k=0;k<BufferSize/2;k++) AudioData[k]=((65535-AudioData[k])>>4)<<3;
+        //for (int k=0;k<BufferSize/2;k++) AudioData[k]=(AudioData[k]>>4)<<3;
 
 //-----------------LPF finished-------------------------------------------------
 
 
 //-----------------DPP started--------------------------------------------------
 
-            int initial_amp = 0, initial_time = 0;
-            float corrector;
-            double energy_pulse;
+        int initial_amp = 0, initial_time = 0;
+        float corrector;
+        double energy_pulse;
 
-            for (int i = 1; i < AudioBytesRead / 2 - 2; i++) {
-                if ((audioCaptureOldTimer + Constants.UPDATE_PERIOD) < (audioCaptureTimer + (i * 1000 / SAMPLE_RATE))) {
-                    audioCaptureOldTimer += Constants.UPDATE_PERIOD;
-                    cpsPos = cpsPos < (1000 / Constants.UPDATE_PERIOD - 1) ? (cpsPos + 1) : 0;
-                    cpsArray[cpsPos] = total_pulses_cps;
-                    cpsArrayInterval[cpsPos] = total_pulses_cps_interval;
-                    cpsArrayEnergy[cpsPos] = total_energy_cps;
-                    total_pulses_cps = 0;
-                    total_pulses_cps_interval = 0;
-                    total_energy_cps = 0.0;
-                }
+        for (int i = 1; i < AudioBytesRead / 2 - 2; i++) {
+            if (((AudioData[i] - AudioData[i - 1]) <= 0) && ((AudioData[i + 1] - AudioData[i]) > 0)) {
+                initial_amp = AudioData[i];
+                initial_time = i;
+            }
+            if (((AudioData[i] - AudioData[i - 1]) >= 0) && ((AudioData[i + 1] - AudioData[i]) < 0)) {
+                if (((i - initial_time) >= frontCountsMin) && ((i - initial_time) <= frontCountsMax)) {
 
-                if (((AudioData[i] - AudioData[i - 1]) <= 0) && ((AudioData[i + 1] - AudioData[i]) > 0)) {
-                    initial_amp = AudioData[i];
-                    initial_time = i;
-                }
-                if (((AudioData[i] - AudioData[i - 1]) >= 0) && ((AudioData[i + 1] - AudioData[i]) < 0)) {
-                    if (((i - initial_time) >= frontCountsMin) && ((i - initial_time) <= frontCountsMax)) {
-
-                        //if (((initial_time-(i-initial_time))>=0)&&(initial_time>=0))
-                        if (i > frontCountsMax * 2)
-                            corrector = AudioData[initial_time - (i - initial_time)] - AudioData[initial_time];
-                        else corrector = 0;
-                        if (!pileup) corrector = 0;
-                        int amp = (AudioData[i] - initial_amp + (int) corrector);//>>4;
+                    //if (((initial_time-(i-initial_time))>=0)&&(initial_time>=0))
+                    if (i > frontCountsMax * 2)
+                        corrector = AudioData[initial_time - (i - initial_time)] - AudioData[initial_time];
+                    else corrector = 0;
+                    if (!pileup) corrector = 0;
+                    int amp = (AudioData[i] - initial_amp + (int) corrector);//>>4;
 //                            amp = Constants.MinMax(amp >> Math.max(0, 15 - Constants.ADC_MAX), 0, Constants.NUM_HIST_POINTS - 1);
-                        if ((amp >= histogramMinChannel) && (amp < Constants.NUM_HIST_POINTS)) {
+                    if ((amp >= histogramMinChannel) && (amp < Constants.NUM_HIST_POINTS)) {
 
 //                                int amp = ((AudioData[i] - initial_amp + (int) corrector));
 
 //                                if ((amp >= 0) && (amp < Constants.NUM_HIST_POINTS)) {
-                            energy_pulse = getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(amp));
+                        energy_pulse = getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(amp));
 //                            if (!freeze_update_data) {
-                                if (ForegroundSpectrum.incSpectrumValue(amp))
-                                    ForegroundSpectrum.updateComments();
-                                total_pulses++;
+                            if (ForegroundSpectrum.incSpectrumValue(amp))
+                                ForegroundSpectrum.updateComments();
+                            total_pulses++;
 //                            }
 
 //-----------------DPP finished-------------------------------------------------
 
-                            total_pulses_cps++;
-                            if ((amp >= leftChannelInterval) && (amp <= rightChannelInterval))
-                                total_pulses_cps_interval++;
-                            total_energy_cps += energy_pulse;
+                        total_pulses_cps++;
+                        if ((amp >= leftChannelInterval) && (amp <= rightChannelInterval))
+                            total_pulses_cps_interval++;
+                        total_energy_cps += energy_pulse;
 //                                }
 
-                            if ((i > 128) && (i < (1024 - 128)) && (i < ((AudioBytesRead - 128) / 2)))
-                                for (int j = -128; j < 128; j++)
-                                    referencePulse[j + 128] += AudioData[i + j];
-                        }
-
+                        if ((i > 128) && (i < (1024 - 128)) && (i < ((AudioBytesRead - 128) / 2)))
+                            for (int j = -128; j < 128; j++)
+                                referencePulse[j + 128] += AudioData[i + j];
                     }
+
                 }
             }
+        }
 
-            audioCaptureTimer += audioTaskTimeout;
+        audioCaptureTimer += captureAudioTaskInterval;
+
+        // expected to be called 10 times per second
+        if ((audioCaptureOldTimer + Constants.UPDATE_PERIOD) < audioCaptureTimer) {
+            audioCaptureOldTimer += Constants.UPDATE_PERIOD;
+            cpsPos = cpsPos < (1000 / Constants.UPDATE_PERIOD - 1) ? (cpsPos + 1) : 0;
+            cpsArray[cpsPos] = total_pulses_cps;
+            cpsArrayInterval[cpsPos] = total_pulses_cps_interval;
+            cpsArrayEnergy[cpsPos] = total_energy_cps;
+            total_pulses_cps = 0;
+            total_pulses_cps_interval = 0;
+            total_energy_cps = 0.0;
         }
     };
 
-    public static void requestUpdateGraph() {
-        synchronized (countTimeSync) {
-            countTime = 10;
+    // finds isotopes and sends data to UI
+    // should to be called each second
+    private final void calcAndSendFoundIsotopesData() {
+        if (AtomSpectraIsotopes.autoUpdateIsotopes && !freeze_update_data && AtomSpectraIsotopes.showFoundIsotopes) {
+            AtomSpectraFindIsotope.updateFoundIsotopes();
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST).setPackage(Constants.PACKAGE_NAME));
         }
     }
 
-    private static int countTime = 0;
-    private static int countUpdateIsotopes = 0;
-    private static final Integer countTimeSync = 1;
+    // clear spectrum change window
+    private static void resetSpectrumChangeData() {
+        if (!histogram_all_queue.isEmpty()) {
+            synchronized (histogram_all_queue) {
+                histogram_all_queue.clear();
+            }
+        }
+    }
 
-    private Timer sendDataTimer = null;
-    private final TimerTask sendData = new TimerTask() {
-        @Override
-        public void run() {
-            boolean toUpdateIsotopes = false;
-            synchronized (countTimeSync) {
-                countTime++;
-                countUpdateIsotopes++;
-                if (countUpdateIsotopes >= 10) {
-                    countUpdateIsotopes = 0;
-                    toUpdateIsotopes = true;
+    // spectrum change mode
+    // shows spectrum for the last n seconds (sliding window)
+    // window size - delta_time
+    private final void calcSpectrumChangeData() {
+        if (showDelta) {
+            long[] currentState = Arrays.copyOf(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getDataArray().length);
+            long[] previousState = currentState;
+            synchronized (histogram_all_queue) {
+                histogram_all_queue.add(currentState);
+                while (histogram_all_queue.size() > delta_time + 1) {
+                    histogram_all_queue.remove();
                 }
+
+                previousState = histogram_all_queue.peek();
             }
-            if (toUpdateIsotopes) {
-                if (AtomSpectraIsotopes.autoUpdateIsotopes && !freeze_update_data && AtomSpectraIsotopes.showFoundIsotopes) {
-                    AtomSpectraFindIsotope.updateFoundIsotopes();
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST).setPackage(Constants.PACKAGE_NAME));
-                }
+
+            for (int i = 0; i < currentState.length; i++) {
+                histogram_all_delta[i] = currentState[i] - previousState[i];
             }
-            deltaTimeAccumulator++;
-            if (deltaTimeAccumulator >= (1000 / Constants.UPDATE_PERIOD)) { // each second
-                if (showDelta && !freeze_update_data) {
-                    long[] currentState = Arrays.copyOf(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getDataArray().length);
-                    long[] previousState = currentState;
-                    synchronized (histogram_all_queue) {
-                        histogram_all_queue.add(currentState);
-                        while (histogram_all_queue.size() > delta_time + 1) {
-                            histogram_all_queue.remove();
+        } else {
+            resetSpectrumChangeData();
+        }
+    }
+
+    private final void sendDataToUI() {
+        final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
+        Bundle mBundle = new Bundle();
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, doseRateValue);
+        mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_pulses);
+        mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
+        mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
+        mBundle.putDouble(EXTRA_DATA_TOTAL_TIME, ForegroundSpectrum.getRealSpectrumTime());
+
+        mBundle.putInt(EXTRA_DATA_ARRAY_INT_SOUND_LENGTH, BufferSize / 2);
+        mBundle.putIntArray(EXTRA_DATA_ARRAY_INT_SOUND, AudioData);
+
+        int num_values;
+        int num_scale_factor;
+        int num_first_channel;
+        synchronized (sync_factor) {
+            num_values = 1 << (Constants.SCALE_MAX - scale_factor - 1);
+            num_scale_factor = scale_factor;
+            num_first_channel = first_channel;
+        }
+
+        switch (num_scale_factor) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                if (showCalibrationFunction) {
+                    double[] histogram_temp = newCalibration.getApproximationList();
+                    for (int i = 0; i < 1024; i++) {
+                        histogram[i] = 0;
+                        background_histogram[i] = 0;
+                        for (int j = 0; j < num_values; j++) {
+                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
                         }
-
-                        previousState = histogram_all_queue.peek();
+                        histogram[i] = histogram[i] / num_values;
                     }
-
-                    for (int i = 0; i < currentState.length; i++) {
-                        histogram_all_delta[i] = currentState[i] - previousState[i];
-                    }
-                } else {
-                    // cleanup queue
-                    if (!histogram_all_queue.isEmpty()) {
-                        synchronized (histogram_all_queue) {
-                            histogram_all_queue.clear();
-                        }
-                    }
-                }
-
-                deltaTimeAccumulator = 0;
-            }
-            synchronized (countTimeSync) {
-                if (countTime < periodUpdate) {
-                    return;
-                }
-                countTime = 0;
-            }
-            final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
-            Bundle mBundle = new Bundle();
-            mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, doseRateValue);
-            mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_pulses);
-            mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
-            mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
-            mBundle.putDouble(EXTRA_DATA_TOTAL_TIME, ForegroundSpectrum.getRealSpectrumTime());
-
-            mBundle.putInt(EXTRA_DATA_ARRAY_INT_SOUND_LENGTH, BufferSize / 2);
-            mBundle.putIntArray(EXTRA_DATA_ARRAY_INT_SOUND, AudioData);
-
-            int num_values;
-            int num_scale_factor;
-            int num_first_channel;
-            synchronized (sync_factor) {
-                num_values = 1 << (Constants.SCALE_MAX - scale_factor - 1);
-                num_scale_factor = scale_factor;
-                num_first_channel = first_channel;
-            }
-
-            switch (num_scale_factor) {
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                    if (showCalibrationFunction) {
-                        double[] histogram_temp = newCalibration.getApproximationList();
-                        for (int i = 0; i < 1024; i++) {
-                            histogram[i] = 0;
-                            background_histogram[i] = 0;
-                            for (int j = 0; j < num_values; j++) {
-                                histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                            }
-                            histogram[i] = histogram[i] / num_values;
-                        }
-                    } else if (showDelta) {
-                        if (isCalibrated) {
-                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
-                            double sum_element;
-                            switch (compressGraph) {
-                                case Constants.COMPRESS_GRAPH_SUM:
-                                    for (int i = 0; i < 1024; i++) {
-                                        sum_element = 0;
-                                        background_histogram[i] = 0;
+                } else if (showDelta) {
+                    if (isCalibrated) {
+                        double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                        double sum_element;
+                        switch (compressGraph) {
+                            case Constants.COMPRESS_GRAPH_SUM:
+                                for (int i = 0; i < 1024; i++) {
+                                    sum_element = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                    }
+                                    histogram[i] = sum_element;
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_AVERAGE:
+                                for (int i = 0; i < 1024; i++) {
+                                    sum_element = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                    }
+                                    histogram[i] = sum_element / num_values;
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_MAX:
+                                for (int i = 0; i < 1024; i++) {
+                                    sum_element = 0;
+                                    background_histogram[i] = 0;
+                                    if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
                                         for (int j = 0; j < num_values; j++) {
-                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                            sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
                                         }
                                         histogram[i] = sum_element;
                                     }
-                                    break;
-                                case Constants.COMPRESS_GRAPH_AVERAGE:
-                                    for (int i = 0; i < 1024; i++) {
-                                        sum_element = 0;
-                                        background_histogram[i] = 0;
-                                        for (int j = 0; j < num_values; j++) {
-                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
-                                        }
-                                        histogram[i] = sum_element / num_values;
-                                    }
-                                    break;
-                                case Constants.COMPRESS_GRAPH_MAX:
-                                    for (int i = 0; i < 1024; i++) {
-                                        sum_element = 0;
-                                        background_histogram[i] = 0;
-                                        if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
-                                            for (int j = 0; j < num_values; j++) {
-                                                sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
-                                            }
-                                            histogram[i] = sum_element;
-                                        }
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                        } else {
-                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
-                            switch (compressGraph) {
-                                case Constants.COMPRESS_GRAPH_SUM:
-                                    for (int i = 0; i < 1024; i++) {
-                                        histogram[i] = 0;
-                                        background_histogram[i] = 0;
-                                        for (int j = 0; j < num_values; j++) {
-                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                                        }
-                                    }
-                                    break;
-                                case Constants.COMPRESS_GRAPH_AVERAGE:
-                                    for (int i = 0; i < 1024; i++) {
-                                        histogram[i] = 0;
-                                        background_histogram[i] = 0;
-                                        for (int j = 0; j < num_values; j++) {
-                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                                        }
-                                        histogram[i] = histogram[i] / num_values;
-                                    }
-                                    break;
-                                case Constants.COMPRESS_GRAPH_MAX:
-                                    for (int i = 0; i < 1024; i++) {
-                                        histogram[i] = 0;
-                                        background_histogram[i] = 0;
-                                        for (int j = 0; j < num_values; j++) {
-                                            histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
-                                        }
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
+                                }
+                                break;
+                            default:
+                                break;
                         }
                     } else {
+                        double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                        switch (compressGraph) {
+                            case Constants.COMPRESS_GRAPH_SUM:
+                                for (int i = 0; i < 1024; i++) {
+                                    histogram[i] = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                    }
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_AVERAGE:
+                                for (int i = 0; i < 1024; i++) {
+                                    histogram[i] = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                    }
+                                    histogram[i] = histogram[i] / num_values;
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_MAX:
+                                for (int i = 0; i < 1024; i++) {
+                                    histogram[i] = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
+                                    }
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                } else {
+                    if (isCalibrated) {
+                        double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                        double sum_element;
+                        switch (compressGraph) {
+                            case Constants.COMPRESS_GRAPH_SUM:
+                                for (int i = 0; i < 1024; i++) {
+                                    sum_element = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                    }
+                                    histogram[i] = sum_element;
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_AVERAGE:
+                                for (int i = 0; i < 1024; i++) {
+                                    sum_element = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                    }
+                                    histogram[i] = sum_element / num_values;
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_MAX:
+                                for (int i = 0; i < 1024; i++) {
+                                    sum_element = 0;
+                                    background_histogram[i] = 0;
+                                    if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
+                                        for (int j = 0; j < num_values; j++) {
+                                            sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
+                                        }
+                                        histogram[i] = sum_element;
+                                    }
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    } else {
+                        double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                        switch (compressGraph) {
+                            case Constants.COMPRESS_GRAPH_SUM:
+                                for (int i = 0; i < 1024; i++) {
+                                    histogram[i] = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                    }
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_AVERAGE:
+                                for (int i = 0; i < 1024; i++) {
+                                    histogram[i] = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                    }
+                                    histogram[i] = histogram[i] / num_values;
+                                }
+                                break;
+                            case Constants.COMPRESS_GRAPH_MAX:
+                                for (int i = 0; i < 1024; i++) {
+                                    histogram[i] = 0;
+                                    background_histogram[i] = 0;
+                                    for (int j = 0; j < num_values; j++) {
+                                        histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
+                                    }
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    if (background_show && (!BackgroundSpectrum.isEmpty())) {
+                        double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
                         if (isCalibrated) {
-                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                            double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                             double sum_element;
                             switch (compressGraph) {
                                 case Constants.COMPRESS_GRAPH_SUM:
                                     for (int i = 0; i < 1024; i++) {
                                         sum_element = 0;
-                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                            sum_element += background_data_e_total[num_first_channel + i * num_values + j];
                                         }
-                                        histogram[i] = sum_element;
+                                        background_histogram[i] = sum_element * backgroundScale;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_AVERAGE:
                                     for (int i = 0; i < 1024; i++) {
                                         sum_element = 0;
-                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                            sum_element += background_data_e_total[num_first_channel + i * num_values + j];
                                         }
-                                        histogram[i] = sum_element / num_values;
+                                        background_histogram[i] = sum_element * backgroundScale / num_values;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_MAX:
                                     for (int i = 0; i < 1024; i++) {
                                         sum_element = 0;
-                                        background_histogram[i] = 0;
-                                        if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
-                                            for (int j = 0; j < num_values; j++) {
-                                                sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
-                                            }
-                                            histogram[i] = sum_element;
+                                        for (int j = 0; j < num_values; j++) {
+                                            sum_element = StrictMath.max(sum_element, background_data_e_total[num_first_channel + i * num_values + j]);
                                         }
+                                        background_histogram[i] = sum_element * backgroundScale;
                                     }
                                     break;
                                 default:
                                     break;
                             }
                         } else {
-                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                            double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                             switch (compressGraph) {
                                 case Constants.COMPRESS_GRAPH_SUM:
                                     for (int i = 0; i < 1024; i++) {
-                                        histogram[i] = 0;
-                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                            background_histogram[i] += data[num_first_channel + i * num_values + j];
                                         }
+                                        background_histogram[i] = background_histogram[i] * backgroundScale;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_AVERAGE:
                                     for (int i = 0; i < 1024; i++) {
-                                        histogram[i] = 0;
-                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                            background_histogram[i] += data[num_first_channel + i * num_values + j];
                                         }
-                                        histogram[i] = histogram[i] / num_values;
+                                        background_histogram[i] = background_histogram[i] * backgroundScale / num_values;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_MAX:
                                     for (int i = 0; i < 1024; i++) {
-                                        histogram[i] = 0;
-                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
+                                            background_histogram[i] = StrictMath.max(background_histogram[i], data[num_first_channel + i * num_values + j]);
                                         }
+                                        background_histogram[i] = background_histogram[i] * backgroundScale;
                                     }
                                     break;
                                 default:
                                     break;
                             }
                         }
-                        if (background_show && (!BackgroundSpectrum.isEmpty())) {
-                            double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
-                            if (isCalibrated) {
-                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
-                                double sum_element;
-                                switch (compressGraph) {
-                                    case Constants.COMPRESS_GRAPH_SUM:
-                                        for (int i = 0; i < 1024; i++) {
-                                            sum_element = 0;
-                                            for (int j = 0; j < num_values; j++) {
-                                                sum_element += background_data_e_total[num_first_channel + i * num_values + j];
-                                            }
-                                            background_histogram[i] = sum_element * backgroundScale;
-                                        }
-                                        break;
-                                    case Constants.COMPRESS_GRAPH_AVERAGE:
-                                        for (int i = 0; i < 1024; i++) {
-                                            sum_element = 0;
-                                            for (int j = 0; j < num_values; j++) {
-                                                sum_element += background_data_e_total[num_first_channel + i * num_values + j];
-                                            }
-                                            background_histogram[i] = sum_element * backgroundScale / num_values;
-                                        }
-                                        break;
-                                    case Constants.COMPRESS_GRAPH_MAX:
-                                        for (int i = 0; i < 1024; i++) {
-                                            sum_element = 0;
-                                            for (int j = 0; j < num_values; j++) {
-                                                sum_element = StrictMath.max(sum_element, background_data_e_total[num_first_channel + i * num_values + j]);
-                                            }
-                                            background_histogram[i] = sum_element * backgroundScale;
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            } else {
-                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
-                                switch (compressGraph) {
-                                    case Constants.COMPRESS_GRAPH_SUM:
-                                        for (int i = 0; i < 1024; i++) {
-                                            for (int j = 0; j < num_values; j++) {
-                                                background_histogram[i] += data[num_first_channel + i * num_values + j];
-                                            }
-                                            background_histogram[i] = background_histogram[i] * backgroundScale;
-                                        }
-                                        break;
-                                    case Constants.COMPRESS_GRAPH_AVERAGE:
-                                        for (int i = 0; i < 1024; i++) {
-                                            for (int j = 0; j < num_values; j++) {
-                                                background_histogram[i] += data[num_first_channel + i * num_values + j];
-                                            }
-                                            background_histogram[i] = background_histogram[i] * backgroundScale / num_values;
-                                        }
-                                        break;
-                                    case Constants.COMPRESS_GRAPH_MAX:
-                                        for (int i = 0; i < 1024; i++) {
-                                            for (int j = 0; j < num_values; j++) {
-                                                background_histogram[i] = StrictMath.max(background_histogram[i], data[num_first_channel + i * num_values + j]);
-                                            }
-                                            background_histogram[i] = background_histogram[i] * backgroundScale;
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
                     }
+                }
 
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
-                    mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
-                    break;
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
+                break;
 
-                case 7:
-                    if (showCalibrationFunction) {
-                        double[] histogram_temp = newCalibration.getApproximationList();
+            case 7:
+                if (showCalibrationFunction) {
+                    double[] histogram_temp = newCalibration.getApproximationList();
+                    for (int i = 0; i < 512; i++) {
+                        histogram[2 * i] = histogram_temp[num_first_channel + i];
+                        histogram[2 * i + 1] = histogram_temp[num_first_channel + i];
+                        background_histogram[2 * i] = 0;
+                        background_histogram[2 * i + 1] = 0;
+                    }
+                } else {
+                    if (isCalibrated) {
+                        double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                        for (int i = 0; i < 512; i++) {
+                            histogram[2 * i] = histogram_e_all[num_first_channel + i];
+                            histogram[2 * i + 1] = histogram_e_all[num_first_channel + i];
+                        }
+                    } else {
+                        double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
                         for (int i = 0; i < 512; i++) {
                             histogram[2 * i] = histogram_temp[num_first_channel + i];
                             histogram[2 * i + 1] = histogram_temp[num_first_channel + i];
-                            background_histogram[2 * i] = 0;
-                            background_histogram[2 * i + 1] = 0;
                         }
-                    } else {
+                    }
+                    if (background_show && (!BackgroundSpectrum.isEmpty())) {
+                        double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
                         if (isCalibrated) {
-                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                            double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                             for (int i = 0; i < 512; i++) {
-                                histogram[2 * i] = histogram_e_all[num_first_channel + i];
-                                histogram[2 * i + 1] = histogram_e_all[num_first_channel + i];
+                                background_histogram[2 * i] = background_data_e_total[num_first_channel + i] * backgroundScale;
+                                background_histogram[2 * i + 1] = background_data_e_total[num_first_channel + i] * backgroundScale;
                             }
                         } else {
-                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                            double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                             for (int i = 0; i < 512; i++) {
-                                histogram[2 * i] = histogram_temp[num_first_channel + i];
-                                histogram[2 * i + 1] = histogram_temp[num_first_channel + i];
-                            }
-                        }
-                        if (background_show && (!BackgroundSpectrum.isEmpty())) {
-                            double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
-                            if (isCalibrated) {
-                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
-                                for (int i = 0; i < 512; i++) {
-                                    background_histogram[2 * i] = background_data_e_total[num_first_channel + i] * backgroundScale;
-                                    background_histogram[2 * i + 1] = background_data_e_total[num_first_channel + i] * backgroundScale;
-                                }
-                            } else {
-                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
-                                for (int i = 0; i < 512; i++) {
-                                    background_histogram[2 * i] = data[num_first_channel + i] * backgroundScale;
-                                    background_histogram[2 * i + 1] = data[num_first_channel + i] * backgroundScale;
-                                }
+                                background_histogram[2 * i] = data[num_first_channel + i] * backgroundScale;
+                                background_histogram[2 * i + 1] = data[num_first_channel + i] * backgroundScale;
                             }
                         }
                     }
+                }
 
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
-                    mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
-                    break;
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
+                break;
 
-                case Constants.SCALE_DOSE_MODE:
-                    double[] histData = new double[SEARCH_WINDOW_SIZE];
-                    int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - doseHistory.size(), 0);
-                    if (isCalibrated)
-                        synchronized (doseHistory) {
-                            for (double v : doseEnergyHistory) {
-                                if (num_data >= SEARCH_WINDOW_SIZE)
-                                    break;
-                                histData[num_data] = v / Constants.DOSE_SCALE;
-                                num_data++;
-                            }
-                        }
-                    else
-                        synchronized (doseHistory) {
-                            for (double v : doseHistory) {
-                                if (num_data >= SEARCH_WINDOW_SIZE)
-                                    break;
-                                histData[num_data] = v / Constants.DOSE_SCALE;
-                                num_data++;
-                            }
-                        }
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histData);
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, new double[1024]);
-                    mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
-                    break;
-
-                case Constants.SCALE_COUNT_MODE:
-                    Arrays.fill(realTimeX, 0);
-                    synchronized (inputSync) {
-                        if (inputType == INPUT_AUDIO) {
-                            for (int i = 0; i < StrictMath.min(realTimeX.length, (AudioBytesRead / 2)); i++)
-                                realTimeX[i] = AudioData[i];
+            case Constants.SCALE_DOSE_MODE:
+                double[] histData = new double[SEARCH_WINDOW_SIZE];
+                int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - doseHistory.size(), 0);
+                if (isCalibrated)
+                    synchronized (doseHistory) {
+                        for (double v : doseEnergyHistory) {
+                            if (num_data >= SEARCH_WINDOW_SIZE)
+                                break;
+                            histData[num_data] = v / Constants.DOSE_SCALE;
+                            num_data++;
                         }
                     }
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, realTimeX);
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
-                    mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
-                    break;
-
-                case Constants.SCALE_IMPULSE_MODE:
-                    synchronized (inputSync) {
-                        if (inputType != INPUT_AUDIO) {
-                            Arrays.fill(referenceDoublePulse, 0);
-                        } else {
-                            for (int i = 0; i < 1024; i++) {
-                                referenceDoublePulse[i] = referencePulse[i];
-                            }
+                else
+                    synchronized (doseHistory) {
+                        for (double v : doseHistory) {
+                            if (num_data >= SEARCH_WINDOW_SIZE)
+                                break;
+                            histData[num_data] = v / Constants.DOSE_SCALE;
+                            num_data++;
                         }
                     }
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, referenceDoublePulse);
-                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
-                    mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
-                    break;
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histData);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, new double[1024]);
+                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
+                break;
 
-                default:
-                    break;
-            }
+            case Constants.SCALE_COUNT_MODE:
+                Arrays.fill(realTimeX, 0);
+                synchronized (inputSync) {
+                    if (inputType == INPUT_AUDIO) {
+                        for (int i = 0; i < StrictMath.min(realTimeX.length, (AudioBytesRead / 2)); i++)
+                            realTimeX[i] = AudioData[i];
+                    }
+                }
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, realTimeX);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
+                break;
 
-            intent.putExtras(mBundle);
+            case Constants.SCALE_IMPULSE_MODE:
+                synchronized (inputSync) {
+                    if (inputType != INPUT_AUDIO) {
+                        Arrays.fill(referenceDoublePulse, 0);
+                    } else {
+                        for (int i = 0; i < 1024; i++) {
+                            referenceDoublePulse[i] = referencePulse[i];
+                        }
+                    }
+                }
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, referenceDoublePulse);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
+                break;
 
-            if (context != null)
-                context.sendBroadcast(intent);
+            default:
+                break;
+        }
+
+        intent.putExtras(mBundle);
+
+        if (context != null) {
+            context.sendBroadcast(intent);
+            // TODO: debug log
         }
     };
 
@@ -2305,8 +2256,6 @@ public class AtomSpectraService extends Service {
             return AtomSpectraService.this;
         }
     }
-
-    private final Timer timerExec = new Timer();
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -2325,7 +2274,168 @@ public class AtomSpectraService extends Service {
         return super.onUnbind(intent);
     }
 
-    private final TimerTask periodicTask = new TimerTask() {
+    // used for audio source only
+    // should be called for each UPDATE_PERIOD
+    private static void calcCpsAndDoseRateForAudioSource() {
+        int int_cps = 0;
+        int int_cps_interval = 0;
+        for (int i = 0; i < (1000 / Constants.UPDATE_PERIOD); i++) {
+            int_cps += cpsArray[i];
+            int_cps_interval += cpsArrayInterval[i];
+        }
+        cps = int_cps;
+        cpsInterval = int_cps_interval;
+        doseRateValue = doseRateSearch(
+                cpsArray[cpsPos],
+                cpsArrayInterval[cpsPos],
+                cpsArrayEnergy[cpsPos],
+                (double) Constants.UPDATE_PERIOD / 1000.0,
+                AtomSpectra.XCalibrated);
+    }
+
+    // audio data capture/send timers
+    // capture timer called based on buffer size and sampling frequency
+    // send data timer must be called with Constants.UPDATE_PERIOD interval
+    // calculates and sends data collected by audio channel
+    private int dataFromAudioSourceElapsedTime = 0;
+    private int eachSecondDataFromAudioSourceElapsedTime = 0;
+    private Timer sendDataFromAudioSourceTimer = null;
+    private Timer captureDataFromAudioSourceTimer = null;
+    private void sendDataFromAudioSourceTimerTask() {
+        // hack to stop data send on spectrum load
+        if (freeze_update_data) {
+            return;
+        }
+
+        if (inputType != INPUT_AUDIO) {
+            return;
+        }
+
+        ForegroundSpectrum.setSpectrumTime(ForegroundSpectrum.getSpectrumTime() + 1);
+        eachSecondDataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
+        if (eachSecondDataFromAudioSourceElapsedTime >= 1000) { // each second
+            calcAndSendFoundIsotopesData();
+            calcSpectrumChangeData();
+
+            eachSecondDataFromAudioSourceElapsedTime = 0;
+        }
+
+        dataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
+        if (dataFromAudioSourceElapsedTime >= dataFromAudioSourceUpdatePeriod) { // from 0.1 to 1 sec
+            calcCpsAndDoseRateForAudioSource();
+            sendDataToUI();
+
+            dataFromAudioSourceElapsedTime = 0;
+        }
+    }
+
+    private final void startCapturingAudioSource() {
+        synchronized (audioCaptureSync) {
+            stopCapturingAudioSource(); // resetting timer just in case
+            resetSpectrumChangeData();
+
+            dataFromAudioSourceElapsedTime = 0;
+            eachSecondDataFromAudioSourceElapsedTime = 0;
+            sendDataFromAudioSourceTimer = new Timer();
+            TimerTask sendDataTask = new TimerTask() {
+                @Override
+                public void run() {
+                    sendDataFromAudioSourceTimerTask();
+                }
+            };
+            sendDataFromAudioSourceTimer.scheduleAtFixedRate(sendDataTask, Constants.UPDATE_PERIOD, Constants.UPDATE_PERIOD);
+
+            // audio capture settings
+            BufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT) * 2; //read two buffers at a time to reduce time consumption
+            AudioBytes = new byte[BufferSize]; //Array containing the audio data bytes
+            AudioData = new int[BufferSize / 2]; //Array containing the audio samples
+            AudioSource = AUDIO_SOURCE_VOICE;
+            captureAudioTaskInterval = 1000L * BufferSize / 2 / SAMPLE_RATE; // 46 ms with the default settings
+            audioCaptureTimer = 0;
+            audioCaptureOldTimer = 0;
+            captureDataFromAudioSourceTimer = new Timer();
+            TimerTask captureTask = new TimerTask() {
+                @Override
+                public void run() {
+                    captureAudioTask();
+                }
+            };
+            captureDataFromAudioSourceTimer.scheduleAtFixedRate(captureTask, 0, captureAudioTaskInterval);
+        }
+    }
+
+    private final void stopCapturingAudioSource() {
+        synchronized (audioCaptureSync) {
+            releaseAR();
+            if (sendDataFromAudioSourceTimer != null) {
+                sendDataFromAudioSourceTimer.cancel();
+                sendDataFromAudioSourceTimer.purge();
+                sendDataFromAudioSourceTimer = null;
+            }
+
+            if (captureDataFromAudioSourceTimer != null) {
+                captureDataFromAudioSourceTimer.cancel();
+                captureDataFromAudioSourceTimer.purge();
+                captureDataFromAudioSourceTimer = null;
+            }
+        }
+    }
+
+    private final void onUSBAttached(UsbDevice device) {
+        synchronized (inputSync) {
+            if (inputType == INPUT_AUDIO) {
+                setFreeze(true);
+            }
+
+            if (inputType == INPUT_SERIAL) {
+                Toast.makeText(this, "Error: usb attached event while input is already usb", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            inputType = INPUT_SERIAL;
+        }
+
+        if (usbDevice.isOpened() || usbDevice.Open(device)) {
+            usbDevice.sendTextCommand("-inf", SERVICE_INF_ID);
+            usbDevice.sendTextCommand("-mode 0", SERVICE_MODE_ID);
+            usbDevice.sendTextCommand("-stt", SERVICE_STT_ID);
+        } else {
+            onUSBNoAccess();
+        }
+
+        sendDataToUI(); // initial render
+        NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
+        Toast.makeText(this, getString(R.string.action_usb_attached), Toast.LENGTH_LONG).show();
+    }
+
+    private final void onUSBDetached() {
+        synchronized (inputSync) {
+            if (inputType == INPUT_SERIAL) {
+                inputType = INPUT_AUDIO;
+                setFreeze(true);
+            }
+        }
+
+        usbDevice.Close();
+        NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
+        Toast.makeText(this, getString(R.string.action_usb_detached), Toast.LENGTH_LONG).show();
+    }
+
+    private final void onUSBNoAccess() {
+        synchronized (inputSync) {
+            if (inputType == INPUT_SERIAL) {
+                inputType = INPUT_AUDIO;
+                setFreeze(true);
+            }
+        }
+
+        Toast.makeText(this, getString(R.string.action_usb_no_access), Toast.LENGTH_LONG).show();
+    }
+
+    // alarm timer
+    // tracks cps and makes alarm sound
+    private final Timer alarmTimer = new Timer();
+    private final TimerTask alarmTimerTask = new TimerTask() {
         @Override
         public void run() {
             if (outputSound) {
@@ -2389,37 +2499,6 @@ public class AtomSpectraService extends Service {
                         soundBufferSwitch = 1 - soundBufferSwitch;
                     }
                 }
-            }
-            synchronized (inputSync) {
-                if (inputType == INPUT_SERIAL)
-                    return;
-            }
-            if (freeze_update_data)
-                return;
-            timer += Constants.UPDATE_PERIOD;
-//            if (!freeze_update_data) ForegroundSpectrum.setSpectrumTime(ForegroundSpectrum.getSpectrumTime() + 1);
-            ForegroundSpectrum.setSpectrumTime(ForegroundSpectrum.getSpectrumTime() + 1);
-            if (timer >= 1000 / doseRateUpdateFreq) {
-                int int_cps = 0;
-                int int_cps_interval = 0;
-                for (int i = 0; i < (1000 / Constants.UPDATE_PERIOD); i++) {
-                    int_cps += cpsArray[i];
-                    int_cps_interval += cpsArrayInterval[i];
-                }
-                cps = int_cps;
-                cpsInterval = int_cps_interval;
-                timer = 0;
-            }
-            doseRateTimer += Constants.UPDATE_PERIOD;
-            double temp_dose = doseRateSearch(
-                    cpsArray[cpsPos],
-                    cpsArrayInterval[cpsPos],
-                    cpsArrayEnergy[cpsPos],
-                    (double) Constants.UPDATE_PERIOD / 1000.0,
-                    AtomSpectra.XCalibrated);
-            if (doseRateTimer >= (1000 / doseRateUpdateFreq)) {
-                doseRateTimer = 0;
-                doseRateValue = temp_dose;
             }
         }
     };
