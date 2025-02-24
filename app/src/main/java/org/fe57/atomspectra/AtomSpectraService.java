@@ -1051,7 +1051,7 @@ public class AtomSpectraService extends Service {
                             return;
                         }
 
-                        long new_time;
+                        double new_time;
                         double old_time;
                         long[] new_histogram;
                         long[] old_histogram;
@@ -1081,15 +1081,13 @@ public class AtomSpectraService extends Service {
                         cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
                         total_pulses = 0;
 
-                        if (new_histogram != null) {
+                        if (new_histogram != null && new_time > old_time) {
                             long count = 0, count_interval = 0;
                             double count_e = 0;
                             for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
                                 total_pulses += new_histogram[i];
                                 long value = 0;
-                                if (skip_next_cps_int_usb_calc == 0) {
-                                    value = new_histogram[i] - old_histogram[i];
-                                }
+                                value = new_histogram[i] - old_histogram[i];
 
                                 count += value;
                                 if (i >= leftChannelInterval && i <= rightChannelInterval) {
@@ -1097,11 +1095,18 @@ public class AtomSpectraService extends Service {
                                 }
                                 count_e += value * getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
                             }
+
                             if (skip_next_cps_int_usb_calc > 0) {
                                 skip_next_cps_int_usb_calc--;
+                                cpsInterval = 0;
+                                doseRateValue = 0;
+                            } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
+                                cpsInterval = (int) count_interval;
+                                doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time, AtomSpectra.XCalibrated);
+                            } else {
+                                cpsInterval = 0;
+                                doseRateValue = 0;
                             }
-                            cpsInterval = (int) count_interval;
-                            doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time, AtomSpectra.XCalibrated);
                         }
 
                         calcAndSendFoundIsotopesData();
@@ -1183,11 +1188,6 @@ public class AtomSpectraService extends Service {
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_OK_COLLECTING.equals(commandResult)) {
-                        resetCpsData();
-                        resetDoseRateData();
-                        // HACK! when started AtomSpectraSerial often sends wrong data for 1-2 seconds
-                        // calculate spectrum based values (cps interval ,dose rate etc.) only when data is more stable
-                        skip_next_cps_int_usb_calc = 3;
                         setFreeze(false);
                     } else {
                         freeze_update_data = true;
@@ -1335,7 +1335,16 @@ public class AtomSpectraService extends Service {
                 if (freeze_update_data) {
                     usbDevice.sendTextCommand("-sto", SERVICE_STO_ID);
                 } else {
+                    // spectrum from device has priority over current spectrum
                     resetSpectrumChangeData();
+                    long[] empty_hist = new long[ForegroundSpectrum.getDataArray().length];
+                    Arrays.fill(empty_hist, 0);
+                    ForegroundSpectrum.setSpectrum(empty_hist);
+                    ForegroundSpectrum.setSpectrumTime(0);
+                    ForegroundSpectrum.updateComments();
+                    // HACK! when started, AtomSpectraSerial often sends wrong data for 1-2 seconds
+                    // calculate spectrum based values (cps interval, dose rate etc.) only when data is more stable
+                    skip_next_cps_int_usb_calc = 3; // skip 3 updates just in case
                     usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
                 }
             }
