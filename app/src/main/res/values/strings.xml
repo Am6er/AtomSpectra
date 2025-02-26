@@ -5,6 +5,7 @@
     <string name="app_bar_audio_action">Reading data from audio</string>
     <string name="app_bar_usb_action">Reading data from USB</string>
     <string name="app_bar_spectrum_update">(updating spectrum)</string>
+    <string name="app_bar_pause">Data reading is stopped</string>
     <string name="app_channel">Atom Spectra Service</string>
     <string name="settings">Atom Spectra Settings</string>
     <string name="isotope_search">Atom Spectra Find Isotopes</string>

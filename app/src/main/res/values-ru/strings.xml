@@ -5,6 +5,7 @@
 	<string name="app_bar_audio_action">Читаю аудио-данные</string>
 	<string name="app_bar_usb_action">Читаю данные с USB</string>
 	<string name="app_bar_spectrum_update">(обновляю спектр)</string>
+	<string name="app_bar_pause">Чтение данных остановлено</string>
 	<string name="app_channel">Сервис Atom Spectra</string>
 	<string name="settings">Atom Spectra Параметры</string>
 	<string name="isotope_search">Atom Spectra Поиск изотопов</string>

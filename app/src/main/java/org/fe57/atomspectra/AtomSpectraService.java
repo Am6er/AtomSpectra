@@ -328,14 +328,16 @@ public class AtomSpectraService extends Service {
 
     private Notification createNewServiceNotification() {
         String notifyString = "";
-        if (inputType == INPUT_AUDIO) {
-            notifyString = getString(R.string.app_bar_audio_action);
-        }
-        if (inputType == INPUT_SERIAL) {
-            notifyString = getString(R.string.app_bar_usb_action);
-        }
         if (!freeze_update_data) {
+            if (inputType == INPUT_AUDIO) {
+                notifyString = getString(R.string.app_bar_audio_action);
+            }
+            if (inputType == INPUT_SERIAL) {
+                notifyString = getString(R.string.app_bar_usb_action);
+            }
             notifyString += " " + getString(R.string.app_bar_spectrum_update);
+        } else {
+            notifyString = getString(R.string.app_bar_pause);
         }
         Intent notificationIntent = new Intent(this, AtomSpectra.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
