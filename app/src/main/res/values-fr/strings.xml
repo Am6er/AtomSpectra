@@ -5,6 +5,7 @@
     <string name="app_bar_audio_action">Lecture de données audio</string>
     <string name="app_bar_usb_action">Lecture de données depuis USB</string>
     <string name="app_bar_spectrum_update">(mise à jour du spectre)</string>
+    <string name="app_bar_pause">La lecture des données est arrêtée</string>
     <string name="app_channel">Le Service d\'Atom Spectra</string>
     <string name="settings">Les Paramètres d\'Atom Spectra</string>
     <string name="isotope_search">Trouver un isotope d\'Atom Spectra</string>

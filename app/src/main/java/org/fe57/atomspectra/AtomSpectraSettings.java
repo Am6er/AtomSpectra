@@ -153,7 +153,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         if (AtomSpectraService.getScaleFactor() <= Constants.SCALE_MAX)
             AtomSpectraService.saveScaleFactor();
         AtomSpectraService.setScaleFactor(Constants.SCALE_COUNT_MODE);
-        AtomSpectraService.requestUpdateGraph();
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
         //gestureDetector = initGestureDetector();
 
         // getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -399,7 +399,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             AtomSpectraService.restoreScaleFactor();
-            AtomSpectraService.requestUpdateGraph();
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
             finish();
 //            onBackPressed();
             return true;
@@ -742,7 +742,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         intentFilter.addAction(Constants.ACTION.ACTION_AUDIO_CHANGED);
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SETTINGS);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_SETTINGS);
-        intentFilter.addAction(Constants.ACTION.ACTION_HAS_ANSWER);
+        intentFilter.addAction(Constants.ACTION.ACTION_USB_HAS_ANSWER);
         return intentFilter;
     }
 
@@ -806,10 +806,10 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
             if (Constants.ACTION.ACTION_CLOSE_SETTINGS.equals(action)) {
                 AtomSpectraService.restoreScaleFactor();
-                AtomSpectraService.requestUpdateGraph();
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
                 finish();
             }
-            if (Constants.ACTION.ACTION_HAS_ANSWER.equals(action)) {
+            if (Constants.ACTION.ACTION_USB_HAS_ANSWER.equals(action)) {
                 String id = intent.getStringExtra(AtomSpectraSerial.EXTRA_ID);
                 String data = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
                 if (SETTINGS_GET_INF_ID.equals(id)) {
@@ -935,7 +935,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         Log.d(TAG, "-XxX-  pause");
         //AtomSpectraService.scale_factor = tmp_scale_factor;
         AtomSpectraService.restoreScaleFactor();
-        AtomSpectraService.requestUpdateGraph();
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
     }
 
     @Override
@@ -1767,7 +1767,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                             AtomSpectraService.setScaleFactor(Constants.SCALE_IMPULSE_MODE);
                             sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
                         }
-                        AtomSpectraService.requestUpdateGraph();
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 
                     } else if (detector.isSwipeRight(e1, e2, velocityX)) {
                         //showToast("Right Swipe");
@@ -1777,16 +1777,16 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                             AtomSpectraService.setScaleFactor(Constants.SCALE_COUNT_MODE);
                             sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
                         }
-                        AtomSpectraService.requestUpdateGraph();
 
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
                     } else if (detector.isSwipeDown(e1, e2, velocityY)) {
                         if (zoom_factor > 1.1) zoom_factor /= 2;
                         else showToast(getString(R.string.graph_min_zoom));
-                        AtomSpectraService.requestUpdateGraph();
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
                     } else if (detector.isSwipeUp(e1, e2, velocityY)) {
                         if (zoom_factor < 40) zoom_factor *= 2;
                         else showToast(getString(R.string.graph_max_zoom));
-                        AtomSpectraService.requestUpdateGraph();
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
                     }
 
                 } catch (Exception ignored) {

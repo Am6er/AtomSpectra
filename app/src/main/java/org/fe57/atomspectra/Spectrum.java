@@ -13,7 +13,7 @@ import java.util.Locale;
 public class Spectrum {
 //    private final static String TAG = Spectrum.class.getSimpleName();
     private long[] DataArray;                     //spectrum data
-    private long SpectrumTime;                    //total amount of time collected
+    private long SpectrumTime;                    //total amount of time collected, NOT seconds, count of Constant.UPDATE_PERIOD
     private long SpectrumDate;                    //last spectrum update date
     private Calibration SpectrumCalibration;      //spectrum calibration
     private String Comments;                      //full comment string to save if exists

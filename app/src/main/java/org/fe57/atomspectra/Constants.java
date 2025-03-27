@@ -1,9 +1,6 @@
 package org.fe57.atomspectra;
 
-import java.lang.reflect.Array;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  * Created by ENDulov on 20.02.17.
@@ -135,14 +132,33 @@ public class Constants {
         String ACTION_CLOSE_ISOTOPES = "org.fe57.atomspectra.ACTION_CLOSE_ISOTOPES";
         String ACTION_CLOSE_SEARCH = "org.fe57.atomspectra.ACTION_CLOSE_SEARCH";
         String ACTION_CLOSE_HELP = "org.fe57.atomspectra.ACTION_CLOSE_HELP";
-        String ACTION_SOURCE_CHANGED = "org.fe57.atomspectra.ACTION_SOURCE_CHANGED";                   //USB or audio selection
-        String ACTION_AUDIO_CHANGED = "org.fe57.atomspectra.ACTION_AUDIO_CHANGED";                     //Added or removed audio input
+
+        // attach/detach USB
+        // sent by AtomSpectraSerial on errors
+        // sent by AtomSpectra on system events
+        // read by AtomSpectraService
+        String ACTION_USB_ATTACHED = "org.fe57.atomspectra.ACTION_USD_ATTACHED";
+        String ACTION_USB_DETACHED = "org.fe57.atomspectra.ACTION_USD_DETACHED";
+
+        // Added or removed audio input, sent by AtomSpectraService
+        String ACTION_AUDIO_CHANGED = "org.fe57.atomspectra.ACTION_AUDIO_CHANGED";
         String ACTION_UPDATE_NOTIFICATION = "org.fe57.atomspectra.ACTION_UPDATE_NOTIFICATION";
-        String ACTION_HAS_DATA = "org.fe57.atomspectra.ACTION_HAS_DATA";
-        String ACTION_HAS_ANSWER = "org.fe57.atomspectra.ACTION_HAS_ANSWER";
+
+        // sent to atom spectra service when data is needed immediately
+        String ACTION_UPDATE_GRAPH = "org.fe57.atomspectra.ACTION_UPDATE_GRAPH";
+
+        // produced by AtomSpectraSerial (usb) and read by AtomSpectraService to recalculate all data
+        String ACTION_USB_HAS_DATA = "org.fe57.atomspectra.ACTION_USB_HAS_DATA";
+
+        // produced by AtomSpectraSerial (usb) when command executed
+        String ACTION_USB_HAS_ANSWER = "org.fe57.atomspectra.ACTION_USB_HAS_ANSWER";
+
+        // produced when start/stop of data collection is needed
         String ACTION_FREEZE_DATA = "org.fe57.atomspectra.ACTION_FREEZE_DATA";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
         String ACTION_CLEAR_IMPULSE = "org.fe57.atomspectra.ACTION_CLEAR_IMPULSE";
+
+        // read by AtomSpectra to actualize menu status after capturing status change
         String ACTION_UPDATE_MENU = "org.fe57.atomspectra.ACTION_UPDATE_MENU";
         String ACTION_UPDATE_CALIBRATION = "org.fe57.atomspectra.ACTION_UPDATE_CALIBRATION";
         String ACTION_CHECK_GPS_AVAILABILITY = "org.fe57.atomspectra.ACTION_CHECK_GPS";

@@ -6,6 +6,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -16,6 +17,7 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.zip.CRC32;
 
@@ -58,6 +60,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private final static String COMMAND_RESULT_OK2 = "ok\r\n";  //replace this one with COMMAND_RESULT_OK as to be wrong
     public final static String COMMAND_RESULT_ERR = "-err\r\n";
     public final static String COMMAND_RESULT_TIMEOUT = "-timeout\r\n";
+    public final static String COMMAND_RESULT_OK_COLLECTING = "-ok collecting\r\n";
 
     public final static String EXTRA_ID = "Id";
     public final static String EXTRA_NUMBER = "Number";
@@ -129,8 +132,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         if (manager == null) {
             Delete();
-            Intent intent = new Intent(Constants.ACTION.ACTION_SOURCE_CHANGED).setPackage(Constants.PACKAGE_NAME);
-            intent.putExtra(AtomSpectraService.EXTRA_SOURCE, AtomSpectraService.EXTRA_SOURCE_AUDIO);
+            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
             return false;
         }
@@ -144,8 +146,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         catch (Exception ignored) {
             Delete();
-            Intent intent = new Intent(Constants.ACTION.ACTION_SOURCE_CHANGED).setPackage(Constants.PACKAGE_NAME);
-            intent.putExtra(AtomSpectraService.EXTRA_SOURCE, AtomSpectraService.EXTRA_SOURCE_AUDIO);
+            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
             return false;
         }
@@ -162,8 +163,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         catch (Exception ignored) {
             Delete();
-            Intent intent = new Intent(Constants.ACTION.ACTION_SOURCE_CHANGED).setPackage(Constants.PACKAGE_NAME);
-            intent.putExtra(AtomSpectraService.EXTRA_SOURCE, AtomSpectraService.EXTRA_SOURCE_AUDIO);
+            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
             return false;
         }
@@ -368,7 +368,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     for (int i = 1, j = 0; i < newPacket.length - 2; i += 2, j += 1) {
                         scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
                     }
-                    Intent intentScope = new Intent(Constants.ACTION.ACTION_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
+                    Intent intentScope = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
                     intentScope.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
                     intentScope.putExtra(AtomSpectraService.EXTRA_DATA_SCOPE_COUNTS, scope);
                     intentScope.putExtra(EXTRA_DATA_TYPE, CODE_SCOPE);
@@ -377,7 +377,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
                 case CODE_TEXT:
                     synchronized (syncCommand) {
-                        Intent intentText = new Intent(Constants.ACTION.ACTION_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
+                        Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                         int newLength = newPacket.length - 3;    //remove 0x03 code operation and trailing crc16 two-byte code
                         byte[] answerPacket = new byte[newLength];   //remove first code byte and last 0x0D,0x0A bytes
                         System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
@@ -426,7 +426,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 //                                ((newPacket[17] & 0xFF) << 16) |
 //                                ((newPacket[18] & 0xFF) << 24);
                     }
-                    Intent intent = new Intent(Constants.ACTION.ACTION_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
+                    Intent intent = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_SCOPE_COUNTS, new long[1024]);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_CPS, cps);
@@ -531,7 +531,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             }
                         }
                         if (code != null) {
-                            Intent intentText = new Intent(Constants.ACTION.ACTION_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
+                            Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                             intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_TIMEOUT);
                             intentText.putExtra(EXTRA_NUMBER, code.Number);
                             intentText.putExtra(EXTRA_COMMAND, new String(code.command));
@@ -543,8 +543,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 }, CommandCode.DROP_TIMEOUT + 500);
             } catch (Exception ignored) {
                 Close();
-                Intent intent = new Intent(Constants.ACTION.ACTION_SOURCE_CHANGED).setPackage(Constants.PACKAGE_NAME);
-                intent.putExtra(AtomSpectraService.EXTRA_SOURCE, AtomSpectraService.EXTRA_SOURCE_AUDIO);
+                Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
                 context.sendBroadcast(intent);
                 return false;
             }
@@ -633,5 +632,24 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     @Override
     public void onRunError(Exception e) {
         //nothing
+    }
+
+    public static UsbDevice scanForSpectraProDevice(UsbManager manager) {
+        if (manager != null) {
+            HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+            for (UsbDevice dev : deviceList.values()) {
+                if (!isSpectraPro(dev)) {
+                    continue;
+                }
+
+                return dev;
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean isSpectraPro(UsbDevice device) {
+        return (device.getVendorId() == 1027) && (device.getProductId() == 1002 || device.getProductId() == 24577);
     }
 }
