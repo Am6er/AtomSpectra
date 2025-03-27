@@ -3,3 +3,6 @@
 /app/build/*
 /build/*
 /.idea/*
+/app/debug/*
+/app/release/*
+.gitignore
