@@ -1461,6 +1461,10 @@ public class AtomSpectraService extends Service {
             }
         }
         double weightSensG = 7 * 0.88 * 1.0e-2 * 3600 / SensG;
+        // fix sensitivity issue for pro devices (required x10 value comparing to audio spectrometer of the same size)
+        // calculation code was written taking into account that it is called each 0.1 second (sensitivity is set for fixed 0.1 sec interval)
+        // adjust according to actual elapsed time
+        weightSensG /= time / (Constants.UPDATE_PERIOD / 1000.0);
         double hist_dose_e = sumEnergy / accumulated * 4.3 * weightSensG;
         double hist_dose = StrictMath.max(0.0, ((sum / accumulated) - backgroundCount) * weightSensG);
         synchronized (doseHistory) {

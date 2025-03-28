@@ -773,7 +773,7 @@ public class AtomSpectraShapeView extends View {
 				System.arraycopy(back, 0, back_yf, 0, size);
 			}
 		}
-		if (xZoom_factor == Constants.SCALE_COUNT_MODE) {
+		if (xZoom_factor == Constants.SCALE_COUNT_MODE || xZoom_factor == Constants.SCALE_DOSE_MODE) {
 			xSize = size;
 		}
 

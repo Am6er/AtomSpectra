@@ -4023,7 +4023,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
 				return;
 			}
-			int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
+			int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
 			int tempBack = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
 			int tempFast = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
 			int tempMedium = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
