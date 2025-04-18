@@ -26,6 +26,7 @@ public class Constants {
     public static final int WINDOW_OUTPUT_SIZE = 512;                                                                    //minimum number of points on the screen
     public static final boolean INVERSE_DEFAULT = false;                                                                 //inverse signal
     public static final boolean PILE_UP_DEFAULT = true;                                                                  //detect pile-up
+    public static final boolean LOG_SCALE_DEFAULT = false;
     public static final int SCALE_DEFAULT = 16 - ADC_MAX;                                                                //default scale: 8192 channels on graph
     public static final int SCALE_MIN = 16 - ADC_MAX;                                                                    //minimum scale factor
     public static final int SCALE_MAX = 16 - ADC_MIN + 1;                                                                //maximum scale factor
@@ -73,6 +74,7 @@ public class Constants {
         String CONF_INVERSION = "Inversion:";
         String CONF_PILE_UP = "PileUp correction:";
         String CONF_SCALE_FACTOR = "ScaleFactor:";
+        String CONF_LOG_SCALE = "LogScale";
         String CONF_POLI_SIZE = "Poli size:";
         String CONF_FIRST_CHANNEL = "FirstChannel:";
         String CONF_CHECK_POWER = "CheckPower:";

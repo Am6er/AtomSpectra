@@ -121,7 +121,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private TextView mTextView = null;
 	private LinearLayout mLayoutView = null;
 
-	private boolean logScale = false;
+	private boolean logScale = Constants.LOG_SCALE_DEFAULT;
 	private boolean barMode = false;
 
 	//for main spectrum
@@ -260,9 +260,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		if (savedInstanceState != null) {
 			show_average_cps = savedInstanceState.getInt(ATOM_STATE_AVERAGE, 0);
-			logScale = savedInstanceState.getBoolean(ATOM_STATE_LOG, false);
+			logScale = savedInstanceState.getBoolean(ATOM_STATE_LOG, Constants.LOG_SCALE_DEFAULT);
 			barMode = savedInstanceState.getBoolean(ATOM_STATE_BAR, false);
-//			AtomSpectraService.inputLastState = savedInstanceState.getInt(ATOM_STATE_INPUT, AtomSpectraService.INPUT_NONE);
 			zoom_factor = savedInstanceState.getFloat(ATOM_STATE_SCALE, 1);
 //			AtomSpectraService.background_show = savedInstanceState.getBoolean(ATOM_STATE_BACKGROUND_SHOW, false) && !AtomSpectraService.BackgroundSpectrum.isEmpty();
 			background_subtract = savedInstanceState.getBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, false) && AtomSpectraService.background_show;
@@ -277,6 +276,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (!AtomSpectraService.isStarted || !AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().isCorrect())
 				getCalibrationSettings(false,true);
 			AtomSpectraService.setScaleFactor(sharedPreferences.getInt(Constants.CONFIG.CONF_SCALE_FACTOR, Constants.SCALE_DEFAULT));
+			logScale = sharedPreferences.getBoolean(Constants.CONFIG.CONF_LOG_SCALE, Constants.LOG_SCALE_DEFAULT);
 			dateScaleChanged = new Date().getTime();
 			showScaleLabel = true;
 		}
@@ -1780,6 +1780,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				dateScaleChanged = new Date().getTime();
 				showScaleLabel = true;
 				sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+				SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+				prefEditor.putBoolean(Constants.CONFIG.CONF_LOG_SCALE, logScale);
+				prefEditor.commit();
 				if (logScale) showToast(getString(R.string.graph_log_info));
 				else showToast(getString(R.string.graph_linear_info));
 				findViewById(R.id.shape_area).performClick();
@@ -4214,9 +4217,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		outState.putInt(ATOM_STATE_AVERAGE, show_average_cps);
 		outState.putBoolean(ATOM_STATE_LOG, logScale);
 		outState.putBoolean(ATOM_STATE_BAR, barMode);
-//		outState.putBoolean(Constants.FREEZE_STATE, AtomSpectraService.freeze_update_data);
 		outState.putInt(Constants.SCALE_FACTOR, AtomSpectraService.getScaleFactor() > Constants.SCALE_DOSE_MODE ? AtomSpectraService.getSavedScaleFactor() : AtomSpectraService.getScaleFactor());
-//		outState.putInt(ATOM_STATE_INPUT, AtomSpectraService.inputType);
 		outState.putFloat(ATOM_STATE_SCALE, zoom_factor);
 //		outState.putBoolean(ATOM_STATE_BACKGROUND_SHOW, AtomSpectraService.background_show);
 		outState.putBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, background_subtract);
