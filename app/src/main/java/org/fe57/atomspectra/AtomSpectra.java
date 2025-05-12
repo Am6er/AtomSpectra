@@ -358,7 +358,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 //		if (Locator == null)
 //			Locator = new GPSLocator(getApplicationContext());
 
-		if ((hasFeatureGPS || hasFeatureNetwork) && addGPS) {
+		boolean isAndroid14orHigher = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+		if ((hasFeatureGPS || hasFeatureNetwork) && addGPS && !isAndroid14orHigher) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 				final Activity id = this;
 				if (PermissionChecker.checkSelfPermission(id, Manifest.permission.ACCESS_FINE_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
@@ -374,6 +375,20 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> ActivityCompat.requestPermissions(id, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_FINE_GPS));
 					alert.show();
 				}
+			}
+		}
+
+		// temporary: android 14+ requires location access to be able to start background service with location access
+		// proper fix should be to check permissions and start background without location + restart when location needed/granted
+		if ((hasFeatureGPS || hasFeatureNetwork) && isAndroid14orHigher) {
+			final Activity id = this;
+			if (PermissionChecker.checkSelfPermission(id, Manifest.permission.ACCESS_FINE_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
+				final AlertDialog.Builder alert = new AlertDialog.Builder(id)
+					.setTitle(getString(R.string.perm_ask_fine_gps_title))
+					.setMessage(getString(R.string.perm_ask_fine_gps_text_android_14))
+					.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {});
+				alert.show();
+				return;
 			}
 		}
 
