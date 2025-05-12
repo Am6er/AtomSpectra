@@ -220,6 +220,7 @@
     <string name="perm_ask_share_text">Cette autorisation est nécessaire pour envoyer le fichier</string>
     <string name="perm_ask_fine_gps_title">Acquisition d\'accès GPS</string>
     <string name="perm_ask_fine_gps_text">Le programme doit accéder à l\'autorisation des coordonnées GPS pour les ajouter au fichier de sortie. Les coordonnées ne seront lues que si la fenêtre principale du programme est active et une case à cocher GPS est activée dans les paramètres.</string>
+    <string name="perm_ask_fine_gps_text_android_14">Le programme doit accéder à l\'autorisation des coordonnées GPS pour les ajouter au fichier de sortie. Les coordonnées ne seront lues que si la fenêtre principale du programme est active et une case à cocher GPS est activée dans les paramètres.\n\nLe programme ne peut pas être démarré sans l\'autorisation des coordonnées GPS. Accordez l\'autorisation dans les paramètres système et redémarrez le programme.</string>
     <string name="perm_ask_gps_off_title">Le GPS est éteint</string>
     <string name="perm_ask_gps_off_text">Le GPS est désactivé. Veuillez activer le GPS pour ajouter des coordonnées au fichier de spectre</string>
 

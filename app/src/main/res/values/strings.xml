@@ -220,6 +220,7 @@
     <string name="perm_ask_share_text">This permission is needed to send file</string>
     <string name="perm_ask_fine_gps_title">GPS access acquisition</string>
     <string name="perm_ask_fine_gps_text">The program needs to access GPS coordinates permission to add them to the output file. The coordinates will be read only if the main program window is active and a GPS checkbox is switched on in the parameters.</string>
+    <string name="perm_ask_fine_gps_text_android_14">The program needs to access GPS coordinates permission to add them to the output file. The coordinates will be read only if the main program window is active and a GPS checkbox is switched on in the parameters. \n\nProgram cannot be started without permission for GPS coordinates, grant permission in the system settings and restart the program.</string>
     <string name="perm_ask_gps_off_title">GPS is off</string>
     <string name="perm_ask_gps_off_text">GPS is switched off. Please switch on GPS to add coordinates to the spectrum file</string>
 

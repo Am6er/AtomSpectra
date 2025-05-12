@@ -220,6 +220,7 @@
     <string name="perm_ask_share_text">Diese Berechtigung wird zum Senden der Datei benötigt</string>
     <string name="perm_ask_fine_gps_title">GPS-Zugangserfassung</string>
     <string name="perm_ask_fine_gps_text">Das Programm benötigt die Berechtigung für den Zugriff auf GPS-Koordinaten, um sie der Ausgabedatei hinzuzufügen. Die Koordinaten werden nur gelesen, wenn das Hauptprogrammfenster aktiv ist und in den Parametern eine GPS-Checkbox eingeschaltet ist.</string>
+    <string name="perm_ask_fine_gps_text_android_14">Das Programm benötigt die Berechtigung für den Zugriff auf GPS-Koordinaten, um sie der Ausgabedatei hinzuzufügen. Die Koordinaten werden nur gelesen, wenn das Hauptprogrammfenster aktiv ist und in den Parametern eine GPS-Checkbox eingeschaltet ist.\n\nDas Programm kann ohne Berechtigung für GPS-Koordinaten nicht gestartet werden. Erteilen Sie die Berechtigung in den Systemeinstellungen und starten Sie das Programm neu.</string>
     <string name="perm_ask_gps_off_title">GPS ist ausgeschaltet</string>
     <string name="perm_ask_gps_off_text">GPS ist ausgeschaltet. Bitte schalten Sie GPS ein, um der Spektrumsdatei Koordinaten hinzuzufügen</string>
 
