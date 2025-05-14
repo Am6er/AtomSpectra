@@ -502,6 +502,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		fmsButton.setText(modeNames[sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0)]);
 
+		updateSelectedInputIndicator();
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			registerReceiver(mDataUpdateReceiver, makeAtomSpectraUpdateIntentFilter(), Context.RECEIVER_NOT_EXPORTED);
 		} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1367,17 +1369,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				if (view != null)
 					view.setText(AtomSpectraService.BackgroundSpectrum.getSuffix());
 
-				Button inputType = findViewById(R.id.inputTypeButton);
-				if (AtomSpectraService.inputType == AtomSpectraService.INPUT_NONE) {
-					inputType.setText("-");
-				}
-				if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
-					inputType.setText("usb");
-				}
-				if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
-					inputType.setText("mic");
-				}
-
+				updateSelectedInputIndicator();
 			}
 			if (Constants.ACTION.ACTION_UPDATE_CALIBRATION.equals(action)) {
 				getCalibrationSettings(intent.getBooleanExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false), false);
@@ -4235,5 +4227,18 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		outState.putBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, background_subtract);
 		outState.putInt(ATOM_STATE_CURSOR_X, cursor_x);
 		outState.putBoolean(ATOM_STATE_CURSOR_BUTTONS, showPlusMinusButtons);
+	}
+
+	private void updateSelectedInputIndicator() {
+		Button inputType = findViewById(R.id.inputTypeButton);
+		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_NONE) {
+			inputType.setText("-");
+		}
+		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
+			inputType.setText("usb");
+		}
+		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
+			inputType.setText("mic");
+		}
 	}
 }
