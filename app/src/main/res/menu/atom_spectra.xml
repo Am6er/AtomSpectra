@@ -30,6 +30,14 @@
         android:showAsAction="ifRoom"
         android:title="@string/action_exit" />
     <item
+        android:id="@+id/action_app_version"
+        android:checkable="false"
+        android:checked="false"
+        android:enabled="false"
+        android:icon="@android:drawable/btn_dialog"
+        android:orderInCategory="113"
+        android:showAsAction="ifRoom" />
+    <item
         android:orderInCategory="102"
         android:title="@string/histogram_menu">
         <menu>

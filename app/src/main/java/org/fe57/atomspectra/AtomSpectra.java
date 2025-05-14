@@ -1012,6 +1012,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
 		}
 
+		updateVersionInMenu();
+
 		return true;
 	}
 
@@ -4239,6 +4241,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		}
 		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
 			inputType.setText("mic");
+		}
+	}
+
+	private void updateVersionInMenu() {
+		if (app_menu != null) {
+			AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
+			app_menu.findItem(R.id.action_app_version).setTitle(versionInfo.version + "." + versionInfo.verCode);
 		}
 	}
 }

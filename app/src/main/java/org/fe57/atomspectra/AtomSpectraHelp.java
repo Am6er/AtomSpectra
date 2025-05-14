@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Annotation;
@@ -21,6 +22,7 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
 import java.util.Locale;
@@ -51,17 +53,7 @@ public class AtomSpectraHelp extends Activity {
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         try {
-            PackageInfo pInfo = getApplicationContext().getPackageManager().getPackageInfo(getPackageName(), 0);
-            String version = pInfo.versionName;
-            int verCode;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                verCode = (int) (pInfo.getLongVersionCode());
-            } else {
-                verCode = pInfo.versionCode;
-            }
-
-
-
+            VersionInfo versionInfo = getVersionInfo(this);
             SpannedString text = (SpannedString) getText(R.string.help_text1);
             Annotation[] annotations = text.getSpans(0, text.length(), Annotation.class);
 
@@ -125,7 +117,7 @@ public class AtomSpectraHelp extends Activity {
             SpannableStringBuilder builder = new SpannableStringBuilder();
             builder.append(prepareString(R.string.help_text2))
                     .append("\n\n\n")
-                    .append(getString(R.string.help_version, version, verCode));
+                    .append(getString(R.string.help_version, versionInfo.version, versionInfo.verCode));
             ((TextView)findViewById(R.id.helpText2)).setText(builder);
         } catch (Exception e) {
             //
@@ -136,6 +128,33 @@ public class AtomSpectraHelp extends Activity {
             registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(mDataUpdateReceiver, intentFilter);
+        }
+    }
+
+    public static @NonNull VersionInfo getVersionInfo(Activity activity) {
+        try {
+            PackageInfo pInfo = activity.getApplicationContext().getPackageManager().getPackageInfo(activity.getPackageName(), 0);
+            String version = pInfo.versionName;
+            int verCode;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                verCode = (int) (pInfo.getLongVersionCode());
+            } else {
+                verCode = pInfo.versionCode;
+            }
+            return new VersionInfo(version, verCode);
+        } catch (Exception e) {
+            return new VersionInfo("", 0);
+        }
+
+    }
+
+    public static class VersionInfo {
+        public final String version;
+        public final int verCode;
+
+        public VersionInfo(String version, int verCode) {
+            this.version = version;
+            this.verCode = verCode;
         }
     }
 
