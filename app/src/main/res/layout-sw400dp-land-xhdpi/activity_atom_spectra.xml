@@ -155,6 +155,19 @@
         android:textColor="@color/colorCursorText" />
 
     <Button
+        android:id="@+id/inputTypeButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="100dp"
+        android:clickable="false"
+        android:enabled="false"
+        android:text="-"
+        android:textColor="#FFFFFFFF"
+        android:textSize="12sp" />
+
+    <Button
         android:id="@+id/channelButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"

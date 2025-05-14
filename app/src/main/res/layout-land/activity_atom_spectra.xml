@@ -136,12 +136,25 @@
         android:textColor="@color/colorCursorText" />
 
     <Button
+        android:id="@+id/inputTypeButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginBottom="30dp"
+        android:clickable="false"
+        android:enabled="false"
+        android:text="-"
+        android:textColor="#FFFFFFFF"
+        android:textSize="9sp" />
+
+    <Button
         android:id="@+id/channelButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="70dp"
         android:onClick="onClick_UpDown"
         android:text="@string/updown"
         android:textColor="#FFFFFFFF" />
@@ -152,7 +165,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="110dp"
         android:onClick="onClick_fms"
         android:text="F"
         android:textColor="#FFFFFFFF" />
@@ -163,7 +176,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="140dp"
+        android:layout_marginBottom="150dp"
         android:onClick="onClick_Dose"
         android:text="D"
         android:textColor="#FFFFFFFF" />
@@ -174,7 +187,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="180dp"
+        android:layout_marginBottom="190dp"
         android:onClick="onClick_Sound"
         android:text="≈"
         android:textColor="#FFFFFFFF" />

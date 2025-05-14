@@ -1366,6 +1366,18 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				view = findViewById(R.id.backgroundSuffixView);
 				if (view != null)
 					view.setText(AtomSpectraService.BackgroundSpectrum.getSuffix());
+
+				Button inputType = findViewById(R.id.inputTypeButton);
+				if (AtomSpectraService.inputType == AtomSpectraService.INPUT_NONE) {
+					inputType.setText("-");
+				}
+				if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
+					inputType.setText("usb");
+				}
+				if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
+					inputType.setText("mic");
+				}
+
 			}
 			if (Constants.ACTION.ACTION_UPDATE_CALIBRATION.equals(action)) {
 				getCalibrationSettings(intent.getBooleanExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false), false);
