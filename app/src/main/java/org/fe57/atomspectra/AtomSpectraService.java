@@ -2407,7 +2407,7 @@ public class AtomSpectraService extends Service {
     // physical device itself continue working, but android does not provide any data through serial port and all commands end with timeout
     // this timer checks that data is constantly receiving, if no data for some period - try to restart serial interface with -sta command
     private Timer usbDataWatchdogTimer = null;
-    private final double usbDataWatchdogInterval = 3.5; // sec
+    private final double usbDataWatchdogInterval = 3; // sec
     private final void usbDataWatchdogTimerTask() {
         synchronized (inputSync) {
             if (inputType != INPUT_SERIAL || freeze_update_data) {
