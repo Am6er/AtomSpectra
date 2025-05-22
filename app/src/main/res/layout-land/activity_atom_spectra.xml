@@ -146,7 +146,7 @@
         android:enabled="false"
         android:text="-"
         android:textColor="#FFFFFFFF"
-        android:textSize="9sp" />
+        android:textSize="8sp" />
 
     <Button
         android:id="@+id/channelButton"
