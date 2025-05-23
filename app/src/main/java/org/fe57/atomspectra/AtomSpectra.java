@@ -4249,13 +4249,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private void updateSelectedInputIndicator() {
 		Button inputType = findViewById(R.id.inputTypeButton);
 		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_NONE) {
-			inputType.setText("-");
+			inputType.setBackgroundResource(R.drawable.input_none);
 		}
 		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
-			inputType.setText("usb");
+			inputType.setBackgroundResource(R.drawable.input_usb);
 		}
 		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
-			inputType.setText("mic");
+			inputType.setBackgroundResource(R.drawable.input_mic);
 		}
 	}
 
