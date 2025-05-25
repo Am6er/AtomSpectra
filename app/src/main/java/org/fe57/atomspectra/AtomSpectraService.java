@@ -1256,6 +1256,7 @@ public class AtomSpectraService extends Service {
 
         Log.d(TAG, "recording Stop");
         stopCapturingAudioSource();
+        cancelUsbDataWatchdog();
         alarmTimer.cancel();
         spgAutosaveTimer.cancel();
         usbDevice.Close();
