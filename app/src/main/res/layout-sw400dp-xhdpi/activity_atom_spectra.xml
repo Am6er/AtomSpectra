@@ -83,18 +83,6 @@
         android:src="@drawable/menu_clear_spectrum" />
 
     <Button
-        android:id="@+id/inputTypeButtonBg"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
-        android:clickable="false"
-        android:enabled="true"
-        android:focusable="false"
-        android:textColor="#FFFFFFFF"
-        android:textSize="12sp" />
-
-    <Button
         android:id="@+id/inputTypeButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"

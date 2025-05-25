@@ -72,19 +72,6 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/inputTypeButtonBg"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginBottom="30sp"
-        android:clickable="false"
-        android:enabled="true"
-        android:focusable="false"
-        android:textColor="#FFFFFFFF"
-        android:textSize="8sp" />
-
-    <Button
         android:id="@+id/inputTypeButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="40sp"
