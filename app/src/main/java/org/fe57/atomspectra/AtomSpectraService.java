@@ -1053,6 +1053,8 @@ public class AtomSpectraService extends Service {
                             return;
                         }
 
+                        restartUsbDataWatchdog();
+
                         double new_time;
                         double old_time;
                         long[] new_histogram;
@@ -1156,12 +1158,12 @@ public class AtomSpectraService extends Service {
                             if (version != null) {
                                 try {
                                     if (Integer.decode(version) < Constants.USB_DEVICE_MINIMAL_VERSION)
-                                        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getString(R.string.usb_below_minimal_version, Constants.USB_DEVICE_MINIMAL_VERSION), Toast.LENGTH_SHORT).show());
+                                        showToastInMainLooper(getString(R.string.usb_below_minimal_version, Constants.USB_DEVICE_MINIMAL_VERSION), Toast.LENGTH_SHORT);
                                 } catch (Exception e) {
-                                    new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "Device version read error", Toast.LENGTH_SHORT).show());
+                                    showToastInMainLooper("Device version read error", Toast.LENGTH_SHORT);
                                 }
                             } else {
-                                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), "Device version in unknown", Toast.LENGTH_SHORT).show());
+                                showToastInMainLooper("Device version in unknown", Toast.LENGTH_SHORT);
                             }
                         }
                     }
@@ -1213,6 +1215,8 @@ public class AtomSpectraService extends Service {
                         Toast.makeText(context, "-sta command timeout", Toast.LENGTH_LONG).show();
                         return;
                     }
+
+                    restartUsbDataWatchdog();
                 }
                 if (SERVICE_STO_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
@@ -1252,6 +1256,7 @@ public class AtomSpectraService extends Service {
 
         Log.d(TAG, "recording Stop");
         stopCapturingAudioSource();
+        cancelUsbDataWatchdog();
         alarmTimer.cancel();
         spgAutosaveTimer.cancel();
         usbDevice.Close();
@@ -1335,6 +1340,7 @@ public class AtomSpectraService extends Service {
         synchronized (inputSync) {
             if (inputType == INPUT_SERIAL) {
                 if (freeze_update_data) {
+                    cancelUsbDataWatchdog();
                     usbDevice.sendTextCommand("-sto", SERVICE_STO_ID);
                 } else {
                     // spectrum from device has priority over current spectrum
@@ -1676,7 +1682,7 @@ public class AtomSpectraService extends Service {
                             ARShowAbsentMessage = true;
                         } else {
                             if (ARShowAbsentMessage) {
-                                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getString(R.string.input_sound_absent), Toast.LENGTH_SHORT).show());
+                                this.showToastInMainLooper(getString(R.string.input_sound_absent), Toast.LENGTH_SHORT);
                                 ARShowAbsentMessage = false;
                             }
                             AR.setPreferredDevice(null);
@@ -2396,6 +2402,73 @@ public class AtomSpectraService extends Service {
         }
     }
 
+
+    // USB data watch dog
+    // in rare cases spectrum data receiving randomly stops
+    // physical device itself continue working, but android does not provide any data through serial port and all commands end with timeout
+    // this timer checks that data is constantly receiving, if no data for some period - try to restart serial interface with -sta command
+    private Timer usbDataWatchdogTimer = null;
+    private final double usbDataWatchdogInterval = 3; // sec
+    private final void usbDataWatchdogTimerTask() {
+        synchronized (inputSync) {
+            if (inputType != INPUT_SERIAL || freeze_update_data) {
+                return;
+            }
+
+            showToastInMainLooper("USB data watchdog: no data from USB for " + usbDataWatchdogInterval + " seconds. Trying to reconnect and re-run -sta command to restart data flow.", Toast.LENGTH_LONG);
+            UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+            UsbDevice device = AtomSpectraSerial.scanForSpectraProDevice(manager);
+            if (device != null) {
+                if (manager.hasPermission(device)) {
+                    usbDevice.Close();
+                    SystemClock.sleep(USB_WAIT_DEVICE);
+                    if (usbDevice.Open(device)) {
+                        usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
+                    } else {
+                        showToastInMainLooper("USB data watchdog: unable to open USB device.", Toast.LENGTH_LONG);
+                        this.onUSBDetached();
+                    }
+                } else {
+                    showToastInMainLooper("USB data watchdog: no permission for USB device.", Toast.LENGTH_LONG);
+                    this.onUSBDetached();
+                }
+            } else {
+                showToastInMainLooper("USB data watchdog: USB device not found.", Toast.LENGTH_LONG);
+                this.onUSBDetached();
+            }
+        }
+    }
+
+    private final void restartUsbDataWatchdog() {
+        // debug line
+        // Toast.makeText(this, "USB data watchdog: re-schedule timer.", Toast.LENGTH_SHORT).show();
+        synchronized (inputSync) {
+            cancelUsbDataWatchdog();
+            if (inputType != INPUT_SERIAL) {
+                return;
+            }
+
+            usbDataWatchdogTimer = new Timer();
+            TimerTask watchDogTask = new TimerTask() {
+                @Override
+                public void run() {
+                    usbDataWatchdogTimerTask();
+                }
+            };
+            usbDataWatchdogTimer.schedule(watchDogTask, (int)(usbDataWatchdogInterval * 1000));
+        }
+    }
+
+    private final void cancelUsbDataWatchdog() {
+        synchronized (inputSync) {
+            if (usbDataWatchdogTimer != null) {
+                usbDataWatchdogTimer.cancel();
+                usbDataWatchdogTimer.purge();
+                usbDataWatchdogTimer = null;
+            }
+        }
+    }
+
     private final void onUSBAttached(UsbDevice device) {
         synchronized (inputSync) {
             if (inputType == INPUT_AUDIO) {
@@ -2420,7 +2493,7 @@ public class AtomSpectraService extends Service {
 
         sendDataToUI(); // initial render
         NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-        Toast.makeText(this, getString(R.string.action_usb_attached), Toast.LENGTH_LONG).show();
+        showToastInMainLooper(getString(R.string.action_usb_attached), Toast.LENGTH_LONG);
     }
 
     private final void onUSBDetached() {
@@ -2431,9 +2504,10 @@ public class AtomSpectraService extends Service {
             }
         }
 
+        cancelUsbDataWatchdog();
         usbDevice.Close();
         NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-        Toast.makeText(this, getString(R.string.action_usb_detached), Toast.LENGTH_LONG).show();
+        showToastInMainLooper(getString(R.string.action_usb_detached), Toast.LENGTH_LONG);
     }
 
     private final void onUSBNoAccess() {
@@ -2444,7 +2518,7 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        Toast.makeText(this, getString(R.string.action_usb_no_access), Toast.LENGTH_LONG).show();
+        showToastInMainLooper(getString(R.string.action_usb_no_access), Toast.LENGTH_LONG);
     }
 
     // alarm timer
@@ -2619,7 +2693,7 @@ public class AtomSpectraService extends Service {
             autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
 
             if (autosavePair == null) {
-                new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getApplicationContext().getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show());
+                this.showToastInMainLooper(getApplicationContext().getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG);
                 autosaveSpectrum = null;
                 return;
             }
@@ -2631,7 +2705,7 @@ public class AtomSpectraService extends Service {
                     setChannels(autosaveSpectrum.getDataArray().length).
                     setChannelCompression(1).
                     saveSpectrum(docStream, this);
-            new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), getApplicationContext().getString(R.string.autosave_start), Toast.LENGTH_LONG).show());
+            this.showToastInMainLooper(getApplicationContext().getString(R.string.autosave_start), Toast.LENGTH_LONG);
             return;
         }
 
@@ -2655,7 +2729,7 @@ public class AtomSpectraService extends Service {
                     setChannelCompression(1).
                     saveIncrementalSpectrum(docStream, this);
         } catch (Exception e) {
-            new Handler(getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), String.format("!%s: %s", e.getMessage(), autosavePair.second), Toast.LENGTH_LONG).show());
+            this.showToastInMainLooper(String.format("!%s: %s", e.getMessage(), autosavePair.second), Toast.LENGTH_LONG);
         }
     }
 
@@ -2684,5 +2758,9 @@ public class AtomSpectraService extends Service {
         } else {
             Locator.stopUsingGPS();
         }
+    }
+
+    private void showToastInMainLooper(String text, int duration) {
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
     }
 }

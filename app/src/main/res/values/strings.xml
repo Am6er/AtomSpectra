@@ -396,128 +396,136 @@
 
     <string name="help_menu">Help</string>
     <string name="help">Atom Spectra Quick Help</string>
-    <string name="help_text1"><big><annotation foreground="caption">Overview.</annotation></big>\n
+    <string name="help_text_overview"><big><annotation foreground="caption">Overview.</annotation></big>\n
         This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), or from an USB spectrometer <u>AtomSpectra Pro</u>. If none of them is connected to a phone the program works in a demo mode reading an internal microphone and creating a spectrum.\n
-		\n
-        NOTE: Please add the program to the power exclusion list for a proper work in a background or when the screen is switched off. To fully stop the program please use \'<annotation foreground="parameter">Exit completely</annotation>\' menu item.\n
-		\n
-        <big><annotation foreground="caption">1. Operating:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- Use a horizontal pinch to scale channels/energies. Take the fingers off the screen to apply a pinch.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a vertical pinch to scale counts.  Take the fingers off the screen to apply a pinch.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a diagonal pinch to scale channels/energies and counts simultaneously. Take the fingers off the screen to apply a pinch.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a left/right swipe to move a spectrum left/right.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a down swipe to show and hide an isotope label.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a single tap to point a green cursor. Use a slider to smoothly shift the cursor. Tap to the left of spectrum to switch off a cursor. Tap on cursor text to set the cursor channel directly.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a double tap to select linear or log10 scale.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a long tap to switch between bar and line view modes.\n
-        \u00A0\u00A0\u00A0\u00A0- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the spectrum to switch between channel and keV modes.\n
-        \u00A0\u00A0\u00A0\u00A0- Use \'<annotation foreground="parameter">CD</annotation>\' button to the right of the spectrum to switch between spectrum and dose rate output modes.\n
-        \u00A0\u00A0\u00A0\u00A0- Use a short press on \'<annotation foreground="parameter">cps</annotation>\' or dose rate output to show all time average cps (\'<i>~cps</i>\') and a total time in seconds (\'<i>time</i>\'). Use a short press on \'<annotation foreground="parameter">~cps</annotation>\' or \'<annotation foreground="parameter">time</annotation>\' to show base (\'<annotation foreground="parameter">≈cps</annotation>\') and signal (\'<annotation foreground="parameter">♪cps</annotation>\') levels. Use a short press on \'<annotation foreground="parameter">≈cps</annotation>\' or \'<annotation foreground="parameter">♪cps</annotation>\' to show coordinates. The coordinates shows current values during spectrum update. They show last position before the record stopped. They shows position from last read file. Use a long press on coordinates to jump to a map program. Use a short press again to return back.\n
-		\n
-        <big><annotation foreground="caption">2. Spectra output:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- The program can show a main spectrum, a main spectrum with a background spectrum, and a difference between them. All modes are selected using \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
-        \u00A0\u00A0\u00A0\u00A0- In the bar view mode the main spectrum is shown blue, the background is shown green, and the difference between them is shown red. The colours are dimmed.\n
-        \u00A0\u00A0\u00A0\u00A0- In the line view mode the main spectrum is shown white, the background is shown green, and the difference between them is shown cyan. The colours are bright.\n
-        \u00A0\u00A0\u00A0\u00A0- You can clear background data in the program.\n
-        \u00A0\u00A0\u00A0\u00A0- To see spectrum \'as is\' please set ADC to maximum and show as 1024 channels. Other values will make spectrum and background smooth.\n
-        \u00A0\u00A0\u00A0\u00A0- You may smooth spectra or revert it by using \'<annotation foreground="parameter">Smooth</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu.\n
-        \u00A0\u00A0\u00A0\u00A0- You may indicate the difference between two spectrum states at different time by using \'<annotation foreground="parameter">Spectrum change</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu. The difference time can be chosen from 1 to 10 seconds range with \'<annotation foreground="parameter">Diff time</annotation>\' under \'<annotation foreground="parameter">Settings</annotation>\'.\n
-        \u00A0\u00A0\u00A0\u00A0- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use \'<annotation foreground="parameter">Set description</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' or \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
-		\n
-        <big><annotation foreground="caption">3. Energy calibration:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- The program uses an energy calibration.\n
-        \u00A0\u00A0\u00A0\u00A0- NOTE: It is better to switch to channel output before making a calibration.\n
-        \u00A0\u00A0\u00A0\u00A0- To calibrate the spectrum point the cursor to the first calibration point, then press a \'<annotation foreground="parameter">1</annotation>\' button above the spectrum and enter a value. The button changes from \'<annotation foreground="parameter">1</annotation>\' to \'<annotation foreground="parameter">2</annotation>\' to show for the second point waiting.\n
-        \u00A0\u00A0\u00A0\u00A0- Do the same for the next calibration points. The button will change to \'<annotation foreground="parameter">-</annotation>\' if there is no more acceptable points.\n
-        \u00A0\u00A0\u00A0\u00A0- Press \'<annotation foreground="parameter">\u221a</annotation>\' button to calculate a calibration. Use \'<annotation foreground="parameter">Store</annotation>\' to save the calibration data for the next program start. The program retrieves the calibration data when it deletes a current spectrum. Use \'<annotation foreground="parameter">Retrieve</annotation>\' to apply calibration data to a spectrum from memory. <annotation foreground="highlight">NOTE</annotation>: if <u>AtomSpectra Pro</u>> is attached, the program will use calibration from the device or store calibration to the device. Internal program calibration does not change and will be restored after unplugging the device or may be changed using appropriate menu commands.\n
-        \u00A0\u00A0\u00A0\u00A0- Tap on a nuclide flag on a graph from a <u>nuclide list</u> to set a new calibration point with the nuclide energy.\n
-        \u00A0\u00A0\u00A0\u00A0- Tap on a nuclide flag on a graph from <u>found peaks list</u> and enter an energy value to set a new calibration point.\n
-        \u00A0\u00A0\u00A0\u00A0- Press on polinom values in \'<annotation foreground="parameter">Calibration</annotation>\' submenu to edit it.\n
-        \u00A0\u00A0\u00A0\u00A0- You can set the highest polinom order in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
-        \u00A0\u00A0\u00A0\u00A0- Press \'<annotation foreground="parameter">\u00d7</annotation>\' button to drop all input points.\n
-        \u00A0\u00A0\u00A0\u00A0- Press on a new calibration line in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu to delete it from the list.\n
-        \u00A0\u00A0\u00A0\u00A0- You can see a calibration function using \'<annotation foreground="parameter">Show a function</annotation>\' item in \'<annotation foreground="parameter">Calibration</annotation>\' submenu.\n
-        \u00A0\u00A0\u00A0\u00A0- Press on \'<annotation foreground="parameter">Draw new</annotation>\' in \'<annotation foreground="parameter">Calibration</annotation>\' submenu to see a new calibration function and calibration points on a graph. New calibration points are shown in green.\n
-        \u00A0\u00A0\u00A0\u00A0- You can load a calibration data from another spectrum.\n
-        \u00A0\u00A0\u00A0\u00A0- You can select the last channel number to show on energy scale. Channel scale always shows the full spectrum.\n
-        \u00A0\u00A0\u00A0\u00A0- You can see and edit calibration data for a current spectrum in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu above the horizontal line.\n
-        \u00A0\u00A0\u00A0\u00A0- You can see new calibration data in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu below the horizontal line.\n
-		\n
-        <big><annotation foreground="caption">4. A dose rate calculation and output:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- The program makes a dose rate measurement in accordance with the channel or keV x-axis selection. In a channel view mode the program makes a simple count to dose rate conversion. In a keV view mode the program makes an energy compensated dose rate measurement.\n
-        \u00A0\u00A0\u00A0\u00A0- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
-        \u00A0\u00A0\u00A0\u00A0- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the dose rate.\n
-        \u00A0\u00A0\u00A0\u00A0- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens</annotation>\' parameter to estimate the dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
-        \u00A0\u00A0\u00A0\u00A0- You can set a \'<annotation foreground="parameter">BckgCnt</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
-        \u00A0\u00A0\u00A0\u00A0- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CD</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">D</annotation>\' means \'uncompensated dose rate history\'.\n
-    </string>
-    <string name="help_text2"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- Green cursor line shows the isotope with 3% uncertainty and selects more important isotopes. To see strict line isotopes please use the \'<annotation foreground="parameter">Show isotopes</annotation>\' isotope selection dialog.\n
-        \u00A0\u00A0\u00A0\u00A0- The program shows an isotope information in accordance with the channel or keV x-axis selection. In a channel mode the program shows isotope names. In a keV mode the program shows isotope energies.\n
-        \u00A0\u00A0\u00A0\u00A0- You can show isotope lines. Note: some isotopes in the list are shown in different colors according to their relative quantum yield on a given line. With increasing quantum yield: dark green, light green, dark yellow, light yellow, red. Light cyan colour is used to show decay chains and isotope groups.\n
-        \u00A0\u00A0\u00A0\u00A0- You can select all lines belongs to a given decay chain, all lines belong to a given isotope, or an individual isotope line.\n
-        \u00A0\u00A0\u00A0\u00A0- You can select an isotope library. The known isotopes from this library becomes bigger than the others.\n
-        \u00A0\u00A0\u00A0\u00A0- A decay chain selection also selects isotopes and individual isotope lines.\n
-        \u00A0\u00A0\u00A0\u00A0- An isotope selection also selects individual isotope lines.\n
-        \u00A0\u00A0\u00A0\u00A0- An individual isotope line selection doesn\'t change decay chain or isotope selection.\n
-        \u00A0\u00A0\u00A0\u00A0- Isotope lines from the list are shown on a graph with their colors.\n
-        \u00A0\u00A0\u00A0\u00A0- Each individual isotope line in a list shows the isotope name, its energy line and a photon output per 100 decays.\n
-		\n
-        <big><annotation foreground="caption">6. Isotope detection:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- You can find isotopes with the program. The algorithm is sensitive to input parameters, so try to change them to get better results. Created list can be shown on the graph or be hidden. You can change the visibility using \'<annotation foreground="parameter">Show</annotation>\' button (the button will change to \'<annotation foreground="parameter">Hide</annotation>\'). All lines are shown light-purple. The energies of these lines are shown calculated, they are not taken from the internal database. Isotope name is determined using \'<annotation foreground="parameter">Inaccuracy</annotation>\' parameter.\n
-        \u00A0\u00A0\u00A0\u00A0- The isotope list is hidden on graph when the spectrum is loaded or you make a new isotope search.\n
-        \u00A0\u00A0\u00A0\u00A0- To activate auto isotope search function during a spectrum reading you first need to activate it in \'<annotation foreground="parameter">Settings</annotation>\'. Then open \'<annotation foreground="parameter">Find isotopes</annotation>\' and press \'<annotation foreground="parameter">Show</annotation>\'. An auto update function does not work during a pause or when found isotopes are selected to be hidden. List updates every second.\n
-        \u00A0\u00A0\u00A0\u00A0- Input parameters are:\n
-        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Threshold\' - a trigger level to add a found isotope to the list (0.00-10,000.00).\n
-        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Window size\' - a number of channels to be used for estimation (1-200).\n
-        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Order\' - polynomial order (1-5).\n
-        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Inaccuracy\' - how coarse will be isotope name definition, in percent of energy (1.00-50.00).\n
-        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Significant bits\' - number of bits in channel number to be used. 13 means leave as-is. 12 means combine two channels into one, 11 means combine 4 channels into one, and so on.\n
-        \u00A0\u00A0\u00A0\u00A0\u00a0\u00a0\u25cf\u00a0\'Library\' - library of isotopes to be used. \'<i>All</i>\' means \'show even not defined\', \'<i>Known</i>\' means \'show only defined\', others mean corresponding isotope type used by IAEA.\n
         \n
-        <big><annotation foreground="caption">7. Data storage:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- You can save main spectrum to view it later. The spectrum is stored in own format file named \'<i>Spectrum-date.txt</i>\', where \'date\' is the current date. You can add a suffix after date as a note.\n
-        \u00A0\u00A0\u00A0\u00A0- A saved spectrum can be loaded in the program via menu. Loading spectrum automatically pauses a spectrum update but a cps and a dose rate continue to work.\n
-        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.xml</i>\' format compatible with \'BecquerelMonitor\'. The files are named as \'Bq-date.xml\' where \'date\' is the current date. You can add a suffix after date as a note. If the background is shown on graph it will be also added to the output file as background spectrum.\n
-        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.spe</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.spe</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
-        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.N42</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.N42</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
-        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields without energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
-        \u00A0\u00A0\u00A0\u00A0- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields with energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
-        \u00A0\u00A0\u00A0\u00A0- Output file names can be modified by \'<annotation foreground="parameter">Name</annotation>\' in \'<annotation foreground="parameter">Settings</annotation>\'. Prefix, date and time can be removed independently.\n
-	    \u00A0\u00A0\u00A0\u00A0- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file. Also you may load it to the main spectrum and then move it the background. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
-        \u00A0\u00A0\u00A0\u00A0- You can stop spectrum update by selecting \'<annotation foreground="parameter">Pause recording</annotation>\' in a main menu or on a shortcut bar. After selecting it changes to \'<annotation foreground="parameter">Continue recording</annotation>\'. All impulses received during pause will be lost. This mode doesn\'t stop cps and the dose rate calculation.\n
-        \u00A0\u00A0\u00A0\u00A0- Each saved file can be sent to another program, user or via internet by means of another program with \'<annotation foreground="parameter">Share a file</annotation>\' menu item.\n
-        \u00A0\u00A0\u00A0\u00A0- Device settings can be stored using \'<annotation foreground="parameter">Save device…</annotation>\' in \'<annotation foreground="parameter">Device</annotation>\' submenu in a \'<i>.txt</i>\' format. Device data is stored in an own format file named \'<i>Device-suffix.txt</i>\', where \'suffix\' can be set or be a date if empty. Stored device settings can be loaded into the program using \'<annotation foreground="parameter">Load device…</annotation>\' in \'<annotation foreground="parameter">Device</annotation>\' submenu.\n
+        NOTE: Please add the program to the power exclusion list for a proper work in a background or when the screen is switched off. To fully stop the program please use \'<annotation foreground="parameter">Exit completely</annotation>\' menu item.\n
+        \n
+    </string>
+    <string name="help_text_part1"><big><annotation foreground="caption">1. Operating:</annotation></big>\n
+        \t- Use a horizontal pinch to scale channels/energies. Take the fingers off the screen to apply a pinch.\n
+        \t- Use a vertical pinch to scale counts.  Take the fingers off the screen to apply a pinch.\n
+        \t- Use a diagonal pinch to scale channels/energies and counts simultaneously. Take the fingers off the screen to apply a pinch.\n
+        \t- Use a left/right swipe to move a spectrum left/right.\n
+        \t- Use a down swipe to show and hide an isotope label.\n
+        \t- Use a single tap to point a green cursor. Use a slider to smoothly shift the cursor. Tap to the left of spectrum to switch off a cursor. Tap on cursor text to set the cursor channel directly.\n
+        \t- Use a double tap to select linear or log10 scale.\n
+        \t- Use a long tap to switch between bar and line view modes.\n
+        \t- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the spectrum to switch between channel and keV modes.\n
+        \t- Use \'<annotation foreground="parameter">CD</annotation>\' button to the right of the spectrum to switch between spectrum and dose rate output modes.\n
+        \t- Use a short press on \'<annotation foreground="parameter">cps</annotation>\' or dose rate output to show all time average cps (\'<i>~cps</i>\') and a total time in seconds (\'<i>time</i>\'). Use a short press on \'<annotation foreground="parameter">~cps</annotation>\' or \'<annotation foreground="parameter">time</annotation>\' to show base (\'<annotation foreground="parameter">≈cps</annotation>\') and signal (\'<annotation foreground="parameter">♪cps</annotation>\') levels. Use a short press on \'<annotation foreground="parameter">≈cps</annotation>\' or \'<annotation foreground="parameter">♪cps</annotation>\' to show coordinates. The coordinates shows current values during spectrum update. They show last position before the record stopped. They shows position from last read file. Use a long press on coordinates to jump to a map program. Use a short press again to return back.\n
+        \n
+    </string>
+    <string name="help_text_part2"><big><annotation foreground="caption">2. Spectra output:</annotation></big>\n
+        \t- The program can show a main spectrum, a main spectrum with a background spectrum, and a difference between them. All modes are selected using \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
+        \t- In the bar view mode the main spectrum is shown blue, the background is shown green, and the difference between them is shown red. The colours are dimmed.\n
+        \t- In the line view mode the main spectrum is shown white, the background is shown green, and the difference between them is shown cyan. The colours are bright.\n
+        \t- You can clear background data in the program.\n
+        \t- To see spectrum \'as is\' please set ADC to maximum and show as 1024 channels. Other values will make spectrum and background smooth.\n
+        \t- You may smooth spectra or revert it by using \'<annotation foreground="parameter">Smooth</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu.\n
+        \t- You may indicate the difference between two spectrum states at different time by using \'<annotation foreground="parameter">Spectrum change</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu. The difference time can be chosen from 1 to 10 seconds range with \'<annotation foreground="parameter">Diff time</annotation>\' under \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \t- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use \'<annotation foreground="parameter">Set description</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' or \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
+        \n
+    </string>
+    <string name="help_text_part3"><big><annotation foreground="caption">3. Energy calibration:</annotation></big>\n
+        \t- The program uses an energy calibration.\n
+        \t- NOTE: It is better to switch to channel output before making a calibration.\n
+        \t- To calibrate the spectrum point the cursor to the first calibration point, then press a \'<annotation foreground="parameter">1</annotation>\' button above the spectrum and enter a value. The button changes from \'<annotation foreground="parameter">1</annotation>\' to \'<annotation foreground="parameter">2</annotation>\' to show for the second point waiting.\n
+        \t- Do the same for the next calibration points. The button will change to \'<annotation foreground="parameter">-</annotation>\' if there is no more acceptable points.\n
+        \t- Press \'<annotation foreground="parameter">\u221a</annotation>\' button to calculate a calibration. Use \'<annotation foreground="parameter">Store</annotation>\' to save the calibration data for the next program start. The program retrieves the calibration data when it deletes a current spectrum. Use \'<annotation foreground="parameter">Retrieve</annotation>\' to apply calibration data to a spectrum from memory. <annotation foreground="highlight">NOTE</annotation>: if <u>AtomSpectra Pro</u>> is attached, the program will use calibration from the device or store calibration to the device. Internal program calibration does not change and will be restored after unplugging the device or may be changed using appropriate menu commands.\n
+        \t- Tap on a nuclide flag on a graph from a <u>nuclide list</u> to set a new calibration point with the nuclide energy.\n
+        \t- Tap on a nuclide flag on a graph from <u>found peaks list</u> and enter an energy value to set a new calibration point.\n
+        \t- Press on polinom values in \'<annotation foreground="parameter">Calibration</annotation>\' submenu to edit it.\n
+        \t- You can set the highest polinom order in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \t- Press \'<annotation foreground="parameter">\u00d7</annotation>\' button to drop all input points.\n
+        \t- Press on a new calibration line in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu to delete it from the list.\n
+        \t- You can see a calibration function using \'<annotation foreground="parameter">Show a function</annotation>\' item in \'<annotation foreground="parameter">Calibration</annotation>\' submenu.\n
+        \t- Press on \'<annotation foreground="parameter">Draw new</annotation>\' in \'<annotation foreground="parameter">Calibration</annotation>\' submenu to see a new calibration function and calibration points on a graph. New calibration points are shown in green.\n
+        \t- You can load a calibration data from another spectrum.\n
+        \t- You can select the last channel number to show on energy scale. Channel scale always shows the full spectrum.\n
+        \t- You can see and edit calibration data for a current spectrum in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu above the horizontal line.\n
+        \t- You can see new calibration data in a \'<annotation foreground="parameter">Calibration</annotation>\' submenu below the horizontal line.\n
+        \n
+    </string>
+    <string name="help_text_part4"><big><annotation foreground="caption">4. A dose rate calculation and output:</annotation></big>\n
+        \t- The program makes a dose rate measurement in accordance with the channel or keV x-axis selection. In a channel view mode the program makes a simple count to dose rate conversion. In a keV view mode the program makes an energy compensated dose rate measurement.\n
+        \t- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \t- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the dose rate.\n
+        \t- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens</annotation>\' parameter to estimate the dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
+        \t- You can set a \'<annotation foreground="parameter">BckgCnt</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
+        \t- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CD</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">D</annotation>\' means \'uncompensated dose rate history\'.\n
+    </string>
+    <string name="help_text_part5"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
+        \t- Green cursor line shows the isotope with 3% uncertainty and selects more important isotopes. To see strict line isotopes please use the \'<annotation foreground="parameter">Show isotopes</annotation>\' isotope selection dialog.\n
+        \t- The program shows an isotope information in accordance with the channel or keV x-axis selection. In a channel mode the program shows isotope names. In a keV mode the program shows isotope energies.\n
+        \t- You can show isotope lines. Note: some isotopes in the list are shown in different colors according to their relative quantum yield on a given line. With increasing quantum yield: dark green, light green, dark yellow, light yellow, red. Light cyan colour is used to show decay chains and isotope groups.\n
+        \t- You can select all lines belongs to a given decay chain, all lines belong to a given isotope, or an individual isotope line.\n
+        \t- You can select an isotope library. The known isotopes from this library becomes bigger than the others.\n
+        \t- A decay chain selection also selects isotopes and individual isotope lines.\n
+        \t- An isotope selection also selects individual isotope lines.\n
+        \t- An individual isotope line selection doesn\'t change decay chain or isotope selection.\n
+        \t- Isotope lines from the list are shown on a graph with their colors.\n
+        \t- Each individual isotope line in a list shows the isotope name, its energy line and a photon output per 100 decays.\n
+        \n
+    </string>
+    <string name="help_text_part6"><big><annotation foreground="caption">6. Isotope detection:</annotation></big>\n
+        \t- You can find isotopes with the program. The algorithm is sensitive to input parameters, so try to change them to get better results. Created list can be shown on the graph or be hidden. You can change the visibility using \'<annotation foreground="parameter">Show</annotation>\' button (the button will change to \'<annotation foreground="parameter">Hide</annotation>\'). All lines are shown light-purple. The energies of these lines are shown calculated, they are not taken from the internal database. Isotope name is determined using \'<annotation foreground="parameter">Inaccuracy</annotation>\' parameter.\n
+        \t- The isotope list is hidden on graph when the spectrum is loaded or you make a new isotope search.\n
+        \t- To activate auto isotope search function during a spectrum reading you first need to activate it in \'<annotation foreground="parameter">Settings</annotation>\'. Then open \'<annotation foreground="parameter">Find isotopes</annotation>\' and press \'<annotation foreground="parameter">Show</annotation>\'. An auto update function does not work during a pause or when found isotopes are selected to be hidden. List updates every second.\n
+        \t- Input parameters are:\n
+        \t\t\u25cf \'Threshold\' - a trigger level to add a found isotope to the list (0.00-10,000.00).\n
+        \t\t\u25cf \'Window size\' - a number of channels to be used for estimation (1-200).\n
+        \t\t\u25cf \'Order\' - polynomial order (1-5).\n
+        \t\t\u25cf \'Inaccuracy\' - how coarse will be isotope name definition, in percent of energy (1.00-50.00).\n
+        \t\t\u25cf \'Significant bits\' - number of bits in channel number to be used. 13 means leave as-is. 12 means combine two channels into one, 11 means combine 4 channels into one, and so on.\n
+        \t\t\u25cf \'Library\' - library of isotopes to be used. \'<i>All</i>\' means \'show even not defined\', \'<i>Known</i>\' means \'show only defined\', others mean corresponding isotope type used by IAEA.\n
+        \n
+    </string>
+    <string name="help_text_part7"><big><annotation foreground="caption">7. Data storage:</annotation></big>\n
+        \t- You can save main spectrum to view it later. The spectrum is stored in own format file named \'<i>Spectrum-date.txt</i>\', where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \t- A saved spectrum can be loaded in the program via menu. Loading spectrum automatically pauses a spectrum update but a cps and a dose rate continue to work.\n
+        \t- The main spectrum can be exported in a \'<i>.xml</i>\' format compatible with \'BecquerelMonitor\'. The files are named as \'Bq-date.xml\' where \'date\' is the current date. You can add a suffix after date as a note. If the background is shown on graph it will be also added to the output file as background spectrum.\n
+        \t- The main spectrum can be exported in a \'<i>.spe</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.spe</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \t- The main spectrum can be exported in a \'<i>.N42</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.N42</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \t- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields without energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \t- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields with energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
+        \t- Output file names can be modified by \'<annotation foreground="parameter">Name</annotation>\' in \'<annotation foreground="parameter">Settings</annotation>\'. Prefix, date and time can be removed independently.\n
+        \t- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file. Also you may load it to the main spectrum and then move it the background. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
+        \t- You can stop spectrum update by selecting \'<annotation foreground="parameter">Pause recording</annotation>\' in a main menu or on a shortcut bar. After selecting it changes to \'<annotation foreground="parameter">Continue recording</annotation>\'. All impulses received during pause will be lost. This mode doesn\'t stop cps and the dose rate calculation.\n
+        \t- Each saved file can be sent to another program, user or via internet by means of another program with \'<annotation foreground="parameter">Share a file</annotation>\' menu item.\n
+        \t- Device settings can be stored using \'<annotation foreground="parameter">Save device…</annotation>\' in \'<annotation foreground="parameter">Device</annotation>\' submenu in a \'<i>.txt</i>\' format. Device data is stored in an own format file named \'<i>Device-suffix.txt</i>\', where \'suffix\' can be set or be a date if empty. Stored device settings can be loaded into the program using \'<annotation foreground="parameter">Load device…</annotation>\' in \'<annotation foreground="parameter">Device</annotation>\' submenu.\n
         NOTE: Device settings contain a sensitivity curve, most of the parameters in \'<annotation foreground="parameter">Atom Spectra Settings</annotation>\', and search isotope parameters excluding library type.\n
-		\n
-        <big><annotation foreground="caption">8. Settings:</annotation></big>\n
-        \u00A0\u00A0\u00A0\u00A0- Graph shows \'as-is\' or \'pulse shape\' input signal. Select them by swipe left/right. Swipe up/down to scale the graph.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Enable pile-up correction\' - select to detect impulse pile-up. This parameter tries to compensate the impulse form if the impulse is too close to the previous one.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Use raw audio source\' - try to use unprocessed audio available on Android 7 and higher. This checkbox is disabled on Android before Android 7 of if the system does not allow to use unprocessed audio.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Invert input\' - choose if pulse shape is negative.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Add GPS coordinates to files\' - add GPS information to output files (spectrum, background and .csv).\n
-        \u00A0\u00A0\u00A0\u00A0- \'Auto search isotopes\' - auto find and show isotopes on a spectrum.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Source:\' - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Sound:\' - desired sound output. Press on text to select next output.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Save folder\' - choose the destination folder for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create folder <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Show as\' - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Min front points\' and \'Max front points\' - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Noise discriminator\' - do not register channels below this number to exclude noisy channels.\n
-        \u00A0\u00A0\u00A0\u00A0- \'ADC is rounded to\' - number of upper ADC bits to be used.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Save channels\' - how many channels from the spectrum to be exported. Note: own format stores all data.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Load channels\' - how many channels from the old spectrum file to be loaded. If there are more than 8192 channels they will be compressed into 8192 channels or less. Note: new own format has channel number itself.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Maximum factor\' - a maximum polinomial factor for the calibration function\n
-        \u00A0\u00A0\u00A0\u00A0- \'Smoothness\' - select a realtime smoothness window.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Diff time\' - select the accumulation time between difference output (1-10 s).\n
-        \u00A0\u00A0\u00A0\u00A0- \'Name\' -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Save every N s\' -  the auto save delta file function. 0 - no auto save.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Channel compression\' - reduce export channels quantity by combining set value of channels into one channel.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Spectrum\' - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Language\' - select a program language. To fully apply the program must be restarted.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Sens\' - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
-        \u00A0\u00A0\u00A0\u00A0- \'BckgCnt\' - noise count subtracted from a simple dose rate calculation.\n
-        \u00A0\u00A0\u00A0\u00A0- \'F\', \'M\', \'S\' - counts for fast, medium and slow dose rate averaging.\n
-        \u00A0\u00A0\u00A0\u00A0- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.</string>
+        \n
+    </string>
+    <string name="help_text_part8"><big><annotation foreground="caption">8. Settings:</annotation></big>\n
+        \t- Graph shows \'as-is\' or \'pulse shape\' input signal. Select them by swipe left/right. Swipe up/down to scale the graph.\n
+        \t- \'Enable pile-up correction\' - select to detect impulse pile-up. This parameter tries to compensate the impulse form if the impulse is too close to the previous one.\n
+        \t- \'Use raw audio source\' - try to use unprocessed audio available on Android 7 and higher. This checkbox is disabled on Android before Android 7 of if the system does not allow to use unprocessed audio.\n
+        \t- \'Invert input\' - choose if pulse shape is negative.\n
+        \t- \'Add GPS coordinates to files\' - add GPS information to output files (spectrum, background and .csv).\n
+        \t- \'Auto search isotopes\' - auto find and show isotopes on a spectrum.\n
+        \t- \'Source:\' - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
+        \t- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
+        \t- \'Sound:\' - desired sound output. Press on text to select next output.\n
+        \t- \'Save folder\' - choose the destination folder for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create folder <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
+        \t- \'Show as\' - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
+        \t- \'Min front points\' and \'Max front points\' - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
+        \t- \'Noise discriminator\' - do not register channels below this number to exclude noisy channels.\n
+        \t- \'ADC is rounded to\' - number of upper ADC bits to be used.\n
+        \t- \'Save channels\' - how many channels from the spectrum to be exported. Note: own format stores all data.\n
+        \t- \'Load channels\' - how many channels from the old spectrum file to be loaded. If there are more than 8192 channels they will be compressed into 8192 channels or less. Note: new own format has channel number itself.\n
+        \t- \'Maximum factor\' - a maximum polinomial factor for the calibration function\n
+        \t- \'Smoothness\' - select a realtime smoothness window.\n
+        \t- \'Diff time\' - select the accumulation time between difference output (1-10 s).\n
+        \t- \'Name\' -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
+        \t- \'Save every N s\' -  the auto save delta file function. 0 - no auto save.\n
+        \t- \'Channel compression\' - reduce export channels quantity by combining set value of channels into one channel.\n
+        \t- \'Spectrum\' - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
+        \t- \'Language\' - select a program language. To fully apply the program must be restarted.\n
+        \t- \'Sens\' - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
+        \t- \'BckgCnt\' - noise count subtracted from a simple dose rate calculation.\n
+        \t- \'F\', \'M\', \'S\' - counts for fast, medium and slow dose rate averaging.\n
+        \t- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.\n\n
+    </string>
     <string name="help_version">Version: <xliff:g id="version">%1$s</xliff:g>, build: <xliff:g id="build">%2$d</xliff:g>.</string>
 </resources>
