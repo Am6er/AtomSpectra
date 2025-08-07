@@ -123,9 +123,9 @@
     <string name="calibration_clear_points">Klare Punkte</string>
     <string name="calibration_calculate">Berechnung</string>
     <string name="calibration_load_from_file">Laden von…</string>
-    <string name="calibration_store">Speichern</string>
+    <string name="calibration_store_device">Auf dem Gerät speichern</string>
     <string name="calibration_store_memory">Im Programm speichern</string>
-    <string name="calibration_revert">Abrufen</string>
+    <string name="calibration_revert_device">Vom Gerät abrufen</string>
     <string name="calibration_revert_memory">Aus dem Gedächtnis abrufen</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Gerät</string>

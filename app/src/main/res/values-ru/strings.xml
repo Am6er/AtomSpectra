@@ -123,9 +123,9 @@
     <string name="calibration_clear_points">Очистить точки</string>
     <string name="calibration_calculate">Рассчитать</string>
     <string name="calibration_load_from_file">Загрузить из…</string>
-    <string name="calibration_store">Запомнить</string>
+    <string name="calibration_store_device">Запомнить в устройство</string>
     <string name="calibration_store_memory">Запомнить в программу</string>
-    <string name="calibration_revert">Восстановить</string>
+    <string name="calibration_revert_device">Восстановить из устройства</string>
     <string name="calibration_revert_memory">Восстановить из программы</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Устройство</string>

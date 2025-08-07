@@ -64,7 +64,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -274,7 +273,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			}
 		} else {
 			if (!AtomSpectraService.isStarted || !AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().isCorrect())
-				getCalibrationSettings(false,true);
+				getCalibrationSettingsFromMemory();
 			AtomSpectraService.setScaleFactor(sharedPreferences.getInt(Constants.CONFIG.CONF_SCALE_FACTOR, Constants.SCALE_DEFAULT));
 			logScale = sharedPreferences.getBoolean(Constants.CONFIG.CONF_LOG_SCALE, Constants.LOG_SCALE_DEFAULT);
 			dateScaleChanged = new Date().getTime();
@@ -993,6 +992,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			app_menu.findItem(R.id.action_cal_new_point10).
 					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(9), AtomSpectraService.newCalibration.getEnergy(9))).
 					setVisible(AtomSpectraService.newCalibration.getLines() > 9);
+
+			boolean isUSB = AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL;
+			boolean isFreeze = AtomSpectraService.getFreeze();
+			app_menu.findItem(R.id.action_cal_store_device).setEnabled(isUSB && isFreeze);
+			app_menu.findItem(R.id.action_cal_retrieve_device).setEnabled(isUSB && isFreeze);
 		}
 	}
 
@@ -1067,12 +1071,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 					} else {
 						Toast.makeText(this, getString(R.string.cal_wrong_usb), Toast.LENGTH_SHORT).show();
-						getCalibrationSettings(false, true);
 					}
 				})
 				.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
 					Toast.makeText(this, getString(R.string.cal_wrong_checksum), Toast.LENGTH_SHORT).show();
-					getCalibrationSettings(false, true);
 				});
 		alert.show();
 	}
@@ -1305,14 +1307,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					if (GET_CALIBRATION.equals(id)) {
 						if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(data)) {
 							Toast.makeText(context, getString(R.string.cal_timeout), Toast.LENGTH_SHORT).show();
-							getCalibrationSettings(false,true);
 							return;
 						}
 
 						if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(data)) {
 							// TODO: localize
 							Toast.makeText(context, "Error from USB during calibration read", Toast.LENGTH_SHORT).show();
-							getCalibrationSettings(false,true);
 							return;
 						}
 
@@ -1334,7 +1334,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 							} else {
 								Toast.makeText(context, getString(R.string.cal_wrong_usb), Toast.LENGTH_SHORT).show();
-								getCalibrationSettings(false, true);
 							}
 						} else {
 							showCalibrationChecksumAlert(dataArray);
@@ -1360,7 +1359,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								Toast.makeText(context, getString(R.string.cal_store_usb), Toast.LENGTH_SHORT).show();
 							else {
 								Toast.makeText(context, getString(R.string.cal_wrong_store_usb), Toast.LENGTH_SHORT).show();
-								setCalibrationSettings(true);
 							}
 						}
 					}
@@ -1387,9 +1385,14 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					view.setText(AtomSpectraService.BackgroundSpectrum.getSuffix());
 
 				updateSelectedInputIndicator();
+				updateCalibrationMenu();
 			}
 			if (Constants.ACTION.ACTION_UPDATE_CALIBRATION.equals(action)) {
-				getCalibrationSettings(intent.getBooleanExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false), false);
+				if (intent.getBooleanExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false) || AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
+					getCalibrationSettingsFromDevice();
+				} else {
+					getCalibrationSettingsFromMemory();
+				}
 			}
 //			if (Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY.equals(action)) {
 //				checkGPS();
@@ -1616,98 +1619,108 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	}
 
-	private void getCalibrationSettings(boolean forceFromUSB, boolean forceFromMemory) {
-		if (!forceFromUSB && (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL || forceFromMemory)) {
-			int poliSize = sharedPreferences.getInt(Constants.CONFIG.CONF_POLI_SIZE, -1);
-			Calibration newHistCalibration = new Calibration();
-			if (poliSize == -1) {
-				//old calibration is found or nothing, use old style loading
-				int RightCal = Constants.NUM_HIST_POINTS - 1;
-				double RightCalE = 3000.0;
-				int LeftCal = 0;
-				double LeftCalE = (float) 0.0;
-				newHistCalibration.addLine(LeftCal, LeftCalE);
-				newHistCalibration.addLine(RightCal, RightCalE);
-				newHistCalibration.Calculate();
-			} else {
-				double x = sharedPreferences.getFloat(Constants.configCoefficient(0), -1000);
-				int Cal = sharedPreferences.getInt(Constants.configChannel(1), -1);
-				if (x != -1000 || Cal == -1) {
-					double[] coeffs = new double[poliSize + 1];
-					for (int i = 0; i <= poliSize; i++)
-						coeffs[i] = sharedPreferences.getFloat(Constants.configCoefficient(i), 1);
-					newHistCalibration.Calculate(coeffs);
-				} else {
-					double CalE;
-					for (int i = 1; i <= poliSize + 1; i++) {
-						Cal = sharedPreferences.getInt(Constants.configChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
-						CalE = sharedPreferences.getFloat(Constants.configEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
-						newHistCalibration.addLine(Cal, CalE);
-					}
-					newHistCalibration.Calculate();
-					double[] coeffs = newHistCalibration.getCoeffArray();
-					SharedPreferences.Editor editor = sharedPreferences.edit();
-					for (int i = 0; i <= newHistCalibration.getFactor(); i++) {
-						editor.putFloat(Constants.configCoefficient(i), (float) coeffs[i]);
-						editor.remove(Constants.configChannel(i + 1));
-						editor.remove(Constants.configEnergy(i));
-					}
-					editor.apply();
-				}
-			}
-			AtomSpectraService.ForegroundSpectrum.setSpectrumCalibration(newHistCalibration);
-			AtomSpectraService.recalculateInterval();
-			AtomSpectraService.lastCalibrationChannel = sharedPreferences.getInt(Constants.CONFIG.CONF_LAST_CHANNEL, Constants.NUM_HIST_POINTS);
-			updateCalibrationMenu();
+	private void getCalibrationSettingsFromDevice() {
+		if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
+			Toast.makeText(getApplicationContext(), "USB device is not available", Toast.LENGTH_LONG).show();
+			return;
+		}
 
-			sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+		sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_USB_COMMAND)
+				.putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID, GET_CALIBRATION)
+				.putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA, "-cal").setPackage(Constants.PACKAGE_NAME));
+	}
+
+	private void getCalibrationSettingsFromMemory() {
+		int poliSize = sharedPreferences.getInt(Constants.CONFIG.CONF_POLI_SIZE, -1);
+		Calibration newHistCalibration = new Calibration();
+		if (poliSize == -1) {
+			//old calibration is found or nothing, use old style loading
+			int RightCal = Constants.NUM_HIST_POINTS - 1;
+			double RightCalE = 3000.0;
+			int LeftCal = 0;
+			double LeftCalE = (float) 0.0;
+			newHistCalibration.addLine(LeftCal, LeftCalE);
+			newHistCalibration.addLine(RightCal, RightCalE);
+			newHistCalibration.Calculate();
 		} else {
+			double x = sharedPreferences.getFloat(Constants.configCoefficient(0), -1000);
+			int Cal = sharedPreferences.getInt(Constants.configChannel(1), -1);
+			if (x != -1000 || Cal == -1) {
+				double[] coeffs = new double[poliSize + 1];
+				for (int i = 0; i <= poliSize; i++)
+					coeffs[i] = sharedPreferences.getFloat(Constants.configCoefficient(i), 1);
+				newHistCalibration.Calculate(coeffs);
+			} else {
+				double CalE;
+				for (int i = 1; i <= poliSize + 1; i++) {
+					Cal = sharedPreferences.getInt(Constants.configChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
+					CalE = sharedPreferences.getFloat(Constants.configEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
+					newHistCalibration.addLine(Cal, CalE);
+				}
+				newHistCalibration.Calculate();
+				double[] coeffs = newHistCalibration.getCoeffArray();
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				for (int i = 0; i <= newHistCalibration.getFactor(); i++) {
+					editor.putFloat(Constants.configCoefficient(i), (float) coeffs[i]);
+					editor.remove(Constants.configChannel(i + 1));
+					editor.remove(Constants.configEnergy(i));
+				}
+				editor.apply();
+			}
+		}
+		AtomSpectraService.ForegroundSpectrum.setSpectrumCalibration(newHistCalibration);
+		AtomSpectraService.recalculateInterval();
+		AtomSpectraService.lastCalibrationChannel = sharedPreferences.getInt(Constants.CONFIG.CONF_LAST_CHANNEL, Constants.NUM_HIST_POINTS);
+		updateCalibrationMenu();
+
+		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+	}
+
+	private void setCalibrationSettingsToDevice() {
+		if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
+			Toast.makeText(getApplicationContext(), "USB device is not available", Toast.LENGTH_LONG).show();
+			return;
+		}
+
+		Toast.makeText(getApplicationContext(), getString(R.string.cal_store_usb_wait), Toast.LENGTH_LONG).show();
+		double[] coeffs = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getCoeffArray(5);
+		StringBuilder val;
+		StringBuilder allCalibration = new StringBuilder();
+		for (int i = 0; i < 5; i++) {
+			val = new StringBuilder(Long.toHexString(Double.doubleToRawLongBits(coeffs[i])));
+			while (val.length() < 16) {
+				val.insert(0, "0");
+			}
+			allCalibration.append(val.substring(0, 8).toUpperCase(Locale.US)).append(val.substring(8, 16).toUpperCase(Locale.US));
+			calibrationAnswers[2 * i] = String.format(Locale.US, "-cal %d %s", 2 * i, val.substring(0, 8));
+			calibrationAnswers[2 * i + 1] = String.format(Locale.US, "-cal %d %s", 2 * i + 1, val.substring(8, 16));
+		}
+		//Toast.makeText(getApplicationContext(), allCalibration, Toast.LENGTH_LONG).show();
+		long crc = AtomSpectraSerial.crc32(allCalibration.toString().getBytes());
+		val = new StringBuilder(Long.toHexString(crc));
+		while (val.length() < 8) {
+			val.insert(0, "0");
+		}
+		calibrationAnswers[10] = String.format(Locale.US, "-cal 10 %s", val);
+		gotAnswers = 11;
+		//send data after all preparations
+		for (int i = 0; i < 11; i++) {
 			sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_USB_COMMAND).
-					putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID, GET_CALIBRATION).
-					putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA, "-cal").setPackage(Constants.PACKAGE_NAME));
+					putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID, SEND_CALIBRATION).
+					putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA, calibrationAnswers[i]).setPackage(Constants.PACKAGE_NAME));
 		}
 	}
 
 	@SuppressLint("ApplySharedPref")
-	private void setCalibrationSettings(boolean forceToMemory) {
-		if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL || forceToMemory) {
-			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-			int poliSize = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getFactor();
-			prefEditor.putInt(Constants.CONFIG.CONF_POLI_SIZE, poliSize);
-			double[] coeffs = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getCoeffArray(5);
-			for (int i = 0; i <= poliSize; i++)
-				prefEditor.putFloat(Constants.configCoefficient(i), (float) coeffs[i]);
-			prefEditor.putInt(Constants.CONFIG.CONF_LAST_CHANNEL, AtomSpectraService.lastCalibrationChannel);
-			prefEditor.commit();
-		} else {
-			Toast.makeText(getApplicationContext(), getString(R.string.cal_store_usb_wait), Toast.LENGTH_LONG).show();
-			double[] coeffs = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getCoeffArray(5);
-			StringBuilder val;
-			StringBuilder allCalibration = new StringBuilder();
-			for (int i = 0; i < 5; i++) {
-				val = new StringBuilder(Long.toHexString(Double.doubleToRawLongBits(coeffs[i])));
-				while (val.length() < 16) {
-					val.insert(0, "0");
-				}
-				allCalibration.append(val.substring(0, 8).toUpperCase(Locale.US)).append(val.substring(8, 16).toUpperCase(Locale.US));
-				calibrationAnswers[2 * i] = String.format(Locale.US, "-cal %d %s", 2 * i, val.substring(0, 8));
-				calibrationAnswers[2 * i + 1] = String.format(Locale.US, "-cal %d %s", 2 * i + 1, val.substring(8, 16));
-			}
-			//Toast.makeText(getApplicationContext(), allCalibration, Toast.LENGTH_LONG).show();
-			long crc = AtomSpectraSerial.crc32(allCalibration.toString().getBytes());
-			val = new StringBuilder(Long.toHexString(crc));
-			while (val.length() < 8) {
-				val.insert(0, "0");
-			}
-			calibrationAnswers[10] = String.format(Locale.US, "-cal 10 %s", val);
-			gotAnswers = 11;
-			//send data after all preparations
-			for (int i = 0; i < 11; i++) {
-				sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_USB_COMMAND).
-						putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID, SEND_CALIBRATION).
-						putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA, calibrationAnswers[i]).setPackage(Constants.PACKAGE_NAME));
-			}
-		}
+	private void setCalibrationSettingsToMemory() {
+		SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+		int poliSize = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getFactor();
+		prefEditor.putInt(Constants.CONFIG.CONF_POLI_SIZE, poliSize);
+		double[] coeffs = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getCoeffArray(5);
+		for (int i = 0; i <= poliSize; i++)
+			prefEditor.putFloat(Constants.configCoefficient(i), (float) coeffs[i]);
+		prefEditor.putInt(Constants.CONFIG.CONF_LAST_CHANNEL, AtomSpectraService.lastCalibrationChannel);
+		prefEditor.commit();
 	}
 
 	@SuppressLint("ClickableViewAccessibility")
@@ -2449,22 +2462,22 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				startActivityForResult(Intent.createChooser(calibIntent, getString(R.string.ask_select_calibration)), LOAD_CALIBRATION_CODE);
 			}
 			return true;
-		} else if (item.getItemId() == R.id.action_cal_store) {
-			Log.d(TAG, "storing calibration to program");
-			setCalibrationSettings(false);
+		} else if (item.getItemId() == R.id.action_cal_store_device) {
+			Log.d(TAG, "storing calibration to device");
+			setCalibrationSettingsToDevice();
 			return true;
 		} else if (item.getItemId() == R.id.action_cal_store_memory) {
 			Log.d(TAG, "storing calibration to program");
-			setCalibrationSettings(true);
+			setCalibrationSettingsToMemory();
 			return true;
-		} else if (item.getItemId() == R.id.action_cal_retrieve) {
-			Log.d(TAG, "retrieving calibration from program");
-			getCalibrationSettings(false, false);
+		} else if (item.getItemId() == R.id.action_cal_retrieve_device) {
+			Log.d(TAG, "retrieving calibration from device");
+			getCalibrationSettingsFromDevice();
 //			updateCalibrationMenu();
 			return true;
 		} else if (item.getItemId() == R.id.action_cal_retrieve_memory) {
 			Log.d(TAG, "retrieving calibration from program");
-			getCalibrationSettings(false, true);
+			getCalibrationSettingsFromMemory();
 //			updateCalibrationMenu();
 			return true;
 		} else if (item.getItemId() == R.id.action_export) {

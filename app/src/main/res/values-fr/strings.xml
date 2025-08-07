@@ -123,9 +123,9 @@
     <string name="calibration_clear_points">Effacer les points</string>
     <string name="calibration_calculate">Calculer</string>
     <string name="calibration_load_from_file">Charger à partir…</string>
-    <string name="calibration_store">Stocker</string>
+    <string name="calibration_store_device">Stocker sur l\'appareil</string>
     <string name="calibration_store_memory">Stocker au programme</string>
-    <string name="calibration_revert">Récupérer</string>
+    <string name="calibration_revert_device">Récupérer depuis l\'appareil</string>
     <string name="calibration_revert_memory">Récupérer de la mémoire</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">L\'appareil</string>
