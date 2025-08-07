@@ -127,20 +127,20 @@
                 android:orderInCategory="401"
                 android:title="@string/calibration_load_from_file" />
             <item
-                android:id="@+id/action_cal_store"
+                android:id="@+id/action_cal_store_device"
                 android:icon="@drawable/menu_agenda"
                 android:orderInCategory="402"
-                android:title="@string/calibration_store" />
+                android:title="@string/calibration_store_device" />
             <item
                 android:id="@+id/action_cal_store_memory"
                 android:icon="@drawable/menu_agenda"
                 android:orderInCategory="403"
                 android:title="@string/calibration_store_memory" />
             <item
-                android:id="@+id/action_cal_retrieve"
+                android:id="@+id/action_cal_retrieve_device"
                 android:icon="@drawable/menu_set_as"
                 android:orderInCategory="404"
-                android:title="@string/calibration_revert" />
+                android:title="@string/calibration_revert_device" />
             <item
                 android:id="@+id/action_cal_retrieve_memory"
                 android:icon="@drawable/menu_set_as"
