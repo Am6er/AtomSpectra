@@ -59,6 +59,7 @@
     <string name="invert">Inverser l\'entrée</string>
     <string name="add_gps">Ajouter des coordonnées GPS aux fichiers</string>
     <string name="update_isotopes">Recherche automatique d\'isotopes</string>
+    <string name="send_data_to_atom_swift_app">Envoyer des données à l\'application AtomSwift</string>
     <string name="input_sound">Source:</string>
     <string name="input_sound_absent">Aucune source d\'entrée! L\'utilisation par défaut.</string>
     <string name="output_sound">Alarme sonore: </string>

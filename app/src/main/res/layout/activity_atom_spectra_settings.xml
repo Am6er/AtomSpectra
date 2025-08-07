@@ -86,6 +86,14 @@
                 android:text="@string/update_isotopes"
                 android:textColor="#FFFFFFFF" />
 
+            <CheckBox
+                android:id="@+id/SendDataToAtomSwift"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/send_data_to_atom_swift_app"
+                android:textColor="#FFFFFFFF" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

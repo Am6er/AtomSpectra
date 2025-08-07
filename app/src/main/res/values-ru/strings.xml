@@ -59,6 +59,7 @@
     <string name="invert">Инвертировать вход</string>
     <string name="add_gps">Добавлять координаты GPS в файлы</string>
     <string name="update_isotopes">Автоматический поиск изотопов</string>
+    <string name="send_data_to_atom_swift_app">Отправлять данные в приложение AtomSwift</string>
     <string name="input_sound">Вход:</string>
     <string name="input_sound_absent">Нет источника! Использую по-умолчанию.</string>
     <string name="output_sound">Звуковой сигнал: </string>
