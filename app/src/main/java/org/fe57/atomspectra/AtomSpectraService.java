@@ -227,8 +227,7 @@ public class AtomSpectraService extends Service {
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
                 super.onAudioDevicesAdded(addedDevices);
                 if (startExecution) {
-                    context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
-                    stopCapturingAudioSource();
+                    onAudioChanged();
                 } else {
                     startExecution = true;
                 }
@@ -238,13 +237,20 @@ public class AtomSpectraService extends Service {
             public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
                 super.onAudioDevicesRemoved(removedDevices);
                 if (startExecution) {
-                    context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
-                    stopCapturingAudioSource();
+                    onAudioChanged();
                 } else {
                     startExecution = true;
                 }
             }
         };
+    }
+
+    private void onAudioChanged() {
+        if (inputType == INPUT_AUDIO && !freeze_update_data) {
+            this.setFreeze(true);
+            this.showToastInMainLooper(getString(R.string.hist_stop_record), Toast.LENGTH_LONG);
+            context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
+        }
     }
 
     public void onCreate() {
