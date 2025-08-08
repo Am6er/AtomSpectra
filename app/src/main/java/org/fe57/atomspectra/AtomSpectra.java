@@ -1248,12 +1248,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				finishAndRemoveTask();
 			}
 			if (Constants.ACTION.ACTION_AUDIO_CHANGED.equals(action)) {
-				if (!AtomSpectraService.getFreeze() && AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
-					app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
-					app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
-					sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
-					Toast.makeText(context, getString(R.string.hist_stop_record), Toast.LENGTH_LONG).show();
-				}
+				// nothing to do so far
 			}
 			if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
 				UsbDevice device;
