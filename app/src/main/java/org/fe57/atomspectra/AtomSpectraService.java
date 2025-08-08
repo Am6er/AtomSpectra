@@ -44,6 +44,7 @@ import androidx.core.util.Pair;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.sql.Time;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Timer;
@@ -100,6 +101,11 @@ public class AtomSpectraService extends Service {
     private static int delta_time = Constants.DEFAULT_DELTA_TIME;
     public static boolean isStarted = false;
     public static boolean showCalibrationFunction = false;
+
+    private static boolean sendDataToAtomSwiftAppEnabled = false;
+    private static String atomSwiftDRType = Constants.ATOMSWIFT_DR_DEFAULT;
+    private static int atomSwiftIntermediateCps = 0;
+    private static boolean atomSwiftHasIntermediateData = false;
 
     //data for spectrum
     private static final double[] histogram = new double[1024];
@@ -190,7 +196,7 @@ public class AtomSpectraService extends Service {
 
     private static int SearchFSM = 0; //0 - fast, 1 - medium, 2 - slow
 
-    private static double doseRateValue = 0.0;
+    private static DoseRate doseRateValue = new DoseRate(0, 0);
     private int dataFromAudioSourceUpdatePeriod = 1000; // ms
 
     private static final int[] cpsArray = new int[1000 / Constants.UPDATE_PERIOD]; // number of counts during last second, measured approximately each 0.1 sec
@@ -425,6 +431,9 @@ public class AtomSpectraService extends Service {
         outputSoundID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
         outputSoundName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
+        sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
+        atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+
         outputSoundInit();
         boolean inputS = sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         int inputSID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
@@ -1090,6 +1099,7 @@ public class AtomSpectraService extends Service {
 
                         cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
                         total_pulses = 0;
+                        boolean isReliableData = false;
 
                         if (new_histogram != null && new_time > old_time) {
                             long count = 0, count_interval = 0;
@@ -1109,19 +1119,24 @@ public class AtomSpectraService extends Service {
                             if (skip_next_cps_int_usb_calc > 0) {
                                 skip_next_cps_int_usb_calc--;
                                 cpsInterval = 0;
-                                doseRateValue = 0;
+                                doseRateValue = new DoseRate(0, 0);
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
                                 cpsInterval = (int) count_interval;
-                                doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time, AtomSpectra.XCalibrated);
+                                doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time);
+                                isReliableData = true;
                             } else {
                                 cpsInterval = 0;
-                                doseRateValue = 0;
+                                doseRateValue = new DoseRate(0, 0);
                             }
                         }
 
                         calcAndSendFoundIsotopesData();
                         calcSpectrumChangeData();
                         sendDataToUI();
+                        if (isReliableData) {
+                            sendDataToAtomSwift(cps, doseRateValue.nonCompensated, doseRateValue.compensated);
+                        }
+
                         break;
 
                     case AtomSpectraSerial.CODE_SCOPE:
@@ -1405,11 +1420,10 @@ public class AtomSpectraService extends Service {
             doseEnergyHistory.clear();
         }
 
-        doseRateValue = 0;
+        doseRateValue = new DoseRate(0, 0);
     }
 
-    private static double doseRateSearch(double pulses, double pulses_interval, double pulses_e, double time, boolean useEnergy) {
-
+    private static DoseRate doseRateSearch(double pulses, double pulses_interval, double pulses_e, double time) {
         synchronized (windowCps) {
             deltaTime.addLast(time);
             if (deltaTime.size() > SEARCH_WINDOW_SIZE) {
@@ -1489,11 +1503,8 @@ public class AtomSpectraService extends Service {
                 doseEnergyHistory.removeFirst();
             }
         }
-        if (useEnergy) {
-            return hist_dose_e;    //calculate energy compensated dose rate
-        } else {
-            return hist_dose;
-        }
+
+        return new DoseRate(hist_dose_e, hist_dose);
     }
 
     //for CsI 10x10x30 crystal
@@ -1905,7 +1916,7 @@ public class AtomSpectraService extends Service {
     private final void sendDataToUI() {
         final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
         Bundle mBundle = new Bundle();
-        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, doseRateValue);
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, AtomSpectra.XCalibrated ? doseRateValue.compensated : doseRateValue.nonCompensated);
         mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_pulses);
         mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
         mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
@@ -2316,8 +2327,7 @@ public class AtomSpectraService extends Service {
                 cpsArray[cpsPos],
                 cpsArrayInterval[cpsPos],
                 cpsArrayEnergy[cpsPos],
-                (double) Constants.UPDATE_PERIOD / 1000.0,
-                AtomSpectra.XCalibrated);
+                (double) Constants.UPDATE_PERIOD / 1000.0);
     }
 
     // audio data capture/send timers
@@ -2339,20 +2349,21 @@ public class AtomSpectraService extends Service {
         }
 
         ForegroundSpectrum.setSpectrumTime(ForegroundSpectrum.getSpectrumTime() + 1);
-        eachSecondDataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
-        if (eachSecondDataFromAudioSourceElapsedTime >= 1000) { // each second
-            calcAndSendFoundIsotopesData();
-            calcSpectrumChangeData();
-
-            eachSecondDataFromAudioSourceElapsedTime = 0;
-        }
-
         dataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
         if (dataFromAudioSourceElapsedTime >= dataFromAudioSourceUpdatePeriod) { // from 0.1 to 1 sec
             calcCpsAndDoseRateForAudioSource();
             sendDataToUI();
 
             dataFromAudioSourceElapsedTime = 0;
+        }
+
+        eachSecondDataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
+        if (eachSecondDataFromAudioSourceElapsedTime >= 1000) { // each second
+            calcAndSendFoundIsotopesData();
+            calcSpectrumChangeData();
+            sendDataToAtomSwift(cps, doseRateValue.nonCompensated, doseRateValue.compensated);
+
+            eachSecondDataFromAudioSourceElapsedTime = 0;
         }
     }
 
@@ -2766,7 +2777,79 @@ public class AtomSpectraService extends Service {
         }
     }
 
+    // sends intent with dose/count rate etc. to AtomSwift app
+    // expected to be called each second
+    // dose rates expected to be uSv/h
+    private void sendDataToAtomSwift(int cps, double doseRate, double compensatedDoseRate) {
+        if (!sendDataToAtomSwiftAppEnabled) {
+            atomSwiftHasIntermediateData = false;
+            atomSwiftIntermediateCps = 0;
+            return;
+        }
+
+        if (!atomSwiftHasIntermediateData) {
+            atomSwiftIntermediateCps = cps;
+            atomSwiftHasIntermediateData = true;
+            return;
+        }
+
+        int cp2s = atomSwiftIntermediateCps + cps;
+        double dr = 0;
+        switch (atomSwiftDRType) {
+            case Constants.ATOMSWIFT_DR_COMPENSATED:
+                dr = compensatedDoseRate;
+                break;
+            case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
+                dr = doseRate;
+        }
+
+        String searchMode = "";
+        int searchWindow = 0;
+        switch (SearchFSM) {
+            case 0:
+                searchWindow = SEARCH_FAST;
+                searchMode = "F";
+                break;
+            case 1:
+                searchWindow = SEARCH_MEDIUM;
+                searchMode = "M";
+                break;
+            case 2:
+                searchWindow = SEARCH_SLOW;
+                searchMode = "S";
+                break;
+        }
+
+        atomSwiftHasIntermediateData = false;
+        atomSwiftIntermediateCps = 0;
+
+        Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
+        dataIntent.setPackage("org.fe57.atomtag");
+        dataIntent.putExtra("CP2S", cp2s); // double
+        dataIntent.putExtra("DR", dr); // double
+        dataIntent.putExtra("SEARCH_MODE", searchMode); // String F/M/S
+        dataIntent.putExtra("SEARCH_WINDOW", searchWindow); // int
+        getApplicationContext().sendBroadcast(dataIntent);
+
+        // debug toast
+//        showToastInMainLooper(
+//                "cp2s: " + cp2s
+//                + "; dr: " + dr
+//                + "; search: " + searchMode + "(" + searchWindow + ");",
+//                Toast.LENGTH_SHORT);
+    }
+
     private void showToastInMainLooper(String text, int duration) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+    }
+
+    private static class DoseRate {
+        public final double compensated;
+        public final double nonCompensated;
+
+        private DoseRate(double compensated, double nonCompensated) {
+            this.compensated = compensated;
+            this.nonCompensated = nonCompensated;
+        }
     }
 }

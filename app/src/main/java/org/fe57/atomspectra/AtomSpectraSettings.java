@@ -258,6 +258,11 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mCheckBox = findViewById(R.id.UpdateIsotopes);
         mCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_AUTO_UPDATE_ISOTOPES, false));
 
+        mCheckBox = findViewById(R.id.SendDataToAtomSwift);
+        mCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT));
+
+        updateAtomSwiftDRText(sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT));
+
         inputDeviceID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
         inputDeviceName = sp.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -290,6 +295,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         addListenerOnCheckInvert();
         addListenerOnCheckPileUp();
         addListenerOnCheckGPS();
+        addListenerOnCheckSendDataToAtomSwift();
         addListenerOnCheckAutoUpdate();
         addListenerOnSound();
 
@@ -451,6 +457,17 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             AtomSpectraIsotopes.autoUpdateIsotopes = ((CheckBox) v).isChecked();
             SharedPreferences.Editor prefEditor = settings.edit();
             prefEditor.putBoolean(Constants.CONFIG.CONF_AUTO_UPDATE_ISOTOPES, AtomSpectraIsotopes.autoUpdateIsotopes);
+            prefEditor.apply();
+        });
+    }
+
+    public void addListenerOnCheckSendDataToAtomSwift() {
+        CheckBox checkUpdate = findViewById(R.id.SendDataToAtomSwift);
+        checkUpdate.setOnClickListener(v -> {
+            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor prefEditor = settings.edit();
+            boolean sendData = ((CheckBox) v).isChecked();
+            prefEditor.putBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, sendData);
             prefEditor.apply();
         });
     }
@@ -1481,7 +1498,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putInt(Constants.CONFIG.CONF_DELTA_TIME, r);
         prefEditor.apply();
-//        AtomSpectra.channelCompression = r;
 
         TextView mDataField = findViewById(R.id.deltaText);
         mDataField.setText(getString(R.string.delta_spectrum_format, r));
@@ -1504,7 +1520,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putInt(Constants.CONFIG.CONF_DELTA_TIME, r);
         prefEditor.apply();
-//        AtomSpectra.channelCompression = r;
 
         TextView mDataField = findViewById(R.id.deltaText);
         mDataField.setText(getString(R.string.delta_spectrum_format, r));
@@ -1717,6 +1732,45 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mDataField.setText(String.format(Locale.US,"Language: %s", Constants.LOCALES[r]));
     }
 
+    public void onClick_AtomSwiftDR_plus(View v) {
+        String dr = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+        int selected_index = indexOfStringArray(Constants.ATOMSWIFT_DOSE_RATES, dr);
+        if (selected_index + 1 < Constants.ATOMSWIFT_DOSE_RATES.length) {
+            String new_dr = Constants.ATOMSWIFT_DOSE_RATES[selected_index + 1];
+            saveAtomSwiftDR(new_dr);
+        }
+    }
+
+    public void onClick_AtomSwiftDR_minus(View v) {
+        String dr = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+        int selected_index = indexOfStringArray(Constants.ATOMSWIFT_DOSE_RATES, dr);
+        if (selected_index > 0) {
+            String new_dr = Constants.ATOMSWIFT_DOSE_RATES[selected_index - 1];
+            saveAtomSwiftDR(new_dr);
+        }
+    }
+
+    private void saveAtomSwiftDR(String dr) {
+        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor prefEditor = settings.edit();
+        prefEditor.putString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, dr);
+        prefEditor.apply();
+
+        updateAtomSwiftDRText(dr);
+    }
+
+    private void updateAtomSwiftDRText(String dr) {
+        TextView mDataField = findViewById(R.id.atomSwiftDRText);
+        switch (dr) {
+            case Constants.ATOMSWIFT_DR_COMPENSATED:
+                mDataField.setText(R.string.atom_swift_app_dr_compensated);
+                break;
+            case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
+                mDataField.setText(R.string.atom_swift_app_dr_non_compensated);
+                break;
+        }
+    }
+
 
     @Override
     public void onGesture(GestureOverlayView overlay, MotionEvent event) {
@@ -1748,6 +1802,17 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         });
 
         view.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
+    }
+
+    private static int indexOfStringArray(String[] array, String value) {
+        int returnvalue = -1;
+        for (int i = 0; i < array.length; ++i) {
+            if (value.equals(array[i])) {
+                returnvalue = i;
+                break;
+            }
+        }
+        return returnvalue;
     }
 
     private GestureDetector initGestureDetector() {

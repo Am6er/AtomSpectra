@@ -60,6 +60,8 @@
     <string name="add_gps">Fügen Dateien GPS-Koordinaten hinzu</string>
     <string name="update_isotopes">Automatische Suche nach Isotopen</string>
     <string name="send_data_to_atom_swift_app">Senden Sie Daten an die AtomSwift-Anwendung</string>
+    <string name="atom_swift_app_dr_non_compensated">AtomSwift DR: Nicht kompensiert</string>
+    <string name="atom_swift_app_dr_compensated">AtomSwift DR: Kompensiert</string>
     <string name="input_sound">Quelle:</string>
     <string name="input_sound_absent">Keine Eingangsquelle! Verwende den Standard.</string>
     <string name="output_sound">Tonalarm: </string>
@@ -506,6 +508,7 @@
         \t- „Quelle:“ - Wählen Sie den gewünschten Audioeingang (wird nicht mit direkten USB-Spektrometern wie „<u>AtomSpectra Nano Pro</u>“ verwendet). Drücken Sie auf Text, um die Audioquelle zu ändern.\n
         \t- „Fügen Dateien GPS-Koordinaten hinzu“ - Hinzufügen von GPS-Informationen zu Ausgabedateien (Spektrum, Hintergrund und CSV).\n
         \t- „Isotope suchen“ - Isotope in einem Spektrum automatisch finden und anzeigen.\n
+        \t- „Senden Sie Daten an die AtomSwift-Anwendung“ - Senden Sie Dosis-/Zählratendaten an die AtomSwift-Anwendung (mit der Sie Karten mit Ihrem Spektrometer erstellen können). Die minimal unterstützte Version von AtomSwift ist XXXXXXX. Verwendung: Spektrometer anschließen, Starttaste drücken, Option aktivieren, AtomSwift-Anwendung ausführen, AtomSpectra in der Geräteliste auswählen.\n
         \t- „Sound:“ - gewünschte Tonausgabe. Drücken Sie auf Text, um die nächste Ausgabe auszuwählen.\n
         \t- „Tonalarm“ - Es macht einen Ton entsprechend der cps-Stufe. Der Basispegel wird anhand des cps-Werts in den letzten 5 Sekunden berechnet. Der Pegel kann nach Löschen des Spektrums oder durch Drücken der Taste „<annotation foreground="parameter">≈</annotation>“ neu berechnet werden. Sie können das gewünschte Energieintervall in keV auswählen (A-B), auf das Sie achten müssen. Der Zählratenwert des ausgewählten Intervalls wird in Klammern hinter dem vollen Zählratenwert angezeigt.\n
         \t- „Ordner speichern“ - Wählen Sie den Zielordner für alle Dateien. Wenn <u>...</u> für Android 8 und höher angezeigt wird, werden Sie nach einem Zielverzeichnis gefragt. Oder Sie drücken <u>...</u> (oder den angezeigten Namen), um den gewünschten Ort manuell auszuwählen. Unter Android vor 8 kann dieser Parameter nicht geändert werden. Wenn weiterhin <u>...</u> angezeigt wird, erstellen Sie den Ordner <u>AtomSpectra</u> im Stammverzeichnis des ersten Speichers (normalerweise des Telefonspeichers) selbst und starten Sie das Programm neu.\n
@@ -523,6 +526,7 @@
         \t- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
         \t- „Spektrum“ - Wählen Sie während der Wertekomprimierung den Summen-, Spitzen- oder Durchschnittswert im Spektraldiagramm. Spitzenwerte helfen dabei, kleine Spitzen nicht zu verlieren. Die Mittelwertbildung ergibt ein richtiges Diagramm. Die Summe zeigt das Gespenst, da das Gerät weniger Kanäle hat.\n
         \t- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
+        \t- „AtomSwift DR“ - Wählen Sie aus, welcher Dosisleistungswert an die AtomSwift-Anwendung gesendet wird (kompensiert oder nicht). Für die Suche/Karten wird die Option „Nicht kompensiert“ empfohlen, es sei denn, Sie benötigen ausdrücklich eine Kompensation und wissen, wie Sie die Empfindlichkeitskurve konfigurieren.\n
         \t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
         \t- „HintZähl“ - Rauschzahl von einer einfachen Dosisleistungsberechnung abgezogen.\n
         \t- „S“, „M“, „L“ - zählt für die Mittelung der schnellen, mittleren und langsamen Dosisleistung.\n

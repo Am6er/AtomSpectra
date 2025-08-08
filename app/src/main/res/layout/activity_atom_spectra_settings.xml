@@ -706,6 +706,39 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/decAtomSwiftDRButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_AtomSwiftDR_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/atomSwiftDRText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:textColor="#FFFFFFFF"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/incAtomSwiftDRButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_AtomSwiftDR_plus"
+                    android:text="@string/plus" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:weightSum="4">
 

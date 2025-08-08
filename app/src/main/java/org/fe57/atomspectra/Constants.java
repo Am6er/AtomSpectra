@@ -61,6 +61,11 @@ public class Constants {
     public static final int AUTOSAVE_DELTA = 5;                                                                          //minimal delta between auto saves
     public static final int AUTOSAVE_MAX_DELTA = 60;                                                                     //maximum delta between auto saves
     public static final int AUTOSAVE_DEFAULT = 0;                                                                        // 0 is for no auto save
+    public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
+    public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
+    public static final String ATOMSWIFT_DR_NON_COMPENSATED = "non-compensated";
+    public static final String ATOMSWIFT_DR_DEFAULT = ATOMSWIFT_DR_NON_COMPENSATED;
+    public static String[] ATOMSWIFT_DOSE_RATES = {ATOMSWIFT_DR_NON_COMPENSATED, ATOMSWIFT_DR_COMPENSATED};
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
@@ -115,6 +120,8 @@ public class Constants {
         String CONF_DELTA_TIME = "Delta time";
         String CONF_LOCALE_ID = "Locale";
         String CONF_AUTOSAVE = "File autosave";
+        String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
+        String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
     }
 
     public interface SEARCH {

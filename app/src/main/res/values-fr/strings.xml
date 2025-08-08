@@ -60,6 +60,8 @@
     <string name="add_gps">Ajouter des coordonnées GPS aux fichiers</string>
     <string name="update_isotopes">Recherche automatique d\'isotopes</string>
     <string name="send_data_to_atom_swift_app">Envoyer des données à l\'application AtomSwift</string>
+    <string name="atom_swift_app_dr_non_compensated">AtomSwift DR: Non rémunéré</string>
+    <string name="atom_swift_app_dr_compensated">AtomSwift DR: Сompensé</string>
     <string name="input_sound">Source:</string>
     <string name="input_sound_absent">Aucune source d\'entrée! L\'utilisation par défaut.</string>
     <string name="output_sound">Alarme sonore: </string>
@@ -511,6 +513,7 @@
         \t- «\u202fInverser l\'entrée\u202f» - choisir si la forme d\'impulsion est négative.\n
         \t- «\u202fAjouter des coordonnées GPS aux fichiers\u202f» - ajouter des informations GPS aux fichiers de sortie (spectre, fond et .csv).\n
         \t- «\u202fRecherche automatique d\'isotopes\u202f» - recherche automatique et affichage des isotopes sur un spectre.\n
+        \t- «\u202fEnvoyer des données à l\'application AtomSwift\u202f» - Envoi des données de dose/taux de comptage à l\'application AtomSwift (qui vous permet de créer des cartes à l\'aide de votre spectromètre). La version minimale d\'AtomSwift prise en charge est XXXXXXX. Utilisation : connectez le spectromètre, appuyez sur le bouton Démarrer, activez l\'option, exécutez l\'application AtomSwift, puis sélectionnez AtomSpectra dans la liste des appareils.\n
         \t- «\u202fSource:\u202f» - choisissez l\'entrée audio souhaitée (non utilisée avec les spectromètres USB directs comme «\u202f<u>AtomSpectra Nano Pro</u>\u202f»). Appuyez sur le texte pour changer la source audio.\n
         \t- «\u202fAlarme sonore\u202f» - fait une tonalité en fonction du niveau de cps. Le niveau de base est calculé en utilisant la valeur cps au cours des 5 dernières secondes. Le niveau peut être recalculé après avoir effacé le spectre ou en appuyant sur le bouton «\u202f<annotation foreground="parameter">≈</annotation>\u202f». Vous pouvez sélectionner l\'intervalle d\'énergie souhaité en keV (A-B) auquel faire attention. La valeur du taux de comptage de l\'intervalle sélectionné est indiquée entre parenthèses après la valeur du taux de comptage complet.\n
         \t- «\u202fAudio:\u202f» - sortie sonore souhaitée. Appuyez sur le texte pour sélectionner la sortie suivante.\n
@@ -529,6 +532,7 @@
         \t- «\u202fCompression des canaux\u202f» - réduire la quantité de canaux d\'exportation en combinant la valeur définie des canaux dans un canal.\n
         \t- «\u202fSpectre\u202f» - Choisissez la somme, la valeur de crête ou moyenne sur le graphique du spectre pendant la compression de valeur. Les valeurs de crête aident à ne pas perdre de petits pics, la moyenne fait un bon graphique, la somme montre un spectre car l\'appareil a moins de canaux.\n
         \t- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n
+        \t- «\u202fAtomSwift DR\u202f» - Sélectionnez la valeur de débit de dose à envoyer à l\'application AtomSwift (compensée ou non). L\'option non compensée est recommandée pour la recherche et les cartes, sauf si vous avez explicitement besoin d\'une compensation et que vous savez configurer la courbe de sensibilité.\n
         \t- «\u202fSens\u202f» - valeur d\'étalonnage pour le calcul du débit de dose. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose.\n
         \t- «\u202fFondComp\u202f» - nombre de bruit soustrait d\'un simple calcul de débit de dose.\n
         \t- «\u202fR\u202f», «\u202fM\u202f», «\u202fL\u202f» - compte pour une moyenne rapide, moyenne et lente du débit de dose.\n
