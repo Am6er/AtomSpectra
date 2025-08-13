@@ -995,8 +995,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 			boolean isUSB = AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL;
 			boolean isFreeze = AtomSpectraService.getFreeze();
-			app_menu.findItem(R.id.action_cal_store_device).setEnabled(isUSB && isFreeze);
-			app_menu.findItem(R.id.action_cal_retrieve_device).setEnabled(isUSB && isFreeze);
+			app_menu.findItem(R.id.action_cal_store_device)
+					.setEnabled(isUSB && isFreeze)
+					.setVisible(isUSB);
+			app_menu.findItem(R.id.action_cal_retrieve_device)
+					.setEnabled(isUSB && isFreeze)
+					.setVisible(isUSB);
 		}
 	}
 
