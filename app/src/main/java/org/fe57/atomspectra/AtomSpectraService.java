@@ -2801,6 +2801,7 @@ public class AtomSpectraService extends Service {
                 break;
             case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
                 dr = doseRate;
+                break;
         }
 
         String searchMode = "";
