@@ -166,6 +166,8 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_TOTAL_TIME";
     public final static String EXTRA_DATA_DOSERATE_SEARCH =
             "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH";
+    public final static String EXTRA_DATA_DOSERATE_SEARCH_ERROR =
+            "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH_ERROR";
     public final static String EXTRA_DATA_SCOPE_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_SCOPE_COUNTS";
     private final static String SERVICE_INF_ID = "Service command -inf";
@@ -196,7 +198,7 @@ public class AtomSpectraService extends Service {
 
     private static int SearchFSM = 0; //0 - fast, 1 - medium, 2 - slow
 
-    private static DoseRate doseRateValue = new DoseRate(0, 0);
+    private static DoseRate doseRateValue = new DoseRate(0, 0, 0, 0);
     private int dataFromAudioSourceUpdatePeriod = 1000; // ms
 
     private static final int[] cpsArray = new int[1000 / Constants.UPDATE_PERIOD]; // number of counts during last second, measured approximately each 0.1 sec
@@ -1119,14 +1121,14 @@ public class AtomSpectraService extends Service {
                             if (skip_next_cps_int_usb_calc > 0) {
                                 skip_next_cps_int_usb_calc--;
                                 cpsInterval = 0;
-                                doseRateValue = new DoseRate(0, 0);
+                                doseRateValue = new DoseRate(0, 0, 0, 0);
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
                                 cpsInterval = (int) count_interval;
                                 doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time);
                                 isReliableData = true;
                             } else {
                                 cpsInterval = 0;
-                                doseRateValue = new DoseRate(0, 0);
+                                doseRateValue = new DoseRate(0, 0, 0, 0);
                             }
                         }
 
@@ -1134,7 +1136,7 @@ public class AtomSpectraService extends Service {
                         calcSpectrumChangeData();
                         sendDataToUI();
                         if (isReliableData) {
-                            sendDataToAtomSwift(cps, doseRateValue.nonCompensated, doseRateValue.compensated);
+                            sendDataToAtomSwift(cps, doseRateValue);
                         }
 
                         break;
@@ -1420,16 +1422,17 @@ public class AtomSpectraService extends Service {
             doseEnergyHistory.clear();
         }
 
-        doseRateValue = new DoseRate(0, 0);
+        doseRateValue = new DoseRate(0, 0, 0, 0);
     }
 
-    private static DoseRate doseRateSearch(double pulses, double pulses_interval, double pulses_e, double time) {
+    // energy is the pulses value adjusted by sensitivity
+    private static DoseRate doseRateSearch(double pulses, double pulses_interval, double energy, double time) {
         synchronized (windowCps) {
             deltaTime.addLast(time);
             if (deltaTime.size() > SEARCH_WINDOW_SIZE) {
                 deltaTime.removeFirst();
             }
-            windowEnergy.addLast(pulses_e);
+            windowEnergy.addLast(energy);
             if (windowEnergy.size() > SEARCH_WINDOW_SIZE) {
                 windowEnergy.removeFirst();
             }
@@ -1492,7 +1495,9 @@ public class AtomSpectraService extends Service {
         // adjust according to actual elapsed time
         weightSensG /= time / (Constants.UPDATE_PERIOD / 1000.0);
         double hist_dose_e = sumEnergy / accumulated * 4.3 * weightSensG;
+        double hist_dose_e_error = clear_sum > 0 ? Math.sqrt(clear_sum) / clear_sum * 100.0 : 0; // TODO: replace with correct error calculation
         double hist_dose = StrictMath.max(0.0, ((sum / accumulated) - backgroundCount) * weightSensG);
+        double hist_dose_error = clear_sum > 0 ? Math.sqrt(clear_sum) / clear_sum * 100.0 : 0;
         synchronized (doseHistory) {
             doseHistory.addLast(hist_dose);
             if (doseHistory.size() > SEARCH_WINDOW_SIZE) {
@@ -1504,7 +1509,7 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        return new DoseRate(hist_dose_e, hist_dose);
+        return new DoseRate(hist_dose_e, hist_dose_e_error, hist_dose, hist_dose_error);
     }
 
     //for CsI 10x10x30 crystal
@@ -1917,6 +1922,7 @@ public class AtomSpectraService extends Service {
         final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
         Bundle mBundle = new Bundle();
         mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, AtomSpectra.XCalibrated ? doseRateValue.compensated : doseRateValue.nonCompensated);
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH_ERROR, AtomSpectra.XCalibrated ? doseRateValue.compensatedError : doseRateValue.nonCompensatedError);
         mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_pulses);
         mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
         mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
@@ -2361,7 +2367,7 @@ public class AtomSpectraService extends Service {
         if (eachSecondDataFromAudioSourceElapsedTime >= 1000) { // each second
             calcAndSendFoundIsotopesData();
             calcSpectrumChangeData();
-            sendDataToAtomSwift(cps, doseRateValue.nonCompensated, doseRateValue.compensated);
+            sendDataToAtomSwift(cps, doseRateValue);
 
             eachSecondDataFromAudioSourceElapsedTime = 0;
         }
@@ -2780,7 +2786,7 @@ public class AtomSpectraService extends Service {
     // sends intent with dose/count rate etc. to AtomSwift app
     // expected to be called each second
     // dose rates expected to be uSv/h
-    private void sendDataToAtomSwift(int cps, double doseRate, double compensatedDoseRate) {
+    private void sendDataToAtomSwift(int cps, DoseRate doseRate) {
         if (!sendDataToAtomSwiftAppEnabled) {
             atomSwiftHasIntermediateData = false;
             atomSwiftIntermediateCps = 0;
@@ -2795,28 +2801,27 @@ public class AtomSpectraService extends Service {
 
         int cp2s = atomSwiftIntermediateCps + cps;
         double dr = 0;
+        double dr_error = 0;
         switch (atomSwiftDRType) {
             case Constants.ATOMSWIFT_DR_COMPENSATED:
-                dr = compensatedDoseRate;
+                dr = doseRate.compensated;
+                dr_error = doseRate.compensatedError;
                 break;
             case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
-                dr = doseRate;
+                dr = doseRate.nonCompensated;
+                dr_error = doseRate.nonCompensatedError;
                 break;
         }
 
         String searchMode = "";
-        int searchWindow = 0;
         switch (SearchFSM) {
             case 0:
-                searchWindow = SEARCH_FAST;
                 searchMode = "F";
                 break;
             case 1:
-                searchWindow = SEARCH_MEDIUM;
                 searchMode = "M";
                 break;
             case 2:
-                searchWindow = SEARCH_SLOW;
                 searchMode = "S";
                 break;
         }
@@ -2826,17 +2831,17 @@ public class AtomSpectraService extends Service {
 
         Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
         dataIntent.setPackage("org.fe57.atomtag");
-        dataIntent.putExtra("CP2S", cp2s); // double
-        dataIntent.putExtra("DR", dr); // double
-        dataIntent.putExtra("SEARCH_MODE", searchMode); // String F/M/S
-        dataIntent.putExtra("SEARCH_WINDOW", searchWindow); // int
+        dataIntent.putExtra("CP2S", cp2s); // double (imp/2s)
+        dataIntent.putExtra("DR", dr); // double (uSv/h)
+        dataIntent.putExtra("DR_ERROR", dr_error); // double (%), 1 sigma
+        dataIntent.putExtra("SEARCH_MODE", searchMode); // String (F/M/S)
         getApplicationContext().sendBroadcast(dataIntent);
 
         // debug toast
 //        showToastInMainLooper(
 //                "cp2s: " + cp2s
-//                + "; dr: " + dr
-//                + "; search: " + searchMode + "(" + searchWindow + ");",
+//                + "; dr: " + dr + " (+-" + dr_error + "%)"
+//                + "; search: " + searchMode + ";",
 //                Toast.LENGTH_SHORT);
     }
 
@@ -2845,12 +2850,16 @@ public class AtomSpectraService extends Service {
     }
 
     private static class DoseRate {
-        public final double compensated;
-        public final double nonCompensated;
+        public final double compensated; // uSv/h
+        public final double compensatedError; // one sigma %
+        public final double nonCompensated; // uSv/h
+        public final double nonCompensatedError; // one sigma %
 
-        private DoseRate(double compensated, double nonCompensated) {
+        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError) {
             this.compensated = compensated;
+            this.compensatedError = compensatedError;
             this.nonCompensated = nonCompensated;
+            this.nonCompensatedError = nonCompensatedError;
         }
     }
 }
