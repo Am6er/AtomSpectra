@@ -106,7 +106,7 @@
     <string name="mode_compensated_button">K</string>
     <string name="mode_uncompensated_button">D</string>
     <string name="sensg_text">Empf:</string>
-    <string name="background_cnt_text">HintZähl:</string>
+    <string name="background_cps_text">HintZähl:</string>
     <string name="fast_mode_sens">S:</string>
     <string name="medium_mode_sens">M:</string>
     <string name="slow_mode_sens">L:</string>
@@ -160,8 +160,8 @@
     <string name="delta_spectrum_format">Differenzzeit: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Kanalkomprimierung: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">Zeit: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
-    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h</string>
-    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h</string>
+    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Cursorposition:\nkanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -453,7 +453,7 @@
     <string name="help_text_part4"><big><annotation foreground="caption">4. Eine Dosisleistungsberechnung und -ausgabe:</annotation></big>\n
         \t- Das Programm führt eine Dosisleistungsmessung gemäß der Auswahl der Kanal- oder keV-x-Achse durch. In einem Kanalansichtsmodus führt das Programm eine einfache Umrechnung der Dosisleistung in eine Dosisrate durch. In einem keV-Ansichtsmodus führt das Programm eine energiekompensierte Dosisleistungsmessung durch.\n
         \t- Die Schaltfläche „<annotation foreground="parameter">SML</annotation>“ rechts neben dem Spektrum wählt die Mittelung der Dosisleistung aus. „<annotation foreground="parameter">S</annotation>“ bedeutet „Schnell“, „<annotation foreground="parameter">M</annotation>“ bedeutet „Mittel“, „<annotation foreground="parameter">L</annotation>“ bedeutet „Schleppend“. Die Zählwerte für die Mittelwertbildung für jeden Typ können im „<annotation foreground="parameter">Einstellungen</annotation>“ festgelegt werden.\n
-        \t- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
+        \t- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ (cps bei 1 uSv/h) in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
         \t- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
         \t- Sie können einen „<annotation foreground="parameter">HintZähl</annotation>“-Parameter festlegen, der bei der einfachen Berechnung der Dosisleistung von cps subtrahiert wird.\n
         \t- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">CD</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">D</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“.\n

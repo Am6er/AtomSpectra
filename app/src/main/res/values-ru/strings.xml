@@ -106,7 +106,7 @@
     <string name="mode_compensated_button">К</string>
     <string name="mode_uncompensated_button">Н</string>
     <string name="sensg_text">Чувств:</string>
-    <string name="background_cnt_text">СчФона:</string>
+    <string name="background_cps_text">СчФона:</string>
     <string name="fast_mode_sens">Б:</string>
     <string name="medium_mode_sens">С:</string>
     <string name="slow_mode_sens">М:</string>
@@ -160,8 +160,8 @@
     <string name="delta_spectrum_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
     <string name="channel_compression_format">Сжатие каналов: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
-    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мкЗв/ч</string>
-    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мЗв/ч</string>
+    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -457,7 +457,7 @@
         <big><annotation foreground="caption">4. Расчёт и отображение мощности дозы:</annotation></big>\n
         \t- Программа выполняет расчёт мощности дозы в зависимости от выбора горизонтальной шкалы. В режиме вывода каналов программа выполняет простой пересчёт количества импульсов в мощность дозы. В режиме вывода энергий программа выполняет расчёт компенсированной мощности дозы.\n
         \t- Кнопка «<annotation foreground="parameter">БСМ</annotation>» справа от графика выбирает режим усреднения мощности дозы. «<annotation foreground="parameter">Б</annotation>» означает «быстрый», «<annotation foreground="parameter">С</annotation>» означает «средний», «<annotation foreground="parameter">М</annotation>» означает «медленный». Значения для усреднения по каждому типу можно задать в «<annotation foreground="parameter">Настройках</annotation>».\n
-        \t- Необходимо задать параметр «<annotation foreground="parameter">Чувств</annotation>» в «<annotation foreground="parameter">Настройках</annotation>» для пересчёта импульсов в мощность дозы.\n
+        \t- Необходимо задать параметр «<annotation foreground="parameter">Чувств</annotation>» (имп/с при 1 мкЗв/ч) в «<annotation foreground="parameter">Настройках</annotation>» для пересчёта импульсов в мощность дозы.\n
         \t- Кривая чувствительности по умолчанию определена для спектрометра <u>AtomSpectra Nano8</u> на основе CsI(Tl), но может быть применена для других спектрометров для оценки мощности дозы, задав параметр «<annotation foreground="parameter">Чувств</annotation>». Используйте пункт меню «<annotation foreground="parameter">Чувствительность…</annotation>» в подменю «<annotation foreground="parameter">Устройство</annotation>» для изменения этой кривой. Кривая приведена к 1 на линии 661,62кэВ линии Cs-137.\n
         \t- Можно задать параметр «<annotation foreground="parameter">СчФона</annotation>» для вычитания фона из показаний cps при простом расчёте мощности дозы.\n
         \t- Можно увидеть историю мощности дозы. Для переключения нажмите кнопку «<annotation foreground="parameter">КН</annotation>». «<annotation foreground="parameter">К</annotation>» означает «история компенсированной мощности дозы». «<annotation foreground="parameter">Н</annotation>» означает «история некомпенсированной мощности дозы».\n

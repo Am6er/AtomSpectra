@@ -1098,7 +1098,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS);
 					int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS_INTERVAL);
 
-					double doserate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH);
+					double dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH);
+					double dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH_ERROR);
 					double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_TOTAL_TIME);
 
 					switch (show_average_cps) {
@@ -1108,10 +1109,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							break;
 						case SHOW_CPS:
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
-							if (doserate > 1000)
-								doseRateText.setText(getString(R.string.dose_rate_mSv_format, doserate / 1000.0));
+							long error95Percent = Math.round(dose_rate_error * 2);
+							if (dose_rate > 1000)
+								doseRateText.setText(getString(R.string.dose_rate_mSv_format, dose_rate / 1000.0, error95Percent));
 							else
-								doseRateText.setText(getString(R.string.dose_rate_format, doserate));
+								doseRateText.setText(getString(R.string.dose_rate_format, dose_rate, error95Percent));
 							break;
 						case SHOW_BASE:
 							cpsView.setText(getString(R.string.cps_base_show, (int) AtomSpectraService.getCpsBaseLevel()));
@@ -3581,7 +3583,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 				if (setData) {
 //					AtomSpectraService.time_counter = spectrum.getSpectrumTime();
-					AtomSpectraService.total_pulses = spectrum.getTotalCounts();
+					AtomSpectraService.total_counts = spectrum.getTotalCounts();
 					if (app_menu != null) {
 						app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
 						app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
@@ -4006,7 +4008,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			OutputStreamWriter fw = docStream;
 			fw.append("DEVFORMAT: 1\n");      //Type of file
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensivity
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CNT_DEFAULT)));                    //Background
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));                    //Background
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));                   //fast counts
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));               //medium counts
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));                   //slow counts
@@ -4021,12 +4023,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
 			fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT)));                               //order size
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length)));      //Calibration array size
-			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length); i++) {
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length)));      //Calibration array size
+			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
 				fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.configCalibrationEnergy(i), i * 100.0f)));
 			}
-			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length); i++) {
-				fw.append(String.format(Locale.US, "%.14e\n", Double.longBitsToDouble(sharedPreferences.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.ETomSvDefault[i])))));
+			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
+				fw.append(String.format(Locale.US, "%.14e\n", Double.longBitsToDouble(sharedPreferences.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.EnergySensitivityDefault[i])))));
 			}
 			fw.close();
 			Log.d(TAG, deviceFileName + " saved successfully");
@@ -4080,7 +4082,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			int tempSize = Integer.parseInt(fr.readLine());
 			double[] tempArray;
 			float[] tempEArray;
-			if (tempSize == AtomSpectraService.ETomSvDefault.length) {
+			if (tempSize == AtomSpectraService.EnergySensitivityDefault.length) {
 				tempArray = new double[tempSize];
 				tempEArray = new float[tempSize];
 				for (int i = 0; i < tempSize; i++) {

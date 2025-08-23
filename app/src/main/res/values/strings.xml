@@ -106,7 +106,7 @@
     <string name="mode_compensated_button">C</string>
     <string name="mode_uncompensated_button">D</string>
     <string name="sensg_text">Sens:</string>
-    <string name="background_cnt_text">BckgCnt:</string>
+    <string name="background_cps_text">BckgCps:</string>
     <string name="fast_mode_sens">F:</string>
     <string name="medium_mode_sens">M:</string>
     <string name="slow_mode_sens">S:</string>
@@ -160,8 +160,8 @@
     <string name="delta_spectrum_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
-    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h</string>
-    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h</string>
+    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -453,9 +453,9 @@
     <string name="help_text_part4"><big><annotation foreground="caption">4. A dose rate calculation and output:</annotation></big>\n
         \t- The program makes a dose rate measurement in accordance with the channel or keV x-axis selection. In a channel view mode the program makes a simple count to dose rate conversion. In a keV view mode the program makes an energy compensated dose rate measurement.\n
         \t- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
-        \t- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the dose rate.\n
+        \t- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter (cps at 1 uSv/h) in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the dose rate.\n
         \t- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens</annotation>\' parameter to estimate the dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
-        \t- You can set a \'<annotation foreground="parameter">BckgCnt</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
+        \t- You can set a \'<annotation foreground="parameter">BckgCps</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
         \t- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CD</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">D</annotation>\' means \'uncompensated dose rate history\'.\n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
@@ -528,7 +528,7 @@
         \t- \'Language\' - select a program language. To fully apply the program must be restarted.\n
         \t- \'AtomSwift DR\' - select which dose rate value is sent to AtomSwift application (compensated or not). Non-compensated is recommended for search/maps unless you explicitly need compensated and you know how to configure sensitivity curve.\n
         \t- \'Sens\' - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
-        \t- \'BckgCnt\' - noise count subtracted from a simple dose rate calculation.\n
+        \t- \'BckgCps\' - noise count subtracted from a simple dose rate calculation.\n
         \t- \'F\', \'M\', \'S\' - counts for fast, medium and slow dose rate averaging.\n
         \t- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.\n\n
     </string>

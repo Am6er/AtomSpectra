@@ -772,7 +772,7 @@
                     android:layout_weight="1"
                     android:gravity="center"
                     android:singleLine="true"
-                    android:text="@string/background_cnt_text"
+                    android:text="@string/background_cps_text"
                     android:textColor="@android:color/white" />
 
                 <EditText
