@@ -324,7 +324,16 @@ public class AtomSpectraShapeView extends View {
 						} else {
 							textColor.setTextAlign(Align.RIGHT);
 						}
-						canvas.drawText(String.format(Locale.getDefault(), "%1.3f%s", (min + (max - min) * i / ny) / zoom, (i < ny) ? "" : (sZoom)), margin_top - height + i * dwy - 6 * ht_px / 2, margin_top - ht_px / 2, textColor);
+						double value = (min + (max - min) * i / ny) / zoom;
+						String format;
+						if (value < 10) {
+							format = "%1.2f%s";
+						} else if (value < 100) {
+							format = "%1.1f%s";
+						} else {
+							format = "%1.0f%s";
+						}
+						canvas.drawText(String.format(Locale.getDefault(), format, value, (i < ny) ? "" : (sZoom)), margin_top - height + i * dwy - 6 * ht_px / 2, margin_top - ht_px / 2, textColor);
 					}
 				} else {
 					long line_val = 0;
