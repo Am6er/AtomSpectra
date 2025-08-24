@@ -1108,12 +1108,20 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						case SHOW_CPS:
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
 							long error95Percent = Math.round(dose_rate_error * 2);
-							if (dose_rate < 0.01) {
-								doseRateText.setText(getString(R.string.dose_rate_1nSv_format, dose_rate * 1000.0, error95Percent));
-							} else if (dose_rate < 0.1) {
-								doseRateText.setText(getString(R.string.dose_rate_10nSv_format, dose_rate * 1000.0, error95Percent));
-							} else if (dose_rate < 1) {
-								doseRateText.setText(getString(R.string.dose_rate_100nSv_format, dose_rate * 1000.0, error95Percent));
+							if (DisplayDose == Constants.DISPLAY_DOSE_INTERVAL) {
+								if (dose_rate < 10) {
+									doseRateText.setText(getString(R.string.dose_rate_1cps_format, dose_rate, error95Percent));
+								} else if (dose_rate < 100) {
+									doseRateText.setText(getString(R.string.dose_rate_10cps_format, dose_rate, error95Percent));
+								} else if (dose_rate < 1000) {
+									doseRateText.setText(getString(R.string.dose_rate_100cps_format, dose_rate, error95Percent));
+								} else if (dose_rate < 10000) {
+									doseRateText.setText(getString(R.string.dose_rate_1kcps_format, dose_rate / 1000.0, error95Percent));
+								} else if (dose_rate < 100000) {
+									doseRateText.setText(getString(R.string.dose_rate_10kcps_format, dose_rate / 1000.0, error95Percent));
+								} else { // > 100k cps
+									doseRateText.setText(getString(R.string.dose_rate_100kcps_format, dose_rate / 1000.0, error95Percent));
+								}
 							} else if (dose_rate < 10) {
 								doseRateText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
 							} else if (dose_rate < 100) {

@@ -163,15 +163,18 @@
     <string name="delta_spectrum_format">Differenzzeit: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Kanalkomprimierung: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">Zeit: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
-    <string name="dose_rate_1nSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_10nSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_100nSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1cps_format"><xliff:g id="cps">%1$.3f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10cps_format"><xliff:g id="cps">%1$.2f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100cps_format"><xliff:g id="cps">%1$.1f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1kcps_format"><xliff:g id="cps">%1$.3f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10kcps_format"><xliff:g id="cps">%1$.2f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Cursorposition:\nkanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -213,7 +216,8 @@
     <string name="graph_show_channel">K.</string>
     <string name="graph_show_points">anz</string>
     <string name="graph_show_kev">keV</string>
-    <string name="graph_show_nSv">nSv/h</string>
+    <string name="graph_show_cps">cps</string>
+    <string name="graph_show_kcps">kcps</string>
     <string name="graph_show_mkSv">μSv/h</string>
     <string name="graph_show_mSv">mSv/h</string>
     <string name="graph_log_info">Logarithmische Y-Skala</string>
@@ -426,7 +430,7 @@
         \t- Verwenden Sie ein doppeltes Tippen, um die lineare oder log10-Skala auszuwählen.\n
         \t- Verwenden Sie ein langes Tippen, um zwischen dem Balken- und dem Linienansichtsmodus zu wechseln.\n
         \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben dem Spektrum zum Umschalten zwischen Kanal- und keV-Modus in der Spektrumansicht. \n
-        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben der Dosisleistungsausgabe, um zwischen den Dosisleistungsarten (kompensiert, nicht kompensiert oder nicht kompensiert innerhalb des Intervalls) umzuschalten. \n
+        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben der Dosisleistungsausgabe, um zwischen den Dosisleistungsarten (kompensiert, nicht kompensiert, Zählrate innerhalb des Intervalls) umzuschalten. \n
         \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">KNI</annotation>“ rechts neben dem Bildschirm, um zwischen den Ausgabemodi Spektrum und Dosisleistung umzuschalten.\n
         \t- Drücken Sie kurz auf „<annotation foreground="parameter">cps</annotation>“ oder auf die Ausgabe der Dosisleistung, um alle zeitlichen Durchschnitts-cps („<i>~cps</i>“) und eine Gesamtsumme anzuzeigen Zeit in Sekunden („<i>Zeit</i>“). Drücken Sie kurz auf „<annotation foreground="parameter">~cps</annotation>“ oder „<annotation foreground="parameter">Zeit</annotation>“, um die Basis- („<i>≈cps</i>“) und Signalpegel („<i>♪cps</i>“) anzuzeigen. Drücken Sie kurz auf „<annotation foreground="parameter">≈cps</annotation>“ oder „<annotation foreground="parameter">♪cps</annotation>“, um die Koordinaten anzuzeigen. Die Koordinaten zeigen die aktuellen Werte während der Spektrumaktualisierung. Sie zeigen die letzte Position an, bevor die Aufzeichnung gestoppt wurde. Sie zeigen die Position der zuletzt gelesenen Datei. Drücken Sie lange auf die Koordinaten, um zu einem Kartenprogramm zu springen. Drücken Sie erneut kurz, um zurückzukehren.\n
         \n
@@ -463,12 +467,12 @@
         \n
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. Eine Dosisleistungsberechnung und -ausgabe:</annotation></big>\n
-        \t- Das Programm führt drei Arten der Dosisleistungsmessung durch: nicht kompensiert, nicht kompensiert innerhalb eines Intervalls und kompensiert. Nicht kompensiert – einfache lineare Umwandlung der Zählrate in eine Dosisleistung. Nicht kompensiert innerhalb eines Intervalls – einfache lineare Umwandlung der Intervall-Zählrate in eine Dosisleistung. Kompensiert – Berechnung der Dosisleistung unter Berücksichtigung der Energie der registrierten Photonen.\n
+        \t- Das Programm berechnet drei Werte: nicht kompensierte Dosisleistung, kompensierte Dosisleistung und Zählrate in einem bestimmten Energiebereich (Intervall). Nicht kompensiert: lineare Umrechnung der Gesamtzählrate in eine Dosisleistung mithilfe eines Koeffizienten. Kompensiert: Berechnung der Dosisleistung unter Berücksichtigung der Energie der registrierten Photonen, der Detektorempfindlichkeitskurve und des Koeffizienten.\n
         \t- Die Schaltfläche „<annotation foreground="parameter">SML</annotation>“ rechts neben dem Spektrum wählt die Mittelung der Dosisleistung aus. „<annotation foreground="parameter">S</annotation>“ bedeutet „Schnell“, „<annotation foreground="parameter">M</annotation>“ bedeutet „Mittel“, „<annotation foreground="parameter">L</annotation>“ bedeutet „Schleppend“. Die Zählwerte für die Mittelwertbildung für jeden Typ können im „<annotation foreground="parameter">Einstellungen</annotation>“ festgelegt werden.\n
         \t- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ (cps bei 1 uSv/h) in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
         \t- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf(kompensiert)</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
         \t- Sie können einen „<annotation foreground="parameter">HintZähl</annotation>“-Parameter festlegen, der bei der einfachen Berechnung der Dosisleistung von cps subtrahiert wird.\n
-        \t- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">KNI</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">N</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">I</annotation>“ bedeutet „nicht kompensiert innerhalb eines Intervalls“.\n
+        \t- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">KNI</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">N</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">I</annotation>“ bedeutet „Intervallzählratenverlauf“.\n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Isotopenausgabe:</annotation></big>\n
         \t- Die grüne Cursorlinie zeigt das Isotop mit 3% Unsicherheit und wählt wichtigere Isotope aus. Um strenge Linienisotope anzuzeigen, verwenden Sie bitte das Dialogfeld „<annotation foreground="parameter">Isotope anzeigen</annotation>“.\n

@@ -1623,11 +1623,8 @@ public class AtomSpectraService extends Service {
         }
         double dose_rate_error = total_counts > 0 ? Math.sqrt(total_counts) / total_counts * 100.0 : 0;
 
-        double interval_dose_rate = 0;
-        if (SensG > 0) {
-            interval_dose_rate = (total_interval_counts / total_interval_time) / SensG;
-        }
-        double interval_dose_rate_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
+        double interval_cps = (total_interval_counts / total_interval_time);
+        double interval_cps_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
         synchronized (doseHistory) {
             doseHistory.addLast(dose_rate);
             if (doseHistory.size() > SEARCH_WINDOW_SIZE) {
@@ -1637,13 +1634,13 @@ public class AtomSpectraService extends Service {
             if (doseCompensatedHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseCompensatedHistory.removeFirst();
             }
-            doseIntervalHistory.addLast(interval_dose_rate);
+            doseIntervalHistory.addLast(interval_cps);
             if (doseIntervalHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseIntervalHistory.removeFirst();
             }
         }
 
-        return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_dose_rate, interval_dose_rate_error);
+        return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_cps, interval_cps_error);
     }
 
     private static int getEnergyBinIndex(double energy) {
@@ -1910,8 +1907,8 @@ public class AtomSpectraService extends Service {
                 dose_rate_error = doseRateValue.compensatedError;
                 break;
             case Constants.DISPLAY_DOSE_INTERVAL:
-                dose_rate = doseRateValue.interval;
-                dose_rate_error = doseRateValue.intervalError;
+                dose_rate = doseRateValue.intervalCps;
+                dose_rate_error = doseRateValue.intervalCpsError;
                 break;
         }
         mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, dose_rate);
@@ -2831,8 +2828,8 @@ public class AtomSpectraService extends Service {
                 dr_error = doseRate.nonCompensatedError;
                 break;
             case Constants.ATOMSWIFT_DR_INTERVAL:
-                dr = doseRate.interval;
-                dr_error = doseRate.intervalError;
+                dr = doseRate.intervalCps;
+                dr_error = doseRate.intervalCpsError;
                 break;
         }
 
@@ -2877,25 +2874,25 @@ public class AtomSpectraService extends Service {
         public final double compensatedError; // one sigma %
         public final double nonCompensated; // uSv/h
         public final double nonCompensatedError; // one sigma %
-        public final double interval; // uSv/h
-        public final double intervalError; // one sigma %
+        public final double intervalCps; // cps
+        public final double intervalCpsError; // one sigma %
 
         private DoseRate() {
             this.compensated = 0;
             this.compensatedError = 0;
             this.nonCompensated = 0;
             this.nonCompensatedError = 0;
-            this.interval = 0;
-            this.intervalError = 0;
+            this.intervalCps = 0;
+            this.intervalCpsError = 0;
         }
 
-        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError, double interval, double intervalError) {
+        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError, double intervalCps, double intervalCpsError) {
             this.compensated = compensated;
             this.compensatedError = compensatedError;
             this.nonCompensated = nonCompensated;
             this.nonCompensatedError = nonCompensatedError;
-            this.interval = interval;
-            this.intervalError = intervalError;
+            this.intervalCps = intervalCps;
+            this.intervalCpsError = intervalCpsError;
         }
     }
 }

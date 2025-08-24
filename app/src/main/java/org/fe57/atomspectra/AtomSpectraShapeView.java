@@ -32,7 +32,6 @@ public class AtomSpectraShapeView extends View {
 	private boolean no_y_mode = false;
 	private boolean dose_mode = false;
 	private boolean m_dose_mode = false;
-	private boolean n_dose_mode = false;
 	private boolean logScale = false;
 	private boolean isCalibrated = true;
 	private boolean calibrationScale = false;
@@ -259,12 +258,20 @@ public class AtomSpectraShapeView extends View {
 			if (logScale) {
 				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
 			} else if (dose_mode) {
-				String unit = res.getString(R.string.graph_show_mkSv);
+				boolean is_interval = AtomSpectra.DisplayDose == Constants.DISPLAY_DOSE_INTERVAL;
+				String unit;
 				if (m_dose_mode) {
-					unit = res.getString(R.string.graph_show_mSv);
-				}
-				if (n_dose_mode) {
-					unit = res.getString(R.string.graph_show_nSv);
+					if (is_interval) {
+						unit = res.getString(R.string.graph_show_kcps);
+					} else {
+						unit = res.getString(R.string.graph_show_mSv);
+					}
+				} else {
+					if (is_interval) {
+						unit = res.getString(R.string.graph_show_cps);
+					} else {
+						unit = res.getString(R.string.graph_show_mkSv);
+					}
 				}
 				sZoom = ", " + unit;
 			} else {
@@ -327,8 +334,10 @@ public class AtomSpectraShapeView extends View {
 						double value = (min + (max - min) * i / ny) / zoom;
 						String format;
 						if (value < 10) {
-							format = "%1.2f%s";
+							format = "%1.3f%s";
 						} else if (value < 100) {
+							format = "%1.2f%s";
+						} else if (value < 1000) {
 							format = "%1.1f%s";
 						} else {
 							format = "%1.0f%s";
@@ -870,15 +879,6 @@ public class AtomSpectraShapeView extends View {
 			}
 			if (dose_mode) {
 				max *= Constants.DOSE_OVERHEAD;
-				if (max < 1) {
-					n_dose_mode = true;
-					max *= 1000;
-					for (int i = 0; i < xSize; i++) {
-						tmp[i] *= 1000.0;
-					}
-				} else {
-					n_dose_mode = false;
-				}
 				if (max > 1000) {
 					m_dose_mode = true;
 					max /= 1000;

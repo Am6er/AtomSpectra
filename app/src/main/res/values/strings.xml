@@ -163,15 +163,18 @@
     <string name="delta_spectrum_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
-    <string name="dose_rate_1nSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_10nSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_100nSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1cps_format"><xliff:g id="cps">%1$.3f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10cps_format"><xliff:g id="cps">%1$.2f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100cps_format"><xliff:g id="cps">%1$.1f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1kcps_format"><xliff:g id="cps">%1$.3f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10kcps_format"><xliff:g id="cps">%1$.2f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -213,7 +216,8 @@
     <string name="graph_show_channel">ch.</string>
     <string name="graph_show_points">pts</string>
     <string name="graph_show_kev">keV</string>
-    <string name="graph_show_nSv">nSv/h</string>
+    <string name="graph_show_cps">cps</string>
+    <string name="graph_show_kcps">kcps</string>
     <string name="graph_show_mkSv">μSv/h</string>
     <string name="graph_show_mSv">mSv/h</string>
     <string name="graph_log_info">Logarithmic Y-scale</string>
@@ -426,7 +430,7 @@
         \t- Use a double tap to select linear or log10 scale.\n
         \t- Use a long tap to switch between bar and line view modes.\n
         \t- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the spectrum to switch between channel and keV modes in spectrum view.\n
-        \t- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the dose rate output to switch between kinds of dose rate (compensated, non-compensated or non-compensated within interval).\n
+        \t- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the dose rate output to switch between kinds of dose rate (compensated, non-compensated, count rate within interval).\n
         \t- Use \'<annotation foreground="parameter">CNI</annotation>\' button to the right of the screen to switch between spectrum and dose rate output modes.\n
         \t- Use a short press on \'<annotation foreground="parameter">cps</annotation>\' or dose rate output to show all time average cps (\'<i>~cps</i>\') and a total time in seconds (\'<i>time</i>\'). Use a short press on \'<annotation foreground="parameter">~cps</annotation>\' or \'<annotation foreground="parameter">time</annotation>\' to show base (\'<annotation foreground="parameter">≈cps</annotation>\') and signal (\'<annotation foreground="parameter">♪cps</annotation>\') levels. Use a short press on \'<annotation foreground="parameter">≈cps</annotation>\' or \'<annotation foreground="parameter">♪cps</annotation>\' to show coordinates. The coordinates shows current values during spectrum update. They show last position before the record stopped. They shows position from last read file. Use a long press on coordinates to jump to a map program. Use a short press again to return back.\n
         \n
@@ -463,12 +467,12 @@
         \n
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. A dose rate calculation and output:</annotation></big>\n
-        \t- The program makes three kinds of dose rate measurement - non-compensated, non-compensated within interval and compensated. Non-compensated - simple linear conversion of count rate into dose rate. Non-compensated within interval - simple linear conversion of interval count rate into dose rate. Compensated - dose rate calculation considering energy of registered photons.\n
+        \t- The program calculates three values - non-compensated dose rate, compensated dose rate, count rate in a given range (interval) of energies. Non-compensated - linear conversion of the overall count rate into dose rate using a coefficient. Compensated - calculation of dose rate taking into account the energy of the registered photons, the detector sensitivity curve and the coefficient.\n
         \t- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
         \t- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter (cps at 1 uSv/h) in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the non-compensated dose rate.\n
         \t- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens(compensated)</annotation>\' parameter to estimate the compensated dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
         \t- You can set a \'<annotation foreground="parameter">BckgCps</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
-        \t- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CNI</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">N</annotation>\' means \'non-compensated dose rate history\'. \'<annotation foreground="parameter">I</annotation>\' means \'non-compensated dose rate history within interval.\'.\n
+        \t- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CNI</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">N</annotation>\' means \'non-compensated dose rate history\'. \'<annotation foreground="parameter">I</annotation>\' means \'interval count rate history\'.\n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n
         \t- Green cursor line shows the isotope with 3% uncertainty and selects more important isotopes. To see strict line isotopes please use the \'<annotation foreground="parameter">Show isotopes</annotation>\' isotope selection dialog.\n
