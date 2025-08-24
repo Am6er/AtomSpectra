@@ -108,6 +108,7 @@
     <string name="mode_uncompensated_button">N</string>
     <string name="mode_interval_button">I</string>
     <string name="sensg_text">Sens:</string>
+    <string name="sensg_compensated_text">Sens(сompensated):</string>
     <string name="background_cps_text">BckgCps:</string>
     <string name="fast_mode_sens">F:</string>
     <string name="medium_mode_sens">M:</string>
@@ -464,8 +465,8 @@
     <string name="help_text_part4"><big><annotation foreground="caption">4. A dose rate calculation and output:</annotation></big>\n
         \t- The program makes three kinds of dose rate measurement - non-compensated, non-compensated within interval and compensated. Non-compensated - simple linear conversion of count rate into dose rate. Non-compensated within interval - simple linear conversion of interval count rate into dose rate. Compensated - dose rate calculation considering energy of registered photons.\n
         \t- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'.\n
-        \t- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter (cps at 1 uSv/h) in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the dose rate.\n
-        \t- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens</annotation>\' parameter to estimate the dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
+        \t- You need to set a \'<annotation foreground="parameter">Sens</annotation>\' parameter (cps at 1 uSv/h) in \'<annotation foreground="parameter">Settings</annotation>\' to convert the counts to the non-compensated dose rate.\n
+        \t- The default sensitivity curve is defined for <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers by means of \'<annotation foreground="parameter">Sens(compensated)</annotation>\' parameter to estimate the compensated dose rate. Use \'<annotation foreground="parameter">Sensitivity…</annotation>\' menu item under \'<annotation foreground="parameter">Device</annotation>\' submenu to change this curve. The curve is fitted to 1 at 661.66keV Cs-137 line.\n
         \t- You can set a \'<annotation foreground="parameter">BckgCps</annotation>\' parameter to be subtracted from cps in simple dose rate calculation.\n
         \t- You may see a dose rate history. To select the screen press \'<annotation foreground="parameter">CNI</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">N</annotation>\' means \'non-compensated dose rate history\'. \'<annotation foreground="parameter">I</annotation>\' means \'non-compensated dose rate history within interval.\'.\n
     </string>
@@ -539,6 +540,7 @@
         \t- \'Language\' - select a program language. To fully apply the program must be restarted.\n
         \t- \'AtomSwift DR\' - select which dose rate value is sent to AtomSwift application. Non-compensated is recommended for search/maps unless you explicitly need compensated and you know how to configure sensitivity curve.\n
         \t- \'Sens\' - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
+        \t- \'Sens(compensated)\' - calibration value for compensated dose rate calculation. The value must be adjusted yourself to show the right compensated dose rate value.\n
         \t- \'BckgCps\' - noise count subtracted from a simple dose rate calculation.\n
         \t- \'F\', \'M\', \'S\' - counts for fast, medium and slow dose rate averaging.\n
         \t- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.\n\n

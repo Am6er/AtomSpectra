@@ -4037,8 +4037,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		try {
 			OutputStreamWriter fw = docStream;
-			fw.append("DEVFORMAT: 1\n");      //Type of file
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensivity
+			fw.append("DEVFORMAT: 2\n");      //Type of file
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensitivity
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));       //Sensitivity for compensated dose rate
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));                    //Background
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));                   //fast counts
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));               //medium counts
@@ -4088,11 +4089,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			BufferedReader fr = new BufferedReader(new InputStreamReader(inputFile));
 			Log.d(TAG, filename + " loading started...");
 			String ident = fr.readLine();
-			if (!ident.matches("^DEVFORMAT: 1$")) {
+			boolean isV1 = ident.matches("^DEVFORMAT: 1$");
+			boolean isV2 = ident.matches("^DEVFORMAT: 2$");
+			if (!isV1 && !isV2) {
 				Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
 				return;
 			}
 			int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
+			int tempSensGCompensated = 0;
+			if (isV2) {
+				tempSensGCompensated = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
+			}
 			int tempBack = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
 			int tempFast = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
 			int tempMedium = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
@@ -4144,6 +4151,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			}
 			SharedPreferences.Editor editor = sharedPreferences.edit();
 			editor.putInt(Constants.CONFIG.CONF_SENSG, tempSensG);                        //Sensitivity
+			if (isV2) {															          //Sensitivity for compensated DR
+				editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, tempSensGCompensated);
+			}
 			editor.putInt(Constants.CONFIG.CONF_BACKGROUND, tempBack);                    //Background
 			editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, tempFast);                   //fast counts
 			editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, tempMedium);               //medium counts

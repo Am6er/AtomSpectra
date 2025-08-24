@@ -472,8 +472,16 @@ public class AtomSpectraService extends Service {
             editor.putInt(Constants.CONFIG.CONF_SENSG, (int)SensG);
             editor.apply();
         }
-        SensGCompensated = SensG / 4.3; // this adjustment allows to match compensated/non-compensated dose rate
-        // TODO: add separate setting, requires updating device file format as well
+
+        try {
+            SensGCompensated = sp.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
+        } catch (Exception e) {
+            SensGCompensated = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, (int)SensGCompensated);
+            editor.apply();
+        }
+
         try {
             backgroundCps = sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT);
         } catch (Exception e) {
@@ -1516,6 +1524,10 @@ public class AtomSpectraService extends Service {
 
     // called each 0.1 sec for audio, each 1 sec for USB
     private DoseRate doseRateSearch(int counts, int interval_counts, int[] binned_counts, double delta_time) {
+        if (delta_time == 0) {
+            return doseRateValue;
+        }
+
         synchronized (windowCounts) {
             windowDeltaTime.addLast(delta_time);
             if (windowDeltaTime.size() > SEARCH_WINDOW_SIZE) {
@@ -1584,7 +1596,10 @@ public class AtomSpectraService extends Service {
             int bin_counts = total_binned_counts[bin];
             double bin_cps = bin_counts / total_time;
             double bin_sens = EnergySensitivity[bin];
-            double bin_dose_rate = bin_cps * bin_sens / SensGCompensated;
+            double bin_dose_rate = 0;
+            if (SensGCompensated > 0) {
+                bin_dose_rate = bin_cps * bin_sens / SensGCompensated;
+            }
             comp_dose_rate += bin_dose_rate;
             if (bin_counts > 0) {
                 double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
@@ -1602,10 +1617,16 @@ public class AtomSpectraService extends Service {
             comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_acc) / comp_dose_rate * 100.0;
         }
 
-        double dose_rate = StrictMath.max(0.0, (total_counts / total_time - backgroundCps) / SensG);
+        double dose_rate = 0;
+        if (SensG > 0) {
+            dose_rate = StrictMath.max(0.0, (total_counts / total_time - backgroundCps) / SensG);
+        }
         double dose_rate_error = total_counts > 0 ? Math.sqrt(total_counts) / total_counts * 100.0 : 0;
 
-        double interval_dose_rate = (total_interval_counts / total_interval_time) / SensG;
+        double interval_dose_rate = 0;
+        if (SensG > 0) {
+            interval_dose_rate = (total_interval_counts / total_interval_time) / SensG;
+        }
         double interval_dose_rate_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
         synchronized (doseHistory) {
             doseHistory.addLast(dose_rate);

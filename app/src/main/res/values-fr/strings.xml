@@ -60,7 +60,7 @@
     <string name="add_gps">Ajouter des coordonnées GPS aux fichiers</string>
     <string name="update_isotopes">Recherche automatique d\'isotopes</string>
     <string name="send_data_to_atom_swift_app">Envoyer des données à l\'application AtomSwift</string>
-    <string name="atom_swift_app_dr_non_compensated">AtomSwift DD: Non rémunéré</string>
+    <string name="atom_swift_app_dr_non_compensated">AtomSwift DD: Non compensé</string>
     <string name="atom_swift_app_dr_compensated">AtomSwift DD: Сompensé</string>
     <string name="atom_swift_app_dr_interval">AtomSwift DD: Intervalle</string>
     <string name="input_sound">Source:</string>
@@ -108,6 +108,7 @@
     <string name="mode_uncompensated_button">N</string>
     <string name="mode_interval_button">I</string>
     <string name="sensg_text">Sens:</string>
+    <string name="sensg_compensated_text">Sens(compensé):</string>
     <string name="background_cps_text">FondCps:</string>
     <string name="fast_mode_sens">V:</string>
     <string name="medium_mode_sens">M:</string>
@@ -468,7 +469,7 @@
         \t- Le programme effectue trois types de mesure du débit de dose: non compensé, non compensé dans l\'intervalle et compensé. Non compensé: conversion linéaire simple du taux de comptage en débit de dose. Non compensé dans l\'intervalle: conversion linéaire simple du taux de comptage de l\'intervalle en débit de dose. Compensé: calcul du débit de dose prenant en compte l\'énergie des photons enregistrés.\n
         \t- Le bouton «\u202f<annotation foreground="parameter">RML</annotation>\u202f» à droite du spectre sélectionne la moyenne du débit de dose. «\u202f<annotation foreground="parameter">R</annotation>\u202f» signifie «\u202fRapide\u202f», «\u202f<annotation foreground="parameter">M</annotation>\u202f» signifie «\u202fMoyen\u202f», «\u202f<annotation foreground="parameter">L</annotation>\u202f» signifie «\u202fLent\u202f». Les valeurs de comptage pour la moyenne de chaque type peuvent être définies dans les «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f».\n
         \t- Vous devez définir un paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» (cps à 1 uSv/h) dans «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f» pour convertir les comptages en débit de dose.\n
-        \t- La courbe de sensibilité par défaut est définie pour le spectromètre <u>AtomSpectra Nano8</u> basé sur CsI(Tl) mais elle peut être appliquée pour un autre spectromètre au moyen du paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» pour estimer le débit de dose. Utilisez l\'élément de menu «\u202f<annotation foreground="parameter">Sensibilité…</annotation>\u202f» sous le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f» pour modifier cette courbe. La courbe est ajustée à 1 à 661,66keV ligne Cs-137.
+        \t- La courbe de sensibilité par défaut est définie pour le spectromètre <u>AtomSpectra Nano8</u> basé sur CsI(Tl) mais elle peut être appliquée pour un autre spectromètre au moyen du paramètre «\u202f<annotation foreground="parameter">Sens(compensé)</annotation>\u202f» pour estimer le débit de dose. Utilisez l\'élément de menu «\u202f<annotation foreground="parameter">Sensibilité…</annotation>\u202f» sous le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f» pour modifier cette courbe. La courbe est ajustée à 1 à 661,66keV ligne Cs-137.
         \t- Vous pouvez définir un paramètre «\u202f<annotation foreground="parameter">FondCps</annotation>\u202f» à soustraire de cps dans le calcul simple du débit de dose.\n
         \t- Vous pouvez voir un historique du débit de dose. Pour sélectionner l\'écran, appuyez sur le bouton «\u202f<annotation foreground="parameter">CNI</annotation>\u202f». «\u202f<annotation foreground="parameter">C</annotation>\u202f» signifie «\u202fhistorique du débit de dose compensé\u202f». «\u202f<annotation foreground="parameter">N</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé\u202f». «\u202f<annotation foreground="parameter">I</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé dans l\'intervalle\u202f».\n
     </string>
@@ -545,6 +546,7 @@
         \t- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n
         \t- «\u202fAtomSwift DD\u202f» - Sélectionnez la valeur de débit de dose à envoyer à l\'application AtomSwift. L\'option non compensée est recommandée pour la recherche et les cartes, sauf si vous avez explicitement besoin d\'une compensation et que vous savez configurer la courbe de sensibilité.\n
         \t- «\u202fSens\u202f» - valeur d\'étalonnage pour le calcul du débit de dose. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose.\n
+        \t- «\u202fSens(compensé)\u202f» - valeur d\'étalonnage pour le calcul du débit de dose compensé. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose compensé.\n
         \t- «\u202fFondCps\u202f» - nombre de bruit soustrait d\'un simple calcul de débit de dose.\n
         \t- «\u202fR\u202f», «\u202fM\u202f», «\u202fL\u202f» - compte pour une moyenne rapide, moyenne et lente du débit de dose.\n
         \t- «\u202fFréq. de mise à jour du graphique, s⁻¹\u202f» - à quelle fréquence le programme met à jour les données de débit de dose par seconde et le spectre.\n\n

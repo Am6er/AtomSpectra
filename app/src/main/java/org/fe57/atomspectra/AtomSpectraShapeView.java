@@ -272,7 +272,7 @@ public class AtomSpectraShapeView extends View {
 			}
 		}
 
-		if (!no_y_mode && !calibrationScale && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
+		if (!no_y_mode && !calibrationScale && !dose_mode && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
 			if (isCalibrated &&
 					AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) < x_max_value  &&
 					AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) > x_min_value) {

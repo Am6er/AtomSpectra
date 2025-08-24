@@ -14,7 +14,8 @@ public class Constants {
     public static final int ADC_DEFAULT = ADC_MAX;                                                                       //number of usable ADC high bits
     public static final int ADC_MIN = 10;                                                                                //minimum ADC bit size (not less than 10)
     public static final int NUM_HIST_POINTS = 1 << ADC_MAX;                                                              //size of histogram
-    public static final int SENSG_DEFAULT = 1700;                                                                        //spectrometer sensitivity
+    public static final int SENSG_DEFAULT = 150;                                                                         //spectrometer sensitivity
+    public static final int SENSG_COMPENSATED_DEFAULT = 35;                                                              //spectrometer sensitivity for compensated dose rate
     public static final int BACKGND_CPS_DEFAULT = 0;                                                                     //spectrometer noise level
     public static final int VIEW_CHANNELS_DEFAULT = 1024;                                                                //number of channels to view on graph (128, 256, 512, 1024)
     public static final int EXPORT_CHANNELS_DEFAULT = NUM_HIST_POINTS;                                                   //number of channels to export
@@ -94,6 +95,7 @@ public class Constants {
         String CONF_DISPLAY_DOSE = "display_dose:";
         String CONF_SEARCH_MODE = "searchfsm";
         String CONF_SENSG = "sensg";
+        String CONF_SENSG_COMPENSATED = "sensg_compensated";
         String CONF_BACKGROUND = "backgcnt";
         String CONF_SEARCH_FAST = "search_fast";
         String CONF_SEARCH_SLOW = "search_slow";

@@ -756,12 +756,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:digits="01234567890,."
                     android:gravity="center"
                     android:imeOptions="actionDone"
-                    android:inputType="numberDecimal"
+                    android:inputType="number"
                     android:minWidth="60dp"
-                    android:text="1700.0"
+                    android:text="150"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     tools:ignore="HardcodedText" />
@@ -780,12 +779,41 @@
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:digits="01234567890,."
                     android:gravity="center"
                     android:imeOptions="actionDone"
-                    android:inputType="numberDecimal"
+                    android:inputType="number"
                     android:minWidth="60dp"
-                    android:text="0.0"
+                    android:text="0"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    tools:ignore="HardcodedText" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:weightSum="3">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="2"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:text="@string/sensg_compensated_text"
+                    android:textColor="@android:color/white" />
+
+                <EditText
+                    android:id="@+id/SensGCompensated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:imeOptions="actionDone"
+                    android:inputType="number"
+                    android:minWidth="60dp"
+                    android:text="35"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     tools:ignore="HardcodedText" />
@@ -814,7 +842,7 @@
                     android:imeOptions="actionDone"
                     android:inputType="number"
                     android:minWidth="56dp"
-                    android:text="25.0"
+                    android:text="25"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     tools:ignore="HardcodedText" />
@@ -836,7 +864,7 @@
                     android:imeOptions="actionDone"
                     android:inputType="number"
                     android:minWidth="56dp"
-                    android:text="35.0"
+                    android:text="35"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     tools:ignore="HardcodedText" />
@@ -858,7 +886,7 @@
                     android:imeOptions="actionDone"
                     android:inputType="number"
                     android:minWidth="56dp"
-                    android:text="70.0"
+                    android:text="70"
                     android:textColor="@android:color/white"
                     android:textSize="14sp"
                     tools:ignore="HardcodedText" />

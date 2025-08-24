@@ -59,7 +59,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     private GestureDetector gestureDetector;
     private TextView mTextField;
-    private EditText SensG, BackgroundCount, slowSens, mediumSens, fastSens;
+    private EditText SensG, SensGCompensated, BackgroundCount, slowSens, mediumSens, fastSens;
     private SharedPreferences sp;
     private TextView doseRateFreqLabel;
     private TextView folderToStore;
@@ -113,6 +113,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mAtomSpectraSignalView.setClickable(false);
         mTextField = findViewById(R.id.countView);
         SensG = findViewById(R.id.SensG);
+        SensGCompensated = findViewById(R.id.SensGCompensated);
         BackgroundCount = findViewById(R.id.BckgCnt);
 
         slowSens = findViewById(R.id.SlowSens);
@@ -127,12 +128,14 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mediumSens.setOnEditorActionListener(editorActionListener);
         fastSens.setOnEditorActionListener(editorActionListener);
         SensG.setOnEditorActionListener(editorActionListener);
+        SensGCompensated.setOnEditorActionListener(editorActionListener);
         BackgroundCount.setOnEditorActionListener(editorActionListener);
 
         slowSens.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));
         fastSens.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));
         mediumSens.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));
         SensG.setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));
+        SensGCompensated.setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));
         BackgroundCount.setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));
 
         int freq = sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, 1);
@@ -424,17 +427,18 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             if (i == EditorInfo.IME_ACTION_DONE) {
                 try {
                     Number sensNumber = NumberFormat.getNumberInstance().parse(SensG.getText().toString());
+                    Number sensCompensatedNumber = NumberFormat.getNumberInstance().parse(SensGCompensated.getText().toString());
                     Number backgroundNumber = NumberFormat.getNumberInstance().parse(BackgroundCount.getText().toString());
-                    if (sensNumber != null && backgroundNumber != null) {
+                    if (sensNumber != null && sensCompensatedNumber != null && backgroundNumber != null) {
                         SharedPreferences.Editor editor = sp.edit();
                         editor.putInt(Constants.CONFIG.CONF_SENSG, sensNumber.intValue());
+                        editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, sensCompensatedNumber.intValue());
                         editor.putInt(Constants.CONFIG.CONF_BACKGROUND, backgroundNumber.intValue());
                         editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, Integer.parseInt(slowSens.getText().toString()));
                         editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, Integer.parseInt(fastSens.getText().toString()));
                         editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Integer.parseInt(mediumSens.getText().toString()));
                         editor.apply();
                     }
-//                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_DATA));
                 } catch (Exception e) {
                     //
                 }

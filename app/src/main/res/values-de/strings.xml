@@ -108,6 +108,7 @@
     <string name="mode_uncompensated_button">N</string>
     <string name="mode_interval_button">I</string>
     <string name="sensg_text">Empf:</string>
+    <string name="sensg_compensated_text">Empf(kompensiert):</string>
     <string name="background_cps_text">HintZähl:</string>
     <string name="fast_mode_sens">S:</string>
     <string name="medium_mode_sens">M:</string>
@@ -465,7 +466,7 @@
         \t- Das Programm führt drei Arten der Dosisleistungsmessung durch: nicht kompensiert, nicht kompensiert innerhalb eines Intervalls und kompensiert. Nicht kompensiert – einfache lineare Umwandlung der Zählrate in eine Dosisleistung. Nicht kompensiert innerhalb eines Intervalls – einfache lineare Umwandlung der Intervall-Zählrate in eine Dosisleistung. Kompensiert – Berechnung der Dosisleistung unter Berücksichtigung der Energie der registrierten Photonen.\n
         \t- Die Schaltfläche „<annotation foreground="parameter">SML</annotation>“ rechts neben dem Spektrum wählt die Mittelung der Dosisleistung aus. „<annotation foreground="parameter">S</annotation>“ bedeutet „Schnell“, „<annotation foreground="parameter">M</annotation>“ bedeutet „Mittel“, „<annotation foreground="parameter">L</annotation>“ bedeutet „Schleppend“. Die Zählwerte für die Mittelwertbildung für jeden Typ können im „<annotation foreground="parameter">Einstellungen</annotation>“ festgelegt werden.\n
         \t- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ (cps bei 1 uSv/h) in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
-        \t- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
+        \t- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf(kompensiert)</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
         \t- Sie können einen „<annotation foreground="parameter">HintZähl</annotation>“-Parameter festlegen, der bei der einfachen Berechnung der Dosisleistung von cps subtrahiert wird.\n
         \t- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">KNI</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">N</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">I</annotation>“ bedeutet „nicht kompensiert innerhalb eines Intervalls“.\n
     </string>
@@ -539,6 +540,7 @@
         \t- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
         \t- „AtomSwift D“ - Wählen Sie aus, welcher Dosisleistungswert an die AtomSwift-Anwendung gesendet wird. Für die Suche/Karten wird die Option „Nicht kompensiert“ empfohlen, es sei denn, Sie benötigen ausdrücklich eine Kompensation und wissen, wie Sie die Empfindlichkeitskurve konfigurieren.\n
         \t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
+        \t- „Empf(kompensiert)“ - Kalibrierungswert für die Berechnung der kompensierten Dosisleistung. Der Wert muss selbst angepasst werden, um den richtigen kompensierten Dosisleistungswert anzuzeigen.\n
         \t- „HintZähl“ - Rauschzahl von einer einfachen Dosisleistungsberechnung abgezogen.\n
         \t- „S“, „M“, „L“ - zählt für die Mittelung der schnellen, mittleren und langsamen Dosisleistung.\n
         \t- „Grafikaktualisierungshäufigkeit, s⁻¹“ - Programmaktualisierungshäufigkeit der Dosisleistung und der Spektrumsdaten pro Sekunde.\n\n
