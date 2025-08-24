@@ -60,8 +60,9 @@
     <string name="add_gps">Ajouter des coordonnées GPS aux fichiers</string>
     <string name="update_isotopes">Recherche automatique d\'isotopes</string>
     <string name="send_data_to_atom_swift_app">Envoyer des données à l\'application AtomSwift</string>
-    <string name="atom_swift_app_dr_non_compensated">AtomSwift DR: Non rémunéré</string>
-    <string name="atom_swift_app_dr_compensated">AtomSwift DR: Сompensé</string>
+    <string name="atom_swift_app_dr_non_compensated">AtomSwift DD: Non rémunéré</string>
+    <string name="atom_swift_app_dr_compensated">AtomSwift DD: Сompensé</string>
+    <string name="atom_swift_app_dr_interval">AtomSwift DD: Intervalle</string>
     <string name="input_sound">Source:</string>
     <string name="input_sound_absent">Aucune source d\'entrée! L\'utilisation par défaut.</string>
     <string name="output_sound">Alarme sonore: </string>
@@ -105,6 +106,7 @@
     <string name="mode_slow_button">L</string>
     <string name="mode_compensated_button">C</string>
     <string name="mode_uncompensated_button">N</string>
+    <string name="mode_interval_button">I</string>
     <string name="sensg_text">Sens:</string>
     <string name="background_cps_text">FondCps:</string>
     <string name="fast_mode_sens">V:</string>
@@ -160,8 +162,15 @@
     <string name="delta_spectrum_format">Diff. de temps: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Compression de canal: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">temps: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
-    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
-    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±dk<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1nSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10nSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100nSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> nSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.0f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Le curseur:\ncanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -203,6 +212,7 @@
     <string name="graph_show_channel">can.</string>
     <string name="graph_show_points">cpt</string>
     <string name="graph_show_kev">keV</string>
+    <string name="graph_show_nSv">nSv/h</string>
     <string name="graph_show_mkSv">μSv/h</string>
     <string name="graph_show_mSv">mSv/h</string>
     <string name="graph_log_info">Y-scale logarithmique</string>
@@ -414,8 +424,9 @@
         \t- Utilisez une simple pression pour afficher un curseur vert. Utilisez un curseur pour déplacer le curseur en douceur. Appuyez à gauche du spectre pour désactiver un curseur. Les coordonnées indiquent les valeurs actuelles pendant la mise à jour du spectre. Ils montrent la dernière position avant l\'arrêt du record. Ils montrent la position du dernier fichier lu. Appuyez brièvement sur les coordonnées pour accéder à un programme cartographique. Appuyez sur le texte du curseur pour définir directement le canal du curseur.\n
         \t- Appuyez deux fois pour sélectionner l\'échelle linéaire ou log10.\n
         \t- Appuyez longuement pour basculer entre les modes d\'affichage barre et ligne.\n
-        \t- Utilisez le bouton «\u202f<annotation foreground="parameter">\u2195</annotation>\u202f» à droite du spectre pour basculer entre les modes canal et keV.\n
-        \t- Utilisez le bouton «\u202f<annotation foreground="parameter">CN</annotation>\u202f» à droite du spectre pour basculer entre les modes de sortie du spectre et du débit de dose.\n
+        \t- Utilisez le bouton «\u202f<annotation foreground="parameter">\u2195</annotation>\u202f» à droite du spectre pour basculer entre les modes canal et keV dans la vue spectre.\n
+        \t- Utilisez le bouton «\u202f<annotation foreground="parameter">\u2195</annotation>\u202f» à droite de la sortie de débit de dose pour basculer entre les types de débit de dose (compensé, non compensé ou non compensé dans l\'intervalle).\n
+        \t- Utilisez le bouton «\u202f<annotation foreground="parameter">CNI</annotation>\u202f» à droite du écran pour basculer entre les modes de sortie du spectre et du débit de dose.\n
         \t- Appuyez brièvement sur «\u202f<annotation foreground="parameter">cps</annotation>\u202f» ou sur la sortie du débit de dose pour afficher tous les cps moyens de temps («\u202f<i>~cps</i>\u202f») et un total temps en secondes («\u202f<i>temps</i>\u202f»). Appuyez brièvement sur «\u202f<annotation foreground="parameter">~cps</annotation>\u202f» ou «\u202f<annotation foreground="parameter">heure</annotation>\u202f» pour afficher la base («\u202f<annotation foreground ="parameter">≈cps</annotation>\u202f») et les niveaux de signal («\u202f<annotation foreground="parameter">♪cps</annotation>\u202f»). Appuyez brièvement sur «\u202f<annotation foreground="parameter">≈cps</annotation>\u202f» ou «\u202f<annotation foreground="parameter">♪cps</annotation>\u202f» pour afficher les coordonnées. Les coordonnées indiquent les valeurs actuelles lors de la mise à jour du spectre. Ils montrent la dernière position avant l\'arrêt du record. Ils montrent la position depuis le dernier fichier lu. Appuyez longuement sur les coordonnées pour accéder à un programme cartographique. Appuyez à nouveau brièvement pour revenir en arrière.\n
         \n
     </string>
@@ -454,12 +465,12 @@
     </string>
     <string name="help_text_part4">
         <big><annotation foreground="caption">4. Un calculet une sortie du débit de dose:</annotation></big>\n
-        \t- Le programme effectue une mesure du débit de dose conformément à la sélection du canal ou de l\'axe X keV. Dans un mode de visualisation des canaux, le programme effectue un simple comptage en conversion de débit de dose. Dans un mode d\'affichage keV, le programme effectue une mesure du débit de dose à compensation d\'énergie.\n
+        \t- Le programme effectue trois types de mesure du débit de dose: non compensé, non compensé dans l\'intervalle et compensé. Non compensé: conversion linéaire simple du taux de comptage en débit de dose. Non compensé dans l\'intervalle: conversion linéaire simple du taux de comptage de l\'intervalle en débit de dose. Compensé: calcul du débit de dose prenant en compte l\'énergie des photons enregistrés.\n
         \t- Le bouton «\u202f<annotation foreground="parameter">RML</annotation>\u202f» à droite du spectre sélectionne la moyenne du débit de dose. «\u202f<annotation foreground="parameter">R</annotation>\u202f» signifie «\u202fRapide\u202f», «\u202f<annotation foreground="parameter">M</annotation>\u202f» signifie «\u202fMoyen\u202f», «\u202f<annotation foreground="parameter">L</annotation>\u202f» signifie «\u202fLent\u202f». Les valeurs de comptage pour la moyenne de chaque type peuvent être définies dans les «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f».\n
         \t- Vous devez définir un paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» (cps à 1 uSv/h) dans «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f» pour convertir les comptages en débit de dose.\n
         \t- La courbe de sensibilité par défaut est définie pour le spectromètre <u>AtomSpectra Nano8</u> basé sur CsI(Tl) mais elle peut être appliquée pour un autre spectromètre au moyen du paramètre «\u202f<annotation foreground="parameter">Sens</annotation>\u202f» pour estimer le débit de dose. Utilisez l\'élément de menu «\u202f<annotation foreground="parameter">Sensibilité…</annotation>\u202f» sous le sous-menu «\u202f<annotation foreground="parameter">L\'appareil</annotation>\u202f» pour modifier cette courbe. La courbe est ajustée à 1 à 661,66keV ligne Cs-137.
         \t- Vous pouvez définir un paramètre «\u202f<annotation foreground="parameter">FondCps</annotation>\u202f» à soustraire de cps dans le calcul simple du débit de dose.\n
-        \t- Vous pouvez voir un historique du débit de dose. Pour sélectionner l\'écran, appuyez sur le bouton «\u202f<annotation foreground="parameter">CN</annotation>\u202f». «\u202f<annotation foreground="parameter">C</annotation>\u202f» signifie «\u202fhistorique du débit de dose compensé\u202f». «\u202f<annotation foreground="parameter">N</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé\u202f».\n
+        \t- Vous pouvez voir un historique du débit de dose. Pour sélectionner l\'écran, appuyez sur le bouton «\u202f<annotation foreground="parameter">CNI</annotation>\u202f». «\u202f<annotation foreground="parameter">C</annotation>\u202f» signifie «\u202fhistorique du débit de dose compensé\u202f». «\u202f<annotation foreground="parameter">N</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé\u202f». «\u202f<annotation foreground="parameter">I</annotation>\u202f» signifie «\u202fhistorique du débit de dose non compensé dans l\'intervalle\u202f».\n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Sortie isotope:</annotation></big>\n
         \t- La ligne verte du curseur montre l\'isotope avec une incertitude de 3% et sélectionne des isotopes plus importants. Pour voir les isotopes des lignes strictes, veuillez utiliser la boîte de dialogue de sélection des isotopes «\u202f<annotation foreground="parameter">Afficher les Isotopes</annotation>\u202f».\n
@@ -532,7 +543,7 @@
         \t- «\u202fCompression des canaux\u202f» - réduire la quantité de canaux d\'exportation en combinant la valeur définie des canaux dans un canal.\n
         \t- «\u202fSpectre\u202f» - Choisissez la somme, la valeur de crête ou moyenne sur le graphique du spectre pendant la compression de valeur. Les valeurs de crête aident à ne pas perdre de petits pics, la moyenne fait un bon graphique, la somme montre un spectre car l\'appareil a moins de canaux.\n
         \t- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n
-        \t- «\u202fAtomSwift DR\u202f» - Sélectionnez la valeur de débit de dose à envoyer à l\'application AtomSwift (compensée ou non). L\'option non compensée est recommandée pour la recherche et les cartes, sauf si vous avez explicitement besoin d\'une compensation et que vous savez configurer la courbe de sensibilité.\n
+        \t- «\u202fAtomSwift DD\u202f» - Sélectionnez la valeur de débit de dose à envoyer à l\'application AtomSwift. L\'option non compensée est recommandée pour la recherche et les cartes, sauf si vous avez explicitement besoin d\'une compensation et que vous savez configurer la courbe de sensibilité.\n
         \t- «\u202fSens\u202f» - valeur d\'étalonnage pour le calcul du débit de dose. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose.\n
         \t- «\u202fFondCps\u202f» - nombre de bruit soustrait d\'un simple calcul de débit de dose.\n
         \t- «\u202fR\u202f», «\u202fM\u202f», «\u202fL\u202f» - compte pour une moyenne rapide, moyenne et lente du débit de dose.\n

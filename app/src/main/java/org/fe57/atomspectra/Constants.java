@@ -64,8 +64,13 @@ public class Constants {
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
     public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
     public static final String ATOMSWIFT_DR_NON_COMPENSATED = "non-compensated";
+    public static final String ATOMSWIFT_DR_INTERVAL = "interval";
     public static final String ATOMSWIFT_DR_DEFAULT = ATOMSWIFT_DR_NON_COMPENSATED;
-    public static String[] ATOMSWIFT_DOSE_RATES = {ATOMSWIFT_DR_NON_COMPENSATED, ATOMSWIFT_DR_COMPENSATED};
+    public static String[] ATOMSWIFT_DOSE_RATES = {ATOMSWIFT_DR_NON_COMPENSATED, ATOMSWIFT_DR_COMPENSATED, ATOMSWIFT_DR_INTERVAL};
+    public static final String DISPLAY_DOSE_COMPENSATED = "dose-compensated";
+    public static final String DISPLAY_DOSE_NON_COMPENSATED = "dose-non-compensated";
+    public static final String DISPLAY_DOSE_INTERVAL = "dose-interval";
+    public static final String DISPLAY_DOSE_DEFAULT = DISPLAY_DOSE_COMPENSATED;
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
@@ -86,6 +91,7 @@ public class Constants {
         String CONF_CHECK_AUDIO = "Check audio:";
         String CONF_BAR_MODE = "BarMode:";
         String CONF_CALIBRATED = "Xcalibrated:";
+        String CONF_DISPLAY_DOSE = "display_dose:";
         String CONF_SEARCH_MODE = "searchfsm";
         String CONF_SENSG = "sensg";
         String CONF_BACKGROUND = "backgcnt";

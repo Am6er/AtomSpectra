@@ -121,7 +121,7 @@ public class AtomSpectraService extends Service {
     private static boolean freeze_update_data = true;
 
     // dose rate
-    private static DoseRate doseRateValue = new DoseRate(0, 0, 0, 0);
+    private static DoseRate doseRateValue = new DoseRate();
     public static final double[] EnergyBinsDefault = new double[]{
             0.0,
             100.0,
@@ -1198,14 +1198,14 @@ public class AtomSpectraService extends Service {
                             if (skip_next_cps_int_usb_calc > 0) {
                                 skip_next_cps_int_usb_calc--;
                                 cpsInterval = 0;
-                                doseRateValue = new DoseRate(0, 0, 0, 0);
+                                doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
                                 cpsInterval = (int) interval_counts;
                                 doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
                                 isReliableData = true;
                             } else {
                                 cpsInterval = 0;
-                                doseRateValue = new DoseRate(0, 0, 0, 0);
+                                doseRateValue = new DoseRate();
                             }
                         }
 
@@ -1482,7 +1482,8 @@ public class AtomSpectraService extends Service {
     private static final LinkedList<Double> windowDeltaTime = new LinkedList<>();
 
     private static final LinkedList<Double> doseHistory = new LinkedList<>();
-    private static final LinkedList<Double> doseEnergyHistory = new LinkedList<>();
+    private static final LinkedList<Double> doseCompensatedHistory = new LinkedList<>();
+    private static final LinkedList<Double> doseIntervalHistory = new LinkedList<>();
 
     private static void resetCpsData() {
         Arrays.fill(cpsArray, 0);
@@ -1506,10 +1507,11 @@ public class AtomSpectraService extends Service {
 
         synchronized (doseHistory) {
             doseHistory.clear();
-            doseEnergyHistory.clear();
+            doseCompensatedHistory.clear();
+            doseIntervalHistory.clear();
         }
 
-        doseRateValue = new DoseRate(0, 0, 0, 0);
+        doseRateValue = new DoseRate();
     }
 
     // called each 0.1 sec for audio, each 1 sec for USB
@@ -1550,17 +1552,28 @@ public class AtomSpectraService extends Service {
                 break;
         }
         int total_counts = 0;
+        int total_interval_counts = 0;
         double total_time = 0;
+        double total_interval_time = 0;
         int[] total_binned_counts = new int[EnergyBins.length];
         synchronized (windowCounts) {
             int start = windowCounts.size() > 0 ? windowCounts.size() - 1 : 0;
             for (int i = start; i >= 0; i--) {
-                total_counts += windowCounts.get(i);
-                total_time += windowDeltaTime.get(i);
-                for (int bin = 0; bin < EnergyBins.length; bin++) {
-                    total_binned_counts[bin] += windowBinnedCounts.get(i)[bin];
+                if (total_counts < counts_search_window) {
+                    total_counts += windowCounts.get(i);
+                    total_time += windowDeltaTime.get(i);
+                    for (int bin = 0; bin < EnergyBins.length; bin++) {
+                        total_binned_counts[bin] += windowBinnedCounts.get(i)[bin];
+                    }
                 }
-                if ((total_counts >= counts_search_window) && (total_time >= min_period))
+
+                if (total_interval_counts < counts_search_window) {
+                    total_interval_counts += windowIntervalCounts.get(i);
+                    total_interval_time += windowDeltaTime.get(i);
+                }
+
+                if ((total_counts >= counts_search_window) && (total_time >= min_period)
+                        && (total_interval_counts >= counts_search_window) && (total_interval_time >= min_period))
                     break;
             }
         }
@@ -1591,18 +1604,25 @@ public class AtomSpectraService extends Service {
 
         double dose_rate = StrictMath.max(0.0, (total_counts / total_time - backgroundCps) / SensG);
         double dose_rate_error = total_counts > 0 ? Math.sqrt(total_counts) / total_counts * 100.0 : 0;
+
+        double interval_dose_rate = (total_interval_counts / total_interval_time) / SensG;
+        double interval_dose_rate_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
         synchronized (doseHistory) {
             doseHistory.addLast(dose_rate);
             if (doseHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseHistory.removeFirst();
             }
-            doseEnergyHistory.addLast(comp_dose_rate);
-            if (doseEnergyHistory.size() > SEARCH_WINDOW_SIZE) {
-                doseEnergyHistory.removeFirst();
+            doseCompensatedHistory.addLast(comp_dose_rate);
+            if (doseCompensatedHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseCompensatedHistory.removeFirst();
+            }
+            doseIntervalHistory.addLast(interval_dose_rate);
+            if (doseIntervalHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseIntervalHistory.removeFirst();
             }
         }
 
-        return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error);
+        return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_dose_rate, interval_dose_rate_error);
     }
 
     private static int getEnergyBinIndex(double energy) {
@@ -1856,8 +1876,26 @@ public class AtomSpectraService extends Service {
     private final void sendDataToUI() {
         final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
         Bundle mBundle = new Bundle();
-        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, AtomSpectra.XCalibrated ? doseRateValue.compensated : doseRateValue.nonCompensated);
-        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH_ERROR, AtomSpectra.XCalibrated ? doseRateValue.compensatedError : doseRateValue.nonCompensatedError);
+
+        double dose_rate = -1;
+        double dose_rate_error = -1;
+        switch (AtomSpectra.DisplayDose) {
+            case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+                dose_rate = doseRateValue.nonCompensated;
+                dose_rate_error = doseRateValue.nonCompensatedError;
+                break;
+            case Constants.DISPLAY_DOSE_COMPENSATED:
+                dose_rate = doseRateValue.compensated;
+                dose_rate_error = doseRateValue.compensatedError;
+                break;
+            case Constants.DISPLAY_DOSE_INTERVAL:
+                dose_rate = doseRateValue.interval;
+                dose_rate_error = doseRateValue.intervalError;
+                break;
+        }
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, dose_rate);
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH_ERROR, dose_rate_error);
+
         mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_counts);
         mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
         mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
@@ -2166,25 +2204,31 @@ public class AtomSpectraService extends Service {
 
             case Constants.SCALE_DOSE_MODE:
                 double[] histData = new double[SEARCH_WINDOW_SIZE];
-                int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - doseHistory.size(), 0);
-                if (isCalibrated)
-                    synchronized (doseHistory) {
-                        for (double v : doseEnergyHistory) {
-                            if (num_data >= SEARCH_WINDOW_SIZE)
-                                break;
-                            histData[num_data] = v / Constants.DOSE_SCALE;
-                            num_data++;
-                        }
+                LinkedList<Double> history;
+                switch (AtomSpectra.DisplayDose) {
+                    case Constants.DISPLAY_DOSE_COMPENSATED:
+                        history = doseCompensatedHistory;
+                        break;
+                    case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+                        history = doseHistory;
+                        break;
+                    case Constants.DISPLAY_DOSE_INTERVAL:
+                        history = doseIntervalHistory;
+                        break;
+                    default:
+                        history = new LinkedList<>();
+                        break;
+                }
+                int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - history.size(), 0);
+                synchronized (doseHistory) {
+                    for (double v : history) {
+                        if (num_data >= SEARCH_WINDOW_SIZE)
+                            break;
+                        histData[num_data] = v / Constants.DOSE_SCALE;
+                        num_data++;
                     }
-                else
-                    synchronized (doseHistory) {
-                        for (double v : doseHistory) {
-                            if (num_data >= SEARCH_WINDOW_SIZE)
-                                break;
-                            histData[num_data] = v / Constants.DOSE_SCALE;
-                            num_data++;
-                        }
-                    }
+                }
+
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histData);
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, new double[1024]);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
@@ -2765,6 +2809,10 @@ public class AtomSpectraService extends Service {
                 dr = doseRate.nonCompensated;
                 dr_error = doseRate.nonCompensatedError;
                 break;
+            case Constants.ATOMSWIFT_DR_INTERVAL:
+                dr = doseRate.interval;
+                dr_error = doseRate.intervalError;
+                break;
         }
 
         String searchMode = "";
@@ -2808,12 +2856,25 @@ public class AtomSpectraService extends Service {
         public final double compensatedError; // one sigma %
         public final double nonCompensated; // uSv/h
         public final double nonCompensatedError; // one sigma %
+        public final double interval; // uSv/h
+        public final double intervalError; // one sigma %
 
-        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError) {
+        private DoseRate() {
+            this.compensated = 0;
+            this.compensatedError = 0;
+            this.nonCompensated = 0;
+            this.nonCompensatedError = 0;
+            this.interval = 0;
+            this.intervalError = 0;
+        }
+
+        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError, double interval, double intervalError) {
             this.compensated = compensated;
             this.compensatedError = compensatedError;
             this.nonCompensated = nonCompensated;
             this.nonCompensatedError = nonCompensatedError;
+            this.interval = interval;
+            this.intervalError = intervalError;
         }
     }
 }

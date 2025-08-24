@@ -261,7 +261,12 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mCheckBox = findViewById(R.id.SendDataToAtomSwift);
         mCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT));
 
-        updateAtomSwiftDRText(sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT));
+        String atomSwiftDR = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+        if (indexOfStringArray(Constants.ATOMSWIFT_DOSE_RATES, atomSwiftDR) == -1) {
+            atomSwiftDR = Constants.ATOMSWIFT_DR_DEFAULT;
+            saveAtomSwiftDR(atomSwiftDR);
+        }
+        updateAtomSwiftDRText(atomSwiftDR);
 
         inputDeviceID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
         inputDeviceName = sp.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
@@ -1735,6 +1740,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     public void onClick_AtomSwiftDR_plus(View v) {
         String dr = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
         int selected_index = indexOfStringArray(Constants.ATOMSWIFT_DOSE_RATES, dr);
+        if (selected_index == -1) {
+            saveAtomSwiftDR(Constants.ATOMSWIFT_DR_DEFAULT);
+        }
         if (selected_index + 1 < Constants.ATOMSWIFT_DOSE_RATES.length) {
             String new_dr = Constants.ATOMSWIFT_DOSE_RATES[selected_index + 1];
             saveAtomSwiftDR(new_dr);
@@ -1744,6 +1752,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     public void onClick_AtomSwiftDR_minus(View v) {
         String dr = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
         int selected_index = indexOfStringArray(Constants.ATOMSWIFT_DOSE_RATES, dr);
+        if (selected_index == -1) {
+            saveAtomSwiftDR(Constants.ATOMSWIFT_DR_DEFAULT);
+        }
         if (selected_index > 0) {
             String new_dr = Constants.ATOMSWIFT_DOSE_RATES[selected_index - 1];
             saveAtomSwiftDR(new_dr);
@@ -1767,6 +1778,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 break;
             case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
                 mDataField.setText(R.string.atom_swift_app_dr_non_compensated);
+                break;
+            case Constants.ATOMSWIFT_DR_INTERVAL:
+                mDataField.setText(R.string.atom_swift_app_dr_interval);
                 break;
         }
     }

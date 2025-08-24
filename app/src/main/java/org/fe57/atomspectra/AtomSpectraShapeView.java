@@ -32,6 +32,7 @@ public class AtomSpectraShapeView extends View {
 	private boolean no_y_mode = false;
 	private boolean dose_mode = false;
 	private boolean m_dose_mode = false;
+	private boolean n_dose_mode = false;
 	private boolean logScale = false;
 	private boolean isCalibrated = true;
 	private boolean calibrationScale = false;
@@ -258,7 +259,14 @@ public class AtomSpectraShapeView extends View {
 			if (logScale) {
 				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
 			} else if (dose_mode) {
-				sZoom = ", " + (m_dose_mode ? res.getString(R.string.graph_show_mSv) : res.getString(R.string.graph_show_mkSv));
+				String unit = res.getString(R.string.graph_show_mkSv);
+				if (m_dose_mode) {
+					unit = res.getString(R.string.graph_show_mSv);
+				}
+				if (n_dose_mode) {
+					unit = res.getString(R.string.graph_show_nSv);
+				}
+				sZoom = ", " + unit;
 			} else {
 				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
 			}
@@ -808,7 +816,7 @@ public class AtomSpectraShapeView extends View {
 			circleMode = false;
 			if (xZoom_factor == Constants.SCALE_DOSE_MODE) {
 				dose_mode = true;
-				max = Constants.DOSE_SCALE * 100 / Constants.DOSE_OVERHEAD;
+				max = Constants.DOSE_SCALE / Constants.DOSE_OVERHEAD;
 			} else {
 				dose_mode = false;
 				if (logScale)
@@ -853,6 +861,15 @@ public class AtomSpectraShapeView extends View {
 			}
 			if (dose_mode) {
 				max *= Constants.DOSE_OVERHEAD;
+				if (max < 1) {
+					n_dose_mode = true;
+					max *= 1000;
+					for (int i = 0; i < xSize; i++) {
+						tmp[i] *= 1000.0;
+					}
+				} else {
+					n_dose_mode = false;
+				}
 				if (max > 1000) {
 					m_dose_mode = true;
 					max /= 1000;

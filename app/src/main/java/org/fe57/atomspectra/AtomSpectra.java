@@ -127,6 +127,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private float zoom_factor = 1;
 	private int cursor_x = -1;
 	public static boolean XCalibrated;
+	public static String DisplayDose;
 
 	//for background
 	public static boolean background_subtract = false;          //Subtract background from main histogram
@@ -423,11 +424,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		barMode = sharedPreferences.getBoolean(Constants.CONFIG.CONF_BAR_MODE, true);
 
 		XCalibrated = sharedPreferences.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true);
-		if (XCalibrated) {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_compensated_button));
-		} else {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_uncompensated_button));
-		}
+		setDisplayDose(sharedPreferences.getString(Constants.CONFIG.CONF_DISPLAY_DOSE, Constants.DISPLAY_DOSE_DEFAULT));
+
 		showCursorInfo(false);
 		Intent intent = getIntent();
 		inputServiceIntent = new Intent(this, AtomSpectraService.class);
@@ -1110,10 +1108,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						case SHOW_CPS:
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
 							long error95Percent = Math.round(dose_rate_error * 2);
-							if (dose_rate > 1000)
-								doseRateText.setText(getString(R.string.dose_rate_mSv_format, dose_rate / 1000.0, error95Percent));
-							else
-								doseRateText.setText(getString(R.string.dose_rate_format, dose_rate, error95Percent));
+							if (dose_rate < 0.01) {
+								doseRateText.setText(getString(R.string.dose_rate_1nSv_format, dose_rate * 1000.0, error95Percent));
+							} else if (dose_rate < 0.1) {
+								doseRateText.setText(getString(R.string.dose_rate_10nSv_format, dose_rate * 1000.0, error95Percent));
+							} else if (dose_rate < 1) {
+								doseRateText.setText(getString(R.string.dose_rate_100nSv_format, dose_rate * 1000.0, error95Percent));
+							} else if (dose_rate < 10) {
+								doseRateText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
+							} else if (dose_rate < 100) {
+								doseRateText.setText(getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent));
+							} else if (dose_rate < 1000) {
+								doseRateText.setText(getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent));
+							} else if (dose_rate < 10000) {
+								doseRateText.setText(getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent));
+							} else if (dose_rate < 100000) {
+								doseRateText.setText(getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent));
+							} else { // > 100 mSv/h
+								doseRateText.setText(getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent));
+							}
 							break;
 						case SHOW_BASE:
 							cpsView.setText(getString(R.string.cps_base_show, (int) AtomSpectraService.getCpsBaseLevel()));
@@ -1517,15 +1530,33 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	@SuppressLint("ApplySharedPref")
 	public void onClick_UpDown(View v) {
-		XCalibrated = !XCalibrated;
-		if (XCalibrated) {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_compensated_button));
+		if (AtomSpectraService.getScaleFactor() == Constants.SCALE_DOSE_MODE) {
+			String newDisplayDose;
+			switch (DisplayDose) {
+				case Constants.DISPLAY_DOSE_COMPENSATED:
+					newDisplayDose = Constants.DISPLAY_DOSE_NON_COMPENSATED;
+					break;
+				case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+					newDisplayDose = Constants.DISPLAY_DOSE_INTERVAL;
+					break;
+				case Constants.DISPLAY_DOSE_INTERVAL:
+					newDisplayDose = Constants.DISPLAY_DOSE_COMPENSATED;
+					break;
+				default:
+					newDisplayDose = Constants.DISPLAY_DOSE_DEFAULT;
+					break;
+			}
+			setDisplayDose(newDisplayDose);
+			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+			prefEditor.putString(Constants.CONFIG.CONF_DISPLAY_DOSE, newDisplayDose);
+			prefEditor.commit();
 		} else {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_uncompensated_button));
+			XCalibrated = !XCalibrated;
+			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+			prefEditor.putBoolean(Constants.CONFIG.CONF_CALIBRATED, XCalibrated);
+			prefEditor.commit();
 		}
-		SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-		prefEditor.putBoolean(Constants.CONFIG.CONF_CALIBRATED, XCalibrated);
-		prefEditor.commit();
+
 		dateScaleChanged = new Date().getTime();
 		showScaleLabel = true;
 		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
@@ -4277,6 +4308,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		if (app_menu != null) {
 			AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
 			app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode);
+		}
+	}
+
+	private void setDisplayDose(String mode) {
+		DisplayDose = mode;
+		Button doseButton = (Button) findViewById(R.id.doseButton);
+		switch (mode) {
+			case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+				doseButton.setText(getText(R.string.mode_uncompensated_button));
+				break;
+			case Constants.DISPLAY_DOSE_COMPENSATED:
+				doseButton.setText(getText(R.string.mode_compensated_button));
+				break;
+			case Constants.DISPLAY_DOSE_INTERVAL:
+				doseButton.setText(getText(R.string.mode_interval_button));
+				break;
+			default:
+				setDisplayDose(Constants.DISPLAY_DOSE_DEFAULT);
+				break;
 		}
 	}
 }
