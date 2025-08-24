@@ -1483,7 +1483,7 @@ public class AtomSpectraService extends Service {
 
     // when new data arrives either from audio or USB we preserve it in historical sliding time window
     // used to calculate dose rate
-    final static int SEARCH_WINDOW_SIZE = 1024;
+    public final static int SEARCH_WINDOW_SIZE = 120;
     private static final LinkedList<Integer> windowCounts = new LinkedList<>();
     private static final LinkedList<Integer> windowIntervalCounts = new LinkedList<>();
     private static final LinkedList<int[]> windowBinnedCounts = new LinkedList<>();
