@@ -1552,15 +1552,15 @@ public class AtomSpectraService extends Service {
         switch (SearchFSM) {
             case 0:
                 counts_search_window = SEARCH_FAST;
-                min_period = 0.1;
+                min_period = 0.2;
                 break;
             case 1:
                 counts_search_window = SEARCH_MEDIUM;
-                min_period = 0.5;
+                min_period = 1;
                 break;
             case 2:
                 counts_search_window = SEARCH_SLOW;
-                min_period = 1.0;
+                min_period = 2;
                 break;
         }
         int total_counts = 0;
@@ -1588,6 +1588,10 @@ public class AtomSpectraService extends Service {
                         && (total_interval_counts >= counts_search_window) && (total_interval_time >= min_period))
                     break;
             }
+        }
+
+        if (total_time < min_period) {
+            return doseRateValue;
         }
 
         double comp_dose_rate = 0;
