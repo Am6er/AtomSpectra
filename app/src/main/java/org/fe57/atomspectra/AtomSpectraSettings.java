@@ -372,8 +372,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 freq = 2;
                 break;
             case 2:
-                freq = 4;
-                break;
             case 4:
                 freq = 5;
                 break;
@@ -393,10 +391,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         int freq = sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
         switch (freq) {
             case 4:
-                freq = 2;
-                break;
             case 5:
-                freq = 4;
+                freq = 2;
                 break;
             case 10:
                 freq = 5;
