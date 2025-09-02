@@ -2854,7 +2854,7 @@ public class AtomSpectraService extends Service {
         atomSwiftIntermediateCps = 0;
 
         Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
-        dataIntent.setPackage("org.fe57.atomtag");
+        dataIntent.setPackage("com.youratom.scid");
         dataIntent.putExtra("CP2S", cp2s); // double (imp/2s)
         dataIntent.putExtra("DR", dr); // double (uSv/h)
         dataIntent.putExtra("DR_ERROR", dr_error); // double (%), 1 sigma
