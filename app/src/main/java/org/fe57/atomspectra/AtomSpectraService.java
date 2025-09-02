@@ -2807,7 +2807,7 @@ public class AtomSpectraService extends Service {
     // expected to be called each second
     // dose rates expected to be uSv/h
     private void sendDataToAtomSwift(int cps, DoseRate doseRate) {
-        if (!sendDataToAtomSwiftAppEnabled) {
+        if (!sendDataToAtomSwiftAppEnabled || freeze_update_data) {
             atomSwiftHasIntermediateData = false;
             atomSwiftIntermediateCps = 0;
             return;
@@ -2850,6 +2850,18 @@ public class AtomSpectraService extends Service {
                 break;
         }
 
+        String inputTypeStr = "";
+        switch (inputType) {
+            case INPUT_AUDIO:
+                inputTypeStr = "MIC";
+                break;
+            case INPUT_SERIAL:
+                searchMode = "USB";
+                break;
+            default:
+                searchMode = "NONE";
+        }
+
         atomSwiftHasIntermediateData = false;
         atomSwiftIntermediateCps = 0;
 
@@ -2859,6 +2871,7 @@ public class AtomSpectraService extends Service {
         dataIntent.putExtra("DR", dr); // double (uSv/h)
         dataIntent.putExtra("DR_ERROR", dr_error); // double (%), 1 sigma
         dataIntent.putExtra("SEARCH_MODE", searchMode); // String (F/M/S)
+        dataIntent.putExtra("INPUT_TYPE", inputTypeStr); // String (USB/MIC/NONE)
         getApplicationContext().sendBroadcast(dataIntent);
 
         // debug toast

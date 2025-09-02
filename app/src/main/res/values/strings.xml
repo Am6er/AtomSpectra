@@ -523,7 +523,7 @@
         \t- \'Invert input\' - choose if pulse shape is negative.\n
         \t- \'Add GPS coordinates to files\' - add GPS information to output files (spectrum, background and .csv).\n
         \t- \'Auto search isotopes\' - auto find and show isotopes on a spectrum.\n
-        \t- \'Send data to AtomSwift application\' - send dose/count rate data to AtomSwift application (which allows you to create maps using your spectrometer). Usage: connect spectrometer, press start button, enable option, run AtomSwift application, select AtomSpectraApp in device list. Minimum supported version of AtomSwift is 1.4.XXX.\n
+        \t- \'Send data to AtomSwift application\' - send dose/count rate data to AtomSwift application (which allows you to create maps using your spectrometer). Usage: connect spectrometer, press start button, enable option, run AtomSwift application, select AtomSpectraApp in device list. Minimum supported version of AtomSwift is 1.4.250.\n
         \t- \'Source:\' - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
         \t- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
         \t- \'Sound:\' - desired sound output. Press on text to select next output.\n
