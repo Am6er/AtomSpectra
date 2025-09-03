@@ -2856,10 +2856,10 @@ public class AtomSpectraService extends Service {
                 inputTypeStr = "MIC";
                 break;
             case INPUT_SERIAL:
-                searchMode = "USB";
+                inputTypeStr = "USB";
                 break;
             default:
-                searchMode = "NONE";
+                inputTypeStr = "NONE";
         }
 
         atomSwiftHasIntermediateData = false;
