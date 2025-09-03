@@ -59,6 +59,10 @@
     <string name="invert">Eingabe umkehren</string>
     <string name="add_gps">Fügen Dateien GPS-Koordinaten hinzu</string>
     <string name="update_isotopes">Automatische Suche nach Isotopen</string>
+    <string name="send_data_to_atom_swift_app">Senden Sie Daten an die AtomSwift-Anwendung</string>
+    <string name="atom_swift_app_dr_non_compensated">AtomSwift D: Nicht kompensiert</string>
+    <string name="atom_swift_app_dr_compensated">AtomSwift D: Kompensiert</string>
+    <string name="atom_swift_app_dr_interval">AtomSwift D: Intervall</string>
     <string name="input_sound">Quelle:</string>
     <string name="input_sound_absent">Keine Eingangsquelle! Verwende den Standard.</string>
     <string name="output_sound">Tonalarm: </string>
@@ -101,9 +105,11 @@
     <string name="mode_medium_button">M</string>
     <string name="mode_slow_button">L</string>
     <string name="mode_compensated_button">K</string>
-    <string name="mode_uncompensated_button">D</string>
+    <string name="mode_uncompensated_button">N</string>
+    <string name="mode_interval_button">I</string>
     <string name="sensg_text">Empf:</string>
-    <string name="background_cnt_text">HintZähl:</string>
+    <string name="sensg_compensated_text">Empf(kompensiert):</string>
+    <string name="background_cps_text">HintZähl:</string>
     <string name="fast_mode_sens">S:</string>
     <string name="medium_mode_sens">M:</string>
     <string name="slow_mode_sens">L:</string>
@@ -157,8 +163,18 @@
     <string name="delta_spectrum_format">Differenzzeit: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Kanalkomprimierung: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">Zeit: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
-    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h</string>
-    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h</string>
+    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> mSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1cps_format"><xliff:g id="cps">%1$.3f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10cps_format"><xliff:g id="cps">%1$.2f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100cps_format"><xliff:g id="cps">%1$.1f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1kcps_format"><xliff:g id="cps">%1$.3f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10kcps_format"><xliff:g id="cps">%1$.2f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Cursorposition:\nkanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -200,6 +216,8 @@
     <string name="graph_show_channel">K.</string>
     <string name="graph_show_points">anz</string>
     <string name="graph_show_kev">keV</string>
+    <string name="graph_show_cps">cps</string>
+    <string name="graph_show_kcps">kcps</string>
     <string name="graph_show_mkSv">μSv/h</string>
     <string name="graph_show_mSv">mSv/h</string>
     <string name="graph_log_info">Logarithmische Y-Skala</string>
@@ -411,8 +429,9 @@
         \t- Zeigen Sie mit einem einzigen Tastendruck auf einen grünen Cursor. Verwenden Sie einen Schieberegler, um den Cursor sanft zu verschieben. Tippen Sie links neben dem Spektrum auf, um einen Cursor auszuschalten. Tippen Sie auf Cursortext, um den Cursorkanal direkt einzustellen.\n
         \t- Verwenden Sie ein doppeltes Tippen, um die lineare oder log10-Skala auszuwählen.\n
         \t- Verwenden Sie ein langes Tippen, um zwischen dem Balken- und dem Linienansichtsmodus zu wechseln.\n
-        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben dem Spektrum, um zwischen dem Kanal- und dem keV-Modus zu wechseln.\n
-        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">KD</annotation>“ rechts neben dem Spektrum, um zwischen den Ausgabemodi Spektrum und Dosisleistung umzuschalten.\n
+        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben dem Spektrum zum Umschalten zwischen Kanal- und keV-Modus in der Spektrumansicht. \n
+        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">\u2195</annotation>“ rechts neben der Dosisleistungsausgabe, um zwischen den Dosisleistungsarten (kompensiert, nicht kompensiert, Zählrate innerhalb des Intervalls) umzuschalten. \n
+        \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">KNI</annotation>“ rechts neben dem Bildschirm, um zwischen den Ausgabemodi Spektrum und Dosisleistung umzuschalten.\n
         \t- Drücken Sie kurz auf „<annotation foreground="parameter">cps</annotation>“ oder auf die Ausgabe der Dosisleistung, um alle zeitlichen Durchschnitts-cps („<i>~cps</i>“) und eine Gesamtsumme anzuzeigen Zeit in Sekunden („<i>Zeit</i>“). Drücken Sie kurz auf „<annotation foreground="parameter">~cps</annotation>“ oder „<annotation foreground="parameter">Zeit</annotation>“, um die Basis- („<i>≈cps</i>“) und Signalpegel („<i>♪cps</i>“) anzuzeigen. Drücken Sie kurz auf „<annotation foreground="parameter">≈cps</annotation>“ oder „<annotation foreground="parameter">♪cps</annotation>“, um die Koordinaten anzuzeigen. Die Koordinaten zeigen die aktuellen Werte während der Spektrumaktualisierung. Sie zeigen die letzte Position an, bevor die Aufzeichnung gestoppt wurde. Sie zeigen die Position der zuletzt gelesenen Datei. Drücken Sie lange auf die Koordinaten, um zu einem Kartenprogramm zu springen. Drücken Sie erneut kurz, um zurückzukehren.\n
         \n
     </string>
@@ -448,12 +467,12 @@
         \n
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. Eine Dosisleistungsberechnung und -ausgabe:</annotation></big>\n
-        \t- Das Programm führt eine Dosisleistungsmessung gemäß der Auswahl der Kanal- oder keV-x-Achse durch. In einem Kanalansichtsmodus führt das Programm eine einfache Umrechnung der Dosisleistung in eine Dosisrate durch. In einem keV-Ansichtsmodus führt das Programm eine energiekompensierte Dosisleistungsmessung durch.\n
+        \t- Das Programm berechnet drei Werte: nicht kompensierte Dosisleistung, kompensierte Dosisleistung und Zählrate in einem bestimmten Energiebereich (Intervall). Nicht kompensiert: lineare Umrechnung der Gesamtzählrate in eine Dosisleistung mithilfe eines Koeffizienten. Kompensiert: Berechnung der Dosisleistung unter Berücksichtigung der Energie der registrierten Photonen, der Detektorempfindlichkeitskurve und des Koeffizienten.\n
         \t- Die Schaltfläche „<annotation foreground="parameter">SML</annotation>“ rechts neben dem Spektrum wählt die Mittelung der Dosisleistung aus. „<annotation foreground="parameter">S</annotation>“ bedeutet „Schnell“, „<annotation foreground="parameter">M</annotation>“ bedeutet „Mittel“, „<annotation foreground="parameter">L</annotation>“ bedeutet „Schleppend“. Die Zählwerte für die Mittelwertbildung für jeden Typ können im „<annotation foreground="parameter">Einstellungen</annotation>“ festgelegt werden.\n
-        \t- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
-        \t- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
+        \t- Sie müssen einen Parameter „<annotation foreground="parameter">Empf</annotation>“ (cps bei 1 uSv/h) in „<annotation foreground="parameter">Einstellungen</annotation>“ festlegen, um die Zählwerte in die Dosisleistung umzuwandeln.\n
+        \t- Die Standardempfindlichkeitskurve ist für das <u>AtomSpectra Nano8</u>-Spektrometer basierend auf CsI (Tl) definiert, kann jedoch mithilfe von „<annotation foreground="parameter">Empf(kompensiert)</annotation>“ für andere Spektrometer angewendet werden Parameter zur Schätzung der Dosisleistung. Verwenden Sie den Menüpunkt „<annotation foreground="parameter">Empfindlichkeit…</annotation>“ unter dem Untermenü „<annotation foreground="parameter">Gerät</annotation>“, um diese Kurve zu ändern. Die Kurve wird bei 661,66 keV Cs-137-Linie an 1 angepasst.\n
         \t- Sie können einen „<annotation foreground="parameter">HintZähl</annotation>“-Parameter festlegen, der bei der einfachen Berechnung der Dosisleistung von cps subtrahiert wird.\n
-        \t- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">CD</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">D</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“.\n
+        \t- Möglicherweise wird eine Dosisleistungshistorie angezeigt. Um den Bildschirm auszuwählen, drücken Sie die Taste „<annotation foreground="parameter">KNI</annotation>“. „<annotation foreground="parameter">K</annotation>“ bedeutet „kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">N</annotation>“ bedeutet „nicht kompensierte Dosisleistungshistorie“. „<annotation foreground="parameter">I</annotation>“ bedeutet „Intervallzählratenverlauf“.\n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Isotopenausgabe:</annotation></big>\n
         \t- Die grüne Cursorlinie zeigt das Isotop mit 3% Unsicherheit und wählt wichtigere Isotope aus. Um strenge Linienisotope anzuzeigen, verwenden Sie bitte das Dialogfeld „<annotation foreground="parameter">Isotope anzeigen</annotation>“.\n
@@ -505,6 +524,7 @@
         \t- „Quelle:“ - Wählen Sie den gewünschten Audioeingang (wird nicht mit direkten USB-Spektrometern wie „<u>AtomSpectra Nano Pro</u>“ verwendet). Drücken Sie auf Text, um die Audioquelle zu ändern.\n
         \t- „Fügen Dateien GPS-Koordinaten hinzu“ - Hinzufügen von GPS-Informationen zu Ausgabedateien (Spektrum, Hintergrund und CSV).\n
         \t- „Isotope suchen“ - Isotope in einem Spektrum automatisch finden und anzeigen.\n
+        \t- „Senden Sie Daten an die AtomSwift-Anwendung“ - Senden Sie Dosis-/Zählratendaten an die AtomSwift-Anwendung (mit der Sie Karten mit Ihrem Spektrometer erstellen können). Verwendung: Spektrometer anschließen, Starttaste drücken, Option aktivieren, AtomSwift-Anwendung ausführen, AtomSpectraApp in der Geräteliste auswählen. Die minimal unterstützte Version von AtomSwift ist 1.4.250.\n
         \t- „Sound:“ - gewünschte Tonausgabe. Drücken Sie auf Text, um die nächste Ausgabe auszuwählen.\n
         \t- „Tonalarm“ - Es macht einen Ton entsprechend der cps-Stufe. Der Basispegel wird anhand des cps-Werts in den letzten 5 Sekunden berechnet. Der Pegel kann nach Löschen des Spektrums oder durch Drücken der Taste „<annotation foreground="parameter">≈</annotation>“ neu berechnet werden. Sie können das gewünschte Energieintervall in keV auswählen (A-B), auf das Sie achten müssen. Der Zählratenwert des ausgewählten Intervalls wird in Klammern hinter dem vollen Zählratenwert angezeigt.\n
         \t- „Ordner speichern“ - Wählen Sie den Zielordner für alle Dateien. Wenn <u>...</u> für Android 8 und höher angezeigt wird, werden Sie nach einem Zielverzeichnis gefragt. Oder Sie drücken <u>...</u> (oder den angezeigten Namen), um den gewünschten Ort manuell auszuwählen. Unter Android vor 8 kann dieser Parameter nicht geändert werden. Wenn weiterhin <u>...</u> angezeigt wird, erstellen Sie den Ordner <u>AtomSpectra</u> im Stammverzeichnis des ersten Speichers (normalerweise des Telefonspeichers) selbst und starten Sie das Programm neu.\n
@@ -522,7 +542,9 @@
         \t- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
         \t- „Spektrum“ - Wählen Sie während der Wertekomprimierung den Summen-, Spitzen- oder Durchschnittswert im Spektraldiagramm. Spitzenwerte helfen dabei, kleine Spitzen nicht zu verlieren. Die Mittelwertbildung ergibt ein richtiges Diagramm. Die Summe zeigt das Gespenst, da das Gerät weniger Kanäle hat.\n
         \t- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
+        \t- „AtomSwift D“ - Wählen Sie aus, welcher Dosisleistungswert an die AtomSwift-Anwendung gesendet wird. Für die Suche/Karten wird die Option „Nicht kompensiert“ empfohlen, es sei denn, Sie benötigen ausdrücklich eine Kompensation und wissen, wie Sie die Empfindlichkeitskurve konfigurieren.\n
         \t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
+        \t- „Empf(kompensiert)“ - Kalibrierungswert für die Berechnung der kompensierten Dosisleistung. Der Wert muss selbst angepasst werden, um den richtigen kompensierten Dosisleistungswert anzuzeigen.\n
         \t- „HintZähl“ - Rauschzahl von einer einfachen Dosisleistungsberechnung abgezogen.\n
         \t- „S“, „M“, „L“ - zählt für die Mittelung der schnellen, mittleren und langsamen Dosisleistung.\n
         \t- „Grafikaktualisierungshäufigkeit, s⁻¹“ - Programmaktualisierungshäufigkeit der Dosisleistung und der Spektrumsdaten pro Sekunde.\n\n

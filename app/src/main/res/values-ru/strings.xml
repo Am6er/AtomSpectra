@@ -59,6 +59,10 @@
     <string name="invert">Инвертировать вход</string>
     <string name="add_gps">Добавлять координаты GPS в файлы</string>
     <string name="update_isotopes">Автоматический поиск изотопов</string>
+    <string name="send_data_to_atom_swift_app">Отправлять данные в приложение AtomSwift</string>
+    <string name="atom_swift_app_dr_non_compensated">AtomSwift МД: Некомпенсированная</string>
+    <string name="atom_swift_app_dr_compensated">AtomSwift МД: Компенсированная</string>
+    <string name="atom_swift_app_dr_interval">AtomSwift МД: Интервал</string>
     <string name="input_sound">Вход:</string>
     <string name="input_sound_absent">Нет источника! Использую по-умолчанию.</string>
     <string name="output_sound">Звуковой сигнал: </string>
@@ -102,8 +106,10 @@
     <string name="mode_slow_button">М</string>
     <string name="mode_compensated_button">К</string>
     <string name="mode_uncompensated_button">Н</string>
+    <string name="mode_interval_button">И</string>
     <string name="sensg_text">Чувств:</string>
-    <string name="background_cnt_text">СчФона:</string>
+    <string name="sensg_compensated_text">Чувств(компенсированная):</string>
+    <string name="background_cps_text">СчФона:</string>
     <string name="fast_mode_sens">Б:</string>
     <string name="medium_mode_sens">С:</string>
     <string name="slow_mode_sens">М:</string>
@@ -157,8 +163,18 @@
     <string name="delta_spectrum_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
     <string name="channel_compression_format">Сжатие каналов: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
-    <string name="dose_rate_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мкЗв/ч</string>
-    <string name="dose_rate_mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мЗв/ч</string>
+    <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1mSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> мЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10mSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100mSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> мЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1cps_format"><xliff:g id="cps">%1$.3f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10cps_format"><xliff:g id="cps">%1$.2f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100cps_format"><xliff:g id="cps">%1$.1f</xliff:g> cps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_1kcps_format"><xliff:g id="cps">%1$.3f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_10kcps_format"><xliff:g id="cps">%1$.2f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -200,6 +216,8 @@
     <string name="graph_show_channel">к.</string>
     <string name="graph_show_points">тчк</string>
     <string name="graph_show_kev">кэВ</string>
+    <string name="graph_show_cps">cps</string>
+    <string name="graph_show_kcps">kcps</string>
     <string name="graph_show_mkSv">мкЗв/ч</string>
     <string name="graph_show_mSv">мЗв/ч</string>
     <string name="graph_log_info">Логарифмическая шкала по Y</string>
@@ -412,8 +430,9 @@
         \t- Однократное касание для вывода зелёного курсора. Слайдером можно более точно установить курсор. Коснитесь левее области графика для отключения курсора. Коснитесь описания курсора для ввода значения канала.\n
         \t- Двойное касание для выбора линейного или логарифмического по основанию 10 вывода шкалы значений.\n
         \t- Длительное нажатие для переключения между линейчатым и столбцовым выводами.\n
-        \t- Кнопка «<annotation foreground="parameter">\u2195</annotation>» справа от графика для переключения между отображением каналов и энергий.\n
-        \t- Кнопка «<annotation foreground="parameter">КН</annotation>» справа от графика для переключения между отображением спектра и мощности дозы.\n
+        \t- Кнопка «<annotation foreground="parameter">\u2195</annotation>» справа от графика для переключения между отображением каналов и энергий в режиме отображения спектра.\n
+        \t- Кнопка «<annotation foreground="parameter">\u2195</annotation>» справа от графика для переключения между типами мощности дозы (компенсированная, некомпенсированная, скорость счета в интервале) в режиме отображения мощности дозы.\n
+        \t- Кнопка «<annotation foreground="parameter">КНИ</annotation>» справа от графика для переключения между отображением спектра и мощности дозы.\n
         \t- Короткое касание на «<annotation foreground="parameter">cps</annotation>» или вывод мощности дозы для отображения средней скорости счёта за весь период («<i>~cps</i>») и полного времени накопления в секундах («<i>время</i>»). Короткое касание на «<annotation foreground="parameter">~cps</annotation>» или «<annotation foreground="parameter">время</annotation>» отобразит фоновый порог («<i>≈cps</i>») и порог срабатывания звука («<i>♪cps</i>»). Короткое касание на «<annotation foreground="parameter">≈cps</annotation>» или «<annotation foreground="parameter">♪cps</annotation>» отобразит текущие координаты. Координаты показывают текущее состояние во время набора спектра. Они показывают последнее полученное значение перед остановкой набора спектра. Они показывают значение из прочитанного файла. Долгое нажатие на координатах позволит перейти к картографической программе. Повторное короткое касание вернёт обратно.\n
         \n
     </string>
@@ -452,12 +471,12 @@
     </string>
     <string name="help_text_part4">
         <big><annotation foreground="caption">4. Расчёт и отображение мощности дозы:</annotation></big>\n
-        \t- Программа выполняет расчёт мощности дозы в зависимости от выбора горизонтальной шкалы. В режиме вывода каналов программа выполняет простой пересчёт количества импульсов в мощность дозы. В режиме вывода энергий программа выполняет расчёт компенсированной мощности дозы.\n
+        \t- Программа выполняет расчёт трех значений - некомпенсированная мощность дозы, компенсированная мощность дозы, скорость счета в заданном диапазоне (интервале) энергий. Некомпенсированная - линейный пересчет общей скорости счета в мощность дозы с использованием коэффициента. Компенсированная - расчет мощности дозы с учетом энергии регистриремых гамма квантов, кривой чувствительности детектора и коэффициента.\n
         \t- Кнопка «<annotation foreground="parameter">БСМ</annotation>» справа от графика выбирает режим усреднения мощности дозы. «<annotation foreground="parameter">Б</annotation>» означает «быстрый», «<annotation foreground="parameter">С</annotation>» означает «средний», «<annotation foreground="parameter">М</annotation>» означает «медленный». Значения для усреднения по каждому типу можно задать в «<annotation foreground="parameter">Настройках</annotation>».\n
-        \t- Необходимо задать параметр «<annotation foreground="parameter">Чувств</annotation>» в «<annotation foreground="parameter">Настройках</annotation>» для пересчёта импульсов в мощность дозы.\n
-        \t- Кривая чувствительности по умолчанию определена для спектрометра <u>AtomSpectra Nano8</u> на основе CsI(Tl), но может быть применена для других спектрометров для оценки мощности дозы, задав параметр «<annotation foreground="parameter">Чувств</annotation>». Используйте пункт меню «<annotation foreground="parameter">Чувствительность…</annotation>» в подменю «<annotation foreground="parameter">Устройство</annotation>» для изменения этой кривой. Кривая приведена к 1 на линии 661,62кэВ линии Cs-137.\n
+        \t- Необходимо задать параметр «<annotation foreground="parameter">Чувств</annotation>» (имп/с при 1 мкЗв/ч) в «<annotation foreground="parameter">Настройках</annotation>» для пересчёта импульсов в некомпенсированную мощность дозы.\n
+        \t- Кривая чувствительности детектора по умолчанию определена для спектрометра <u>AtomSpectra Nano8</u> на основе CsI(Tl), но может быть применена для других спектрометров для оценки мощности дозы, задав параметр «<annotation foreground="parameter">Чувств(компенсированная)</annotation>». Используйте пункт меню «<annotation foreground="parameter">Чувствительность…</annotation>» в подменю «<annotation foreground="parameter">Устройство</annotation>» для изменения этой кривой. Кривая приведена к 1 на линии 661,62кэВ Cs-137.\n
         \t- Можно задать параметр «<annotation foreground="parameter">СчФона</annotation>» для вычитания фона из показаний cps при простом расчёте мощности дозы.\n
-        \t- Можно увидеть историю мощности дозы. Для переключения нажмите кнопку «<annotation foreground="parameter">КН</annotation>». «<annotation foreground="parameter">К</annotation>» означает «история компенсированной мощности дозы». «<annotation foreground="parameter">Н</annotation>» означает «история некомпенсированной мощности дозы».\n
+        \t- Можно увидеть историю мощности дозы. Для переключения нажмите кнопку «<annotation foreground="parameter">КНИ</annotation>». «<annotation foreground="parameter">К</annotation>» означает «история компенсированной мощности дозы». «<annotation foreground="parameter">Н</annotation>» означает «история некомпенсированной мощности дозы». «<annotation foreground="parameter">И</annotation>» означает «история скорости счета в интервале».\n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Отображение изотопов:</annotation></big>\n
         \t- Зелёная линия курсора показывает изотоп с погрешностью 3% с предпочтительным отображением более важных изотопов. Для точного отображения линий изотопов используйте диалог «<annotation foreground="parameter">Выбрать изотопы</annotation>».\n
@@ -510,6 +529,7 @@
         \t- «Инвертировать вход» - выберите, если импульсы имеют отрицательную полярность.\n
         \t- «Добавить координаты GPS в файлы» - добавить информацию GPS в выходные файлы (спектр, фон и .csv).\n
         \t- «Автоматический поиск изотопов» - автоматически искать и показывать изотопы на спектре.\n
+        \t- «Отправлять данные в приложение AtomSwift» - отправлять значения мощности дозы и скорости счета в приложение AtomSwift (что позволяет строить карты используя ваш спектрометр). Использование: подключите спектрометр, нажмите кнопку старт, включите опцию, запустите приложение AtomSwift, выберите AtomSpectraApp в списке устройств. Минимальная поддерживаемая версия AtomSwift 1.4.250.\n
         \t- «Вход:» - выбор требуемого аудиовхода (Не работает с истинными USB-спектрометрами, например «<u>AtomSpectra Nano Pro</u>»). нажмите на текст для изменения источника звука.\n
         \t- «Звуковой сигнал» - вывести тон в соответствии с уровнем cps. Опорный уровень рассчитывается на основе последних 5 секунд cps. Уровень можно пересчитать при очистке спектра или по нажатию на кнопку «<annotation foreground="parameter">≈</annotation>». Можно задать интересуемый интервал энергий в кэВ (A-B). Скорость счёта в выбранном интервале отображается в круглых скобках после общей скоорсти счёта.\n
         \t- «Звук:» - требуемое устройство для вывода звука. Нажмите на текст для выбора другого устройства.\n
@@ -528,7 +548,9 @@
         \t- «Сжатие каналов» - уменьшить количество экспортируемых каналов путём объединения нескольких каналов в один.\n
         \t- «Спектр» - выбрать суммарное, среднее или пиковое значение на графике спектра при сжатии графика. Пиковые значения позволяют не потерять слабые пики, средние показывают корректный график, суммы представляют прибор с меньшим количеством каналов.\n
         \t- «Language» - выбор языка программы. Для использования программу надо перезапустить.\n
+        \t- «AtomSwift МД» - выбор значения мощности дозы, отправляемой в приложение AtomSwift. Нескомпенсированное значение рекомендуется по умолчанию для поиска и карт если вам явно не требуется компенсированная и вы знаете как настроить кривую чувствительности.\n
         \t- «Чувств» - калибровочный коэффициент для расчёта мощности дозы. Значение подбирается самостоятельно для получения правильной мощности дозы.\n
+        \t- «Чувств(компенсированная)» - калибровочный коэффициент для расчёта компенсированной мощности дозы. Значение подбирается самостоятельно для получения правильной компенсированной мощности дозы.\n
         \t- «СчФона» - значение фона, вычитаемое из cps при простом расчёте мощности дозы.\n
         \t- «Б», «С», «М» - значения отсчётов для быстрого (Б), среднего (С) и медленного (М) усреднения расчёта мощности дозы.\n
         \t- «Частота обновл. графика, с⁻¹» - сколько раз в секунду программа обновляет показания мощности дозы и спектр.\n\n

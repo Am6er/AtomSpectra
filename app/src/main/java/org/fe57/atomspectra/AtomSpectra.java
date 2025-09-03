@@ -127,6 +127,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private float zoom_factor = 1;
 	private int cursor_x = -1;
 	public static boolean XCalibrated;
+	public static String DisplayDose;
 
 	//for background
 	public static boolean background_subtract = false;          //Subtract background from main histogram
@@ -423,11 +424,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		barMode = sharedPreferences.getBoolean(Constants.CONFIG.CONF_BAR_MODE, true);
 
 		XCalibrated = sharedPreferences.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true);
-		if (XCalibrated) {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_compensated_button));
-		} else {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_uncompensated_button));
-		}
+		setDisplayDose(sharedPreferences.getString(Constants.CONFIG.CONF_DISPLAY_DOSE, Constants.DISPLAY_DOSE_DEFAULT));
+
 		showCursorInfo(false);
 		Intent intent = getIntent();
 		inputServiceIntent = new Intent(this, AtomSpectraService.class);
@@ -1098,7 +1096,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS);
 					int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS_INTERVAL);
 
-					double doserate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH);
+					double dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH);
+					double dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH_ERROR);
 					double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_TOTAL_TIME);
 
 					switch (show_average_cps) {
@@ -1108,10 +1107,34 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							break;
 						case SHOW_CPS:
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
-							if (doserate > 1000)
-								doseRateText.setText(getString(R.string.dose_rate_mSv_format, doserate / 1000.0));
-							else
-								doseRateText.setText(getString(R.string.dose_rate_format, doserate));
+							long error95Percent = Math.round(dose_rate_error * 2);
+							if (DisplayDose == Constants.DISPLAY_DOSE_INTERVAL) {
+								if (dose_rate < 10) {
+									doseRateText.setText(getString(R.string.dose_rate_1cps_format, dose_rate, error95Percent));
+								} else if (dose_rate < 100) {
+									doseRateText.setText(getString(R.string.dose_rate_10cps_format, dose_rate, error95Percent));
+								} else if (dose_rate < 1000) {
+									doseRateText.setText(getString(R.string.dose_rate_100cps_format, dose_rate, error95Percent));
+								} else if (dose_rate < 10000) {
+									doseRateText.setText(getString(R.string.dose_rate_1kcps_format, dose_rate / 1000.0, error95Percent));
+								} else if (dose_rate < 100000) {
+									doseRateText.setText(getString(R.string.dose_rate_10kcps_format, dose_rate / 1000.0, error95Percent));
+								} else { // > 100k cps
+									doseRateText.setText(getString(R.string.dose_rate_100kcps_format, dose_rate / 1000.0, error95Percent));
+								}
+							} else if (dose_rate < 10) {
+								doseRateText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
+							} else if (dose_rate < 100) {
+								doseRateText.setText(getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent));
+							} else if (dose_rate < 1000) {
+								doseRateText.setText(getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent));
+							} else if (dose_rate < 10000) {
+								doseRateText.setText(getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent));
+							} else if (dose_rate < 100000) {
+								doseRateText.setText(getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent));
+							} else { // > 100 mSv/h
+								doseRateText.setText(getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent));
+							}
 							break;
 						case SHOW_BASE:
 							cpsView.setText(getString(R.string.cps_base_show, (int) AtomSpectraService.getCpsBaseLevel()));
@@ -1185,12 +1208,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 										false,
 										false,
 										false,
-										1024,
-										reducedTo,
+										AtomSpectraService.SEARCH_WINDOW_SIZE,
+										AtomSpectraService.SEARCH_WINDOW_SIZE,
 										false,
 										barMode,
 										0,
-										1024,
+										AtomSpectraService.SEARCH_WINDOW_SIZE,
 										getString(R.string.graph_show_points),
 										zoom_factor,
 										num_scale_factor,
@@ -1515,15 +1538,33 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	@SuppressLint("ApplySharedPref")
 	public void onClick_UpDown(View v) {
-		XCalibrated = !XCalibrated;
-		if (XCalibrated) {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_compensated_button));
+		if (AtomSpectraService.getScaleFactor() == Constants.SCALE_DOSE_MODE) {
+			String newDisplayDose;
+			switch (DisplayDose) {
+				case Constants.DISPLAY_DOSE_COMPENSATED:
+					newDisplayDose = Constants.DISPLAY_DOSE_NON_COMPENSATED;
+					break;
+				case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+					newDisplayDose = Constants.DISPLAY_DOSE_INTERVAL;
+					break;
+				case Constants.DISPLAY_DOSE_INTERVAL:
+					newDisplayDose = Constants.DISPLAY_DOSE_COMPENSATED;
+					break;
+				default:
+					newDisplayDose = Constants.DISPLAY_DOSE_DEFAULT;
+					break;
+			}
+			setDisplayDose(newDisplayDose);
+			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+			prefEditor.putString(Constants.CONFIG.CONF_DISPLAY_DOSE, newDisplayDose);
+			prefEditor.commit();
 		} else {
-			((Button) findViewById(R.id.doseButton)).setText(getText(R.string.mode_uncompensated_button));
+			XCalibrated = !XCalibrated;
+			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+			prefEditor.putBoolean(Constants.CONFIG.CONF_CALIBRATED, XCalibrated);
+			prefEditor.commit();
 		}
-		SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-		prefEditor.putBoolean(Constants.CONFIG.CONF_CALIBRATED, XCalibrated);
-		prefEditor.commit();
+
 		dateScaleChanged = new Date().getTime();
 		showScaleLabel = true;
 		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
@@ -3581,7 +3622,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 				if (setData) {
 //					AtomSpectraService.time_counter = spectrum.getSpectrumTime();
-					AtomSpectraService.total_pulses = spectrum.getTotalCounts();
+					AtomSpectraService.total_counts = spectrum.getTotalCounts();
 					if (app_menu != null) {
 						app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
 						app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
@@ -4004,9 +4045,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		try {
 			OutputStreamWriter fw = docStream;
-			fw.append("DEVFORMAT: 1\n");      //Type of file
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensivity
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CNT_DEFAULT)));                    //Background
+			fw.append("DEVFORMAT: 2\n");      //Type of file
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensitivity
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));       //Sensitivity for compensated dose rate
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));                    //Background
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));                   //fast counts
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));               //medium counts
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));                   //slow counts
@@ -4021,12 +4063,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
 			fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT)));                               //order size
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length)));      //Calibration array size
-			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length); i++) {
+			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length)));      //Calibration array size
+			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
 				fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.configCalibrationEnergy(i), i * 100.0f)));
 			}
-			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length); i++) {
-				fw.append(String.format(Locale.US, "%.14e\n", Double.longBitsToDouble(sharedPreferences.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.ETomSvDefault[i])))));
+			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
+				fw.append(String.format(Locale.US, "%.14e\n", Double.longBitsToDouble(sharedPreferences.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.EnergySensitivityDefault[i])))));
 			}
 			fw.close();
 			Log.d(TAG, deviceFileName + " saved successfully");
@@ -4055,11 +4097,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			BufferedReader fr = new BufferedReader(new InputStreamReader(inputFile));
 			Log.d(TAG, filename + " loading started...");
 			String ident = fr.readLine();
-			if (!ident.matches("^DEVFORMAT: 1$")) {
+			boolean isV1 = ident.matches("^DEVFORMAT: 1$");
+			boolean isV2 = ident.matches("^DEVFORMAT: 2$");
+			if (!isV1 && !isV2) {
 				Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
 				return;
 			}
 			int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
+			int tempSensGCompensated = 0;
+			if (isV2) {
+				tempSensGCompensated = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
+			}
 			int tempBack = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
 			int tempFast = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
 			int tempMedium = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
@@ -4080,7 +4128,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			int tempSize = Integer.parseInt(fr.readLine());
 			double[] tempArray;
 			float[] tempEArray;
-			if (tempSize == AtomSpectraService.ETomSvDefault.length) {
+			if (tempSize == AtomSpectraService.EnergySensitivityDefault.length) {
 				tempArray = new double[tempSize];
 				tempEArray = new float[tempSize];
 				for (int i = 0; i < tempSize; i++) {
@@ -4111,6 +4159,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			}
 			SharedPreferences.Editor editor = sharedPreferences.edit();
 			editor.putInt(Constants.CONFIG.CONF_SENSG, tempSensG);                        //Sensitivity
+			if (isV2) {															          //Sensitivity for compensated DR
+				editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, tempSensGCompensated);
+			}
 			editor.putInt(Constants.CONFIG.CONF_BACKGROUND, tempBack);                    //Background
 			editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, tempFast);                   //fast counts
 			editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, tempMedium);               //medium counts
@@ -4275,6 +4326,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		if (app_menu != null) {
 			AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
 			app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode);
+		}
+	}
+
+	private void setDisplayDose(String mode) {
+		DisplayDose = mode;
+		Button doseButton = (Button) findViewById(R.id.doseButton);
+		switch (mode) {
+			case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+				doseButton.setText(getText(R.string.mode_uncompensated_button));
+				break;
+			case Constants.DISPLAY_DOSE_COMPENSATED:
+				doseButton.setText(getText(R.string.mode_compensated_button));
+				break;
+			case Constants.DISPLAY_DOSE_INTERVAL:
+				doseButton.setText(getText(R.string.mode_interval_button));
+				break;
+			default:
+				setDisplayDose(Constants.DISPLAY_DOSE_DEFAULT);
+				break;
 		}
 	}
 }

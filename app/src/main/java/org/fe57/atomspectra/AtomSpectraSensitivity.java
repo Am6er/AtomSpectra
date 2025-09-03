@@ -84,10 +84,10 @@ public class AtomSpectraSensitivity extends Activity {
     };
 
     public void onOkButton(View v) {
-        float[] energy = new float[AtomSpectraService.ETomSvDefault.length];
+        float[] energy = new float[AtomSpectraService.EnergySensitivityDefault.length];
         float lastEnergy = -1;
-        double[] sensitivity = new double[AtomSpectraService.ETomSvDefault.length];
-        for (int i = 0; i < AtomSpectraService.ETomSvDefault.length; i++) {
+        double[] sensitivity = new double[AtomSpectraService.EnergySensitivityDefault.length];
+        for (int i = 0; i < AtomSpectraService.EnergySensitivityDefault.length; i++) {
             try {
                 energy[i] = Float.parseFloat(((EditText)findViewById(Constants.GROUPS.GROUP_SENSE_TABLE + 2 * i)).getText().toString().replaceAll(",", "."));
                 if (energy[i] < 0 || energy[i] >= 5000.0 || lastEnergy >= energy[i]) {
@@ -107,8 +107,8 @@ public class AtomSpectraSensitivity extends Activity {
             }
         }
         SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
-        editor.putInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, AtomSpectraService.ETomSvDefault.length);
-        for (int i = 0; i < AtomSpectraService.ETomSvDefault.length; i++) {
+        editor.putInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, AtomSpectraService.EnergySensitivityDefault.length);
+        for (int i = 0; i < AtomSpectraService.EnergySensitivityDefault.length; i++) {
             editor.putFloat(Constants.configCalibrationEnergy(i), energy[i]);
             editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(sensitivity[i]));
         }
@@ -126,13 +126,13 @@ public class AtomSpectraSensitivity extends Activity {
         if (v.getId() == R.id.buttonSensReset) {
             SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
             EditText view;
-            for (int i = 0; i < AtomSpectraService.ETomSvDefault.length; i++) {
-                editor.putFloat(Constants.configCalibrationEnergy(i), (float)AtomSpectraService.EnergyListDefault[i]);
-                editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.ETomSvDefault[i]));
+            for (int i = 0; i < AtomSpectraService.EnergySensitivityDefault.length; i++) {
+                editor.putFloat(Constants.configCalibrationEnergy(i), (float)AtomSpectraService.EnergyBinsDefault[i]);
+                editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.EnergySensitivityDefault[i]));
                 view = findViewById(Constants.GROUPS.GROUP_SENSE_TABLE + 2 * i);
-                view.setText(String.format(Locale.US, "%.1f", (float)AtomSpectraService.EnergyListDefault[i]));
+                view.setText(String.format(Locale.US, "%.1f", (float)AtomSpectraService.EnergyBinsDefault[i]));
                 view = findViewById(Constants.GROUPS.GROUP_SENSE_TABLE + 2 * i + 1);
-                view.setText(String.format(Locale.US, "%.10e", AtomSpectraService.ETomSvDefault[i]));
+                view.setText(String.format(Locale.US, "%.10e", AtomSpectraService.EnergySensitivityDefault[i]));
             }
             editor.apply();
         }
@@ -173,7 +173,7 @@ public class AtomSpectraSensitivity extends Activity {
         Paint text = new Paint();
         text.setTextSize(18);
 
-        for (int i = 0; i < sp.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.ETomSvDefault.length); i++) {
+        for (int i = 0; i < sp.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
             newRow = new TableRow(this);
             textNumber = new TextView(this);
             textNumber.setText(String.format(Locale.getDefault(),"%d", i + 1));
@@ -195,7 +195,7 @@ public class AtomSpectraSensitivity extends Activity {
             editSensitivity = new EditText(this);
             editSensitivity.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT, 1.0f));
             editSensitivity.setGravity(Gravity.CENTER);
-            editSensitivity.setText(String.format(Locale.getDefault(), "%.8e", Double.longBitsToDouble(sp.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.ETomSvDefault[i])))));
+            editSensitivity.setText(String.format(Locale.getDefault(), "%.8e", Double.longBitsToDouble(sp.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.EnergySensitivityDefault[i])))));
             editSensitivity.setTextSize(18);
             editSensitivity.setId(Constants.GROUPS.GROUP_SENSE_TABLE + 2 * i + 1);
             editSensitivity.setEms(15);

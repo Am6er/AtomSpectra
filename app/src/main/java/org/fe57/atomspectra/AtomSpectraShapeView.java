@@ -258,13 +258,28 @@ public class AtomSpectraShapeView extends View {
 			if (logScale) {
 				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
 			} else if (dose_mode) {
-				sZoom = ", " + (m_dose_mode ? res.getString(R.string.graph_show_mSv) : res.getString(R.string.graph_show_mkSv));
+				boolean is_interval = AtomSpectra.DisplayDose == Constants.DISPLAY_DOSE_INTERVAL;
+				String unit;
+				if (m_dose_mode) {
+					if (is_interval) {
+						unit = res.getString(R.string.graph_show_kcps);
+					} else {
+						unit = res.getString(R.string.graph_show_mSv);
+					}
+				} else {
+					if (is_interval) {
+						unit = res.getString(R.string.graph_show_cps);
+					} else {
+						unit = res.getString(R.string.graph_show_mkSv);
+					}
+				}
+				sZoom = ", " + unit;
 			} else {
 				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
 			}
 		}
 
-		if (!no_y_mode && !calibrationScale && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
+		if (!no_y_mode && !calibrationScale && !dose_mode && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
 			if (isCalibrated &&
 					AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) < x_max_value  &&
 					AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) > x_min_value) {
@@ -316,7 +331,18 @@ public class AtomSpectraShapeView extends View {
 						} else {
 							textColor.setTextAlign(Align.RIGHT);
 						}
-						canvas.drawText(String.format(Locale.getDefault(), "%1.3f%s", (min + (max - min) * i / ny) / zoom, (i < ny) ? "" : (sZoom)), margin_top - height + i * dwy - 6 * ht_px / 2, margin_top - ht_px / 2, textColor);
+						double value = (min + (max - min) * i / ny) / zoom;
+						String format;
+						if (value < 10) {
+							format = "%1.3f%s";
+						} else if (value < 100) {
+							format = "%1.2f%s";
+						} else if (value < 1000) {
+							format = "%1.1f%s";
+						} else {
+							format = "%1.0f%s";
+						}
+						canvas.drawText(String.format(Locale.getDefault(), format, value, (i < ny) ? "" : (sZoom)), margin_top - height + i * dwy - 6 * ht_px / 2, margin_top - ht_px / 2, textColor);
 					}
 				} else {
 					long line_val = 0;
@@ -808,7 +834,7 @@ public class AtomSpectraShapeView extends View {
 			circleMode = false;
 			if (xZoom_factor == Constants.SCALE_DOSE_MODE) {
 				dose_mode = true;
-				max = Constants.DOSE_SCALE * 100 / Constants.DOSE_OVERHEAD;
+				max = Constants.DOSE_SCALE / Constants.DOSE_OVERHEAD;
 			} else {
 				dose_mode = false;
 				if (logScale)

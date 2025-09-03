@@ -101,6 +101,12 @@ public class AtomSpectraService extends Service {
     public static boolean isStarted = false;
     public static boolean showCalibrationFunction = false;
 
+    // atom swift integration
+    private static boolean sendDataToAtomSwiftAppEnabled = false;
+    private static String atomSwiftDRType = Constants.ATOMSWIFT_DR_DEFAULT;
+    private static int atomSwiftIntermediateCps = 0;
+    private static boolean atomSwiftHasIntermediateData = false;
+
     //data for spectrum
     private static final double[] histogram = new double[1024];
     public static long[] histogram_all_delta = new long[Constants.NUM_HIST_POINTS];       //array to save delta
@@ -114,13 +120,86 @@ public class AtomSpectraService extends Service {
     public static boolean background_show = false;
     private static boolean freeze_update_data = true;
 
-    public static int total_pulses_cps = 0;
-    public static int total_pulses_cps_interval = 0;
-    public static long total_pulses = 0;
-    private static int cps = 0;
-    private static int cpsInterval = 0;
-    private int skip_next_cps_int_usb_calc = 0;
-    public static double total_energy_cps = 0.0;
+    // dose rate
+    private static DoseRate doseRateValue = new DoseRate();
+    public static final double[] EnergyBinsDefault = new double[]{
+            0.0,
+            100.0,
+            200.0,
+            300.0,
+            400.0,
+            500.0,
+            600.0,
+            700.0,
+            800.0,
+            900.0,
+            1000.0,
+            1100.0,
+            1200.0,
+            1300.0,
+            1400.0,
+            1500.0,
+            1600.0,
+            1700.0,
+            1800.0,
+            1900.0,
+            2000.0,
+            2100.0,
+            2200.0,
+            2300.0,
+            2400.0,
+            2500.0,
+            2600.0,
+            2700.0,
+            2800.0,
+            2900.0
+    }; // energy bins in keV
+    private static double[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
+    // for CsI 10x10x30 crystal
+    public static final double[] EnergySensitivityDefault = new double[]{
+            0.0,
+            0.0171979600731997,
+            0.0480184835146140,
+            0.1435917027218390,
+            0.3282911602228690,
+            0.5905998429192040,
+            0.8920944634987190,
+            1.1745696899418600,
+            1.4115205995972900,
+            1.5822683732872000,
+            1.7193245130080400,
+            1.8300925688571300,
+            1.9598962219392600,
+            2.1527699267401500,
+            2.3779144044044100,
+            2.5751926000784900,
+            2.6687959009367600,
+            2.6614382236336400,
+            2.6501896868633800,
+            2.7655103687783900,
+            2.9332404784454300,
+            3.1635329688032900,
+            3.2657941250968600,
+            3.3349624711773100,
+            3.0682650024761000,
+            2.8705814847550800,
+            2.9826045411205400,
+            3.5934184594279600,
+            4.2014869361989400,
+            5.2692760307823300
+    }; // photon energy relative to Cs-137 energy (1.0 for 662 keV)
+    private static double[] EnergySensitivity = Arrays.copyOf(EnergySensitivityDefault, EnergySensitivityDefault.length);
+
+    // audio counts processing
+    public static int counts_from_audio = 0; // number of counts detected from audio source during UPDATE_PERIOD
+    public static int interval_counts_from_audio = 0; // number of counts in user defined energy range detected from audio source during UPDATE_PERIOD
+    public static int[] binned_counts_from_audio = new int[EnergyBinsDefault.length]; // number of counts by energy bins detected from audio source during UPDATE_PERIOD
+
+    public static long total_counts = 0; // number of counts collected in current spectrum (either from audio or USB)
+    private static int cps = 0; // current cps value
+    private static int cpsInterval = 0; // current cps value in user defined energy range
+
+    private int skip_next_cps_int_usb_calc = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
     private static int autosaveTimeout = 0;
     private static int autosaveIncrement = 0;
     private Spectrum autosaveSpectrum = null;
@@ -160,6 +239,8 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_TOTAL_TIME";
     public final static String EXTRA_DATA_DOSERATE_SEARCH =
             "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH";
+    public final static String EXTRA_DATA_DOSERATE_SEARCH_ERROR =
+            "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH_ERROR";
     public final static String EXTRA_DATA_SCOPE_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_SCOPE_COUNTS";
     private final static String SERVICE_INF_ID = "Service command -inf";
@@ -185,17 +266,18 @@ public class AtomSpectraService extends Service {
     private static final int CHANNEL_CONFIG = android.media.AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = android.media.AudioFormat.ENCODING_PCM_16BIT;
 
-    private static int SensG, backgroundCount;
+    private static double SensG;
+    private static double SensGCompensated;
+    private static double backgroundCps;
     private static int SEARCH_FAST = 25, SEARCH_MEDIUM = 35, SEARCH_SLOW = 70;
 
     private static int SearchFSM = 0; //0 - fast, 1 - medium, 2 - slow
 
-    private static double doseRateValue = 0.0;
     private int dataFromAudioSourceUpdatePeriod = 1000; // ms
 
     private static final int[] cpsArray = new int[1000 / Constants.UPDATE_PERIOD]; // number of counts during last second, measured approximately each 0.1 sec
-    private static final int[] cpsArrayInterval = new int[1000 / Constants.UPDATE_PERIOD]; // same as above but for energy range
-    private static final double[] cpsArrayEnergy = new double[1000 / Constants.UPDATE_PERIOD];
+    private static final int[] cpsArrayInterval = new int[1000 / Constants.UPDATE_PERIOD]; // same as above but for user selected energy range
+    private static final int[][] cpsArrayEnergyBins = new int[1000 / Constants.UPDATE_PERIOD][EnergyBins.length]; // same as above but counts stored separate for each energy bin
     private static long audioCaptureTimer = 0;
     private static long audioCaptureOldTimer = 0;
     private static long captureAudioTaskInterval = 0;
@@ -387,15 +469,25 @@ public class AtomSpectraService extends Service {
         } catch (Exception e) {
             SensG = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_SENSG, SensG);
+            editor.putInt(Constants.CONFIG.CONF_SENSG, (int)SensG);
             editor.apply();
         }
+
         try {
-            backgroundCount = sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CNT_DEFAULT);
+            SensGCompensated = sp.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
         } catch (Exception e) {
-            backgroundCount = (int) sp.getFloat(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CNT_DEFAULT);
+            SensGCompensated = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_BACKGROUND, backgroundCount);
+            editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, (int)SensGCompensated);
+            editor.apply();
+        }
+
+        try {
+            backgroundCps = sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT);
+        } catch (Exception e) {
+            backgroundCps = (int) sp.getFloat(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT);
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putInt(Constants.CONFIG.CONF_BACKGROUND, (int)backgroundCps);
             editor.apply();
         }
 //        GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0,3, -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW));
@@ -425,6 +517,9 @@ public class AtomSpectraService extends Service {
         outputSoundID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
         outputSoundName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
+        sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
+        atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+
         outputSoundInit();
         boolean inputS = sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         int inputSID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
@@ -442,27 +537,26 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        int newETomSvCount = sp.getInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, ETomSvDefault.length);
-        if (newETomSvCount == ETomSv.length) {
-            EnergyListCount = newETomSvCount;
+        int newEnergySensitivityCount = sp.getInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, EnergySensitivityDefault.length);
+        if (newEnergySensitivityCount == EnergyBins.length) {
             try {
-                EnergyList = new double[EnergyListCount];
-                ETomSv = new double[EnergyListCount];
-                for (int i = 0; i < EnergyListCount; i++) {
-                    ETomSv[i] = Double.longBitsToDouble(sp.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(ETomSvDefault[i])));
-                    EnergyList[i] = sp.getFloat(Constants.configCalibrationEnergy(i), (float) EnergyListDefault[i]);
+                EnergyBins = new double[EnergyBins.length];
+                EnergySensitivity = new double[EnergyBins.length];
+                for (int i = 0; i < EnergyBins.length; i++) {
+                    EnergySensitivity[i] = Double.longBitsToDouble(sp.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(EnergySensitivityDefault[i])));
+                    EnergyBins[i] = sp.getFloat(Constants.configCalibrationEnergy(i), (float) EnergyBinsDefault[i]);
                 }
             } catch (Exception e) {
+                showToastInMainLooper("Unable to load device sensitivity curve from preferences, resetting to default", Toast.LENGTH_LONG);
                 SharedPreferences.Editor editor = sp.edit();
-                editor.putInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, AtomSpectraService.ETomSvDefault.length);
-                EnergyListCount = EnergyListDefault.length;
-                EnergyList = new double[EnergyListCount];
-                ETomSv = new double[EnergyListCount];
-                for (int i = 0; i < EnergyListDefault.length; i++) {
-                    ETomSv[i] = ETomSvDefault[i];
-                    EnergyList[i] = EnergyListDefault[i];
-                    editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(ETomSvDefault[i]));
-                    editor.putFloat(Constants.configCalibrationEnergy(i), (float) EnergyListDefault[i]);
+                editor.putInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, AtomSpectraService.EnergyBinsDefault.length);
+                EnergyBins = new double[EnergyBinsDefault.length];
+                EnergySensitivity = new double[EnergyBinsDefault.length];
+                for (int i = 0; i < EnergyBinsDefault.length; i++) {
+                    EnergySensitivity[i] = EnergySensitivityDefault[i];
+                    EnergyBins[i] = EnergyBinsDefault[i];
+                    editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(EnergySensitivityDefault[i]));
+                    editor.putFloat(Constants.configCalibrationEnergy(i), (float) EnergyBinsDefault[i]);
                 }
                 editor.apply();
             }
@@ -1089,39 +1183,47 @@ public class AtomSpectraService extends Service {
                         }
 
                         cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
-                        total_pulses = 0;
+                        total_counts = 0;
+                        boolean isReliableData = false;
 
                         if (new_histogram != null && new_time > old_time) {
-                            long count = 0, count_interval = 0;
-                            double count_e = 0;
+                            int counts = 0, interval_counts = 0;
+                            int[] binned_counts = new int[EnergyBins.length];
                             for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
-                                total_pulses += new_histogram[i];
-                                long value = 0;
-                                value = new_histogram[i] - old_histogram[i];
+                                total_counts += new_histogram[i];
+                                int value = 0;
+                                value = (int)(new_histogram[i] - old_histogram[i]);
 
-                                count += value;
+                                counts += value;
                                 if (i >= leftChannelInterval && i <= rightChannelInterval) {
-                                    count_interval += value;
+                                    interval_counts += value;
                                 }
-                                count_e += value * getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
+
+                                int bin_index = getEnergyBinIndex(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
+                                binned_counts[bin_index] += value;
                             }
 
                             if (skip_next_cps_int_usb_calc > 0) {
                                 skip_next_cps_int_usb_calc--;
                                 cpsInterval = 0;
-                                doseRateValue = 0;
+                                doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
-                                cpsInterval = (int) count_interval;
-                                doseRateValue = doseRateSearch(count, count_interval, count_e, new_time - old_time, AtomSpectra.XCalibrated);
+                                cpsInterval = (int) interval_counts;
+                                doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
+                                isReliableData = true;
                             } else {
                                 cpsInterval = 0;
-                                doseRateValue = 0;
+                                doseRateValue = new DoseRate();
                             }
                         }
 
                         calcAndSendFoundIsotopesData();
                         calcSpectrumChangeData();
                         sendDataToUI();
+                        if (isReliableData) {
+                            sendDataToAtomSwift(cps, doseRateValue);
+                        }
+
                         break;
 
                     case AtomSpectraSerial.CODE_SCOPE:
@@ -1322,7 +1424,7 @@ public class AtomSpectraService extends Service {
         synchronized (histogram_all_queue) {
             histogram_all_queue.clear();
         }
-        total_pulses = 0;
+        total_counts = 0;
 
         synchronized (soundSync) {
             cpsBaseLevel = 0;
@@ -1371,273 +1473,195 @@ public class AtomSpectraService extends Service {
             }
         }
 
+        if (freeze) {
+            resetSearchWindow();
+        }
+
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
         NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
     }
 
-    final static int SEARCH_WINDOW_SIZE = 1024;
-    private static final LinkedList<Double> windowCps = new LinkedList<>();
-    private static final LinkedList<Double> window = new LinkedList<>();
-    private static final LinkedList<Double> windowEnergy = new LinkedList<>();
+    // when new data arrives either from audio or USB we preserve it in historical sliding time window
+    // used to calculate dose rate
+    public final static int SEARCH_WINDOW_SIZE = 240;
+    private static final LinkedList<Integer> windowCounts = new LinkedList<>();
+    private static final LinkedList<Integer> windowIntervalCounts = new LinkedList<>();
+    private static final LinkedList<int[]> windowBinnedCounts = new LinkedList<>();
+    private static final LinkedList<Double> windowDeltaTime = new LinkedList<>();
+
     private static final LinkedList<Double> doseHistory = new LinkedList<>();
-    private static final LinkedList<Double> doseEnergyHistory = new LinkedList<>();
-    private static final LinkedList<Double> deltaTime = new LinkedList<>();
-    private static double exp_T = 0.1;
+    private static final LinkedList<Double> doseCompensatedHistory = new LinkedList<>();
+    private static final LinkedList<Double> doseIntervalHistory = new LinkedList<>();
 
     private static void resetCpsData() {
         Arrays.fill(cpsArray, 0);
         Arrays.fill(cpsArrayInterval, 0);
-        Arrays.fill(cpsArrayEnergy, 0);
+        Arrays.fill(cpsArrayEnergyBins, new int[EnergyBins.length]);
         cps = 0;
         cpsInterval = 0;
     }
 
-    private static void resetDoseRateData() {
-        synchronized (windowCps) {
-            deltaTime.clear();
-            windowEnergy.clear();
-            windowCps.clear();
-            window.clear();
+    private static void resetSearchWindow() {
+        synchronized (windowCounts) {
+            windowDeltaTime.clear();
+            windowBinnedCounts.clear();
+            windowCounts.clear();
+            windowIntervalCounts.clear();
         }
+    }
+
+    private static void resetDoseRateData() {
+        resetSearchWindow();
 
         synchronized (doseHistory) {
             doseHistory.clear();
-            doseEnergyHistory.clear();
+            doseCompensatedHistory.clear();
+            doseIntervalHistory.clear();
         }
 
-        doseRateValue = 0;
+        doseRateValue = new DoseRate();
     }
 
-    private static double doseRateSearch(double pulses, double pulses_interval, double pulses_e, double time, boolean useEnergy) {
+    // called each 0.1 sec for audio, each 1 sec for USB
+    private DoseRate doseRateSearch(int counts, int interval_counts, int[] binned_counts, double delta_time) {
+        if (delta_time == 0) {
+            return doseRateValue;
+        }
 
-        synchronized (windowCps) {
-            deltaTime.addLast(time);
-            if (deltaTime.size() > SEARCH_WINDOW_SIZE) {
-                deltaTime.removeFirst();
+        synchronized (windowCounts) {
+            windowDeltaTime.addLast(delta_time);
+            if (windowDeltaTime.size() > SEARCH_WINDOW_SIZE) {
+                windowDeltaTime.removeFirst();
             }
-            windowEnergy.addLast(pulses_e);
-            if (windowEnergy.size() > SEARCH_WINDOW_SIZE) {
-                windowEnergy.removeFirst();
+            windowBinnedCounts.addLast(binned_counts);
+            if (windowBinnedCounts.size() > SEARCH_WINDOW_SIZE) {
+                windowBinnedCounts.removeFirst();
             }
-            windowCps.addLast(pulses);
-            if (windowCps.size() > SEARCH_WINDOW_SIZE) {
-                windowCps.removeFirst();
+            windowCounts.addLast(counts);
+            if (windowCounts.size() > SEARCH_WINDOW_SIZE) {
+                windowCounts.removeFirst();
             }
-            window.addLast(pulses_interval);
-            if (window.size() > SEARCH_WINDOW_SIZE) {
-                window.removeFirst();
+            windowIntervalCounts.addLast(interval_counts);
+            if (windowIntervalCounts.size() > SEARCH_WINDOW_SIZE) {
+                windowIntervalCounts.removeFirst();
             }
         }
 
-        int sens = 0;
-        double min_period = 1;   //in seconds
+        int counts_search_window = 0;
+        double min_period = 1;   // in seconds
         switch (SearchFSM) {
             case 0:
-                sens = SEARCH_FAST;
-                min_period = 0.1;
+                counts_search_window = SEARCH_FAST;
+                min_period = 0.2;
                 break;
             case 1:
-                sens = SEARCH_MEDIUM;
-                min_period = 0.5;
+                counts_search_window = SEARCH_MEDIUM;
+                min_period = 1;
                 break;
             case 2:
-                sens = SEARCH_SLOW;
-                min_period = 1.0;
+                counts_search_window = SEARCH_SLOW;
+                min_period = 2;
                 break;
         }
-        if (pulses <= 10) {
-            exp_T = StrictMath.max(exp_T / (1.0 + time / 10.0), 0.001);
-        } else if (pulses >= 100) {
-            exp_T = StrictMath.min(exp_T * (1.0 + time / 10.0), 0.1);
-        } else {
-            if (exp_T > (pulses * pulses / 100000.0)) exp_T /= (1.0 + time / 10.0);
-            if (exp_T < (pulses * pulses / 100000.0)) exp_T *= (1.0 + time / 10.0);
-        }
-        double sum = 0;
-        double clear_sum = 0;
-        double totalTime = 0;
-        double sumEnergy = 0.0;
-        double accumulated = 0.0;
-        double weight;
-        synchronized (windowCps) {
-            int start = windowCps.size() > 0 ? windowCps.size() - 1 : 0;
+        int total_counts = 0;
+        int total_interval_counts = 0;
+        double total_time = 0;
+        double total_interval_time = 0;
+        int[] total_binned_counts = new int[EnergyBins.length];
+        synchronized (windowCounts) {
+            int start = windowCounts.size() > 0 ? windowCounts.size() - 1 : 0;
             for (int i = start; i >= 0; i--) {
-                clear_sum += windowCps.get(i);                      //total number of pulses
-                weight = StrictMath.exp(-exp_T * totalTime) / deltaTime.get(i);
-                sum += windowCps.get(i) * weight;
-                sumEnergy += windowEnergy.get(i) * weight;
-                accumulated += weight;
-                totalTime += deltaTime.get(i);
-                if ((clear_sum >= sens) && (totalTime >= min_period))
+                if (total_counts < counts_search_window) {
+                    total_counts += windowCounts.get(i);
+                    total_time += windowDeltaTime.get(i);
+                    for (int bin = 0; bin < EnergyBins.length; bin++) {
+                        total_binned_counts[bin] += windowBinnedCounts.get(i)[bin];
+                    }
+                }
+
+                if (total_interval_counts < counts_search_window) {
+                    total_interval_counts += windowIntervalCounts.get(i);
+                    total_interval_time += windowDeltaTime.get(i);
+                }
+
+                if ((total_counts >= counts_search_window) && (total_time >= min_period)
+                        && (total_interval_counts >= counts_search_window) && (total_interval_time >= min_period))
                     break;
             }
         }
-        double weightSensG = 7 * 0.88 * 1.0e-2 * 3600 / SensG;
-        // fix sensitivity issue for pro devices (required x10 value comparing to audio spectrometer of the same size)
-        // calculation code was written taking into account that it is called each 0.1 second (sensitivity is set for fixed 0.1 sec interval)
-        // adjust according to actual elapsed time
-        weightSensG /= time / (Constants.UPDATE_PERIOD / 1000.0);
-        double hist_dose_e = sumEnergy / accumulated * 4.3 * weightSensG;
-        double hist_dose = StrictMath.max(0.0, ((sum / accumulated) - backgroundCount) * weightSensG);
+
+        if (total_time < min_period) {
+            return doseRateValue;
+        }
+
+        double comp_dose_rate = 0;
+        double comp_dose_rate_error_acc = 0;
+        for (int bin = 0; bin < EnergyBins.length; bin++) {
+            int bin_counts = total_binned_counts[bin];
+            double bin_cps = bin_counts / total_time;
+            double bin_sens = EnergySensitivity[bin];
+            double bin_dose_rate = 0;
+            if (SensGCompensated > 0) {
+                bin_dose_rate = bin_cps * bin_sens / SensGCompensated;
+            }
+            comp_dose_rate += bin_dose_rate;
+            if (bin_counts > 0) {
+                double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
+                comp_dose_rate_error_acc += bin_dose_rate_error * bin_dose_rate_error;
+            } else {
+                // experiment, if zero counts in bin we assume that bin has no more than single count
+                // so the error is no more than dose rate for single count in interval
+                double single_count_cps = 1.0 / total_time;
+                double upper_dose_rate_bound = single_count_cps * bin_sens / SensGCompensated;
+                comp_dose_rate_error_acc += upper_dose_rate_bound * upper_dose_rate_bound;
+            }
+        }
+        double comp_dose_rate_error = 0;
+        if (comp_dose_rate > 0) {
+            comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_acc) / comp_dose_rate * 100.0;
+        }
+
+        double dose_rate = 0;
+        if (SensG > 0) {
+            dose_rate = StrictMath.max(0.0, (total_counts / total_time - backgroundCps) / SensG);
+        }
+        double dose_rate_error = total_counts > 0 ? Math.sqrt(total_counts) / total_counts * 100.0 : 0;
+
+        double interval_cps = (total_interval_counts / total_interval_time);
+        double interval_cps_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
         synchronized (doseHistory) {
-            doseHistory.addLast(hist_dose);
+            doseHistory.addLast(dose_rate);
             if (doseHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseHistory.removeFirst();
             }
-            doseEnergyHistory.addLast(hist_dose_e);
-            if (doseEnergyHistory.size() > SEARCH_WINDOW_SIZE) {
-                doseEnergyHistory.removeFirst();
+            doseCompensatedHistory.addLast(comp_dose_rate);
+            if (doseCompensatedHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseCompensatedHistory.removeFirst();
+            }
+            doseIntervalHistory.addLast(interval_cps);
+            if (doseIntervalHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseIntervalHistory.removeFirst();
             }
         }
-        if (useEnergy) {
-            return hist_dose_e;    //calculate energy compensated dose rate
-        } else {
-            return hist_dose;
-        }
+
+        return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_cps, interval_cps_error);
     }
 
-    //for CsI 10x10x30 crystal
-    private static double[] EnergyList = new double[]{
-            0.0,
-            100.0,
-            200.0,
-            300.0,
-            400.0,
-            500.0,
-            600.0,
-            700.0,
-            800.0,
-            900.0,
-            1000.0,
-            1100.0,
-            1200.0,
-            1300.0,
-            1400.0,
-            1500.0,
-            1600.0,
-            1700.0,
-            1800.0,
-            1900.0,
-            2000.0,
-            2100.0,
-            2200.0,
-            2300.0,
-            2400.0,
-            2500.0,
-            2600.0,
-            2700.0,
-            2800.0,
-            2900.0
-    }; //energy list in keV
-    public static final double[] EnergyListDefault = new double[]{
-            0.0,
-            100.0,
-            200.0,
-            300.0,
-            400.0,
-            500.0,
-            600.0,
-            700.0,
-            800.0,
-            900.0,
-            1000.0,
-            1100.0,
-            1200.0,
-            1300.0,
-            1400.0,
-            1500.0,
-            1600.0,
-            1700.0,
-            1800.0,
-            1900.0,
-            2000.0,
-            2100.0,
-            2200.0,
-            2300.0,
-            2400.0,
-            2500.0,
-            2600.0,
-            2700.0,
-            2800.0,
-            2900.0
-    }; //energy list in keV
-    private static int EnergyListCount = EnergyListDefault.length;
-//    private static final double[] Sensitivity = new double[EnergyListCount];
-    private static double[] ETomSv = new double[]{
-            0.0,
-            0.0171979600731997,
-            0.0480184835146140,
-            0.1435917027218390,
-            0.3282911602228690,
-            0.5905998429192040,
-            0.8920944634987190,
-            1.1745696899418600,
-            1.4115205995972900,
-            1.5822683732872000,
-            1.7193245130080400,
-            1.8300925688571300,
-            1.9598962219392600,
-            2.1527699267401500,
-            2.3779144044044100,
-            2.5751926000784900,
-            2.6687959009367600,
-            2.6614382236336400,
-            2.6501896868633800,
-            2.7655103687783900,
-            2.9332404784454300,
-            3.1635329688032900,
-            3.2657941250968600,
-            3.3349624711773100,
-            3.0682650024761000,
-            2.8705814847550800,
-            2.9826045411205400,
-            3.5934184594279600,
-            4.2014869361989400,
-            5.2692760307823300
-    }; //photon energy to Cs-137 energy
-    public static final double[] ETomSvDefault = new double[]{
-            0.0,
-            0.0171979600731997,
-            0.0480184835146140,
-            0.1435917027218390,
-            0.3282911602228690,
-            0.5905998429192040,
-            0.8920944634987190,
-            1.1745696899418600,
-            1.4115205995972900,
-            1.5822683732872000,
-            1.7193245130080400,
-            1.8300925688571300,
-            1.9598962219392600,
-            2.1527699267401500,
-            2.3779144044044100,
-            2.5751926000784900,
-            2.6687959009367600,
-            2.6614382236336400,
-            2.6501896868633800,
-            2.7655103687783900,
-            2.9332404784454300,
-            3.1635329688032900,
-            3.2657941250968600,
-            3.3349624711773100,
-            3.0682650024761000,
-            2.8705814847550800,
-            2.9826045411205400,
-            3.5934184594279600,
-            4.2014869361989400,
-            5.2692760307823300
-    }; //photon energy to Cs-137 energy
+    private static int getEnergyBinIndex(double energy) {
+        if (energy >= EnergyBins[EnergyBins.length - 1]) {
+            return EnergyBins.length - 1;
+        }
 
-    private static double getEnergyPulse(double energy) {
-        if (energy >= EnergyList[EnergyList.length - 1])
-            return ETomSv[EnergyListCount - 1];
-        if (energy <= EnergyList[0])
-            return ETomSv[0];
-        int energy_pos = 1;
-        // Calculation using energy list
-        while ((energy_pos < (EnergyList.length - 1)) && (energy > EnergyList[energy_pos]))
-            energy_pos++;
-        return StrictMath.max(0.0, (energy - EnergyList[energy_pos - 1]) / (EnergyList[energy_pos] - EnergyList[energy_pos - 1]) * (ETomSv[energy_pos] - ETomSv[energy_pos - 1]) + ETomSv[energy_pos - 1]);
+        if (energy <= EnergyBins[0]) {
+            return 0;
+        }
+
+        int energy_bin = 1;
+        while ((energy_bin < (EnergyBins.length - 1)) && (energy > EnergyBins[energy_bin])) {
+            energy_bin++;
+        }
+
+        return energy_bin;
     }
 
     // this function is used to release sound input
@@ -1762,7 +1786,6 @@ public class AtomSpectraService extends Service {
 
         // First we will pass the 2 bytes into one sample
         // It's an extra loop but avoids repeating the same sum many times later during the filter
-        // int Mask = ((-1) << (Constants.ADC_MAX - adc_effective_bits));
         int HighBitsShift = Math.max(0, 15 - Constants.ADC_MAX);
         for (int i = 0, r = 0; i < AudioBytesRead - 2; i += 2, r++) {// Before the 8 we had the end of the previous data
             if (AudioBytes[i] < 0)
@@ -1771,35 +1794,15 @@ public class AtomSpectraService extends Service {
                 AudioData[r] = AudioBytes[i];
             AudioData[r] = AudioData[r] + 256 * AudioBytes[i + 1];//+32768;
 
-            if (inversion) AudioData[r] = -AudioData[r];
-//                    AudioData[r] = Constants.MinMax(AudioData[r] >> (Math.max(0, 15 - Constants.ADC_MAX)), 0, Constants.NUM_HIST_POINTS - 1);
-            AudioData[r] = (AudioData[r] >> HighBitsShift);// & Mask;
-//                    AudioData[r] = ((AudioData[r] >> (Math.max(0, 15 - Constants.ADC_MAX))) >> (Constants.ADC_MAX - adc_effective_bits)) << (Constants.ADC_MAX - adc_effective_bits);
-//                    AudioData[r] = Constants.MinMax(((AudioData[r] >> (Math.max(0, 15 - Constants.ADC_MAX))) >> (Constants.ADC_MAX - adc_effective_bits)) << (Constants.ADC_MAX - adc_effective_bits), 0, Constants.NUM_HIST_POINTS - 1);
-//                    AudioData[r] = (AudioData[r] >> (16 - adc_effective_bits)) << (16 - adc_effective_bits);
+            if (inversion)
+                AudioData[r] = -AudioData[r];
+            AudioData[r] = (AudioData[r] >> HighBitsShift);
         }
-
-//-----------------LPF started--------------------------------------------------
-         /*
-         float f_cutting = (float) 15000.0;
-         AudioData[0]=(int)(AudioData[BufferSize/2-1]*(SAMPLE_RATE/(SAMPLE_RATE+f_cutting))
-                 +AudioData[0]*(f_cutting/(SAMPLE_RATE+f_cutting)));
-         for (int k=1;k<BufferSize/2;k++)
-         {
-             AudioData[k]=(int)(AudioData[k-1]*(SAMPLE_RATE/(SAMPLE_RATE+f_cutting))+AudioData[k]*(f_cutting/(SAMPLE_RATE+f_cutting)));
-         }
-*/
-        //for (int k=0;k<BufferSize/2;k++) AudioData[k]=((65535-AudioData[k])>>4)<<3;
-        //for (int k=0;k<BufferSize/2;k++) AudioData[k]=(AudioData[k]>>4)<<3;
-
-//-----------------LPF finished-------------------------------------------------
-
 
 //-----------------DPP started--------------------------------------------------
 
         int initial_amp = 0, initial_time = 0;
         float corrector;
-        double energy_pulse;
 
         for (int i = 1; i < AudioBytesRead / 2 - 2; i++) {
             if (((AudioData[i] - AudioData[i - 1]) <= 0) && ((AudioData[i + 1] - AudioData[i]) > 0)) {
@@ -1808,39 +1811,29 @@ public class AtomSpectraService extends Service {
             }
             if (((AudioData[i] - AudioData[i - 1]) >= 0) && ((AudioData[i + 1] - AudioData[i]) < 0)) {
                 if (((i - initial_time) >= frontCountsMin) && ((i - initial_time) <= frontCountsMax)) {
-
-                    //if (((initial_time-(i-initial_time))>=0)&&(initial_time>=0))
                     if (i > frontCountsMax * 2)
                         corrector = AudioData[initial_time - (i - initial_time)] - AudioData[initial_time];
                     else corrector = 0;
                     if (!pileup) corrector = 0;
-                    int amp = (AudioData[i] - initial_amp + (int) corrector);//>>4;
-//                            amp = Constants.MinMax(amp >> Math.max(0, 15 - Constants.ADC_MAX), 0, Constants.NUM_HIST_POINTS - 1);
-                    if ((amp >= histogramMinChannel) && (amp < Constants.NUM_HIST_POINTS)) {
-
-//                                int amp = ((AudioData[i] - initial_amp + (int) corrector));
-
-//                                if ((amp >= 0) && (amp < Constants.NUM_HIST_POINTS)) {
-                        energy_pulse = getEnergyPulse(ForegroundSpectrum.getSpectrumCalibration().toEnergy(amp));
-//                            if (!freeze_update_data) {
-                            if (ForegroundSpectrum.incSpectrumValue(amp))
-                                ForegroundSpectrum.updateComments();
-                            total_pulses++;
-//                            }
+                    int channel = (AudioData[i] - initial_amp + (int) corrector);
+                    if ((channel >= histogramMinChannel) && (channel < Constants.NUM_HIST_POINTS)) {
+                        if (ForegroundSpectrum.incSpectrumValue(channel))
+                            ForegroundSpectrum.updateComments();
+                        total_counts++;
 
 //-----------------DPP finished-------------------------------------------------
 
-                        total_pulses_cps++;
-                        if ((amp >= leftChannelInterval) && (amp <= rightChannelInterval))
-                            total_pulses_cps_interval++;
-                        total_energy_cps += energy_pulse;
-//                                }
+                        counts_from_audio++;
+                        if ((channel >= leftChannelInterval) && (channel <= rightChannelInterval)) {
+                            interval_counts_from_audio++;
+                        }
+                        int energy_bin_index = getEnergyBinIndex(ForegroundSpectrum.getSpectrumCalibration().toEnergy(channel));
+                        binned_counts_from_audio[energy_bin_index] += 1;
 
                         if ((i > 128) && (i < (1024 - 128)) && (i < ((AudioBytesRead - 128) / 2)))
                             for (int j = -128; j < 128; j++)
                                 referencePulse[j + 128] += AudioData[i + j];
                     }
-
                 }
             }
         }
@@ -1851,12 +1844,12 @@ public class AtomSpectraService extends Service {
         if ((audioCaptureOldTimer + Constants.UPDATE_PERIOD) < audioCaptureTimer) {
             audioCaptureOldTimer += Constants.UPDATE_PERIOD;
             cpsPos = cpsPos < (1000 / Constants.UPDATE_PERIOD - 1) ? (cpsPos + 1) : 0;
-            cpsArray[cpsPos] = total_pulses_cps;
-            cpsArrayInterval[cpsPos] = total_pulses_cps_interval;
-            cpsArrayEnergy[cpsPos] = total_energy_cps;
-            total_pulses_cps = 0;
-            total_pulses_cps_interval = 0;
-            total_energy_cps = 0.0;
+            cpsArray[cpsPos] = counts_from_audio;
+            cpsArrayInterval[cpsPos] = interval_counts_from_audio;
+            System.arraycopy(binned_counts_from_audio, 0, cpsArrayEnergyBins[cpsPos], 0, EnergyBins.length);
+            counts_from_audio = 0;
+            interval_counts_from_audio = 0;
+            Arrays.fill(binned_counts_from_audio, 0);
         }
     };
 
@@ -1905,8 +1898,27 @@ public class AtomSpectraService extends Service {
     private final void sendDataToUI() {
         final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
         Bundle mBundle = new Bundle();
-        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, doseRateValue);
-        mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_pulses);
+
+        double dose_rate = -1;
+        double dose_rate_error = -1;
+        switch (AtomSpectra.DisplayDose) {
+            case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+                dose_rate = doseRateValue.nonCompensated;
+                dose_rate_error = doseRateValue.nonCompensatedError;
+                break;
+            case Constants.DISPLAY_DOSE_COMPENSATED:
+                dose_rate = doseRateValue.compensated;
+                dose_rate_error = doseRateValue.compensatedError;
+                break;
+            case Constants.DISPLAY_DOSE_INTERVAL:
+                dose_rate = doseRateValue.intervalCps;
+                dose_rate_error = doseRateValue.intervalCpsError;
+                break;
+        }
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, dose_rate);
+        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH_ERROR, dose_rate_error);
+
+        mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_counts);
         mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
         mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
         mBundle.putDouble(EXTRA_DATA_TOTAL_TIME, ForegroundSpectrum.getRealSpectrumTime());
@@ -2214,25 +2226,31 @@ public class AtomSpectraService extends Service {
 
             case Constants.SCALE_DOSE_MODE:
                 double[] histData = new double[SEARCH_WINDOW_SIZE];
-                int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - doseHistory.size(), 0);
-                if (isCalibrated)
-                    synchronized (doseHistory) {
-                        for (double v : doseEnergyHistory) {
-                            if (num_data >= SEARCH_WINDOW_SIZE)
-                                break;
-                            histData[num_data] = v / Constants.DOSE_SCALE;
-                            num_data++;
-                        }
+                LinkedList<Double> history;
+                switch (AtomSpectra.DisplayDose) {
+                    case Constants.DISPLAY_DOSE_COMPENSATED:
+                        history = doseCompensatedHistory;
+                        break;
+                    case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+                        history = doseHistory;
+                        break;
+                    case Constants.DISPLAY_DOSE_INTERVAL:
+                        history = doseIntervalHistory;
+                        break;
+                    default:
+                        history = new LinkedList<>();
+                        break;
+                }
+                int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - history.size(), 0);
+                synchronized (doseHistory) {
+                    for (double v : history) {
+                        if (num_data >= SEARCH_WINDOW_SIZE)
+                            break;
+                        histData[num_data] = v / Constants.DOSE_SCALE;
+                        num_data++;
                     }
-                else
-                    synchronized (doseHistory) {
-                        for (double v : doseHistory) {
-                            if (num_data >= SEARCH_WINDOW_SIZE)
-                                break;
-                            histData[num_data] = v / Constants.DOSE_SCALE;
-                            num_data++;
-                        }
-                    }
+                }
+
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histData);
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, new double[1024]);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
@@ -2302,22 +2320,40 @@ public class AtomSpectraService extends Service {
     }
 
     // used for audio source only
-    // should be called for each UPDATE_PERIOD
-    private static void calcCpsAndDoseRateForAudioSource() {
-        int int_cps = 0;
-        int int_cps_interval = 0;
-        for (int i = 0; i < (1000 / Constants.UPDATE_PERIOD); i++) {
-            int_cps += cpsArray[i];
-            int_cps_interval += cpsArrayInterval[i];
+    // elapsed time in ms since last method call, expected value from 100 to 1000 ms
+    private void calcCpsAndDoseRateForAudioSource(int elapsed_time) {
+        int last_second_cps = 0;
+        int last_second_interval_cps = 0;
+        for (int i = 0; i < cpsArray.length; i++) {
+            last_second_cps += cpsArray[i];
+            last_second_interval_cps += cpsArrayInterval[i];
         }
-        cps = int_cps;
-        cpsInterval = int_cps_interval;
+        cps = last_second_cps;
+        cpsInterval = last_second_interval_cps;
+
+        int elapsed_periods = elapsed_time / Constants.UPDATE_PERIOD;
+        int counts = 0;
+        int interval_counts = 0;
+        int[] binned_counts = new int[EnergyBins.length];
+        int periodCpsPos = cpsPos;
+        while (elapsed_periods > 0) {
+            counts += cpsArray[periodCpsPos];
+            interval_counts += cpsArrayInterval[periodCpsPos];
+            for (int bin = 0; bin < EnergyBins.length; bin++) {
+                binned_counts[bin] += cpsArrayEnergyBins[periodCpsPos][bin];
+            }
+            periodCpsPos--;
+            if (periodCpsPos < 0) {
+                periodCpsPos = cpsArray.length - 1;
+            }
+
+            elapsed_periods--;
+        }
         doseRateValue = doseRateSearch(
-                cpsArray[cpsPos],
-                cpsArrayInterval[cpsPos],
-                cpsArrayEnergy[cpsPos],
-                (double) Constants.UPDATE_PERIOD / 1000.0,
-                AtomSpectra.XCalibrated);
+                counts,
+                interval_counts,
+                binned_counts,
+                (double) elapsed_time / 1000.0);
     }
 
     // audio data capture/send timers
@@ -2339,20 +2375,21 @@ public class AtomSpectraService extends Service {
         }
 
         ForegroundSpectrum.setSpectrumTime(ForegroundSpectrum.getSpectrumTime() + 1);
+        dataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
+        if (dataFromAudioSourceElapsedTime >= dataFromAudioSourceUpdatePeriod) { // from 0.1 to 1 sec (based on user settings)
+            calcCpsAndDoseRateForAudioSource(dataFromAudioSourceElapsedTime);
+            sendDataToUI();
+
+            dataFromAudioSourceElapsedTime = 0;
+        }
+
         eachSecondDataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
         if (eachSecondDataFromAudioSourceElapsedTime >= 1000) { // each second
             calcAndSendFoundIsotopesData();
             calcSpectrumChangeData();
+            sendDataToAtomSwift(cps, doseRateValue);
 
             eachSecondDataFromAudioSourceElapsedTime = 0;
-        }
-
-        dataFromAudioSourceElapsedTime += Constants.UPDATE_PERIOD;
-        if (dataFromAudioSourceElapsedTime >= dataFromAudioSourceUpdatePeriod) { // from 0.1 to 1 sec
-            calcCpsAndDoseRateForAudioSource();
-            sendDataToUI();
-
-            dataFromAudioSourceElapsedTime = 0;
         }
     }
 
@@ -2542,11 +2579,11 @@ public class AtomSpectraService extends Service {
                     cpsCurrentLevel = 0;
                     double soundTime = 0;
                     double cpsTime = 0;
-                    synchronized (window) {
-                        if (!window.isEmpty()) {
-                            for (int i = window.size() - 1; i >= 0; i--) {
-                                soundTime += deltaTime.get(i);
-                                cpsTime += window.get(i);
+                    synchronized (windowIntervalCounts) {
+                        if (!windowIntervalCounts.isEmpty()) {
+                            for (int i = windowIntervalCounts.size() - 1; i >= 0; i--) {
+                                soundTime += windowDeltaTime.get(i);
+                                cpsTime += windowIntervalCounts.get(i);
                                 if (soundTime >= minMeanSoundTime)
                                     break;
                             }
@@ -2561,12 +2598,12 @@ public class AtomSpectraService extends Service {
                 if (soundPeriodNum >= soundPeriodCount) {
                     soundPeriodNum = 0;
                     double boost = 0.0;
-                    synchronized (window) {
-                        int sizeDose = window.size();
+                    synchronized (windowIntervalCounts) {
+                        int sizeDose = windowIntervalCounts.size();
                         if (sizeDose > 2) {
-                            if (window.get(sizeDose - 1) > 1.05 * window.get(sizeDose - 2) && window.get(sizeDose - 2) > 1.05 * window.get(sizeDose - 3))
+                            if (windowIntervalCounts.get(sizeDose - 1) > 1.05 * windowIntervalCounts.get(sizeDose - 2) && windowIntervalCounts.get(sizeDose - 2) > 1.05 * windowIntervalCounts.get(sizeDose - 3))
                                 boost = 0.5;
-                            if (1.05 * window.get(sizeDose - 1) < window.get(sizeDose - 2) && 1.05 * window.get(sizeDose - 2) < window.get(sizeDose - 3))
+                            if (1.05 * windowIntervalCounts.get(sizeDose - 1) < windowIntervalCounts.get(sizeDose - 2) && 1.05 * windowIntervalCounts.get(sizeDose - 2) < windowIntervalCounts.get(sizeDose - 3))
                                 boost = 0.5;
                         }
                     }
@@ -2766,7 +2803,113 @@ public class AtomSpectraService extends Service {
         }
     }
 
+    // sends intent with dose/count rate etc. to AtomSwift app
+    // expected to be called each second
+    // dose rates expected to be uSv/h
+    private void sendDataToAtomSwift(int cps, DoseRate doseRate) {
+        if (!sendDataToAtomSwiftAppEnabled || freeze_update_data) {
+            atomSwiftHasIntermediateData = false;
+            atomSwiftIntermediateCps = 0;
+            return;
+        }
+
+        if (!atomSwiftHasIntermediateData) {
+            atomSwiftIntermediateCps = cps;
+            atomSwiftHasIntermediateData = true;
+            return;
+        }
+
+        int cp2s = atomSwiftIntermediateCps + cps;
+        double dr = 0;
+        double dr_error = 0;
+        switch (atomSwiftDRType) {
+            case Constants.ATOMSWIFT_DR_COMPENSATED:
+                dr = doseRate.compensated;
+                dr_error = doseRate.compensatedError;
+                break;
+            case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
+                dr = doseRate.nonCompensated;
+                dr_error = doseRate.nonCompensatedError;
+                break;
+            case Constants.ATOMSWIFT_DR_INTERVAL:
+                dr = doseRate.intervalCps;
+                dr_error = doseRate.intervalCpsError;
+                break;
+        }
+
+        String searchMode = "";
+        switch (SearchFSM) {
+            case 0:
+                searchMode = "F";
+                break;
+            case 1:
+                searchMode = "M";
+                break;
+            case 2:
+                searchMode = "S";
+                break;
+        }
+
+        String inputTypeStr = "";
+        switch (inputType) {
+            case INPUT_AUDIO:
+                inputTypeStr = "MIC";
+                break;
+            case INPUT_SERIAL:
+                searchMode = "USB";
+                break;
+            default:
+                searchMode = "NONE";
+        }
+
+        atomSwiftHasIntermediateData = false;
+        atomSwiftIntermediateCps = 0;
+
+        Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
+        dataIntent.setPackage("com.youratom.scid");
+        dataIntent.putExtra("CP2S", cp2s); // double (imp/2s)
+        dataIntent.putExtra("DR", dr); // double (uSv/h)
+        dataIntent.putExtra("DR_ERROR", dr_error); // double (%), 1 sigma
+        dataIntent.putExtra("SEARCH_MODE", searchMode); // String (F/M/S)
+        dataIntent.putExtra("INPUT_TYPE", inputTypeStr); // String (USB/MIC/NONE)
+        getApplicationContext().sendBroadcast(dataIntent);
+
+        // debug toast
+//        showToastInMainLooper(
+//                "cp2s: " + cp2s
+//                + "; dr: " + dr + " (+-" + dr_error + "%)"
+//                + "; search: " + searchMode + ";",
+//                Toast.LENGTH_SHORT);
+    }
+
     private void showToastInMainLooper(String text, int duration) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+    }
+
+    private static class DoseRate {
+        public final double compensated; // uSv/h
+        public final double compensatedError; // one sigma %
+        public final double nonCompensated; // uSv/h
+        public final double nonCompensatedError; // one sigma %
+        public final double intervalCps; // cps
+        public final double intervalCpsError; // one sigma %
+
+        private DoseRate() {
+            this.compensated = 0;
+            this.compensatedError = 0;
+            this.nonCompensated = 0;
+            this.nonCompensatedError = 0;
+            this.intervalCps = 0;
+            this.intervalCpsError = 0;
+        }
+
+        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError, double intervalCps, double intervalCpsError) {
+            this.compensated = compensated;
+            this.compensatedError = compensatedError;
+            this.nonCompensated = nonCompensated;
+            this.nonCompensatedError = nonCompensatedError;
+            this.intervalCps = intervalCps;
+            this.intervalCpsError = intervalCpsError;
+        }
     }
 }
