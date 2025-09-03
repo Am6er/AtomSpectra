@@ -1160,6 +1160,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							AtomSpectraService.restoreScaleFactor();
 							num_scale_factor = AtomSpectraService.getScaleFactor();
 						}
+						// Toast.makeText(context, "show calibration", Toast.LENGTH_SHORT).show();
 						mAtomSpectraShapeView.showShape(
 								histogram,
 								hist_back,
@@ -1180,8 +1181,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
 								sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
 					} else {
-						if (XCalibrated)
-							if (num_scale_factor <= Constants.SCALE_MAX) {
+						if (num_scale_factor <= Constants.SCALE_MAX) {
+							// spectrum view
+							if (XCalibrated) {
+								// Toast.makeText(context, "spectrum kev", Toast.LENGTH_SHORT).show();
 								mAtomSpectraShapeView.showShape(
 										histogram,
 										hist_back,
@@ -1202,59 +1205,42 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 										sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
 										sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
 							} else {
+								// Toast.makeText(context, "spectrum ch", Toast.LENGTH_SHORT).show();
 								mAtomSpectraShapeView.showShape(
 										histogram,
 										hist_back,
+										show_back,
+										background_subtract,
 										false,
-										false,
-										false,
-										AtomSpectraService.SEARCH_WINDOW_SIZE,
-										AtomSpectraService.SEARCH_WINDOW_SIZE,
-										false,
+										1024,
+										reducedTo,
+										logScale,
 										barMode,
-										0,
-										AtomSpectraService.SEARCH_WINDOW_SIZE,
-										getString(R.string.graph_show_points),
+										num_first_channel,
+										num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)),
+										getString(R.string.graph_show_channel),
 										zoom_factor,
 										num_scale_factor,
 										false,
-										-1,
+										(float) cursor_x,
 										sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
 										sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
 							}
-						else if (num_scale_factor <= Constants.SCALE_MAX) {
-							mAtomSpectraShapeView.showShape(
-									histogram,
-									hist_back,
-									show_back,
-									background_subtract,
-									false,
-									1024,
-									reducedTo,
-									logScale,
-									barMode,
-									num_first_channel,
-									num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)),
-									getString(R.string.graph_show_channel),
-									zoom_factor,
-									num_scale_factor,
-									false,
-									(float) cursor_x,
-									sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-									sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
-						} else {
+						} else if (num_scale_factor == Constants.SCALE_DOSE_MODE) {
+							// search view
+							// Toast.makeText(context, "search mode", Toast.LENGTH_SHORT).show();
 							mAtomSpectraShapeView.showShape(
 									histogram,
 									hist_back,
 									false,
 									false,
 									false,
-									1024,
-									reducedTo,
+									AtomSpectraService.SEARCH_WINDOW_SIZE,
+									AtomSpectraService.SEARCH_WINDOW_SIZE,
 									false,
 									barMode,
 									0,
-									1024,
+									AtomSpectraService.SEARCH_WINDOW_SIZE,
 									getString(R.string.graph_show_points),
 									zoom_factor,
 									num_scale_factor,
