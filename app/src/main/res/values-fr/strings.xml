@@ -163,6 +163,7 @@
     <string name="delta_spectrum_format">Diff. de temps: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Compression de canal: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">temps: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="delta_time_format">temps: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
     <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
@@ -178,6 +179,7 @@
     <string name="cursor_format">Le curseur:\ncanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spectre: <xliff:g id="type">%1$s</xliff:g></string>
@@ -443,7 +445,7 @@
         \t- Vous pouvez effacer les données du fond dans le programme.\n
         \t- Pour voir le spectre «\u202ftel quel\u202f», veuillez régler ANC au maximum et afficher comme 1024 canaux. D\'autres valeurs rendront le spectre et le fond lisses.\n
         \t- Vous pouvez lisser les spectres ou les rétablir en utilisant «\u202f<annotation foreground="parameter">Lisse</annotation>\u202f» dans un sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f».\n
-        \t- Vous pouvez indiquer la différence entre deux états du spectre à des moments différents en utilisant «\u202f<annotation foreground="parameter">Changement de spectre</annotation>\u202f» dans un sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f». Le temps de différence peut être choisi dans une plage de 1 à 10 secondes avec «\u202f<annotation foreground="parameter">Diff. de temps</annotation>\u202f» sous «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f».\n
+        \t- Vous pouvez afficher l\'évolution de l\'état du spectre en mode fenêtre temporelle glissante via «\u202f<annotation foreground="parameter">Changement de spectre</annotation>\u202f» dans le sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f». La taille de la fenêtre glissante peut être sélectionnée entre 1 et 300 s dans le paramètre «\u202f<annotation foreground="parameter">Diff. de temps</annotation>\u202f» des «\u202f<annotation foreground="parameter">Paramètres</annotation>\u202f». Dans ce mode, deux spectres avec des durées de fenêtre glissante différentes sont affichés: n secondes et 4n secondes (par exemple, 30/120). Dans ce mode, la couleur du spectre à fenêtre courte (n secondes) est violette et celle du spectre à fenêtre longue (4n secondes) est verte. Les lignes indiquant la durée totale d\'acquisition et le taux de comptage du spectre principal sont remplacées par l\'affichage des tailles et des taux de comptage au sein de ces fenêtres (courte/longue).\n
         \t- Vous pouvez modifier et voir les descriptions du spectre et de l\'arrière-plan pendant la sortie du curseur. Ces descriptions sont utilisées comme suffixe lors de la sauvegarde. Pour les modifier, utilisez «\u202f<annotation foreground="parameter">Entrez la description</annotation>\u202f» dans un sous-menu «\u202f<annotation foreground="parameter">Spectre</annotation>\u202f» ou «\u202f<annotation foreground="parameter">Fond</annotation>\u202f».\n
         \n
     </string>

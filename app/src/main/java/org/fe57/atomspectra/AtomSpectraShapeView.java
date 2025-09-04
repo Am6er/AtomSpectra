@@ -75,6 +75,7 @@ public class AtomSpectraShapeView extends View {
 	private static final double[] logLines = {StrictMath.log10(2), StrictMath.log10(3), StrictMath.log10(4),
 			StrictMath.log10(5), StrictMath.log10(6), StrictMath.log10(7), StrictMath.log10(8), StrictMath.log10(9)};
 
+	public static final int DELTA_COLOR = 0xFFFF00FF;
 
 	public AtomSpectraShapeView(Context context) {
 		super(context);
@@ -367,7 +368,6 @@ public class AtomSpectraShapeView extends View {
 				canvas.drawText(String.format(Locale.getDefault(), "%d%s", (int) ((x_max_value - x_min_value) * i / nx + x_min_value), (i < nx) ? "" : (measureUnits)), margin_left + i * dwx + (i == nx ? margin_right : 0), viewHeight - ht_px / 4, textColor);
 			}
 
-			//squareColor.setColor(Color.YELLOW);
 			if (!no_y_mode && !dose_mode && !calibrationScale) { //draw isotope lines on main window
 				float x_pos;
 				for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
@@ -412,12 +412,20 @@ public class AtomSpectraShapeView extends View {
 					for (int i = 2; i < N; i++)
 						if (X[i - 1] >= margin_left)
 							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-				} else if (AtomSpectraService.showDelta) {
-					squareColor.setColor(Color.YELLOW);
+				} else if (AtomSpectraService.showDelta && !dose_mode) {
+					squareColor.setColor(DELTA_COLOR);
 					for (int i = 2; i < N; i++)
 						if (X[i - 1] >= margin_left)
 							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-				}else if (background_delta && background_show) {
+
+					// TODO: duplicated code
+					if (background_show) {
+						squareColor.setColor(Color.GREEN);
+						for (int i = 2; i < N; i++)
+							if (X[i - 1] >= margin_left)
+								canvas.drawLine(X[i - 1], back_Y[i - 1], X[i], back_Y[i], squareColor);
+					}
+				} else if (background_delta && background_show) {
 					squareColor.setColor(Color.CYAN);
 					for (int i = 2; i < N; i++)
 						if (X[i - 1] >= margin_left)
@@ -437,7 +445,7 @@ public class AtomSpectraShapeView extends View {
 			} else {
 				if (calibrationScale) {
 					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;//Color.YELLOW;
+					int colorFrom = 0;
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 						colorFrom = getResources().getColor(R.color.colorGradientMainFrom, null);
 					} else {
@@ -456,10 +464,10 @@ public class AtomSpectraShapeView extends View {
 							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
 						}
 					squareColor.setShader(null);
-				} else if (AtomSpectraService.showDelta) {
+				} else if (AtomSpectraService.showDelta && !dose_mode) {
 					squareColor.setStyle(Style.FILL);
-					int colorFrom = Color.YELLOW;
-					int colorTo = Color.YELLOW;
+					int colorFrom = DELTA_COLOR;
+					int colorTo = DELTA_COLOR;
 					LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
 					squareColor.setShader(linearGradientShader);
 					for (int i = 2; i < N; i++)
@@ -467,9 +475,31 @@ public class AtomSpectraShapeView extends View {
 							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
 						}
 					squareColor.setShader(null);
-				}else if (background_delta && background_show) {
+
+					// TODO: duplicated code
+					if (background_show) {
+						squareColor.setStyle(Style.FILL);
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+							colorFrom = getResources().getColor(R.color.colorGradientBackFrom, null);
+						} else {
+							colorFrom = getResources().getColor(R.color.colorGradientBackFrom);
+						}
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+							colorTo = getResources().getColor(R.color.colorGradientBackTo, null);
+						} else {
+							colorTo = getResources().getColor(R.color.colorGradientBackTo);
+						}
+						linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
+						squareColor.setShader(linearGradientShader);
+						for (int i = 2; i < N; i++)
+							if (X[i - 1] >= margin_left) {
+								canvas.drawRect(X[i], back_Y[i - 1], X[i - 1], margin_top + height, squareColor);
+							}
+						squareColor.setShader(null);
+					}
+				} else if (background_delta && background_show) {
 					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;//Color.YELLOW;
+					int colorFrom = 0;
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 						colorFrom = getResources().getColor(R.color.colorGradientDeltaFrom, null);
 					} else {
@@ -490,7 +520,7 @@ public class AtomSpectraShapeView extends View {
 					squareColor.setShader(null);
 				} else {
 					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;//Color.YELLOW;
+					int colorFrom = 0;
 					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
 						colorFrom = getResources().getColor(R.color.colorGradientMainFrom, null);
 					} else {
@@ -512,7 +542,7 @@ public class AtomSpectraShapeView extends View {
 					if (background_show) {
 						squareColor.setStyle(Style.FILL);
 						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-							colorFrom = getResources().getColor(R.color.colorGradientBackFrom, null);//Color.YELLOW;
+							colorFrom = getResources().getColor(R.color.colorGradientBackFrom, null);
 						} else {
 							colorFrom = getResources().getColor(R.color.colorGradientBackFrom);
 						}
@@ -557,7 +587,6 @@ public class AtomSpectraShapeView extends View {
 				float x_pos;
 				String isotopeLabel;
 				textColor.setTextAlign(Align.LEFT);
-				//textColor.setColor(Color.YELLOW);
 				for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
 					if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
 						if (isCalibrated) {
@@ -736,7 +765,7 @@ public class AtomSpectraShapeView extends View {
 				for (int i = 0; i < N; i++) {
 					squareColor.setColor(Color.RED);
 					if ((i > 127) && (i <= 127 + frontCountsMin)) {
-						squareColor.setColor(Color.YELLOW);
+						squareColor.setColor(DELTA_COLOR);
 						canvas.drawCircle(X[i], Y[i], (float)width / 100, squareColor);
 					}
 					if ((i > 127 + frontCountsMin) && (i <= 127 + frontCountsMax)) {
@@ -753,7 +782,7 @@ public class AtomSpectraShapeView extends View {
 			double[] y, // array to draw
 			double[] back,  //background drawing
 			boolean show_back, //show background
-			boolean show_delta, //subtract background from main hist
+			boolean subtract_back, //subtract background from main hist
 			boolean calibrated, //if show energies
 			int size, // size of the array to draw
 			int xSize, // number of abscissa point to be drawn
@@ -777,7 +806,7 @@ public class AtomSpectraShapeView extends View {
 		logScale = logarithmic;
 		barMode = bar_mode;
 		background_show = show_back;
-		background_delta = show_delta;
+		background_delta = subtract_back;
 		isCalibrated = calibrated;
 		frontCountsMin = front_min;
 		frontCountsMax = front_max;
@@ -790,7 +819,7 @@ public class AtomSpectraShapeView extends View {
 			System.arraycopy(y, 0, yf, 0, size);
 		}
 		if (show_back) {
-			if (show_delta) {   //remove background from main hist
+			if (subtract_back) {   //remove background from main hist
 				for (int i = 0; i < size; i++) {
 					back_yf[i] = 0.0;
 					yf[i] = Math.max(0.0, yf[i] - back[i]);
