@@ -1209,7 +1209,7 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Intent.ACTION_BATTERY_LOW.equals(action) && AtomSpectraService.ForegroundSpectrum.isChanged()) {
-                saveHist();
+                saveCurrentSpectrum("battery_low");
             }
             if (Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY.equals(action)) {
                 checkGPS();
@@ -2862,12 +2862,12 @@ public class AtomSpectraService extends Service {
         return result;
     }
 
-    private void saveHist() {
+    private void saveCurrentSpectrum(String suffix) {
         SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
         boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
         boolean fileNameDate = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
         boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
-        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, "battery_low", ".txt", "text/plain", fileNameDate, fileNameTime, false);
+        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
         if (returnPair == null) {
             showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
             return;
@@ -3064,7 +3064,7 @@ public class AtomSpectraService extends Service {
             recordingSuspendInputType = INPUT_AUDIO;
 
             stopCapturingAudioSource();
-            notifyRecordingSuspended();
+            saveSpectrumAndNotifyRecordingSuspended();
         }
     }
 
@@ -3080,7 +3080,7 @@ public class AtomSpectraService extends Service {
             recordingSuspendReason = RECORDING_SUSPEND_REASON_USB_DISCONNECT;
             recordingSuspendInputType = INPUT_SERIAL;
 
-            notifyRecordingSuspended();
+            saveSpectrumAndNotifyRecordingSuspended();
         }
     }
 
@@ -3089,11 +3089,11 @@ public class AtomSpectraService extends Service {
         notifyRecordingResumed();
     }
 
-    private void notifyRecordingSuspended() {
+    private void saveSpectrumAndNotifyRecordingSuspended() {
+        saveCurrentSpectrum("recording_suspended");
         recordingSuspendedAt = new Date();
         sendBroadcast(new Intent(ACTION_RECORDING_SUSPENDED).setPackage(Constants.PACKAGE_NAME));
         refreshServiceNotification();
-
         playNotificationSound();
     }
 
