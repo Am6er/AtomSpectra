@@ -344,8 +344,8 @@
     <string name="recording_suspended_dialog_audio_removed">External microphone is disconnected during data reading process, please connect external microphone to resume.</string>
     <string name="recording_suspended_dialog_dismiss">Ignore and stop reading data</string>
     <string name="recording_suspended_notification">Data reading suspended!</string>
-    <string name="recording_suspended_notification_suspended_at">Recording suspended at: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="recording_suspended_notification_resumed_at">Recording resumed at: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_suspended_at">Recording suspended: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Recording resumed: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
     <string name="autosave_start">Delta auto save function is started.</string>

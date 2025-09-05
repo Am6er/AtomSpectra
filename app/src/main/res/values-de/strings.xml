@@ -344,8 +344,8 @@
     <string name="recording_suspended_dialog_audio_removed">Während des Datenlesevorgangs wurde das externe Mikrofon getrennt. Bitte schließen Sie das externe Mikrofon wieder an, um fortzufahren.</string>
     <string name="recording_suspended_dialog_dismiss">Ignorieren und Datenübertragung beenden</string>
     <string name="recording_suspended_notification">Datenlesevorgang unterbrochen!</string>
-    <string name="recording_suspended_notification_suspended_at">Aufnahme wurde gestoppt um: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="recording_suspended_notification_resumed_at">Die Aufnahme wurde fortgesetzt um: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_suspended_at">Aufnahme wurde gestoppt: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Die Aufnahme wurde fortgesetzt: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
     <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>

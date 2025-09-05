@@ -344,8 +344,8 @@
     <string name="recording_suspended_dialog_audio_removed">Le microphone externe a été déconnecté pendant le processus de lecture des données. Veuillez reconnecter le microphone externe pour poursuivre.</string>
     <string name="recording_suspended_dialog_dismiss">Ignorer et arrêter la lecture des données</string>
     <string name="recording_suspended_notification">Lecture des données suspendue!</string>
-    <string name="recording_suspended_notification_suspended_at">Enregistrement suspendu à: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="recording_suspended_notification_resumed_at">L\'enregistrement a repris à: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_suspended_at">Enregistrement suspendu: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">L\'enregistrement a repris: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Recherche d\'isotopes…</string>
     <string name="autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>

@@ -344,8 +344,8 @@
     <string name="recording_suspended_dialog_audio_removed">Внешний микрофон отключен в процессе чтения данных, подключите внешний микрофон для возобновления.</string>
     <string name="recording_suspended_dialog_dismiss">Проигнорировать и остановить чтение данных</string>
     <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
-    <string name="recording_suspended_notification_suspended_at">Чтение приостановлено в: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="recording_suspended_notification_resumed_at">Чтение возобновлено в: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_suspended_at">Чтение приостановлено: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Чтение возобновлено: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>
     <string name="autosave_start">Функция автозаписи дельт включена.</string>
