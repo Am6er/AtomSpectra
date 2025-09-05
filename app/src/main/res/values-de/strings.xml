@@ -163,6 +163,7 @@
     <string name="delta_spectrum_format">Differenzzeit: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Kanalkomprimierung: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">Zeit: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="delta_time_format">Zeit: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
     <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
@@ -178,6 +179,7 @@
     <string name="cursor_format">Cursorposition:\nkanal <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spektrum: <xliff:g id="type">%1$s</xliff:g></string>
@@ -442,7 +444,7 @@
         \t- Sie können Hintergrunddaten im Programm löschen.\n
         \t- Um das Spektrum „wie es ist“ zu sehen, stellen Sie den ADC auf Maximum und zeigen Sie ihn als 1024 Kanäle an. Andere Werte machen das Spektrum und den Hintergrund glatt.\n
         \t- Sie können Spektren glätten oder rückgängig machen, indem Sie „<annotation foreground="parameter">Glatt</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“-Untermenü verwenden.\n
-        \t- Sie können den Unterschied zwischen zwei Spektralzuständen zu unterschiedlichen Zeiten anzeigen, indem Sie „<annotation foreground="parameter">Spektrumänderung</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“-Untermenü verwenden. Die Differenzzeit kann mit „<annotation foreground="parameter">Differenzzeit</annotation>“ unter „<annotation foreground="parameter">Einstellungen</annotation>“ im Bereich von 1 bis 10 Sekunden gewählt werden.\n
+        \t- Sie können die Zustandsänderung des Spektrums im gleitenden Zeitfenstermodus über „<annotation foreground="parameter">Spektrumsänderung</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrum</annotation>“ anzeigen. Die Größe des gleitenden Fensters kann im Bereich von 1 bis 300 s im Parameter „<annotation foreground="parameter">Differenzzeit</annotation>“ in „<annotation foreground="parameter">Einstellungen</annotation>“ ausgewählt werden. In diesem Modus werden zwei Spektren mit unterschiedlichen Gleitfensterdauern angezeigt: n Sekunden und 4n Sekunden (z. B. 30/120). Die Farbe des kurzen Fensterspektrums (n Sekunden) in diesem Modus ist violett und die des langen (4n Sekunden) grün. Die Linien, die die Gesamtaufnahmezeit und Zählrate des Hauptspektrums anzeigen, werden durch eine Anzeige der Fenstergrößen und Zählraten innerhalb dieser Fenster (kurz/lang) ersetzt.\n
         \t- Während der Cursorausgabe können Sie Beschreibungen für Spektrum und Hintergrund bearbeiten und anzeigen. Diese Beschreibungen werden beim Speichern als Suffix verwendet. Um sie zu ändern, verwenden Sie „<annotation foreground="parameter">Beschreibung eingeben</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“- oder „<annotation foreground="parameter">Hintergrund</annotation>“-Untermenü.\n
         \n
     </string>

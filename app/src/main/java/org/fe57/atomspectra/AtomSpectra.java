@@ -16,6 +16,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
+import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
@@ -1099,11 +1100,26 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					double dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH);
 					double dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH_ERROR);
 					double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_TOTAL_TIME);
+					long total_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_COUNTS);
+
+					long delta_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_DELTA_COUNTS);
+					long delta_back_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_DELTA_BACK_COUNTS);
+					int delta_time = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_DELTA_TIME);
+					int delta_back_time = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_DELTA_BACK_TIME);
 
 					switch (show_average_cps) {
 						case SHOW_AVERAGE:
-							cpsView.setText(getString(R.string.cps_average_show, total_time > 1 ? mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_COUNTS) / total_time : 0));
-							doseRateText.setText(getString(R.string.total_time_format, total_time));
+							if (AtomSpectraService.showDelta) {
+								double delta_cps = delta_time > 0 ? delta_counts / (double)delta_time : 0.0;
+								double delta_back_cps = delta_back_time > 0 ? delta_back_counts / (double)delta_back_time : 0.0;
+
+								cpsView.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
+								doseRateText.setText(getString(R.string.delta_time_format, delta_time, delta_back_time));
+							} else {
+								cpsView.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
+								doseRateText.setText(getString(R.string.total_time_format, total_time));
+							}
+
 							break;
 						case SHOW_CPS:
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
@@ -1188,8 +1204,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								mAtomSpectraShapeView.showShape(
 										histogram,
 										hist_back,
-										show_back,
-										background_subtract,
+										show_back || AtomSpectraService.showDelta,
+										background_subtract && !AtomSpectraService.showDelta,
 										true,
 										1024,
 										reducedTo,
@@ -1209,8 +1225,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								mAtomSpectraShapeView.showShape(
 										histogram,
 										hist_back,
-										show_back,
-										background_subtract,
+										show_back || AtomSpectraService.showDelta,
+										background_subtract && !AtomSpectraService.showDelta,
 										false,
 										1024,
 										reducedTo,

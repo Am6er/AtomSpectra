@@ -163,6 +163,7 @@
     <string name="delta_spectrum_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
     <string name="channel_compression_format">Сжатие каналов: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
+    <string name="delta_time_format">время: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> с</string>
     <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> мкЗв/ч ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
@@ -178,6 +179,7 @@
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Спектр: <xliff:g id="type">%1$s</xliff:g></string>
@@ -444,7 +446,7 @@
         \t- Данные фона в программе можно очистить.\n
         \t- Для вывода спектров «как есть», пожалуйста, установите АЦП на максимум и выведите 1024 точек графика. Другие значения будут сглаживать основной спектр и спектр фона.\n
         \t- Можно сгладить спектр командой «<annotation foreground="parameter">Сгладить</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>».\n
-        \t- Можно вывести изменение между двумя состояниями спектра в разное время через «<annotation foreground="parameter">Изменение спектра</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>». Разницу времени можно выбрать в диапазоне от 1 до 10 с в параметре «<annotation foreground="parameter">Дельта-время</annotation>» в «<annotation foreground="parameter">Настройках</annotation>».\n
+        \t- Можно вывести изменение состояния спектра в режиме скользящего временного окна через «<annotation foreground="parameter">Изменение спектра</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>». Размер скользящего окна можно выбрать в диапазоне от 1 до 300 с в параметре «<annotation foreground="parameter">Дельта-время</annotation>» в «<annotation foreground="parameter">Настройках</annotation>». В этом режиме отображается два спектра с разной длительностью скользящего окна: n секунд и 4n секунд (например, 30/120). Цвет спектра короткого окна (n) в этом режиме пурпурный, длинного (4n) - зеленый. Строки отображения общего времени набора и скорости счета основного спектра сменяются на отображение размеров окон и скоростей счета в рамках этих окон (короткое/длинное).\n
         \t- Можно редактировать и смотреть описания для спектра и фона при выводе курсора. Эти описания используются как суффиксы при сохранении. Для их изменения используется «<annotation foreground="parameter">Ввести описание</annotation>» в подменю «<annotation foreground="parameter">Спектр</annotation>» или «<annotation foreground="parameter">Фон</annotation>».\n
         \n
     </string>
