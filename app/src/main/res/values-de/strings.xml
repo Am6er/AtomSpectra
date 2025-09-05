@@ -334,6 +334,16 @@
     <string name="usb_below_minimal_version">Aktualisieren Sie die Gerätefirmware auf 11 <xliff:g id="version">%1$d</xliff:g> oder höher</string>
     <string name="usb_version_read_error">Fehler beim Lesen der Firmware-Version des Geräts</string>
     <string name="usb_version_unknown">Geräte-Firmware-Version unbekannt</string>
+    <string name="usb_attached_while_recording_audio">USB-Gerät wird ignoriert: Datenübertragung vom Mikrofon wird durchgeführt.\nBeenden Sie die Datenübertragung und schließen Sie das USB-Gerät erneut an.</string>
+
+    <string name="recording_suspended_dialog_title">Datenlesevorgang unterbrochen!</string>
+    <string name="recording_suspended_dialog_usb_disconnected">Das USB-Gerät wurde während des Datenlesevorgangs getrennt. Bitte schließen Sie das Gerät wieder an, um fortzufahren.</string>
+    <string name="recording_suspended_dialog_audio_added">Während des Datenlesevorgangs ist ein externes Mikrofon angeschlossen. Bitte trennen Sie das externe Mikrofon, um fortzufahren.</string>
+    <string name="recording_suspended_dialog_audio_removed">Während des Datenlesevorgangs wurde das externe Mikrofon getrennt. Bitte schließen Sie das externe Mikrofon wieder an, um fortzufahren.</string>
+    <string name="recording_suspended_dialog_dismiss">Ignorieren und Datenübertragung beenden</string>
+    <string name="recording_suspended_notification">Datenlesevorgang unterbrochen!</string>
+    <string name="recording_suspended_notification_suspended_at">Aufnahme wurde gestoppt um: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Die Aufnahme wurde fortgesetzt um: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
     <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>

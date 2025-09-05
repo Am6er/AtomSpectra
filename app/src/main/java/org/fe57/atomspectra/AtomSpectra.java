@@ -523,6 +523,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else {
 			registerReceiver(mDataUpdateReceiver, makeAtomSpectraUpdateIntentFilter());
 		}
+
+		if (AtomSpectraService.isStarted && AtomSpectraService.isRecordingSuspended) {
+			showRecordingSuspendedDialog();
+		}
 	}
 
 	@Override
@@ -1042,6 +1046,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private static IntentFilter makeAtomSpectraUpdateIntentFilter() {
 		final IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(AtomSpectraService.ACTION_DATA_AVAILABLE);
+		intentFilter.addAction(AtomSpectraService.ACTION_RECORDING_SUSPENDED);
+		intentFilter.addAction(AtomSpectraService.ACTION_RECORDING_RESUMED);
 		intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
 		intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_APP);
 		intentFilter.addAction(Constants.ACTION.ACTION_AUDIO_CHANGED);
@@ -1086,6 +1092,14 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			final String action = intent.getAction();
+			if (AtomSpectraService.ACTION_RECORDING_SUSPENDED.equals(action)) {
+				showRecordingSuspendedDialog();
+			}
+
+			if (AtomSpectraService.ACTION_RECORDING_RESUMED.equals(action)) {
+				dismissRecordingSuspendedDialog();
+			}
+
 			if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action)) {
 				Bundle mBundle = intent.getExtras();
 				if (mBundle != null) {
@@ -4331,6 +4345,45 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			default:
 				setDisplayDose(Constants.DISPLAY_DOSE_DEFAULT);
 				break;
+		}
+	}
+
+	private AlertDialog recordingSuspendedAlert = null;
+	private void showRecordingSuspendedDialog() {
+		if (recordingSuspendedAlert != null) {
+			dismissRecordingSuspendedDialog();
+		}
+		String message;
+		switch (AtomSpectraService.recordingSuspendReason) {
+			case AtomSpectraService.RECORDING_SUSPEND_REASON_AUDIO_ADDED:
+				message = getString(R.string.recording_suspended_dialog_audio_added);
+				break;
+			case AtomSpectraService.RECORDING_SUSPEND_REASON_AUDIO_REMOVED:
+				message = getString(R.string.recording_suspended_dialog_audio_removed);
+				break;
+			case AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT:
+				message = getString(R.string.recording_suspended_dialog_usb_disconnected);
+				break;
+			default:
+				message = "Unknown reason.";
+				break;
+		}
+		message += "\n" + AtomSpectraService.formatLocalTimeAsISOLikeString(AtomSpectraService.recordingSuspendedAt);
+		final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+				.setTitle(getString(R.string.recording_suspended_dialog_title))
+				.setMessage(message)
+				.setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
+					AtomSpectraService.freeze(true);
+					sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+				})
+				.setCancelable(false);
+		recordingSuspendedAlert = alert.show();
+	}
+
+	private void dismissRecordingSuspendedDialog() {
+		if (recordingSuspendedAlert != null) {
+			recordingSuspendedAlert.dismiss();
+			recordingSuspendedAlert = null;
 		}
 	}
 }

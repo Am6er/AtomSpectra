@@ -334,6 +334,16 @@
     <string name="usb_below_minimal_version">Обновите версию прошивки до <xliff:g id="version">%1$d</xliff:g> или выше</string>
     <string name="usb_version_read_error">Ошибка чтения версии прошивки</string>
     <string name="usb_version_unknown">Неизвестная версия прошивки</string>
+    <string name="usb_attached_while_recording_audio">USB устройство проигнорировано: идет чтение данных с микрофона.\nОстановите чтение данных и переподключите USB устройство.</string>
+
+    <string name="recording_suspended_dialog_title">Чтение данных приостановлено!</string>
+    <string name="recording_suspended_dialog_usb_disconnected">USB устройство отключено в процессе чтения данных, подключите устройство для возобновления.</string>
+    <string name="recording_suspended_dialog_audio_added">Внешний микрофон подключен в процессе чтения данных, отключите внешний микрофон для возобновления.</string>
+    <string name="recording_suspended_dialog_audio_removed">Внешний микрофон отключен в процессе чтения данных, подключите внешний микрофон для возобновления.</string>
+    <string name="recording_suspended_dialog_dismiss">Проигнорировать и остановить чтение данных</string>
+    <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
+    <string name="recording_suspended_notification_suspended_at">Чтение приостановлено в: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Чтение возобновлено в: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>
     <string name="autosave_start">Функция автозаписи дельт включена.</string>

@@ -334,6 +334,16 @@
     <string name="usb_below_minimal_version">Update device firmware to <xliff:g id="version">%1$d</xliff:g> or higher</string>
     <string name="usb_version_read_error">Device firmware version read error</string>
     <string name="usb_version_unknown">Device firmware version in unknown</string>
+    <string name="usb_attached_while_recording_audio">USB device ignored: reading data from microphone.\nStop reading data and reconnect USB device.</string>
+
+    <string name="recording_suspended_dialog_title">Data reading suspended!</string>
+    <string name="recording_suspended_dialog_usb_disconnected">USB device is disconnected while reading data, please connect the device to resume.</string>
+    <string name="recording_suspended_dialog_audio_added">External microphone is connected during data reading process, please disconnect external microphone to resume.</string>
+    <string name="recording_suspended_dialog_audio_removed">External microphone is disconnected during data reading process, please connect external microphone to resume.</string>
+    <string name="recording_suspended_dialog_dismiss">Ignore and stop reading data</string>
+    <string name="recording_suspended_notification">Data reading suspended!</string>
+    <string name="recording_suspended_notification_suspended_at">Recording suspended at: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Recording resumed at: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
     <string name="autosave_start">Delta auto save function is started.</string>

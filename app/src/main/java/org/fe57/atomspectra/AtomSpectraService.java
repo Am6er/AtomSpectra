@@ -15,7 +15,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
-import android.graphics.drawable.Icon;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.media.AudioAttributes;
@@ -26,6 +27,8 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
@@ -40,12 +43,18 @@ import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.PermissionChecker;
+import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.util.Pair;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -91,7 +100,6 @@ public class AtomSpectraService extends Service {
     public static Calibration newCalibration = new Calibration();
     public static Spectrum ForegroundSpectrum = new Spectrum();
     public static Spectrum BackgroundSpectrum = new Spectrum();
-//    private GPSLocator Locator = null;
     private boolean addGPS = false;
 
 
@@ -218,6 +226,11 @@ public class AtomSpectraService extends Service {
     public final static String EXTRA_DATA =
             "org.fe57.atomspectra.EXTRA_DATA";
 
+    public final static String ACTION_RECORDING_SUSPENDED =
+            "org.fe57.atomspectra.ACTION_RECORDING_SUSPENDED";
+    public final static String ACTION_RECORDING_RESUMED =
+            "org.fe57.atomspectra.ACTION_RECORDING_RESUMED";
+
     public final static String EXTRA_DATA_LONG_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_LONG_COUNTS";
     public final static String EXTRA_DATA_INT_CPS =
@@ -253,6 +266,7 @@ public class AtomSpectraService extends Service {
 
     private static final int USB_WAIT_DEVICE = 600;
     private static final Integer data_from_usb_sync = 1;
+
     // RECORDING VARIABLES  
     private static AudioRecord AR = null;
     private static final Integer ARLock = 1;        //Locker for AudioRecord
@@ -291,6 +305,19 @@ public class AtomSpectraService extends Service {
     // TODO: verify it actually requires sync
     private static final Integer inputSync = 1;
 
+    private static final Integer recordingSuspendedSync = 1;
+    public static Date recordingSuspendedAt = null;
+    public static Date recordingResumedAt = null;
+    public static int recordingSuspendInputType = INPUT_NONE;
+    public static final int RECORDING_SUSPEND_REASON_NONE = 0;
+    public static final int RECORDING_SUSPEND_REASON_AUDIO_REMOVED = 1;
+    public static final int RECORDING_SUSPEND_REASON_AUDIO_ADDED = 2;
+    public static final int RECORDING_SUSPEND_REASON_USB_DISCONNECT = 3;
+    public static int recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
+    public static boolean isRecordingSuspended = false;
+    public static HashSet<String> recordingSuspendedWithAudioDevices = new HashSet<>();
+
+
     private SharedPreferences sp;
 
     private final AudioDeviceCallback audioChanged = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? createAudioDeviceCallback() : null;
@@ -299,40 +326,92 @@ public class AtomSpectraService extends Service {
 
     private GPSLocator Locator = null;
 
-//    private static FileOutputStream trace;
-
     @TargetApi(Build.VERSION_CODES.M)
     private AudioDeviceCallback createAudioDeviceCallback() {
+        // simple (based on assumptions) tracking of audio device configuration changes
+        // case 1: working with external audio device, external removed - waiting for reconnect
+        // case 2: working with internal audio device, external added - waiting for external disconnect
+        // note: external deices are sometimes trigger multiple added/removed calls
         return new AudioDeviceCallback() {
-            boolean startExecution = false;
+            final HashSet<String> activeInputDeviceList = new HashSet<>();
             @Override
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+//                String debug_msg = "Added audio devices:";
+//                for (AudioDeviceInfo device : addedDevices) {
+//                    debug_msg += "\n" + device.getProductName().toString() + "|source:" + device.isSource() + "|sink:" + device.isSink();
+//                }
+//                showToastInMainLooper(debug_msg, Toast.LENGTH_LONG);
+
                 super.onAudioDevicesAdded(addedDevices);
-                if (startExecution) {
-                    onAudioChanged();
-                } else {
-                    startExecution = true;
+                HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
+                for (AudioDeviceInfo addedDevice : addedDevices) {
+                    if (addedDevice.isSource()) {
+                        activeInputDeviceList.add(addedDevice.getProductName().toString());
+                    }
+                }
+                if (prevState.equals(activeInputDeviceList)) {
+                    return;
+                }
+
+                if (!freeze_update_data && inputType == INPUT_AUDIO) {
+                    synchronized (recordingSuspendedSync) {
+                        if (isRecordingSuspended) {
+                            if (recordingSuspendInputType != INPUT_AUDIO) {
+                                return;
+                            }
+
+                            if (recordingSuspendReason == RECORDING_SUSPEND_REASON_AUDIO_REMOVED) {
+                                if (activeInputDeviceList.equals(recordingSuspendedWithAudioDevices)) {
+                                    restoreAudioRecording();
+                                }
+                            }
+                        } else {
+                            recordingSuspendedWithAudioDevices = new HashSet<>(prevState);
+                            suspendAudioRecording(RECORDING_SUSPEND_REASON_AUDIO_ADDED);
+                        }
+                    }
                 }
             }
 
             @Override
             public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+//                String debug_msg = "Removed audio devices:";
+//                for (AudioDeviceInfo device : removedDevices) {
+//                    debug_msg += "\n" + device.getProductName().toString() + "|source:" + device.isSource() + "|sink:" + device.isSink();
+//                }
+//                showToastInMainLooper(debug_msg, Toast.LENGTH_LONG);
+
                 super.onAudioDevicesRemoved(removedDevices);
-                if (startExecution) {
-                    onAudioChanged();
-                } else {
-                    startExecution = true;
+                HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
+                for (AudioDeviceInfo removedDevice : removedDevices) {
+                    if (removedDevice.isSource()) {
+                        activeInputDeviceList.remove(removedDevice.getProductName().toString());
+                    }
+                }
+                if (prevState.equals(activeInputDeviceList)) {
+                    return;
+                }
+
+                if (!freeze_update_data && inputType == INPUT_AUDIO) {
+                    synchronized (recordingSuspendedSync) {
+                        if (isRecordingSuspended) {
+                            if (recordingSuspendInputType != INPUT_AUDIO) {
+                                return;
+                            }
+
+                            if (recordingSuspendReason == RECORDING_SUSPEND_REASON_AUDIO_ADDED) {
+                                if (activeInputDeviceList.equals(recordingSuspendedWithAudioDevices)) {
+                                    restoreAudioRecording();
+                                }
+                            }
+                        } else {
+                            recordingSuspendedWithAudioDevices = new HashSet<>(prevState);
+                            suspendAudioRecording(RECORDING_SUSPEND_REASON_AUDIO_REMOVED);
+                        }
+                    }
                 }
             }
         };
-    }
-
-    private void onAudioChanged() {
-        if (inputType == INPUT_AUDIO && !freeze_update_data) {
-            this.setFreeze(true);
-            this.showToastInMainLooper(getString(R.string.hist_stop_record), Toast.LENGTH_LONG);
-            context.sendBroadcast(new Intent(Constants.ACTION.ACTION_AUDIO_CHANGED).setPackage(Constants.PACKAGE_NAME));
-        }
     }
 
     public void onCreate() {
@@ -346,30 +425,29 @@ public class AtomSpectraService extends Service {
         super.onDestroy();
         Stop();
         DeleteSpc();
-        context = null;
+        service_context = null;
         BackgroundSpectrum.initSpectrumData();
         background_show = false;
         freeze_update_data = true;
         sp.unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
         isStarted = false;
-//        Locator.stopUsingGPS();
-//        Locator = null;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // service_context must be defined here, method is called after Start()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
-                    getString(R.string.app_channel),
+                    getContextStringOrDefault(R.string.app_channel),
                     NotificationManager.IMPORTANCE_LOW
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null)
                 manager.createNotificationChannel(serviceChannel);
         }
+        refreshServiceNotification();
         Notification notification = createNewServiceNotification();
-        NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             startForeground(FOREGROUND_PROCESS_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE|ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
         } else {
@@ -416,48 +494,56 @@ public class AtomSpectraService extends Service {
 
     private Notification createNewServiceNotification() {
         String notifyString = "";
-        if (!freeze_update_data) {
+        if (isRecordingSuspended) {
+            notifyString = getContextStringOrDefault(R.string.recording_suspended_notification).toUpperCase();
+        } else if (!freeze_update_data) {
             if (inputType == INPUT_AUDIO) {
-                notifyString = getString(R.string.app_bar_audio_action);
+                notifyString = getContextStringOrDefault(R.string.app_bar_audio_action);
             }
             if (inputType == INPUT_SERIAL) {
-                notifyString = getString(R.string.app_bar_usb_action);
+                notifyString = getContextStringOrDefault(R.string.app_bar_usb_action);
             }
-            notifyString += " " + getString(R.string.app_bar_spectrum_update);
+            notifyString += " " + getContextStringOrDefault(R.string.app_bar_spectrum_update);
         } else {
-            notifyString = getString(R.string.app_bar_pause);
+            notifyString = getContextStringOrDefault(R.string.app_bar_pause);
         }
+
+        if (recordingSuspendedAt != null) {
+            notifyString += "\n" + getContextStringOrDefault(R.string.recording_suspended_notification_suspended_at, formatLocalTimeAsISOLikeString(recordingSuspendedAt));
+
+            if (recordingResumedAt != null && recordingResumedAt.getTime() > recordingSuspendedAt.getTime()) {
+                notifyString += "\n" + getContextStringOrDefault(R.string.recording_suspended_notification_resumed_at, formatLocalTimeAsISOLikeString(recordingResumedAt));
+            }
+        }
+
         Intent notificationIntent = new Intent(this, AtomSpectra.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        notificationIntent.setAction(Intent.ACTION_MAIN);
-//        notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, mutabilityFlag);
         Notification notification;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            Intent exitIntent = new Intent(this, AtomSpectraService.class).setAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
             Intent exitIntent = new Intent(Constants.ACTION.ACTION_STOP_FOREGROUND).setPackage(Constants.PACKAGE_NAME);
-//            exitIntent.setAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
             PendingIntent exitPendingIntent =
                     PendingIntent.getBroadcast(this, 0, exitIntent, mutabilityFlag);
 
-            notification = new Notification.Builder(this, CHANNEL_ID)
-//                    .setContentTitle(getString(R.string.app_name))
+            notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(notifyString))
                     .setContentText(notifyString)
                     .setSmallIcon(R.drawable.logo_atom)
                     .setColor(0xFFFFA629)
                     .setContentIntent(pendingIntent)
-                    .addAction(new Notification.Action.Builder(Icon.createWithResource(this, android.R.drawable.ic_delete), getString(R.string.action_exit), exitPendingIntent).build())
+                    .addAction(new NotificationCompat.Action.Builder(IconCompat.createWithResource(this, android.R.drawable.ic_delete), getContextStringOrDefault(R.string.action_exit), exitPendingIntent).build())
                     .build();
         } else {
             notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-//                    .setContentTitle(getString(R.string.app_name))
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(notifyString))
                     .setContentText(notifyString)
                     .setSmallIcon(R.drawable.logo_atom)
                     .setColor(0xFFFFA629)
                     .setContentIntent(pendingIntent)
                     .build();
         }
+
         return notification;
     }
 
@@ -716,12 +802,13 @@ public class AtomSpectraService extends Service {
     private int[] AudioData = null; //Array containing the audio samples
     private static int AudioSource = AUDIO_SOURCE_VOICE;
     public static int SetAudioSource = SET_AUDIO_OK;
-    private Context context = null;
+    private Context service_context = null;
     private static int basic_window = 7;
 
     @SuppressLint({"UnspecifiedRegisterReceiverFlag", "DiscouragedApi"})
     public void Start(final Context context) {
-        this.context = context;
+        setLocaleFromPreferences(context);
+        this.service_context = context;
 
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
@@ -745,18 +832,12 @@ public class AtomSpectraService extends Service {
                 Locator.startUsingGPS();
                 if (!Locator.hasGPS) {
                     Locator.stopUsingGPS();
-//                    final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-//                            .setTitle(getString(R.string.perm_ask_gps_off_title))
-//                            .setMessage(getString(R.string.perm_ask_gps_off_text))
-//                            .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-//                            });
-//                    alert.show();
                 }
             }
         }
 
-        ForegroundSpectrum.setSuffix(context.getString(R.string.hist_suffix));
-        BackgroundSpectrum.setSuffix(context.getString(R.string.background_suffix));
+        ForegroundSpectrum.setSuffix(getContextStringOrDefault(R.string.hist_suffix));
+        BackgroundSpectrum.setSuffix(getContextStringOrDefault(R.string.background_suffix));
         usbDevice = new AtomSpectraSerial(context);
         sp = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
         sp.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
@@ -814,7 +895,7 @@ public class AtomSpectraService extends Service {
                     AudioSource = ((sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, SET_AUDIO_RAW)) == SET_AUDIO_RAW) ? AUDIO_SOURCE_RAW : AUDIO_SOURCE_VOICE;
             }
         } catch (IllegalArgumentException e) {
-            Toast.makeText(context, getString(R.string.no_audio_available), Toast.LENGTH_LONG).show();
+            showToastInMainLooper(R.string.no_audio_available, Toast.LENGTH_LONG);
         }
 
         spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, 0, 1000);
@@ -829,12 +910,28 @@ public class AtomSpectraService extends Service {
         Log.d(TAG, "AtomSpectraService START");
     }
 
+    private static void setLocaleFromPreferences(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
+        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
+        String lang = Locale.getDefault().getLanguage();
+        if (r > 0) {
+            lang = Constants.LOCALES_ID[r];
+        }
+        Locale locale = new Locale(lang);
+        Locale.setDefault(locale);
+        Resources resources = context.getResources();
+        Configuration config = resources.getConfiguration();
+        config.setLocale(locale);
+        resources.updateConfiguration(config, resources.getDisplayMetrics());
+    }
+
     private void outputSoundInit() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
             if (outputSound && soundTrack != null) {
-                AudioDeviceInfo deviceOut = getDeviceOutput(context, outputSoundID, outputSoundName, true);
+                AudioDeviceInfo deviceOut = getDeviceOutput(service_context, outputSoundID, outputSoundName, true);
                 if (deviceOut == null) {
-                    deviceOut = getDeviceOutput(context, -1, null, false);
+                    deviceOut = getDeviceOutput(service_context, -1, null, false);
                 }
                 if (deviceOut != null) {
                     synchronized (soundSync) {
@@ -1046,7 +1143,7 @@ public class AtomSpectraService extends Service {
             if (action == null)
                 return;
             if (Constants.ACTION.ACTION_UPDATE_NOTIFICATION.equals(action)) {
-                NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
+                refreshServiceNotification();
                 return;
             }
             if (Constants.ACTION.ACTION_CLEAR_SPECTRUM.equals(action)) {
@@ -1266,7 +1363,7 @@ public class AtomSpectraService extends Service {
                             if (version != null) {
                                 try {
                                     if (Integer.decode(version) < Constants.USB_DEVICE_MINIMAL_VERSION)
-                                        showToastInMainLooper(getString(R.string.usb_below_minimal_version, Constants.USB_DEVICE_MINIMAL_VERSION), Toast.LENGTH_SHORT);
+                                        showToastInMainLooper(getContextStringOrDefault(R.string.usb_below_minimal_version, Constants.USB_DEVICE_MINIMAL_VERSION), Toast.LENGTH_SHORT);
                                 } catch (Exception e) {
                                     showToastInMainLooper("Device version read error", Toast.LENGTH_SHORT);
                                 }
@@ -1347,9 +1444,8 @@ public class AtomSpectraService extends Service {
     };
 
     public void notify_cancel_all() {
-//        Context context = getApplicationContext();
-        if (context != null) {
-            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (service_context != null) {
+            NotificationManager nm = (NotificationManager) service_context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null)
                 nm.cancelAll();
         }
@@ -1357,10 +1453,11 @@ public class AtomSpectraService extends Service {
 
     public void Stop() {
         notify_cancel_all();
-//        stopForeground(true);
         canOpenAudio = false;
         isStarted = false;
         showDelta = false;
+
+        resetRecordingSuspendedStatus(true);
 
         Log.d(TAG, "recording Stop");
         stopCapturingAudioSource();
@@ -1369,8 +1466,8 @@ public class AtomSpectraService extends Service {
         spgAutosaveTimer.cancel();
         usbDevice.Close();
         usbDevice.Destroy();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
+            AudioManager manager = (AudioManager) service_context.getSystemService(Context.AUDIO_SERVICE);
             if (manager != null)
                 manager.unregisterAudioDeviceCallback(audioChanged);
         }
@@ -1419,7 +1516,8 @@ public class AtomSpectraService extends Service {
 
         Arrays.fill(histogram, 0);
         Arrays.fill(referencePulse, 0);
-        ForegroundSpectrum.initSpectrumData().setSuffix(getString(R.string.hist_suffix));
+        ForegroundSpectrum.initSpectrumData().setSuffix(getContextStringOrDefault(R.string.hist_suffix));
+
         Arrays.fill(histogram_all_delta, 0);
         synchronized (histogram_all_queue) {
             histogram_all_queue.clear();
@@ -1475,10 +1573,11 @@ public class AtomSpectraService extends Service {
 
         if (freeze) {
             resetSearchWindow();
+            resetRecordingSuspendedStatus(false);
         }
 
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-        NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
+        refreshServiceNotification();
     }
 
     // when new data arrives either from audio or USB we preserve it in historical sliding time window
@@ -1690,9 +1789,9 @@ public class AtomSpectraService extends Service {
             releaseAR();
             SetAudioSource = SET_AUDIO_OK;
         }
-        if (SetAudioSource == SET_AUDIO_RAW && context != null) {
+        if (SetAudioSource == SET_AUDIO_RAW && service_context != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                AudioManager manager = (AudioManager) service_context.getSystemService(Context.AUDIO_SERVICE);
                 if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null)
                     AudioSource = AUDIO_SOURCE_RAW;
                 SetAudioSource = SET_AUDIO_OK;
@@ -1705,14 +1804,14 @@ public class AtomSpectraService extends Service {
             if (canOpenAudio && (AR == null)) {
                 AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (inputSound) {
-                        AudioDeviceInfo device = getDeviceInput(context, inputSoundID, inputSoundName, true);
+                    if (inputSound && service_context != null) {
+                        AudioDeviceInfo device = getDeviceInput(service_context, inputSoundID, inputSoundName, true);
                         if (device != null) {
                             AR.setPreferredDevice(device);
                             ARShowAbsentMessage = true;
                         } else {
                             if (ARShowAbsentMessage) {
-                                this.showToastInMainLooper(getString(R.string.input_sound_absent), Toast.LENGTH_SHORT);
+                                this.showToastInMainLooper(R.string.input_sound_absent, Toast.LENGTH_SHORT);
                                 ARShowAbsentMessage = false;
                             }
                             AR.setPreferredDevice(null);
@@ -1725,9 +1824,6 @@ public class AtomSpectraService extends Service {
                     AR = null;
                 } else {
                     try {
-                        // if (AutomaticGainControl.isAvailable()) {
-                        //    AutomaticGainControl.create(AR.getAudioSessionId()).setEnabled(false);
-                        // }
                         AR.startRecording();
                     } catch (IllegalStateException e) {
                         AR.release();
@@ -2290,9 +2386,8 @@ public class AtomSpectraService extends Service {
 
         intent.putExtras(mBundle);
 
-        if (context != null) {
-            context.sendBroadcast(intent);
-            // TODO: debug log
+        if (service_context != null) {
+            service_context.sendBroadcast(intent);
         }
     };
 
@@ -2454,7 +2549,7 @@ public class AtomSpectraService extends Service {
     private final double usbDataWatchdogInterval = 10; // sec
     private final void usbDataWatchdogTimerTask() {
         synchronized (inputSync) {
-            if (inputType != INPUT_SERIAL || freeze_update_data) {
+            if (inputType != INPUT_SERIAL || freeze_update_data || isRecordingSuspended) {
                 return;
             }
 
@@ -2514,12 +2609,8 @@ public class AtomSpectraService extends Service {
 
     private final void onUSBAttached(UsbDevice device) {
         synchronized (inputSync) {
-            if (inputType == INPUT_AUDIO) {
-                setFreeze(true);
-            }
-
-            if (inputType == INPUT_SERIAL) {
-                Toast.makeText(this, "Error: usb attached event while input is already usb", Toast.LENGTH_LONG).show();
+            if (!freeze_update_data && inputType == INPUT_AUDIO) {
+                showToastInMainLooper(R.string.usb_attached_while_recording_audio, Toast.LENGTH_LONG);
                 return;
             }
 
@@ -2529,28 +2620,41 @@ public class AtomSpectraService extends Service {
         if (usbDevice.isOpened() || usbDevice.Open(device)) {
             usbDevice.sendTextCommand("-inf", SERVICE_INF_ID);
             usbDevice.sendTextCommand("-mode 0", SERVICE_MODE_ID);
-            usbDevice.sendTextCommand("-stt", SERVICE_STT_ID);
+
+            synchronized (recordingSuspendedSync) {
+                if (isRecordingSuspended && recordingSuspendInputType == INPUT_SERIAL) {
+                    usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
+                    onUSBConnectionRestored();
+                } else {
+                    usbDevice.sendTextCommand("-stt", SERVICE_STT_ID);
+                }
+            }
+
+            sendDataToUI(); // initial render
+            refreshServiceNotification();
+
+            showToastInMainLooper(R.string.action_usb_attached, Toast.LENGTH_LONG);
         } else {
             onUSBNoAccess();
         }
-
-        sendDataToUI(); // initial render
-        NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-        showToastInMainLooper(getString(R.string.action_usb_attached), Toast.LENGTH_LONG);
     }
 
     private final void onUSBDetached() {
-        synchronized (inputSync) {
-            if (inputType == INPUT_SERIAL) {
-                inputType = INPUT_AUDIO;
-                setFreeze(true);
+        if (!freeze_update_data && inputType == INPUT_SERIAL) {
+            onUSBConnectionLostDuringRecording();
+        } else {
+            synchronized (inputSync) {
+                if (inputType == INPUT_SERIAL) {
+                    inputType = INPUT_AUDIO;
+                }
             }
         }
 
-        cancelUsbDataWatchdog();
         usbDevice.Close();
-        NotificationManagerCompat.from(context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-        showToastInMainLooper(getString(R.string.action_usb_detached), Toast.LENGTH_LONG);
+        cancelUsbDataWatchdog();
+        refreshServiceNotification();
+
+        showToastInMainLooper(R.string.action_usb_detached, Toast.LENGTH_LONG);
     }
 
     private final void onUSBNoAccess() {
@@ -2561,7 +2665,7 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        showToastInMainLooper(getString(R.string.action_usb_no_access), Toast.LENGTH_LONG);
+        showToastInMainLooper(R.string.action_usb_no_access, Toast.LENGTH_LONG);
     }
 
     // alarm timer
@@ -2704,7 +2808,7 @@ public class AtomSpectraService extends Service {
         boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
         Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, "battery_low", ".txt", "text/plain", fileNameDate, fileNameTime, false);
         if (returnPair == null) {
-            Toast.makeText(this, getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show();
+            showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
             return;
         }
 
@@ -2736,7 +2840,8 @@ public class AtomSpectraService extends Service {
             autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
 
             if (autosavePair == null) {
-                this.showToastInMainLooper(getApplicationContext().getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG);
+                this.showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
+
                 autosaveSpectrum = null;
                 return;
             }
@@ -2748,7 +2853,7 @@ public class AtomSpectraService extends Service {
                     setChannels(autosaveSpectrum.getDataArray().length).
                     setChannelCompression(1).
                     saveSpectrum(docStream, this);
-            this.showToastInMainLooper(getApplicationContext().getString(R.string.autosave_start), Toast.LENGTH_LONG);
+            this.showToastInMainLooper(R.string.autosave_start, Toast.LENGTH_LONG);
             return;
         }
 
@@ -2764,7 +2869,7 @@ public class AtomSpectraService extends Service {
         OutputStreamWriter docStream;
         try {
 //            DocumentFile fileDoc = DocumentFile.fromSingleUri(this, new File(autosavePair.second).toURI());
-            docStream = new OutputStreamWriter(context.getContentResolver().openOutputStream(autosavePair.second, "wa"));// new (new Uri.Builder().build());
+            docStream = new OutputStreamWriter(service_context.getContentResolver().openOutputStream(autosavePair.second, "wa"));// new (new Uri.Builder().build());
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.
                     addSpectrum(deltaSpectrum).
@@ -2884,6 +2989,110 @@ public class AtomSpectraService extends Service {
 
     private void showToastInMainLooper(String text, int duration) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+    }
+
+    private void showToastInMainLooper(int res_id, int duration) {
+        String text = getContextStringOrDefault(res_id);
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+    }
+
+    private void suspendAudioRecording(int suspend_reason) {
+        synchronized (recordingSuspendedSync) {
+            isRecordingSuspended = true;
+            recordingSuspendReason = suspend_reason;
+            recordingSuspendInputType = INPUT_AUDIO;
+
+            stopCapturingAudioSource();
+            notifyRecordingSuspended();
+        }
+    }
+
+    private void restoreAudioRecording() {
+        resetRecordingSuspendedStatus(false);
+        startCapturingAudioSource();
+        notifyRecordingResumed();
+    }
+
+    private void onUSBConnectionLostDuringRecording() {
+        synchronized (recordingSuspendedSync) {
+            isRecordingSuspended = true;
+            recordingSuspendReason = RECORDING_SUSPEND_REASON_USB_DISCONNECT;
+            recordingSuspendInputType = INPUT_SERIAL;
+
+            notifyRecordingSuspended();
+        }
+    }
+
+    private void onUSBConnectionRestored() {
+        resetRecordingSuspendedStatus(false);
+        notifyRecordingResumed();
+    }
+
+    private void notifyRecordingSuspended() {
+        recordingSuspendedAt = new Date();
+        sendBroadcast(new Intent(ACTION_RECORDING_SUSPENDED).setPackage(Constants.PACKAGE_NAME));
+        refreshServiceNotification();
+
+        playNotificationSound();
+    }
+
+    private void refreshServiceNotification() {
+        if (service_context != null) {
+            NotificationManagerCompat.from(service_context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
+        }
+    }
+
+    private void notifyRecordingResumed() {
+        recordingResumedAt = new Date();
+        sendBroadcast(new Intent(ACTION_RECORDING_RESUMED).setPackage(Constants.PACKAGE_NAME));
+        refreshServiceNotification();
+        playNotificationSound();
+    }
+
+    private void playNotificationSound() {
+        try {
+            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+            r.play();
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    public static void resetRecordingSuspendedStatus(boolean withDates) {
+        synchronized (recordingSuspendedSync) {
+            isRecordingSuspended = false;
+            recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
+            recordingSuspendInputType = INPUT_NONE;
+
+            if (withDates) {
+                recordingSuspendedAt = null;
+                recordingResumedAt = null;
+            }
+        }
+    }
+
+    public static String formatLocalTimeAsISOLikeString(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getDefault());
+
+        return sdf.format(date);
+    }
+
+    private String getContextStringOrDefault(int res_id) {
+        if (service_context != null) {
+            return service_context.getString(res_id);
+        }
+
+        return getString(res_id);
+    }
+
+    private String getContextStringOrDefault(int res_id, Object... formatArgs) {
+        if (service_context != null) {
+            return service_context.getString(res_id, formatArgs);
+        }
+
+        return getString(res_id, formatArgs);
     }
 
     private static class DoseRate {
