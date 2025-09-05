@@ -163,6 +163,7 @@
     <string name="delta_spectrum_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="delta_time_format">time: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
     <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
@@ -178,6 +179,7 @@
     <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spectrum: <xliff:g id="type">%1$s</xliff:g></string>
@@ -452,7 +454,7 @@
         \t- You can clear background data in the program.\n
         \t- To see spectrum \'as is\' please set ADC to maximum and show as 1024 channels. Other values will make spectrum and background smooth.\n
         \t- You may smooth spectra or revert it by using \'<annotation foreground="parameter">Smooth</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu.\n
-        \t- You may indicate the difference between two spectrum states at different time by using \'<annotation foreground="parameter">Spectrum change</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' submenu. The difference time can be chosen from 1 to 10 seconds range with \'<annotation foreground="parameter">Diff time</annotation>\' under \'<annotation foreground="parameter">Settings</annotation>\'.\n
+        \t- You can display the spectrum state change in the sliding time window mode via «<annotation foreground="parameter">Spectrum change</annotation>» in the «<annotation foreground="parameter">Spectrum</annotation> submenu. The sliding window size can be selected in the range from 1 to 300 s in the «<annotation foreground="parameter">Diff Time</annotation>» parameter in «<annotation foreground="parameter">Settings</annotation>». In this mode, two spectra with different sliding window durations are displayed: n seconds and 4n seconds (e.g. 30/120). The color of the short window spectrum (n seconds) in this mode is purple, and the long one (4n seconds) is green. The lines displaying the total acquisition time and count rate of the main spectrum are replaced by a display of the window sizes and count rates within these windows (short/long).\n
         \t- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use \'<annotation foreground="parameter">Set description</annotation>\' in a \'<annotation foreground="parameter">Spectrum</annotation>\' or \'<annotation foreground="parameter">Background</annotation>\' submenu.\n
         \n
     </string>
