@@ -209,6 +209,7 @@ public class AtomSpectraService extends Service {
     private static int cps = 0; // current cps value
     private static int cpsInterval = 0; // current cps value in user defined energy range
 
+    private final int USB_DATA_SKIP_SECONDS = 3;
     private int skip_next_cps_int_usb_calc = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
     private static int autosaveTimeout = 0;
     private static int autosaveIncrement = 0;
@@ -1326,9 +1327,9 @@ public class AtomSpectraService extends Service {
                         }
 
                         calcAndSendFoundIsotopesData();
-                        calcSpectrumChangeData();
                         sendDataToUI();
                         if (isReliableData) {
+                            calcSpectrumChangeData();
                             sendDataToAtomSwift(cps, doseRateValue);
                         }
 
@@ -1529,8 +1530,7 @@ public class AtomSpectraService extends Service {
         Arrays.fill(referencePulse, 0);
         ForegroundSpectrum.initSpectrumData().setSuffix(getContextStringOrDefault(R.string.hist_suffix));
 
-        Arrays.fill(histogram_all_delta, 0);
-        Arrays.fill(histogram_all_delta_back, 0);
+        resetSpectrumChangeWindow();
         synchronized (histogram_all_queue) {
             histogram_all_queue.clear();
         }
@@ -1562,7 +1562,6 @@ public class AtomSpectraService extends Service {
                     usbDevice.sendTextCommand("-sto", SERVICE_STO_ID);
                 } else {
                     // spectrum from device has priority over current spectrum
-                    resetSpectrumChangeData();
                     long[] empty_hist = new long[ForegroundSpectrum.getDataArray().length];
                     Arrays.fill(empty_hist, 0);
                     ForegroundSpectrum.setSpectrum(empty_hist);
@@ -1570,7 +1569,7 @@ public class AtomSpectraService extends Service {
                     ForegroundSpectrum.updateComments();
                     // HACK! when started, AtomSpectraSerial often sends wrong data for 1-2 seconds
                     // calculate spectrum based values (cps interval, dose rate etc.) only when data is more stable
-                    skip_next_cps_int_usb_calc = 3; // skip 3 updates just in case
+                    skipUnreliableUSBData();
                     usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
                 }
             }
@@ -1585,6 +1584,7 @@ public class AtomSpectraService extends Service {
 
         if (freeze) {
             resetSearchWindow();
+            resetSpectrumChangeWindow();
             resetRecordingSuspendedStatus(false);
         }
 
@@ -1970,15 +1970,6 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    // clear spectrum change window
-    private static void resetSpectrumChangeData() {
-        if (!histogram_all_queue.isEmpty()) {
-            synchronized (histogram_all_queue) {
-                histogram_all_queue.clear();
-            }
-        }
-    }
-
     // spectrum change mode
     // shows spectrum for the last n seconds (sliding window)
     // window size - delta_time
@@ -2007,7 +1998,7 @@ public class AtomSpectraService extends Service {
                 histogram_all_delta_back[i] = currentState[i] - backState[i];
             }
         } else {
-            resetSpectrumChangeData();
+            resetSpectrumChangeWindow();
         }
     }
 
@@ -2552,7 +2543,6 @@ public class AtomSpectraService extends Service {
     private final void startCapturingAudioSource() {
         synchronized (audioCaptureSync) {
             stopCapturingAudioSource(); // resetting timer just in case
-            resetSpectrumChangeData();
 
             dataFromAudioSourceElapsedTime = 0;
             eachSecondDataFromAudioSourceElapsedTime = 0;
@@ -2974,8 +2964,7 @@ public class AtomSpectraService extends Service {
     // dose rates expected to be uSv/h
     private void sendDataToAtomSwift(int cps, DoseRate doseRate) {
         if (!sendDataToAtomSwiftAppEnabled || freeze_update_data) {
-            atomSwiftHasIntermediateData = false;
-            atomSwiftIntermediateCps = 0;
+            resetAtomSwiftIntermediateData();
             return;
         }
 
@@ -3028,8 +3017,7 @@ public class AtomSpectraService extends Service {
                 inputTypeStr = "NONE";
         }
 
-        atomSwiftHasIntermediateData = false;
-        atomSwiftIntermediateCps = 0;
+        resetAtomSwiftIntermediateData();
 
         Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
         dataIntent.setPackage("com.youratom.scid");
@@ -3048,6 +3036,11 @@ public class AtomSpectraService extends Service {
 //                Toast.LENGTH_SHORT);
     }
 
+    private static void resetAtomSwiftIntermediateData() {
+        atomSwiftHasIntermediateData = false;
+        atomSwiftIntermediateCps = 0;
+    }
+
     private void showToastInMainLooper(String text, int duration) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
     }
@@ -3064,14 +3057,14 @@ public class AtomSpectraService extends Service {
             recordingSuspendInputType = INPUT_AUDIO;
 
             stopCapturingAudioSource();
-            saveSpectrumAndNotifyRecordingSuspended();
+            onRecordingSuspended();
         }
     }
 
     private void restoreAudioRecording() {
         resetRecordingSuspendedStatus(false);
         startCapturingAudioSource();
-        notifyRecordingResumed();
+        onRecordingResumed();
     }
 
     private void onUSBConnectionLostDuringRecording() {
@@ -3080,34 +3073,45 @@ public class AtomSpectraService extends Service {
             recordingSuspendReason = RECORDING_SUSPEND_REASON_USB_DISCONNECT;
             recordingSuspendInputType = INPUT_SERIAL;
 
-            saveSpectrumAndNotifyRecordingSuspended();
+            onRecordingSuspended();
         }
     }
 
     private void onUSBConnectionRestored() {
         resetRecordingSuspendedStatus(false);
-        notifyRecordingResumed();
+        onRecordingResumed();
     }
 
-    private void saveSpectrumAndNotifyRecordingSuspended() {
-        saveCurrentSpectrum("recording_suspended");
+    private void onRecordingSuspended() {
         recordingSuspendedAt = new Date();
+
+        saveCurrentSpectrum("recording_suspended");
+        if (recordingSuspendInputType == INPUT_SERIAL) {
+            skipUnreliableUSBData();
+        }
+        resetSpectrumChangeWindow();
+        resetSearchWindow();
+        resetAtomSwiftIntermediateData();
         sendBroadcast(new Intent(ACTION_RECORDING_SUSPENDED).setPackage(Constants.PACKAGE_NAME));
         refreshServiceNotification();
         playNotificationSound();
+    }
+
+    private void onRecordingResumed() {
+        recordingResumedAt = new Date();
+        sendBroadcast(new Intent(ACTION_RECORDING_RESUMED).setPackage(Constants.PACKAGE_NAME));
+        refreshServiceNotification();
+        playNotificationSound();
+    }
+
+    private void skipUnreliableUSBData() {
+        skip_next_cps_int_usb_calc = USB_DATA_SKIP_SECONDS;
     }
 
     private void refreshServiceNotification() {
         if (service_context != null) {
             NotificationManagerCompat.from(service_context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
         }
-    }
-
-    private void notifyRecordingResumed() {
-        recordingResumedAt = new Date();
-        sendBroadcast(new Intent(ACTION_RECORDING_RESUMED).setPackage(Constants.PACKAGE_NAME));
-        refreshServiceNotification();
-        playNotificationSound();
     }
 
     private void playNotificationSound() {
@@ -3129,6 +3133,16 @@ public class AtomSpectraService extends Service {
             if (withDates) {
                 recordingSuspendedAt = null;
                 recordingResumedAt = null;
+            }
+        }
+    }
+
+    private static void resetSpectrumChangeWindow() {
+        Arrays.fill(histogram_all_delta, 0);
+        Arrays.fill(histogram_all_delta_back, 0);
+        if (!histogram_all_queue.isEmpty()) {
+            synchronized (histogram_all_queue) {
+                histogram_all_queue.clear();
             }
         }
     }
