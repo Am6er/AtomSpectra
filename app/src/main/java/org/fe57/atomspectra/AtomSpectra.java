@@ -95,7 +95,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private static final String ATOM_STATE_LOG = "Atom Log";
 	private static final String ATOM_STATE_BAR = "Atom Bar";
 	private static final String ATOM_STATE_SCALE = "Atom scale";
-//	private static final String ATOM_STATE_BACKGROUND_SHOW = "Atom background";
 	private static final String ATOM_STATE_BACKGROUND_SUBTRACT = "Atom subtract";
 
     private static final String ATOM_STATE_CURSOR_X = "Atom cursor";
@@ -130,7 +129,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	public static String DisplayDose;
 
 	//for background
-	public static boolean background_subtract = false;          //Subtract background from main histogram
+	public static boolean background_subtract = false; // Subtract background from main histogram
 	private static Menu app_menu = null;
 	private final int LOAD_HIST_CODE = 301;
 	private final int LOAD_CALIBRATION_CODE = 302;
@@ -149,9 +148,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private final int ADD_HIST_CODE = 315;
 	private boolean isPinchMode = false;
 	private boolean isPinchModeFinished = false;
-	private boolean hasFeatureGPS = false;                    //GPS coordinates
-	private boolean hasFeatureNetwork = false;              //Network coordinates
-	//private GPSLocator Locator = null;
+	private boolean hasFeatureGPS = false; // GPS coordinates
+	private boolean hasFeatureNetwork = false; // Network coordinates
 	private boolean addGPS = false;
 	private Intent inputServiceIntent = null;
     private SharedPreferences sharedPreferences = null;
@@ -218,7 +216,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		if (r > 0) {
 			lang = Constants.LOCALES_ID[r];
 		}
-		super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
+		super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
 //		super.attachBaseContext(MyContextWrapper.wrap(newBase, "en"));
 	}
 
@@ -249,7 +247,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			logScale = savedInstanceState.getBoolean(ATOM_STATE_LOG, Constants.LOG_SCALE_DEFAULT);
 			barMode = savedInstanceState.getBoolean(ATOM_STATE_BAR, false);
 			zoom_factor = savedInstanceState.getFloat(ATOM_STATE_SCALE, 1);
-//			AtomSpectraService.background_show = savedInstanceState.getBoolean(ATOM_STATE_BACKGROUND_SHOW, false) && !AtomSpectraService.BackgroundSpectrum.isEmpty();
 			background_subtract = savedInstanceState.getBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, false) && AtomSpectraService.background_show;
 			AtomSpectraService.setScaleFactor(savedInstanceState.getInt(Constants.SCALE_FACTOR, Constants.SCALE_DEFAULT));
 			cursor_x = savedInstanceState.getInt(ATOM_STATE_CURSOR_X, -1);
@@ -271,7 +268,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		cpsView = findViewById(R.id.channelText);
 		cpsView.setOnLongClickListener(this);
 		mAtomSpectraShapeView = findViewById(R.id.shape_area);
-//		seekChannel.setLayoutParams(new LinearLayout.LayoutParams(mAtomSpectraShapeView.getLayoutParams().width - 100, seekChannel.getHeight()));
 		int coeff = StrictMath.max(seekChannel.getWidth() / 200, 1);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			seekChannel.setProgress(0);
@@ -340,10 +336,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
 		hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
 		addGPS = sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-
-//		if (Locator == null)
-//			Locator = new GPSLocator(getApplicationContext());
-
 		boolean isAndroid14orHigher = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 		if ((hasFeatureGPS || hasFeatureNetwork) && addGPS && !isAndroid14orHigher) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -465,17 +457,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		}
 
 		inputServiceIntent.setAction(Constants.ACTION.ACTION_START_FOREGROUND);
-
-//		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//			getApplicationContext().startForegroundService(inputServiceIntent);
-//		} else {
-//			getApplicationContext().startService(inputServiceIntent);
-//		}
-//		getApplicationContext().bindService(inputServiceIntent, mServiceConnection, BIND_IMPORTANT);
-
-//		if (savedInstanceState != null) {
-//			sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, savedInstanceState.getBoolean(Constants.FREEZE_STATE, true)));
-//		}
 
 		//check permissions
 		if (checkPermissions(new String[]{Manifest.permission.RECORD_AUDIO},
@@ -811,21 +792,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				break;
 			case REQUEST_FINE_GPS:
 				if (grantResults.length > 1 && grantResults[0] != PackageManager.PERMISSION_GRANTED && grantResults[1] != PackageManager.PERMISSION_GRANTED) {
-//					AtomSpectraService.Locator.startUsingGPS();
-//					if (!AtomSpectraService.Locator.hasGPS) {
-//						AtomSpectraService.Locator.stopUsingGPS();
-//						final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-//								.setTitle(getString(R.string.perm_ask_gps_off_title))
-//								.setMessage(getString(R.string.perm_ask_gps_off_text))
-//								.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-//								});
-//						alert.show();
-//						SharedPreferences.Editor editor = sharedPreferences.edit();
-//						editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-//						editor.commit();
-//						sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS));
-//					}
-//				} else {
 					SharedPreferences.Editor editor = sharedPreferences.edit();
 					editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
 					editor.commit();
@@ -890,9 +856,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			try {
 				String state = Environment.getExternalStorageState();
 				if (Environment.MEDIA_MOUNTED.equals(state)) {
-// get path
+					// get path
 					File folder = new File(Environment.getExternalStorageDirectory() + "/AtomSpectra");
-// create folder if not exist
+					// create folder if not exist
 					if (!folder.exists()) {
 						if (folder.mkdir()) {
 							prefEditor.putString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, folder.toString());
@@ -1012,14 +978,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		TextView view = findViewById(R.id.backgroundSuffixView);
 		view.setVisibility(enable_back ? TextView.VISIBLE : TextView.INVISIBLE);
 
-		if (AtomSpectraService.getFreeze()) {
-			menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
-			menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
-		} else {
-			menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.menu_block);
-			menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
-		}
-
+		updateRecordStatusMenu();
 		updateVersionInMenu();
 
 		return true;
@@ -1265,16 +1224,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					}
 				}
 			}
-			if (Constants.ACTION.ACTION_UPDATE_GPS.equals(action)) {
-//				if (AtomSpectraService.isStarted && !AtomSpectraService.getFreeze()) {
-//					AtomSpectraService.ForegroundSpectrum.setLocation(Locator.getLocation()).updateComments();
-//				}
-			}
 			if (Constants.ACTION.ACTION_CLOSE_APP.equals(action)) {
 				finishAndRemoveTask();
-			}
-			if (Constants.ACTION.ACTION_AUDIO_CHANGED.equals(action)) {
-				// nothing to do so far
 			}
 			if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
 				UsbDevice device;
@@ -1381,27 +1332,22 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				}
 			}
 			if (Constants.ACTION.ACTION_UPDATE_MENU.equals(action)) {
-				if (app_menu != null) {
-					if (AtomSpectraService.getFreeze()) {
-						app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
-						app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
-					} else {
-						app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.menu_block);
-						app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
-					}
-				}
+				updateRecordStatusMenu();
+				updateSelectedInputIndicator();
+				updateCalibrationMenu();
+				updateSpectrogramMenu();
+
 				Button outputSound = findViewById(R.id.nbrButton);
 				outputSound.setVisibility((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) ? Button.VISIBLE : Button.INVISIBLE);
 				TextView view;
 				view = findViewById(R.id.suffixView);
-				if (view != null)
+				if (view != null) {
 					view.setText(AtomSpectraService.ForegroundSpectrum.getSuffix());
+				}
 				view = findViewById(R.id.backgroundSuffixView);
-				if (view != null)
+				if (view != null) {
 					view.setText(AtomSpectraService.BackgroundSpectrum.getSuffix());
-
-				updateSelectedInputIndicator();
-				updateCalibrationMenu();
+				}
 			}
 			if (Constants.ACTION.ACTION_UPDATE_CALIBRATION.equals(action)) {
 				if (intent.getBooleanExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false) || AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
@@ -1410,9 +1356,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					getCalibrationSettingsFromMemory();
 				}
 			}
-//			if (Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY.equals(action)) {
-//				checkGPS();
-//			}
 		}
 
 	};
@@ -1742,11 +1685,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		view.setOnTouchListener((v, event) -> {
 			boolean retVal;
-			//retVal = gestureDetector.onTouchEvent(event);
 			retVal = gestureScaleDetector.onTouchEvent(event);
 			retVal = gestureDetector.onTouchEvent(event) || retVal;
 			retVal = retVal || AtomSpectra.super.onTouchEvent(event);
-			//if (retVal) v.performClick();
 			return retVal;
 		});
 	}
@@ -1835,10 +1776,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				if (AtomSpectraService.showCalibrationFunction) {
 					showCursorInfo(true);
 					dateChannelChanged = 0;
-//					Button button = findViewById(R.id.channelMinusButton);
-//					button.setVisibility(Button.INVISIBLE);
-//					button = findViewById(R.id.channelPlusButton);
-//					button.setVisibility(Button.INVISIBLE);
 					seekChannel.setVisibility(SeekBar.INVISIBLE);
 					showPlusMinusButtons = false;
 					return true;
@@ -1850,10 +1787,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				if (AtomSpectraShapeView.isOutOfFrame(e1.getX())) {
 					cursor_x = -1;
 					dateChannelChanged = 0;
-//					Button button = findViewById(R.id.channelMinusButton);
-//					button.setVisibility(Button.INVISIBLE);
-//					button = findViewById(R.id.channelPlusButton);
-//					button.setVisibility(Button.INVISIBLE);
 					seekChannel.setVisibility(SeekBar.INVISIBLE);
 					showPlusMinusButtons = false;
 				} else {
@@ -1934,10 +1867,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					}
 					if (!getInside) {
 						dateChannelChanged = System.currentTimeMillis();
-//						Button button = findViewById(R.id.channelMinusButton);
-//						button.setVisibility(Button.VISIBLE);
-//						button = findViewById(R.id.channelPlusButton);
-//						button.setVisibility(Button.VISIBLE);
 						seekChannel.setVisibility(SeekBar.VISIBLE);
 						if (showPlusMinusButtons || (cursor_x < AtomSpectraService.getFirstChannel())) {
 							if (XCalibrated) {
@@ -1976,15 +1905,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		return new ScaleGestureDetector(getBaseContext(), new SimpleOnScaleGestureListener() {
 			private float SpanXInit = 1;
 			private float SpanYInit = 1;
-//			private float FocusXInit = 0;
-//			private float FocusYInit = 0;
 
 			@Override
 			public boolean onScaleBegin(@NotNull ScaleGestureDetector scaleGestureDetector) {
 				SpanXInit = scaleGestureDetector.getCurrentSpanX();
 				SpanYInit = scaleGestureDetector.getCurrentSpanY();
-//				FocusXInit = scaleGestureDetector.getFocusX();
-//				FocusYInit = scaleGestureDetector.getFocusY();
 				isPinchMode = true;
 				return true;
 			}
@@ -1999,15 +1924,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			public void onScaleEnd(@NotNull ScaleGestureDetector scaleGestureDetector) {
 				float mScaleFactor;
 				float mSpanX, mSpanY;
-//				float mFocusX, mFocusY;
 				int new_channel;
 				isPinchMode = false;
 				isPinchModeFinished = true;
 				mSpanX = scaleGestureDetector.getCurrentSpanX() - SpanXInit;
 				mSpanY = scaleGestureDetector.getCurrentSpanY() - SpanYInit;
 				mScaleFactor = ((mSpanX) * (mSpanX) + (mSpanY) * (mSpanY));
-//				mFocusX = scaleGestureDetector.getFocusX();
-//				mFocusY = scaleGestureDetector.getFocusY();
 
 				if (mScaleFactor > 22500) {
 					boolean spanXPrefer = StrictMath.abs(mSpanX * 1.5) > StrictMath.abs(mSpanY);
@@ -2076,34 +1998,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						}
 					}
 
-				}/* else {
-					//showToast(String.valueOf(mFocusX - FocusXInit));
+				}
 
-					if(mAtomSpectraService.getScaleFactor() <= 6) {
-
-						if ((mFocusX - FocusXInit) > 100) {
-							new_channel = AtomSpectraService.getFirstChannel() + 256 * (1 << (Constants.SCALE_MAX - AtomSpectraService.getScaleFactor()));
-
-							if (new_channel + 1024 * (1 << (6 - AtomSpectraService.getScaleFactor())) > Constants.NUM_HIST_POINTS) {
-								new_channel = Constants.NUM_HIST_POINTS - 1024 * (1 << (Constants.SCALE_MAX - AtomSpectraService.getScaleFactor()));
-							}
-
-							AtomSpectraService.first_channel = new_channel;
-						} else if ((mFocusX - FocusXInit) < -100) {
-							new_channel = AtomSpectraService.getFirstChannel() - 256 * (1 << (Constants.SCALE_MAX - mAtomSpectraService.getScaleFactor()));
-
-							if (new_channel < 0) {
-								new_channel = 0;
-							}
-
-							AtomSpectraService.first_channel = new_channel;
-						}
-
-					}
-
-				}*/
-
-				//return false;
 				findViewById(R.id.shape_area).performClick();
 			}
 
@@ -2123,10 +2019,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		public void run() {
 			if (showPlusMinusButtons && ((System.currentTimeMillis() - dateChannelChanged) > Constants.CURSOR_TIMEOUT)) {
 				showPlusMinusButtons = false;
-//				final Button button1 = findViewById(R.id.channelMinusButton);
-//				button1.post(() -> button1.setVisibility(Button.INVISIBLE));
-//				final Button button2 = findViewById(R.id.channelPlusButton);
-//				button2.post(() -> button2.setVisibility(Button.INVISIBLE));
 				final SeekBar seekChannel = findViewById(R.id.seekChannel);
 				seekChannel.post(() -> seekChannel.setVisibility(SeekBar.INVISIBLE));
 			}
@@ -2136,22 +2028,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		}
 	};
 
-/*	public void onClickPlusPressed(View v) {
-		int shift_cursor = 1 << StrictMath.max(0, (Constants.SCALE_MAX - AtomSpectraService.getScaleFactor() - 1));
-		cursor_x = cursor_x < (Constants.NUM_HIST_POINTS - shift_cursor) ? cursor_x + shift_cursor : (Constants.NUM_HIST_POINTS - 1);
-		showCursorInfo();
-		dateChannelChanged = System.currentTimeMillis();
-	}
-
-	public void onClickMinusPressed(View v) {
-		int shift_cursor = 1 << StrictMath.max(0, (Constants.SCALE_MAX - AtomSpectraService.getScaleFactor() - 1));
-		cursor_x = cursor_x > shift_cursor ? cursor_x - shift_cursor : 0;
-		showCursorInfo();
-		dateChannelChanged = System.currentTimeMillis();
-	} */
-
 	private void showCursorInfo(boolean requestUpdateGraph) {
-//		TextView mTextView = findViewById(R.id.cursorView);
 		if (cursor_x >= 0 && cursor_x >= AtomSpectraService.getFirstChannel() / Constants.NUM_HIST_POINTS * AtomSpectraService.lastCalibrationChannel && !AtomSpectraService.showCalibrationFunction) {
 			mTextView.setText(getString(R.string.cursor_format, cursor_x, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(cursor_x), AtomSpectraService.ForegroundSpectrum.getDataArray()[cursor_x]));
 			mTextView.setVisibility(TextView.VISIBLE);
@@ -2208,13 +2085,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						.setAction(Intent.ACTION_GET_CONTENT);
 				startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
 			}
-			//return true;
-
-
-
-
-
-
 
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
@@ -2354,6 +2224,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_help) {
 			Intent intent_help = new Intent(this, AtomSpectraHelp.class);
 			startActivity(intent_help);
+			return true;
+		} else if (item.getItemId() == R.id.action_spectrogram_load) {
+			Toast.makeText(this, "load spg", Toast.LENGTH_SHORT).show();
+			return true;
+		} else if (item.getItemId() == R.id.action_spectrogram_view) {
+			Intent intent_spectrogram = new Intent(this, AtomSpectraSpectrogram.class);
+			startActivity(intent_spectrogram);
 			return true;
 		} else if (item.getItemId() == R.id.action_hist_to_file) {
 			Log.d(TAG, "saving file");
@@ -3588,7 +3465,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				updateCalibrationMenu();
 
 				if (setData) {
-//					AtomSpectraService.time_counter = spectrum.getSpectrumTime();
 					AtomSpectraService.total_counts = spectrum.getTotalCounts();
 					if (app_menu != null) {
 						app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
@@ -4270,7 +4146,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		outState.putBoolean(ATOM_STATE_BAR, barMode);
 		outState.putInt(Constants.SCALE_FACTOR, AtomSpectraService.getScaleFactor() > Constants.SCALE_DOSE_MODE ? AtomSpectraService.getSavedScaleFactor() : AtomSpectraService.getScaleFactor());
 		outState.putFloat(ATOM_STATE_SCALE, zoom_factor);
-//		outState.putBoolean(ATOM_STATE_BACKGROUND_SHOW, AtomSpectraService.background_show);
 		outState.putBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, background_subtract);
 		outState.putInt(ATOM_STATE_CURSOR_X, cursor_x);
 		outState.putBoolean(ATOM_STATE_CURSOR_BUTTONS, showPlusMinusButtons);
@@ -4289,10 +4164,28 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		}
 	}
 
+	private void updateSpectrogramMenu() {
+		if (app_menu != null) {
+			app_menu.findItem(R.id.action_spectrogram_load).setEnabled(AtomSpectraService.getFreeze());
+		}
+	}
+
 	private void updateVersionInMenu() {
 		if (app_menu != null) {
 			AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
 			app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode);
+		}
+	}
+
+	private void updateRecordStatusMenu() {
+		if (app_menu != null) {
+			if (AtomSpectraService.getFreeze()) {
+				app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
+				app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
+			} else {
+				app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.menu_block);
+				app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
+			}
 		}
 	}
 

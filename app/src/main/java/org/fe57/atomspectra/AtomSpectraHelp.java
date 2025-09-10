@@ -37,7 +37,7 @@ public class AtomSpectraHelp extends Activity {
         if (r > 0) {
             lang = Constants.LOCALES_ID[r];
         }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
+        super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
     @SuppressLint("SetTextI18n")

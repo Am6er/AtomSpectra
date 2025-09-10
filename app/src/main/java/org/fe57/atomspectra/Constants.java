@@ -149,6 +149,7 @@ public class Constants {
         String ACTION_CLOSE_ISOTOPES = "org.fe57.atomspectra.ACTION_CLOSE_ISOTOPES";
         String ACTION_CLOSE_SEARCH = "org.fe57.atomspectra.ACTION_CLOSE_SEARCH";
         String ACTION_CLOSE_HELP = "org.fe57.atomspectra.ACTION_CLOSE_HELP";
+        String ACTION_CLOSE_SPECTROGRAM = "org.fe57.atomspectra.ACTION_CLOSE_SPECTROGRAM";
 
         // attach/detach USB
         // sent by AtomSpectraSerial on errors

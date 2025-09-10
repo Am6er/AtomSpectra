@@ -8,9 +8,9 @@ import android.os.Build;
 
 import java.util.Locale;
 
-public class MyContextWrapper extends ContextWrapper {
+public class LocaleContextWrapper extends ContextWrapper {
 
-    public MyContextWrapper(Context base) {
+    public LocaleContextWrapper(Context base) {
         super(base);
     }
 
@@ -38,7 +38,7 @@ public class MyContextWrapper extends ContextWrapper {
         } else {
             context.getResources().updateConfiguration(config, context.getResources().getDisplayMetrics());
         }
-        return new MyContextWrapper(context);
+        return new LocaleContextWrapper(context);
     }
 
     @SuppressWarnings("deprecation")

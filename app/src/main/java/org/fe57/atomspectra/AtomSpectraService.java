@@ -1499,6 +1499,7 @@ public class AtomSpectraService extends Service {
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_HELP).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SENSITIVITY).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_APP).setPackage(Constants.PACKAGE_NAME));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -1522,6 +1523,7 @@ public class AtomSpectraService extends Service {
             }
             autosavePair = null;
         }
+        AtomSpectraSpectrogramData.instance.clear();
 
         resetCpsData();
         resetDoseRateData();
@@ -2904,19 +2906,22 @@ public class AtomSpectraService extends Service {
                     setChannels(autosaveSpectrum.getDataArray().length).
                     setChannelCompression(1).
                     saveSpectrum(docStream, this);
+
+            AtomSpectraSpectrogramData.instance.clear();
+            AtomSpectraSpectrogramData.instance.setBaseSpectrum(autosaveSpectrum);
+
             this.showToastInMainLooper(R.string.autosave_start, Toast.LENGTH_LONG);
             return;
         }
 
         Spectrum newSpectrum = new Spectrum(ForegroundSpectrum);
         Spectrum deltaSpectrum = new Spectrum(newSpectrum).subtractSpectrum(autosaveSpectrum);
-        autosaveSpectrum = newSpectrum;
-
         if (!sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
             deltaSpectrum.setLocation(null);
         }
-
         deltaSpectrum.updateComments();
+        autosaveSpectrum = newSpectrum;
+
         OutputStreamWriter docStream;
         try {
 //            DocumentFile fileDoc = DocumentFile.fromSingleUri(this, new File(autosavePair.second).toURI());
@@ -2930,6 +2935,8 @@ public class AtomSpectraService extends Service {
         } catch (Exception e) {
             this.showToastInMainLooper(String.format("!%s: %s", e.getMessage(), autosavePair.second), Toast.LENGTH_LONG);
         }
+
+        AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
     }
 
     private void checkGPS() {

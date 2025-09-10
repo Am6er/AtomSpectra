@@ -8,10 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.DocumentsContract;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,13 +24,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.documentfile.provider.DocumentFile;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -52,7 +43,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         if (r > 0) {
             lang = Constants.LOCALES_ID[r];
         }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
+        super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
     @SuppressLint("RtlHardcoded")

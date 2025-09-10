@@ -424,6 +424,11 @@
         <item>16</item>
     </string-array>
 
+    <string name="spectrogram_activity_title">Atom Spectra Spectrogram</string>
+    <string name="spectrogram_menu">Spectrogram</string>
+    <string name="spectrogram_load">Load from…</string>
+    <string name="spectrogram_view">View</string>
+
     <string name="help_menu">Help</string>
     <string name="help">Atom Spectra Quick Help</string>
     <string name="help_text_overview"><big><annotation foreground="caption">Overview.</annotation></big>\n
