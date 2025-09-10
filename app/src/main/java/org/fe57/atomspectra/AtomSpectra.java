@@ -16,7 +16,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
-import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
@@ -226,22 +225,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	@SuppressLint({"ApplySharedPref", "UnspecifiedRegisterReceiverFlag"})
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		// Toast.makeText(this, "On create", Toast.LENGTH_SHORT).show();
 		sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-//		if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
-//			Locale appLocale;
-//			int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-//			r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-//			if (r > 0) {
-//				appLocale = new Locale(Constants.LOCALES_ID[r]);
-//			} else {
-//				appLocale = Locale.getDefault();
-//			}
-//			Locale.setDefault(appLocale);
-//			Configuration config = new Configuration();
-//			config.setLocale(appLocale);
-//			getBaseContext().getResources().updateConfiguration(config,
-//					getBaseContext().getResources().getDisplayMetrics());
-//		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {});
 		}
@@ -890,8 +875,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	@Override
 	public void onStart() {
 		super.onStart();
-		active = true;
 		Log.d(TAG, "-XxX-  onStart");
+		// Toast.makeText(this, "On start", Toast.LENGTH_SHORT).show();
+		active = true;
 	}
 
 	//Update destination directory on Android 7.0
@@ -1043,6 +1029,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private static IntentFilter makeAtomSpectraUpdateIntentFilter() {
 		final IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(AtomSpectraService.ACTION_DATA_AVAILABLE);
+		intentFilter.addAction(AtomSpectraService.ACTION_RECORDING_SUSPENDED);
+		intentFilter.addAction(AtomSpectraService.ACTION_RECORDING_RESUMED);
 		intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
 		intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_APP);
 		intentFilter.addAction(Constants.ACTION.ACTION_AUDIO_CHANGED);
@@ -1050,7 +1038,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		intentFilter.addAction(Constants.ACTION.ACTION_GET_USB_PERMISSION);
 		intentFilter.addAction(Constants.ACTION.ACTION_USB_HAS_ANSWER);
 		intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_CALIBRATION);
-//		intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
 		return intentFilter;
 	}
 
@@ -1087,6 +1074,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			final String action = intent.getAction();
+			if (AtomSpectraService.ACTION_RECORDING_SUSPENDED.equals(action)) {
+				// Toast.makeText(context,"suspended intent", Toast.LENGTH_SHORT).show();
+				checkRecordingSuspended();
+			}
+
+			if (AtomSpectraService.ACTION_RECORDING_RESUMED.equals(action)) {
+				// Toast.makeText(context,"resumed intent", Toast.LENGTH_SHORT).show();
+				dismissRecordingSuspendedDialog();
+			}
+
 			if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action)) {
 				Bundle mBundle = intent.getExtras();
 				if (mBundle != null) {
@@ -1301,11 +1298,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				}
 			}
 			if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-				if (app_menu != null) {
-					// TODO: check if device is recording?
-					app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
-					app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
-				}
 				Intent intentDetached = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
 				context.sendBroadcast(intentDetached);
 			}
@@ -1428,8 +1420,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	@Override
 	protected void onResume() {
 		super.onResume();
-//		checkGPS();
+		// Toast.makeText(this, "On resume", Toast.LENGTH_SHORT).show();
 
+		checkRecordingSuspended();
 		reducedTo = sharedPreferences.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
 		if (mAtomSpectraService != null) {
 			if (AtomSpectraService.getScaleFactor() > Constants.SCALE_DOSE_MODE) {
@@ -1443,8 +1436,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	@Override
 	protected void onPause() {
 		super.onPause();
-//		Locator.stopUsingGPS();
 		Log.d(TAG, "-XxX-  pause");
+		// Toast.makeText(this, "On pause", Toast.LENGTH_SHORT).show();
 	}
 
 	@Override
@@ -1466,45 +1459,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		mLayoutView.setVisibility(LinearLayout.INVISIBLE);
 		mTextView = null;
 		mLayoutView = null;
+		dismissRecordingSuspendedDialog();
 		Log.d(TAG, "-XxX-");
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
+		// Toast.makeText(this, "On stop", Toast.LENGTH_SHORT).show();
 		active = false;
 		Log.d(TAG, "-XxX-  stop");
 	}
-
-//	private boolean checkGPS() {
-//		boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
-//		boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-//		addGPS = sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-//
-//		if ((hasFeatureGPS || hasFeatureNetwork) && addGPS) {
-//			if (PermissionChecker.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
-//				Locator.startUsingGPS();
-//				if (!Locator.hasGPS) {
-//					SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
-//					editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-//					editor.apply();
-//					sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
-//					return false;
-//				}
-//			} else {
-//				Locator.stopUsingGPS();
-//				SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
-//				editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-//				editor.apply();
-//				sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
-//				return false;
-//			}
-//		} else {
-//			Locator.stopUsingGPS();
-//			return false;
-//		}
-//		return true;
-//	}
 
 	// Code to manage Service lifecycle.
 	private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -4347,6 +4312,48 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			default:
 				setDisplayDose(Constants.DISPLAY_DOSE_DEFAULT);
 				break;
+		}
+	}
+
+	private AlertDialog recordingSuspendedAlert = null;
+	private void showRecordingSuspendedDialog() {
+		String message;
+		switch (AtomSpectraService.recordingSuspendReason) {
+			case AtomSpectraService.RECORDING_SUSPEND_REASON_AUDIO_ADDED:
+				message = getString(R.string.recording_suspended_dialog_audio_added);
+				break;
+			case AtomSpectraService.RECORDING_SUSPEND_REASON_AUDIO_REMOVED:
+				message = getString(R.string.recording_suspended_dialog_audio_removed);
+				break;
+			case AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT:
+				message = getString(R.string.recording_suspended_dialog_usb_disconnected);
+				break;
+			default:
+				message = "Unknown reason.";
+				break;
+		}
+		message += "\n" + AtomSpectraService.formatLocalTimeAsISOLikeString(AtomSpectraService.recordingSuspendedAt);
+		final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+				.setTitle(getString(R.string.recording_suspended_dialog_title))
+				.setMessage(message)
+				.setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
+					AtomSpectraService.freeze(true);
+					sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+				})
+				.setCancelable(false);
+		recordingSuspendedAlert = alert.show();
+	}
+
+	private void dismissRecordingSuspendedDialog() {
+		if (recordingSuspendedAlert != null) {
+			recordingSuspendedAlert.dismiss();
+			recordingSuspendedAlert = null;
+		}
+	}
+
+	private void checkRecordingSuspended() {
+		if (AtomSpectraService.isStarted && AtomSpectraService.isRecordingSuspended && active && recordingSuspendedAlert == null) {
+			showRecordingSuspendedDialog();
 		}
 	}
 }

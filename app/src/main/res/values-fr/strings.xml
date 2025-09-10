@@ -336,6 +336,16 @@
     <string name="usb_below_minimal_version">Mettre à jour le micrologiciel de l\'appareil vers la version <xliff:g id="version">%1$d</xliff:g> ou supérieure</string>
     <string name="usb_version_read_error">Erreur de lecture de la version du micrologiciel de l\'appareil</string>
     <string name="usb_version_unknown">Version du micrologiciel de l\'appareil inconnue</string>
+    <string name="usb_attached_while_recording_audio">Le périphérique USB a été ignoré : lecture des données du microphone en cours.\nArrêtez la lecture des données et reconnectez le périphérique USB.</string>
+
+    <string name="recording_suspended_dialog_title">Lecture des données suspendue!</string>
+    <string name="recording_suspended_dialog_usb_disconnected">Le périphérique USB a été déconnecté pendant la lecture des données. Veuillez le reconnecter pour poursuivre.</string>
+    <string name="recording_suspended_dialog_audio_added">Un microphone externe est connecté pendant le processus de lecture des données. Veuillez le déconnecter pour poursuivre.</string>
+    <string name="recording_suspended_dialog_audio_removed">Le microphone externe a été déconnecté pendant le processus de lecture des données. Veuillez reconnecter le microphone externe pour poursuivre.</string>
+    <string name="recording_suspended_dialog_dismiss">Ignorer et arrêter la lecture des données</string>
+    <string name="recording_suspended_notification">Lecture des données suspendue!</string>
+    <string name="recording_suspended_notification_suspended_at">Enregistrement suspendu: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">L\'enregistrement a repris: <xliff:g id="time">%1$s</xliff:g></string>
 
     <string name="searching_isotopes">Recherche d\'isotopes…</string>
     <string name="autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
