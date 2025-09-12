@@ -182,7 +182,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:singleLine="true"
-                    android:text="@string/save_folder"
+                    android:text="@string/working_directory"
                     android:textColor="#FFFFFF"
                     android:textSize="18sp" />
 

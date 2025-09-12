@@ -82,7 +82,7 @@
     <string name="minfront">Des points avant min: 5</string>
     <string name="noisediscriminator">Le discriminateur de bruit: 256</string>
     <string name="ADCroundedto">ANC est arrondi à: 12 bits</string>
-    <string name="save_folder">Un répertoire par défaut: </string>
+    <string name="working_directory">Répertoire de travail: </string>
     <string name="compress_graph">Spectre: Somme</string>
 
     <string name="plus">\u2192</string>
@@ -262,6 +262,8 @@
     <string name="perm_no_outside">Un fichier est hors de ma portée</string>
     <string name="perm_no_usb">Aucune autorisation d\'accès au périphérique USB</string>
     <string name="perm_no_gps">Pas d\'accès GPS, les données GPS ne seront pas définies</string>
+
+    <string name="error_working_dir_not_set">Le répertoire de travail n\'est pas défini. Accédez aux paramètres et configurez le répertoire de travail.</string>
 
     <string name="ask_select_histogram">Sélectionnez un spectre</string>
     <string name="ask_select_background">Sélectionnez un spectre du fond</string>
@@ -545,7 +547,7 @@
         \t- «\u202fSource:\u202f» - choisissez l\'entrée audio souhaitée (non utilisée avec les spectromètres USB directs comme «\u202f<u>AtomSpectra Nano Pro</u>\u202f»). Appuyez sur le texte pour changer la source audio.\n
         \t- «\u202fAlarme sonore\u202f» - fait une tonalité en fonction du niveau de cps. Le niveau de base est calculé en utilisant la valeur cps au cours des 5 dernières secondes. Le niveau peut être recalculé après avoir effacé le spectre ou en appuyant sur le bouton «\u202f<annotation foreground="parameter">≈</annotation>\u202f». Vous pouvez sélectionner l\'intervalle d\'énergie souhaité en keV (A-B) auquel faire attention. La valeur du taux de comptage de l\'intervalle sélectionné est indiquée entre parenthèses après la valeur du taux de comptage complet.\n
         \t- «\u202fAudio:\u202f» - sortie sonore souhaitée. Appuyez sur le texte pour sélectionner la sortie suivante.\n
-        \t- «\u202fUn répertoire par défaut\u202f» - choisissez le dossier de destination pour tous les fichiers. S\'il indique <u>...</u> pour Android 8 et supérieur, il vous sera demandé un répertoire de destination. Ou vous pouvez appuyer sur <u>...</u> (ou le nom affiché) pour sélectionner manuellement l\'emplacement souhaité. Sur Android avant 8, ce paramètre ne peut pas être modifié. S\'il affiche toujours <u>...</u>, créez vous-même le dossier <u>AtomSpectra</u> à la racine du premier stockage (généralement le stockage du téléphone) et redémarrez le programme.\n
+        \t- «\u202fRépertoire de travail\u202f» - choisissez le dossier de destination pour tous les fichiers. S\'il indique <u>...</u> pour Android 8 et supérieur, il vous sera demandé un répertoire de destination. Ou vous pouvez appuyer sur <u>...</u> (ou le nom affiché) pour sélectionner manuellement l\'emplacement souhaité. Sur Android avant 8, ce paramètre ne peut pas être modifié. S\'il affiche toujours <u>...</u>, créez vous-même le dossier <u>AtomSpectra</u> à la racine du premier stockage (généralement le stockage du téléphone) et redémarrez le programme.\n
         \t- «\u202fMontrer comme\u202f» - compresser le spectre affiché à ce nombre de points. Le programme réduit 1024 canaux de spectre ou le débit de dose au nombre sélectionné et l\'affiche sur le graphique pour accélérer la sortie.\n
         \t- «\u202fDes points avant min\u202f» and «\u202fDes points avant max\u202f» - longueur minimale et maximale en comptage du front d\'impulsion à détecter. Les points jaunes sur le graphique indiquent la longueur minimale requise sur le front d\'impulsion, les points verts indiquent la longueur acceptable du front d\'impulsion entre le nombre minimum et maximum de comptages. Les paramètres par défaut sont optimaux pour tous les appareils <u>AtomSpectra</u>.\n
         \t- «\u202fLe discriminateur de bruit\u202f» - n\'enregistrez pas les chaînes sous ce nombre pour exclure les chaînes bruyantes.\n

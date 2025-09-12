@@ -82,7 +82,7 @@
     <string name="minfront">Min front points: 5</string>
     <string name="noisediscriminator">Noise discriminator: 256</string>
     <string name="ADCroundedto">ADC is rounded to: 12 bits</string>
-    <string name="save_folder">Save folder: </string>
+    <string name="working_directory">Working directory: </string>
     <string name="compress_graph">Spectrum: Sum</string>
 
     <string name="plus">\u2192</string>
@@ -262,6 +262,8 @@
     <string name="perm_no_outside">A file is outside of my scope</string>
     <string name="perm_no_usb">No permission to access USB device</string>
     <string name="perm_no_gps">No GPS access, GPS data will be undefined</string>
+
+    <string name="error_working_dir_not_set">Working directory is not set. Go to settings and configure working directory.</string>
 
     <string name="ask_select_histogram">Select a spectrum</string>
     <string name="ask_select_background">Select a background spectrum</string>
@@ -539,7 +541,7 @@
         \t- \'Source:\' - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
         \t- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
         \t- \'Sound:\' - desired sound output. Press on text to select next output.\n
-        \t- \'Save folder\' - choose the destination folder for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create folder <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
+        \t- \'Working directory\' - choose the destination directory for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create directory <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
         \t- \'Show as\' - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
         \t- \'Min front points\' and \'Max front points\' - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
         \t- \'Noise discriminator\' - do not register channels below this number to exclude noisy channels.\n

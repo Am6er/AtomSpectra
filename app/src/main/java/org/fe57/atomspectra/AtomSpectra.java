@@ -999,7 +999,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		menu.findItem(R.id.action_background_show).setChecked(AtomSpectraService.background_show);
 		menu.findItem(R.id.action_background_show).setEnabled(enable_back);
-		app_menu.findItem(R.id.action_background_suffix).setEnabled(enable_back);
+		menu.findItem(R.id.action_background_suffix).setEnabled(enable_back);
 		menu.findItem(R.id.action_background_subtract).setEnabled(AtomSpectraService.background_show);
 		menu.findItem(R.id.action_background_subtract).setChecked(background_subtract);
 		menu.findItem(R.id.action_background_clear).setEnabled(enable_back);
@@ -2172,7 +2172,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.action_background_save) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2208,16 +2208,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						.setAction(Intent.ACTION_GET_CONTENT);
 				startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
 			}
-			//return true;
-
-
-
-
-
-
 
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2358,7 +2351,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_hist_to_file) {
 			Log.d(TAG, "saving file");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2490,7 +2483,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_export) {
 			Log.d(TAG, "exporting file");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2555,7 +2548,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_export_with_energy) {
 			Log.d(TAG, "exporting file with energy");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2620,7 +2613,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_export_to_BqMoni) {
 			Log.d(TAG, "exporting file to Becquerel Monitor");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2685,7 +2678,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_export_to_SPE) {
 			Log.d(TAG, "exporting file to SPE");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2750,7 +2743,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_export_to_N42) {
 			Log.d(TAG, "exporting file to SPE");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -2815,7 +2808,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_save_device) {
 			Log.d(TAG, "saving device file");
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				String dirName = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+				String dirName = getWorkingDir(false);
 				if (dirName == null) {
 					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
@@ -3176,6 +3169,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (selectedFile != null)
 				loadHist(selectedFile, true, true);
 		} else if (requestCode == LOAD_BACK_CODE && resultCode == RESULT_OK) {
+
 			selectedFile = data.getData(); //The uri with the location of the file
 			if (selectedFile != null)
 				loadBackground(selectedFile);
@@ -3631,7 +3625,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			backSpectrum.setLocation(null).updateComments();
 		}
 
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), spectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, spectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.perm_no_write_histogram), Toast.LENGTH_LONG).show();
 			return;
@@ -3670,26 +3668,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	private void loadBackground(Uri file) {
 		InputStream docStream;
-		//String backgroundFileName;
-		String folder = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
-		Uri folderUri = Uri.parse(folder);
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			if (file == null) {
-				if (folder == null) {
+				// load default background
+				String workingDir = getWorkingDir(true);
+				if (workingDir == null) {
+					return;
+				}
+				Uri dirUri = Uri.parse(workingDir);
+				if (dirUri == null) {
 					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
 					return;
 				}
-				Uri dir = Uri.parse(folder);
-				if (dir == null) {
-					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
-					return;
-				}
-				DocumentFile dirFile = DocumentFile.fromTreeUri(this, dir);
+				DocumentFile dirFile = DocumentFile.fromTreeUri(this, dirUri);
 				if ((dirFile == null) || !dirFile.isDirectory()) {
 					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
 					return;
 				}
-				DocumentFile backgroundFile = DocumentFile.fromSingleUri(this, Uri.parse(folder + "/document/" + Uri.encode(DocumentsContract.getTreeDocumentId(folderUri) + "/Background")));
+				DocumentFile backgroundFile = DocumentFile.fromSingleUri(this, Uri.parse(workingDir + "/document/" + Uri.encode(DocumentsContract.getTreeDocumentId(dirUri) + "/Background")));
 				if ((backgroundFile == null) || !backgroundFile.isFile()) {
 					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
 					return;
@@ -3700,10 +3697,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
 					return;
 				}
-				//backgroundFileName = backgroundFile.getUri().getPath();
 				Log.d(TAG, "Background");
 			} else {
-				//backgroundFileName = file.getPath();
 				Log.d(TAG, file.toString());
 				try {
 					docStream = getContentResolver().openInputStream(file);
@@ -3714,30 +3709,24 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			}
 		} else {
 			if (file == null) {
-				if (folder == null) {
-					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
+				// default background
+				String workingDir = getWorkingDir(true);
+				if (workingDir == null) {
 					return;
 				}
-				//backgroundFileName = "/AtomSpectra/Background";
 				try {
-					docStream = new FileInputStream(folder + "/Background");
+					docStream = new FileInputStream(workingDir + "/Background");
 				} catch (Exception e) {
 					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
 					return;
 				}
 			} else {
-				//backgroundFileName = file.getPath();
 				try {
 					docStream = new FileInputStream(file.getPath());
 				} catch (Exception e) {
 					Toast.makeText(this, getString(R.string.background_load_error), Toast.LENGTH_LONG).show();
 					return;
 				}
-//				if (backgroundFileName == null) {
-//					Log.d(TAG, "Null filename");
-//					Toast.makeText(this, getString(R.string.strange_file_name), Toast.LENGTH_LONG).show();
-//					return;
-//				}
 			}
 		}
 		SpectrumFileAS spectrumFile = new SpectrumFileAS();
@@ -3789,7 +3778,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			spectrum.setLocation(null).updateComments();
 		}
 
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), spectrum.getSpectrumDate(), "Background", true, "", "", "application/octet-stream", false, false, true);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, spectrum.getSpectrumDate(), "Background", true, "", "", "application/octet-stream", false, false, true);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.background_save_error), Toast.LENGTH_LONG).show();
 			return;
@@ -3823,7 +3816,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			backSpectrum.setLocation(null).updateComments();
 		}
 
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), spectrum.getSpectrumDate(), "Export", fileNamePrefix, suffix, ".csv", "text/csv", fileNameDate, fileNameTime, false);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, spectrum.getSpectrumDate(), "Export", fileNamePrefix, suffix, ".csv", "text/csv", fileNameDate, fileNameTime, false);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.perm_no_write_export), Toast.LENGTH_LONG).show();
 			return;
@@ -3858,7 +3855,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			backSpectrum.setLocation(null).updateComments();
 		}
 
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), spectrum.getSpectrumDate(), "Bq", fileNamePrefix, suffix, ".xml", "text/xml", fileNameDate, fileNameTime, false);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, spectrum.getSpectrumDate(), "Bq", fileNamePrefix, suffix, ".xml", "text/xml", fileNameDate, fileNameTime, false);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.perm_no_write_bqmoni), Toast.LENGTH_LONG).show();
 			return;
@@ -3891,7 +3892,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			spectrum.setLocation(null).updateComments();
 		}
 
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), spectrum.getSpectrumDate(), "MCA", fileNamePrefix, suffix, ".spe", "application/octet-stream", fileNameDate, fileNameTime, false);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, spectrum.getSpectrumDate(), "MCA", fileNamePrefix, suffix, ".spe", "application/octet-stream", fileNameDate, fileNameTime, false);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.perm_no_write_spe), Toast.LENGTH_LONG).show();
 			return;
@@ -3925,7 +3930,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			backSpectrum.setLocation(null).updateComments();
 		}
 
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), spectrum.getSpectrumDate(), "MCA", fileNamePrefix, suffix, ".N42", "application/octet-stream", fileNameDate, fileNameTime, false);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, spectrum.getSpectrumDate(), "MCA", fileNamePrefix, suffix, ".N42", "application/octet-stream", fileNameDate, fileNameTime, false);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.perm_no_write_N42), Toast.LENGTH_LONG).show();
 			return;
@@ -4001,7 +4010,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
 		boolean fileNameDate = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
 		boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
-		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), 0, "Device", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
+		String workingDir = getWorkingDir(true);
+		if (workingDir == null) {
+			return;
+		}
+		Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, 0, "Device", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
 		if (returnPair == null) {
 			Toast.makeText(this, getString(R.string.perm_no_write_device), Toast.LENGTH_LONG).show();
 			return;
@@ -4274,6 +4287,28 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		outState.putBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, background_subtract);
 		outState.putInt(ATOM_STATE_CURSOR_X, cursor_x);
 		outState.putBoolean(ATOM_STATE_CURSOR_BUTTONS, showPlusMinusButtons);
+	}
+
+	private void showToast(int stringId) {
+		Toast.makeText(this, stringId, Toast.LENGTH_LONG);
+	}
+
+	private void showToast(String text) {
+		Toast.makeText(this, text, Toast.LENGTH_LONG);
+	}
+
+	private String getWorkingDir(boolean notifyUserIfNotSet) {
+		if (sharedPreferences == null) {
+			showToast("ERROR: Unable to get working dir, sharedPreferences instance is null.");
+			return null;
+		}
+
+		String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+		if (workingDir == null && notifyUserIfNotSet) {
+			showToast(R.string.error_working_dir_not_set);
+		}
+
+		return workingDir;
 	}
 
 	private void updateSelectedInputIndicator() {
