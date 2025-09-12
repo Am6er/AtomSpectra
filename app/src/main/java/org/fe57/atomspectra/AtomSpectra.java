@@ -2174,17 +2174,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_BACK_DIR_CODE);
+					requestDirectory(SELECT_SAVE_BACK_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
 						saveBackground();
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_BACK_DIR_CODE);
+						requestDirectory(SELECT_SAVE_BACK_DIR_CODE);
 					}
 				}
 			} else {
@@ -2212,17 +2208,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_LOAD_BACK_DIR_CODE);
+					requestDirectory(SELECT_LOAD_BACK_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
 						loadBackground(null);
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_LOAD_BACK_DIR_CODE);
+						requestDirectory(SELECT_LOAD_BACK_DIR_CODE);
 					}
 				}
 			} else {
@@ -2353,9 +2345,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_HIST_DIR_CODE);
+					requestDirectory(SELECT_SAVE_HIST_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2382,9 +2372,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_HIST_DIR_CODE);
+						requestDirectory(SELECT_SAVE_HIST_DIR_CODE);
 					}
 				}
 			} else {
@@ -2485,9 +2473,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_EXPORT_DIR_CODE);
+					requestDirectory(SELECT_SAVE_EXPORT_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2514,9 +2500,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_EXPORT_DIR_CODE);
+						requestDirectory(SELECT_SAVE_EXPORT_DIR_CODE);
 					}
 				}
 			} else {
@@ -2550,9 +2534,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_EXPORT_E_DIR_CODE);
+					requestDirectory(SELECT_SAVE_EXPORT_E_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2579,9 +2561,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_EXPORT_E_DIR_CODE);
+						requestDirectory(SELECT_SAVE_EXPORT_E_DIR_CODE);
 					}
 				}
 			} else {
@@ -2615,9 +2595,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_EXPORT_BQ_DIR_CODE);
+					requestDirectory(SELECT_SAVE_EXPORT_BQ_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2644,9 +2622,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_EXPORT_BQ_DIR_CODE);
+						requestDirectory(SELECT_SAVE_EXPORT_BQ_DIR_CODE);
 					}
 				}
 			} else {
@@ -2680,9 +2656,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_EXPORT_SPE_DIR_CODE);
+					requestDirectory(SELECT_SAVE_EXPORT_SPE_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2709,9 +2683,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_EXPORT_SPE_DIR_CODE);
+						requestDirectory(SELECT_SAVE_EXPORT_SPE_DIR_CODE);
 					}
 				}
 			} else {
@@ -2745,9 +2717,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_EXPORT_N42_DIR_CODE);
+					requestDirectory(SELECT_SAVE_EXPORT_N42_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2774,9 +2744,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_EXPORT_N42_DIR_CODE);
+						requestDirectory(SELECT_SAVE_EXPORT_N42_DIR_CODE);
 					}
 				}
 			} else {
@@ -2810,9 +2778,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 				String dirName = getWorkingDir(false);
 				if (dirName == null) {
-					Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-					intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-					startActivityForResult(intent, SELECT_SAVE_HIST_DIR_CODE);
+					requestDirectory(SELECT_SAVE_DEVICE_DIR_CODE);
 				} else {
 					final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
 					if ((dir != null) && dir.isDirectory()) {
@@ -2836,9 +2802,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							Log.d(TAG, "saving file FAIL");
 						}
 					} else {
-						Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-						startActivityForResult(intent, SELECT_SAVE_DEVICE_DIR_CODE);
+						requestDirectory(SELECT_SAVE_DEVICE_DIR_CODE);
 					}
 				}
 			} else {
@@ -4283,18 +4247,23 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		outState.putBoolean(ATOM_STATE_BAR, barMode);
 		outState.putInt(Constants.SCALE_FACTOR, AtomSpectraService.getScaleFactor() > Constants.SCALE_DOSE_MODE ? AtomSpectraService.getSavedScaleFactor() : AtomSpectraService.getScaleFactor());
 		outState.putFloat(ATOM_STATE_SCALE, zoom_factor);
-//		outState.putBoolean(ATOM_STATE_BACKGROUND_SHOW, AtomSpectraService.background_show);
 		outState.putBoolean(ATOM_STATE_BACKGROUND_SUBTRACT, background_subtract);
 		outState.putInt(ATOM_STATE_CURSOR_X, cursor_x);
 		outState.putBoolean(ATOM_STATE_CURSOR_BUTTONS, showPlusMinusButtons);
 	}
 
+	private void requestDirectory(int dir_code) {
+		Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+		intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+		startActivityForResult(intent, dir_code);
+	}
+
 	private void showToast(int stringId) {
-		Toast.makeText(this, stringId, Toast.LENGTH_LONG);
+		showToast(getString(stringId));
 	}
 
 	private void showToast(String text) {
-		Toast.makeText(this, text, Toast.LENGTH_LONG);
+		Toast.makeText(this, text, Toast.LENGTH_LONG).show();
 	}
 
 	private String getWorkingDir(boolean notifyUserIfNotSet) {
