@@ -381,7 +381,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		//prepare directory to work on Android under 7.0
 		//on Android 8.0 and above system picker will be used
 		updateDestinationDirectory();
-
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		reducedTo = sharedPreferences.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
@@ -466,17 +465,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		inputServiceIntent.setAction(Constants.ACTION.ACTION_START_FOREGROUND);
 
-//		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//			getApplicationContext().startForegroundService(inputServiceIntent);
-//		} else {
-//			getApplicationContext().startService(inputServiceIntent);
-//		}
-//		getApplicationContext().bindService(inputServiceIntent, mServiceConnection, BIND_IMPORTANT);
-
-//		if (savedInstanceState != null) {
-//			sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, savedInstanceState.getBoolean(Constants.FREEZE_STATE, true)));
-//		}
-
 		//check permissions
 		if (checkPermissions(new String[]{Manifest.permission.RECORD_AUDIO},
 				getString(R.string.perm_ask_audio_title),
@@ -509,6 +497,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else {
 			registerReceiver(mDataUpdateReceiver, makeAtomSpectraUpdateIntentFilter());
 		}
+
+		getWorkingDir(true);
 	}
 
 	@Override

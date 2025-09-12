@@ -2857,7 +2857,12 @@ public class AtomSpectraService extends Service {
         boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
         boolean fileNameDate = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
         boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
-        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
+        String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+        if (workingDir == null) {
+            showToastInMainLooper(R.string.error_working_dir_not_set, Toast.LENGTH_LONG);
+            return;
+        }
+        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
         if (returnPair == null) {
             showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
             return;
@@ -2888,7 +2893,13 @@ public class AtomSpectraService extends Service {
 
         if (autosaveSpectrum == null) {
             autosaveSpectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
-            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
+            String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+            if (workingDir == null) {
+                showToastInMainLooper(R.string.error_working_dir_not_set, Toast.LENGTH_LONG);
+                showToastInMainLooper("Unable to ", Toast.LENGTH_LONG);
+                return;
+            }
+            autosavePair = SpectrumFile.prepareOutputStream(this, workingDir, autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
 
             if (autosavePair == null) {
                 this.showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
