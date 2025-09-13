@@ -349,9 +349,16 @@
     <string name="recording_suspended_notification_suspended_at">Enregistrement suspendu: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">L\'enregistrement a repris: <xliff:g id="time">%1$s</xliff:g></string>
 
-    <string name="searching_isotopes">Recherche d\'isotopes…</string>
     <string name="autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
+
+    <string name="dialog_confirm_title">Confirmation</string>
+    <string name="dialog_yes_button">Oui</string>
+    <string name="dialog_no_button">Non</string>
+
+    <string name="searching_isotopes">Recherche d\'isotopes…</string>
     <string name="isotope_list">Isotopes</string>
+    <string name="isotopes_clear_selection">Effacer la sélection</string>
+    <string name="isotopes_clear_selection_confirm">Effacer la sélection actuelle d\'articles?</string>
     <string name="action_find_isotopes">Trouver des isotopes</string>
     <string name="find_isotopes">Trouver</string>
     <string name="show_isotopes">Montrer</string>
