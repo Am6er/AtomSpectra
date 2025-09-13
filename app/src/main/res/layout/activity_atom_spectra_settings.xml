@@ -44,6 +44,16 @@
             android:orientation="vertical"
             android:showDividers="middle">
 
+<!-- Audio Processing -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_audio_processing"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
 
             <CheckBox
                 android:id="@+id/CheckPileUp"
@@ -70,30 +80,6 @@
                 android:text="@string/invert"
                 android:textColor="#FFFFFFFF" />
 
-            <CheckBox
-                android:id="@+id/CheckGPS"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/add_gps"
-                android:textColor="#FFFFFFFF" />
-
-            <CheckBox
-                android:id="@+id/UpdateIsotopes"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/update_isotopes"
-                android:textColor="#FFFFFFFF" />
-
-            <CheckBox
-                android:id="@+id/SendDataToAtomSwift"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/send_data_to_atom_swift_app"
-                android:textColor="#FFFFFFFF" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -117,118 +103,6 @@
                     android:textColor="#FFFFFF"
                     android:textSize="18sp"
                     tools:ignore="HardcodedText" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="5sp"
-                android:layout_marginBottom="5sp"
-                android:orientation="horizontal">
-
-                <CheckBox
-                    android:id="@+id/CheckSound"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/output_sound"
-                    android:textColor="#FFFFFFFF" />
-
-                <TextView
-                    android:id="@+id/CheckSoundText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="onSelectIntervalClick"
-                    android:text="@string/output_sound_full"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="5sp"
-                android:layout_marginBottom="5sp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/textView2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="@string/output_sound_device"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/outputSoundText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="onSelectAudioOutputClick"
-                    android:text="..."
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    tools:ignore="HardcodedText" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="5sp"
-                android:layout_marginBottom="5sp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/textView3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="@string/working_directory"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/directoryText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="onSelectDirectoryClick"
-                    android:text="..."
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    tools:ignore="HardcodedText" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|center_horizontal">
-
-                <Button
-                    android:id="@+id/addPointButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_reducedTo_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/channelText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:gravity="center"
-                    android:text="@string/reducedto"
-                    android:textColor="#FFFFFF" />
-
-                <Button
-                    android:id="@+id/removeCalibrationButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_reducedTo_plus"
-                    android:text="@string/plus" />
-
             </LinearLayout>
 
             <LinearLayout
@@ -302,41 +176,6 @@
                 android:layout_height="wrap_content">
 
                 <Button
-                    android:id="@+id/decNoiseButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_noise_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/noiseText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:clickable="true"
-                    android:gravity="center"
-                    android:onClick="onClick_noise"
-                    android:text="@string/noisediscriminator"
-                    android:textColor="#FFFFFFFF" />
-
-                <Button
-                    android:id="@+id/incNoiseButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_noise_plus"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <Button
                     android:id="@+id/decADCButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -365,74 +204,85 @@
 
             </LinearLayout>
 
+<!-- End Audio Processing -->
+<!-- Spectrum -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_spectrum"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal">
 
                 <Button
-                    android:id="@+id/decSaveButton"
+                    android:id="@+id/addPointButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="24dp"
-                    android:onClick="onClick_save_channels_minus"
+                    android:onClick="onClick_reducedTo_minus"
                     android:text="@string/minus" />
 
                 <TextView
-                    android:id="@+id/saveText"
+                    android:id="@+id/channelText"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="80"
-                    android:clickable="true"
                     android:gravity="center"
-                    android:onClick="onClick_save_channels"
-                    android:text="@string/save_channels"
-                    android:textColor="#FFFFFFFF" />
+                    android:text="@string/reducedto"
+                    android:textColor="#FFFFFF" />
 
                 <Button
-                    android:id="@+id/incSaveText"
+                    android:id="@+id/removeCalibrationButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="24dp"
-                    android:onClick="onClick_save_channels_plus"
+                    android:onClick="onClick_reducedTo_plus"
                     android:text="@string/plus" />
+
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content">
 
                 <Button
-                    android:id="@+id/decLoadButton"
+                    android:id="@+id/decNoiseButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="24dp"
-                    android:onClick="onClick_load_channels_minus"
+                    android:onClick="onClick_noise_minus"
                     android:text="@string/minus" />
 
                 <TextView
-                    android:id="@+id/loadText"
+                    android:id="@+id/noiseText"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_weight="80"
                     android:clickable="true"
                     android:gravity="center"
-                    android:onClick="onClick_load_channels"
-                    android:text="@string/load_channels"
+                    android:onClick="onClick_noise"
+                    android:text="@string/noisediscriminator"
                     android:textColor="#FFFFFFFF" />
 
                 <Button
-                    android:id="@+id/incLoadButton"
+                    android:id="@+id/incNoiseButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="24dp"
-                    android:onClick="onClick_load_channels_plus"
+                    android:onClick="onClick_noise_plus"
                     android:text="@string/plus" />
+
             </LinearLayout>
 
             <LinearLayout
@@ -503,6 +353,51 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/decGraphTypeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_Graph_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/graphTypeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:text="@string/compress_graph"
+                    android:textColor="#FFFFFFFF" />
+
+                <Button
+                    android:id="@+id/incGraphTypeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_Graph_plus"
+                    android:text="@string/plus" />
+
+            </LinearLayout>
+
+<!-- End Spectrum -->
+<!-- Spectrum Change -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_spectrum_change"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal">
 
@@ -534,39 +429,27 @@
                     android:text="@string/plus" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/decOutputNameButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_outputName_minus"
-                    android:text="@string/minus" />
+<!-- End Spectrum Change -->
+<!-- Spectrogram -->
 
-                <TextView
-                    android:id="@+id/outputNameText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:gravity="center"
-                    android:text="..."
-                    android:textColor="#FFFFFF"
-                    tools:ignore="HardcodedText" />
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_spectrogram"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
 
-                <Button
-                    android:id="@+id/incOutputNameButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_outputName_plus"
-                    android:text="@string/plus" />
-            </LinearLayout>
+            <CheckBox
+                android:id="@+id/SpectrogramMidnightReset"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/settings_spg_midnight_reset"
+                android:textColor="#FFFFFFFF" />
+
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -602,140 +485,17 @@
                     android:text="@string/plus" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
+<!-- End Spectrogram -->
+<!-- Dose Rate -->
 
-                <Button
-                    android:id="@+id/decCompressButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_compression_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/compressText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:clickable="true"
-                    android:gravity="center"
-                    android:onClick="onClick_compression_channels"
-                    android:text="@string/channel_compression"
-                    android:textColor="#FFFFFF" />
-
-                <Button
-                    android:id="@+id/incCompressButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_compression_plus"
-                    android:text="@string/plus" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <Button
-                    android:id="@+id/decGraphTypeButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_Graph_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/graphTypeText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:gravity="center"
-                    android:text="@string/compress_graph"
-                    android:textColor="#FFFFFFFF" />
-
-                <Button
-                    android:id="@+id/incGraphTypeButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_Graph_plus"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <Button
-                    android:id="@+id/decLocaleButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_Locale_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/localeText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:gravity="center"
-                    android:text="Language: Default"
-                    android:textColor="#FFFFFFFF"
-                    tools:ignore="HardcodedText" />
-
-                <Button
-                    android:id="@+id/incLocaleButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_Locale_plus"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <Button
-                    android:id="@+id/decAtomSwiftDRButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_AtomSwiftDR_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/atomSwiftDRText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:gravity="center"
-                    android:textColor="#FFFFFFFF"
-                    tools:ignore="HardcodedText" />
-
-                <Button
-                    android:id="@+id/incAtomSwiftDRButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_AtomSwiftDR_plus"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_dose_rate"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -933,6 +693,377 @@
                     android:text="@string/plus" />
 
             </LinearLayout>
+
+<!-- End Dose Rate -->
+<!-- Interval Search -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_interval_search"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5sp"
+                android:layout_marginBottom="5sp"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    android:id="@+id/CheckSound"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/output_sound"
+                    android:textColor="#FFFFFFFF" />
+
+                <TextView
+                    android:id="@+id/CheckSoundText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onSelectIntervalClick"
+                    android:text="@string/output_sound_full"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5sp"
+                android:layout_marginBottom="5sp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:text="@string/output_sound_device"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/outputSoundText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onSelectAudioOutputClick"
+                    android:text="..."
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+<!-- End Interval Search -->
+<!-- AtomSwift Integration -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_atomswift_integration"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <CheckBox
+                android:id="@+id/SendDataToAtomSwift"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/send_data_to_atom_swift_app"
+                android:textColor="#FFFFFFFF" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/decAtomSwiftDRButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_AtomSwiftDR_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/atomSwiftDRText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:textColor="#FFFFFFFF"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/incAtomSwiftDRButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_AtomSwiftDR_plus"
+                    android:text="@string/plus" />
+
+            </LinearLayout>
+
+<!-- End AtomSwift Integration -->
+<!-- Search Isotopes -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_search_isotopes"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <CheckBox
+                android:id="@+id/UpdateIsotopes"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/update_isotopes"
+                android:textColor="#FFFFFFFF" />
+
+
+<!-- End Search Isotopes -->
+<!-- Files -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_files"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5sp"
+                android:layout_marginBottom="5sp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:text="@string/working_directory"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/directoryText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onSelectDirectoryClick"
+                    android:text="..."
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/CheckGPS"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/add_gps"
+                android:textColor="#FFFFFFFF" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/decSaveButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_save_channels_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/saveText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:clickable="true"
+                    android:gravity="center"
+                    android:onClick="onClick_save_channels"
+                    android:text="@string/save_channels"
+                    android:textColor="#FFFFFFFF" />
+
+                <Button
+                    android:id="@+id/incSaveText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_save_channels_plus"
+                    android:text="@string/plus" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/decLoadButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_load_channels_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/loadText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:clickable="true"
+                    android:gravity="center"
+                    android:onClick="onClick_load_channels"
+                    android:text="@string/load_channels"
+                    android:textColor="#FFFFFFFF" />
+
+                <Button
+                    android:id="@+id/incLoadButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_load_channels_plus"
+                    android:text="@string/plus" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/decCompressButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_compression_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/compressText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:clickable="true"
+                    android:gravity="center"
+                    android:onClick="onClick_compression_channels"
+                    android:text="@string/channel_compression"
+                    android:textColor="#FFFFFF" />
+
+                <Button
+                    android:id="@+id/incCompressButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_compression_plus"
+                    android:text="@string/plus" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/decOutputNameButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_outputName_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/outputNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:text="..."
+                    android:textColor="#FFFFFF"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/incOutputNameButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_outputName_plus"
+                    android:text="@string/plus" />
+            </LinearLayout>
+
+<!-- End Files -->
+<!-- Miscellaneous -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_miscellaneous"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/decLocaleButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_Locale_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/localeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:text="Language: Default"
+                    android:textColor="#FFFFFFFF"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/incLocaleButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_Locale_plus"
+                    android:text="@string/plus" />
+
+            </LinearLayout>
+
+<!-- End Miscellanious -->
 
         </LinearLayout>
 

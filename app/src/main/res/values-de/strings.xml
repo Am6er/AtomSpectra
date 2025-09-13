@@ -7,7 +7,20 @@
     <string name="app_bar_spectrum_update">(spektrum aktualisieren)</string>
     <string name="app_bar_pause">Das Lesen der Daten wird gestoppt</string>
     <string name="app_channel">Atom Spectra Bedienung</string>
+
     <string name="settings">Atom Spectra Einstellungen</string>
+    <string name="settings_audio_processing">Audioverarbeitung</string>
+    <string name="settings_spectrum">Spektrum</string>
+    <string name="settings_spectrum_change">Spektrumänderung</string>
+    <string name="settings_spectrogram">Spektrogramm</string>
+    <string name="settings_dose_rate">Dosisleistung</string>
+    <string name="settings_interval_search">Intervallsuche</string>
+    <string name="settings_atomswift_integration">AtomSwift-Integration</string>
+    <string name="settings_search_isotopes">Suche nach Isotopen</string>
+    <string name="settings_files">Dateien</string>
+    <string name="settings_miscellaneous">Verschiedenes</string>
+    <string name="settings_spg_midnight_reset">Erstellen Sie um Mitternacht eine neue Spektrogrammdatei</string>
+
     <string name="isotope_search">Atom Spectra Finde Isotope</string>
     <string name="app_bar_sensitivity">Atom Spectra Empfindlichkeit</string>
     <string name="action_settings">Einstellungen</string>
@@ -349,11 +362,12 @@
     <string name="recording_suspended_notification_suspended_at">Aufnahme wurde gestoppt: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Die Aufnahme wurde fortgesetzt: <xliff:g id="time">%1$s</xliff:g></string>\
 
-    <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
-
     <string name="dialog_confirm_title">Bestätigung</string>
     <string name="dialog_yes_button">Ja</string>
     <string name="dialog_no_button">Nein</string>
+
+    <string name="spg_autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
+    <string name="spg_autosave_start_error">FEHLER: Die Delta-Auto-Save-Funktion kann nicht gestartet werden.</string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
     <string name="isotopes_clear_selection">Auswahl löschen</string>
@@ -543,32 +557,43 @@
         \t- „Verwenden eine rohe Audioquelle“ - Versuchen Sie, unverarbeitetes Audio zu verwenden, das unter Android 7 und höher verfügbar ist. Dieses Kontrollkästchen ist unter Android vor Android 7 deaktiviert, wenn das System die Verwendung von unverarbeitetem Audio nicht zulässt.\n
         \t- „Eingabe umkehren“ - Wählen Sie, ob die Pulsform negativ ist.\n
         \t- „Quelle:“ - Wählen Sie den gewünschten Audioeingang (wird nicht mit direkten USB-Spektrometern wie „<u>AtomSpectra Nano Pro</u>“ verwendet). Drücken Sie auf Text, um die Audioquelle zu ändern.\n
-        \t- „Fügen Dateien GPS-Koordinaten hinzu“ - Hinzufügen von GPS-Informationen zu Ausgabedateien (Spektrum, Hintergrund und CSV).\n
-        \t- „Isotope suchen“ - Isotope in einem Spektrum automatisch finden und anzeigen.\n
-        \t- „Senden Sie Daten an die AtomSwift-Anwendung“ - Senden Sie Dosis-/Zählratendaten an die AtomSwift-Anwendung (mit der Sie Karten mit Ihrem Spektrometer erstellen können). Verwendung: Spektrometer anschließen, Starttaste drücken, Option aktivieren, AtomSwift-Anwendung ausführen, AtomSpectraApp in der Geräteliste auswählen. Die minimal unterstützte Version von AtomSwift ist 1.4.250.\n
-        \t- „Sound:“ - gewünschte Tonausgabe. Drücken Sie auf Text, um die nächste Ausgabe auszuwählen.\n
-        \t- „Tonalarm“ - Es macht einen Ton entsprechend der cps-Stufe. Der Basispegel wird anhand des cps-Werts in den letzten 5 Sekunden berechnet. Der Pegel kann nach Löschen des Spektrums oder durch Drücken der Taste „<annotation foreground="parameter">≈</annotation>“ neu berechnet werden. Sie können das gewünschte Energieintervall in keV auswählen (A-B), auf das Sie achten müssen. Der Zählratenwert des ausgewählten Intervalls wird in Klammern hinter dem vollen Zählratenwert angezeigt.\n
-        \t- „Arbeitsverzeichnis“ - Wählen Sie den Zielordner für alle Dateien. Wenn <u>...</u> für Android 8 und höher angezeigt wird, werden Sie nach einem Zielverzeichnis gefragt. Oder Sie drücken <u>...</u> (oder den angezeigten Namen), um den gewünschten Ort manuell auszuwählen. Unter Android vor 8 kann dieser Parameter nicht geändert werden. Wenn weiterhin <u>...</u> angezeigt wird, erstellen Sie den Ordner <u>AtomSpectra</u> im Stammverzeichnis des ersten Speichers (normalerweise des Telefonspeichers) selbst und starten Sie das Programm neu.\n
-        \t- „Zeigen als“ - Komprimierungsspektrum auf diese Anzahl von Punkten angezeigt. Das Programm reduziert den 1024-Kanal des Spektrums oder die Dosisleistung auf die ausgewählte Zahl und zeigt sie in der Grafik an, um die Ausgabe zu beschleunigen.\n
         \t- „Min. Frontpunkte“ and „Max. Frontpunkte“ - minimale und maximale Länge in Zählungen der zu erfassenden Impulsfront. Gelbe Punkte in der Grafik zeigen die minimal erforderliche Länge an der Impulsfront, grüne Punkte zeigen eine akzeptable Länge der Impulsfront zwischen der minimalen und maximalen Anzahl von Zählungen. Die Standardparameter sind für alle <u>AtomSpectra</u>-Geräte optimal.\n
-        \t- „Geräuschdiskriminator“ - Registrieren Sie keine Kanäle unterhalb dieser Nummer, um verrauschte Kanäle auszuschließen.\n
         \t- „ADC ist gerundet auf“ - Anzahl der zu verwendenden oberen ADC-Bits.\n
-        \t- „Kanäle speichern“ - Wie viele Kanäle aus dem Spektrum sollen exportiert werden? Hinweis: Das eigene Format speichert alle Daten.\n
-        \t- „Kanäle laden“ - Wie viele Kanäle aus der alten Spektrumdatei sollen geladen werden? Wenn mehr als 8192 Kanäle vorhanden sind, werden diese auf 8192 Kanäle oder weniger komprimiert. Hinweis: Das neue eigene Format hat die Kanalnummer selbst.\n
+        \n
+        \t- „Zeigen als“ - Komprimierungsspektrum auf diese Anzahl von Punkten angezeigt. Das Programm reduziert den 1024-Kanal des Spektrums oder die Dosisleistung auf die ausgewählte Zahl und zeigt sie in der Grafik an, um die Ausgabe zu beschleunigen.\n
+        \t- „Geräuschdiskriminator“ - Registrieren Sie keine Kanäle unterhalb dieser Nummer, um verrauschte Kanäle auszuschließen.\n
         \t- „Maximaler Grad“ - maximaler Polnomfaktor für die Kalibrierfunktion\n
         \t- „Glätte“ - Wählen Sie ein Echtzeit-Glattheitsfenster.\n
-        \t- „Differenzzeit“ - select the accumulation time between difference output (1-10 s).\n
-        \t- „Name“ - Benennen der Ausgabedateien. Präfix – Dateityp, Datum – Aufnahmedatum, Zeit – Aufnahmezeit, Suffix – benutzerdefinierter Text.\n
-        \t- „Alle N s speichern“ - die Funktion zum automatischen Speichern von Deltadateien. 0 - keine automatische Speicherung.\n
-        \t- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
         \t- „Spektrum“ - Wählen Sie während der Wertekomprimierung den Summen-, Spitzen- oder Durchschnittswert im Spektraldiagramm. Spitzenwerte helfen dabei, kleine Spitzen nicht zu verlieren. Die Mittelwertbildung ergibt ein richtiges Diagramm. Die Summe zeigt das Gespenst, da das Gerät weniger Kanäle hat.\n
-        \t- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
-        \t- „AtomSwift D“ - Wählen Sie aus, welcher Dosisleistungswert an die AtomSwift-Anwendung gesendet wird. Für die Suche/Karten wird die Option „Nicht kompensiert“ empfohlen, es sei denn, Sie benötigen ausdrücklich eine Kompensation und wissen, wie Sie die Empfindlichkeitskurve konfigurieren.\n
-        \t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
+        \n
+        \t- „Differenzzeit“ - Wählen Sie die Dauer des gleitenden Fensters im Spektrumänderungsmodus.\n
+        \n
+        \t- „Erstellen Sie um Mitternacht eine neue Spektrogrammdatei“ - Wenn die Delta-Autosave-Funktion aktiviert ist, wird jeden Tag um Mitternacht eine neue Spektrogrammdatei erstellt.\n
+        \t- „Alle N s speichern“ - die Funktion zum automatischen Speichern von Deltadateien. 0 - keine automatische Speicherung.\n
+        \n
+\t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
         \t- „Empf(kompensiert)“ - Kalibrierungswert für die Berechnung der kompensierten Dosisleistung. Der Wert muss selbst angepasst werden, um den richtigen kompensierten Dosisleistungswert anzuzeigen.\n
         \t- „HintZähl“ - Rauschzahl von einer einfachen Dosisleistungsberechnung abgezogen.\n
         \t- „S“, „M“, „L“ - zählt für die Mittelung der schnellen, mittleren und langsamen Dosisleistung.\n
-        \t- „Grafikaktualisierungshäufigkeit, s⁻¹“ - Programmaktualisierungshäufigkeit der Dosisleistung und der Spektrumsdaten pro Sekunde.\n\n
+        \t- „Grafikaktualisierungshäufigkeit, s⁻¹“ - Programmaktualisierungshäufigkeit der Dosisleistung und der Spektrumsdaten pro Sekunde.\n
+        \n
+        \t- „Tonalarm“ - Es macht einen Ton entsprechend der cps-Stufe. Der Basispegel wird anhand des cps-Werts in den letzten 5 Sekunden berechnet. Der Pegel kann nach Löschen des Spektrums oder durch Drücken der Taste „<annotation foreground="parameter">≈</annotation>“ neu berechnet werden. Sie können das gewünschte Energieintervall in keV auswählen (A-B), auf das Sie achten müssen. Der Zählratenwert des ausgewählten Intervalls wird in Klammern hinter dem vollen Zählratenwert angezeigt.\n
+        \t- „Sound:“ - gewünschte Tonausgabe. Drücken Sie auf Text, um die nächste Ausgabe auszuwählen.\n
+        \n
+        \t- „Senden Sie Daten an die AtomSwift-Anwendung“ - Senden Sie Dosis-/Zählratendaten an die AtomSwift-Anwendung (mit der Sie Karten mit Ihrem Spektrometer erstellen können). Verwendung: Spektrometer anschließen, Starttaste drücken, Option aktivieren, AtomSwift-Anwendung ausführen, AtomSpectraApp in der Geräteliste auswählen. Die minimal unterstützte Version von AtomSwift ist 1.4.250.\n
+        \t- „AtomSwift D“ - Wählen Sie aus, welcher Dosisleistungswert an die AtomSwift-Anwendung gesendet wird. Für die Suche/Karten wird die Option „Nicht kompensiert“ empfohlen, es sei denn, Sie benötigen ausdrücklich eine Kompensation und wissen, wie Sie die Empfindlichkeitskurve konfigurieren.\n
+        \n
+        \t- „Automatische Suche nach Isotopen“ - Isotope in einem Spektrum automatisch finden und anzeigen.\n
+        \n
+        \t- „Arbeitsverzeichnis“ - Wählen Sie den Zielordner für alle Dateien. Wenn <u>...</u> für Android 8 und höher angezeigt wird, werden Sie nach einem Zielverzeichnis gefragt. Oder Sie drücken <u>...</u> (oder den angezeigten Namen), um den gewünschten Ort manuell auszuwählen. Unter Android vor 8 kann dieser Parameter nicht geändert werden. Wenn weiterhin <u>...</u> angezeigt wird, erstellen Sie den Ordner <u>AtomSpectra</u> im Stammverzeichnis des ersten Speichers (normalerweise des Telefonspeichers) selbst und starten Sie das Programm neu.\n
+        \t- „Fügen Dateien GPS-Koordinaten hinzu“ - Hinzufügen von GPS-Informationen zu Ausgabedateien (Spektrum, Hintergrund und CSV).\n
+        \t- „Kanäle speichern“ - Wie viele Kanäle aus dem Spektrum sollen exportiert werden? Hinweis: Das eigene Format speichert alle Daten.\n
+        \t- „Kanäle laden“ - Wie viele Kanäle aus der alten Spektrumdatei sollen geladen werden? Wenn mehr als 8192 Kanäle vorhanden sind, werden diese auf 8192 Kanäle oder weniger komprimiert. Hinweis: Das neue eigene Format hat die Kanalnummer selbst.\n
+        \t- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
+        \t- „Name“ - Benennen der Ausgabedateien. Präfix – Dateityp, Datum – Aufnahmedatum, Zeit – Aufnahmezeit, Suffix – benutzerdefinierter Text.\n
+        \n
+        \t- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
+        \n
     </string>
     <string name="help_version">Ausführung: <xliff:g id="version">%1$s</xliff:g>, Stellung: <xliff:g id="build">%2$d</xliff:g>.</string>
 </resources>
