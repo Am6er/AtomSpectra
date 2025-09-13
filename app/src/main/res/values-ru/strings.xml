@@ -349,9 +349,16 @@
     <string name="recording_suspended_notification_suspended_at">Чтение приостановлено: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Чтение возобновлено: <xliff:g id="time">%1$s</xliff:g></string>
 
-    <string name="searching_isotopes">Обнаружение изотопов…</string>
     <string name="autosave_start">Функция автозаписи дельт включена.</string>
+
+    <string name="dialog_confirm_title">Подтверждение</string>
+    <string name="dialog_yes_button">Да</string>
+    <string name="dialog_no_button">Нет</string>
+
+    <string name="searching_isotopes">Обнаружение изотопов…</string>
     <string name="isotope_list">Изотопы</string>
+    <string name="isotopes_clear_selection">Очистить выбор</string>
+    <string name="isotopes_clear_selection_confirm">Очистить текущий выбор элементов?</string>
     <string name="action_find_isotopes">Найти изотопы</string>
     <string name="find_isotopes">Найти</string>
     <string name="show_isotopes">Показать</string>

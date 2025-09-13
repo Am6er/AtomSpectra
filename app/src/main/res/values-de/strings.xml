@@ -347,10 +347,17 @@
     <string name="recording_suspended_dialog_dismiss">Ignorieren und Datenübertragung beenden</string>
     <string name="recording_suspended_notification">Datenlesevorgang unterbrochen!</string>
     <string name="recording_suspended_notification_suspended_at">Aufnahme wurde gestoppt: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="recording_suspended_notification_resumed_at">Die Aufnahme wurde fortgesetzt: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="recording_suspended_notification_resumed_at">Die Aufnahme wurde fortgesetzt: <xliff:g id="time">%1$s</xliff:g></string>\
+
+    <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
+
+    <string name="dialog_confirm_title">Bestätigung</string>
+    <string name="dialog_yes_button">Ja</string>
+    <string name="dialog_no_button">Nein</string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
-    <string name="autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
+    <string name="isotopes_clear_selection">Auswahl löschen</string>
+    <string name="isotopes_clear_selection_confirm">Aktuelle Artikelauswahl löschen?</string>
     <string name="isotope_list">Isotope</string>
     <string name="action_find_isotopes">Finde Isotope</string>
     <string name="find_isotopes">Finde</string>
