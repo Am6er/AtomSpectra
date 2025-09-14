@@ -752,8 +752,8 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
         TextView clearButton = new TextView(this);
         clearButton.setId(Constants.GROUPS.GROUP_ID_ALIGN - 1);
         clearButton.setText(R.string.isotopes_clear_selection);
-        clearButton.setTextSize(22);
-        clearButton.setMinHeight(28);
+        clearButton.setTextSize(18);
+        clearButton.setMinHeight(20);
         clearButton.setClickable(true);
         clearButton.setEnabled(true);
         clearButton.setFocusable(true);
