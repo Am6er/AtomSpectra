@@ -7,7 +7,20 @@
     <string name="app_bar_spectrum_update">(mise à jour du spectre)</string>
     <string name="app_bar_pause">La lecture des données est arrêtée</string>
     <string name="app_channel">Le Service d\'Atom Spectra</string>
+
     <string name="settings">Les Paramètres d\'Atom Spectra</string>
+    <string name="settings_audio_processing">Traitement audio</string>
+    <string name="settings_spectrum">Spectre</string>
+    <string name="settings_spectrum_change">Changement de spectre</string>
+    <string name="settings_spectrogram">Spectrogramme</string>
+    <string name="settings_dose_rate">Débit de dose</string>
+    <string name="settings_interval_search">Recherche par intervalle</string>
+    <string name="settings_atomswift_integration">Intégration AtomSwift</string>
+    <string name="settings_search_isotopes">Rechercher des isotopes</string>
+    <string name="settings_files">Fichiers</string>
+    <string name="settings_miscellaneous">Divers</string>
+    <string name="settings_spg_midnight_reset">Créer un nouveau fichier de spectrogramme à minuit</string>
+
     <string name="isotope_search">Trouver un isotope d\'Atom Spectra</string>
     <string name="app_bar_sensitivity">Atom Spectra Sensibilité</string>
     <string name="action_settings">Les Paramètres</string>
@@ -349,11 +362,12 @@
     <string name="recording_suspended_notification_suspended_at">Enregistrement suspendu: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">L\'enregistrement a repris: <xliff:g id="time">%1$s</xliff:g></string>
 
-    <string name="autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
-
     <string name="dialog_confirm_title">Confirmation</string>
     <string name="dialog_yes_button">Oui</string>
     <string name="dialog_no_button">Non</string>
+
+    <string name="spg_autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
+    <string name="spg_autosave_start_error">ERREUR: Impossible de démarrer la fonction de sauvegarde automatique delta.</string>
 
     <string name="searching_isotopes">Recherche d\'isotopes…</string>
     <string name="isotope_list">Isotopes</string>
@@ -548,33 +562,44 @@
         \t- «\u202fActiver la correction d\'empilement\u202f» - sélectionner pour détecter l\'empilement d\'impulsions. Ce paramètre tente de compenser la forme d\'impulsion si l\'impulsion est trop proche de la précédente.\n
         \t- «\u202fUtiliser une source audio brut\u202f» - essayez d\'utiliser l\'audio non traité disponible sur Android 7 et supérieur. Cette case à cocher est désactivée sur Android avant Android 7 ou si le système ne permet pas d\'utiliser l\'audio non traité.\n
         \t- «\u202fInverser l\'entrée\u202f» - choisir si la forme d\'impulsion est négative.\n
-        \t- «\u202fAjouter des coordonnées GPS aux fichiers\u202f» - ajouter des informations GPS aux fichiers de sortie (spectre, fond et .csv).\n
-        \t- «\u202fRecherche automatique d\'isotopes\u202f» - recherche automatique et affichage des isotopes sur un spectre.\n
-        \t- «\u202fEnvoyer des données à l\'application AtomSwift\u202f» - Envoi des données de dose/taux de comptage à l\'application AtomSwift (qui vous permet de créer des cartes à l\'aide de votre spectromètre). Utilisation : connectez le spectromètre, appuyez sur le bouton Démarrer, activez l\'option, exécutez l\'application AtomSwift, puis sélectionnez AtomSpectraApp dans la liste des appareils. La version minimale d\'AtomSwift prise en charge est 1.4.250.\n
         \t- «\u202fSource:\u202f» - choisissez l\'entrée audio souhaitée (non utilisée avec les spectromètres USB directs comme «\u202f<u>AtomSpectra Nano Pro</u>\u202f»). Appuyez sur le texte pour changer la source audio.\n
-        \t- «\u202fAlarme sonore\u202f» - fait une tonalité en fonction du niveau de cps. Le niveau de base est calculé en utilisant la valeur cps au cours des 5 dernières secondes. Le niveau peut être recalculé après avoir effacé le spectre ou en appuyant sur le bouton «\u202f<annotation foreground="parameter">≈</annotation>\u202f». Vous pouvez sélectionner l\'intervalle d\'énergie souhaité en keV (A-B) auquel faire attention. La valeur du taux de comptage de l\'intervalle sélectionné est indiquée entre parenthèses après la valeur du taux de comptage complet.\n
-        \t- «\u202fAudio:\u202f» - sortie sonore souhaitée. Appuyez sur le texte pour sélectionner la sortie suivante.\n
-        \t- «\u202fRépertoire de travail\u202f» - choisissez le dossier de destination pour tous les fichiers. S\'il indique <u>...</u> pour Android 8 et supérieur, il vous sera demandé un répertoire de destination. Ou vous pouvez appuyer sur <u>...</u> (ou le nom affiché) pour sélectionner manuellement l\'emplacement souhaité. Sur Android avant 8, ce paramètre ne peut pas être modifié. S\'il affiche toujours <u>...</u>, créez vous-même le dossier <u>AtomSpectra</u> à la racine du premier stockage (généralement le stockage du téléphone) et redémarrez le programme.\n
-        \t- «\u202fMontrer comme\u202f» - compresser le spectre affiché à ce nombre de points. Le programme réduit 1024 canaux de spectre ou le débit de dose au nombre sélectionné et l\'affiche sur le graphique pour accélérer la sortie.\n
         \t- «\u202fDes points avant min\u202f» and «\u202fDes points avant max\u202f» - longueur minimale et maximale en comptage du front d\'impulsion à détecter. Les points jaunes sur le graphique indiquent la longueur minimale requise sur le front d\'impulsion, les points verts indiquent la longueur acceptable du front d\'impulsion entre le nombre minimum et maximum de comptages. Les paramètres par défaut sont optimaux pour tous les appareils <u>AtomSpectra</u>.\n
-        \t- «\u202fLe discriminateur de bruit\u202f» - n\'enregistrez pas les chaînes sous ce nombre pour exclure les chaînes bruyantes.\n
         \t- «\u202fANC est arrondi à\u202f» - nombre de bits ANC supérieurs à utiliser.\n
-        \t- «\u202fEnregistrer canaux\u202f» - combien de canaux du spectre à exporter. Remarque: son propre format stocke toutes les données.\n
-        \t- «\u202fCharger des canaux\u202f» - combien de canaux de l\'ancien fichier de spectre à charger. S\'il y a plus de 8192 canaux, ils seront compressés en 8192 canaux ou moins. Remarque: le nouveau format propre a le numéro de canal lui-même.\n
+        \n
+        \t- «\u202fMontrer comme\u202f» - compresser le spectre affiché à ce nombre de points. Le programme réduit 1024 canaux de spectre ou le débit de dose au nombre sélectionné et l\'affiche sur le graphique pour accélérer la sortie.\n
+        \t- «\u202fLe discriminateur de bruit\u202f» - n\'enregistrez pas les chaînes sous ce nombre pour exclure les chaînes bruyantes.\n
         \t- «\u202fDegré maximum\u202f» - facteur polynomial maximal pour la fonction d\'étalonnagen\n
         \t- «\u202fDouceur\u202f» - sélectionner une fenêtre de lissage en temps réel.\n
-        \t- «\u202fDiff. de temps\u202f» - sélectionner le temps d\'accumulation entre les sorties de différence (1-10 s).\n
-        \t- «\u202fNom\u202f» - nommer les fichiers de sortie. Préfixe - type de fichier, date - date d\'enregistrement, temps - temps d\'enregistrement, suffixe - texte personnalisé.\n
-        \t- «\u202fSauver chaque N s\u202f» - la fonction de sauvegarde automatique du fichier delta. 0 - pas de sauvegarde automatique.\n
-        \t- «\u202fCompression des canaux\u202f» - réduire la quantité de canaux d\'exportation en combinant la valeur définie des canaux dans un canal.\n
         \t- «\u202fSpectre\u202f» - Choisissez la somme, la valeur de crête ou moyenne sur le graphique du spectre pendant la compression de valeur. Les valeurs de crête aident à ne pas perdre de petits pics, la moyenne fait un bon graphique, la somme montre un spectre car l\'appareil a moins de canaux.\n
-        \t- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n
-        \t- «\u202fAtomSwift DD\u202f» - Sélectionnez la valeur de débit de dose à envoyer à l\'application AtomSwift. L\'option non compensée est recommandée pour la recherche et les cartes, sauf si vous avez explicitement besoin d\'une compensation et que vous savez configurer la courbe de sensibilité.\n
+        \n
+        \t- «\u202fDiff. de temps\u202f» - sélectionnez la durée de la fenêtre glissante en mode de changement de spectre.\n
+        \n
+        \t- «\u202fCréer un nouveau fichier de spectrogramme à minuit\u202f» - avec la fonction d\'enregistrement automatique delta activée, un nouveau fichier de spectrogramme sera créé chaque jour à minuit.\n
+        \t- «\u202fSauver chaque N s\u202f» - la fonction de sauvegarde automatique du fichier delta. 0 - pas de sauvegarde automatique.\n
+        \n
         \t- «\u202fSens\u202f» - valeur d\'étalonnage pour le calcul du débit de dose. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose.\n
         \t- «\u202fSens(compensé)\u202f» - valeur d\'étalonnage pour le calcul du débit de dose compensé. La valeur doit être ajustée vous-même pour afficher la bonne valeur de débit de dose compensé.\n
         \t- «\u202fFondCps\u202f» - nombre de bruit soustrait d\'un simple calcul de débit de dose.\n
         \t- «\u202fR\u202f», «\u202fM\u202f», «\u202fL\u202f» - compte pour une moyenne rapide, moyenne et lente du débit de dose.\n
-        \t- «\u202fFréq. de mise à jour du graphique, s⁻¹\u202f» - à quelle fréquence le programme met à jour les données de débit de dose par seconde et le spectre.\n\n
+        \t- «\u202fFréq. de mise à jour du graphique, s⁻¹\u202f» - à quelle fréquence le programme met à jour les données de débit de dose par seconde et le spectre.\n
+        \n
+        \t- «\u202fAlarme sonore\u202f» - fait une tonalité en fonction du niveau de cps. Le niveau de base est calculé en utilisant la valeur cps au cours des 5 dernières secondes. Le niveau peut être recalculé après avoir effacé le spectre ou en appuyant sur le bouton «\u202f<annotation foreground="parameter">≈</annotation>\u202f». Vous pouvez sélectionner l\'intervalle d\'énergie souhaité en keV (A-B) auquel faire attention. La valeur du taux de comptage de l\'intervalle sélectionné est indiquée entre parenthèses après la valeur du taux de comptage complet.\n
+        \t- «\u202fAudio:\u202f» - sortie sonore souhaitée. Appuyez sur le texte pour sélectionner la sortie suivante.\n
+        \n
+        \t- «\u202fEnvoyer des données à l\'application AtomSwift\u202f» - Envoi des données de dose/taux de comptage à l\'application AtomSwift (qui vous permet de créer des cartes à l\'aide de votre spectromètre). Utilisation : connectez le spectromètre, appuyez sur le bouton Démarrer, activez l\'option, exécutez l\'application AtomSwift, puis sélectionnez AtomSpectraApp dans la liste des appareils. La version minimale d\'AtomSwift prise en charge est 1.4.250.\n
+        \t- «\u202fAtomSwift DD\u202f» - Sélectionnez la valeur de débit de dose à envoyer à l\'application AtomSwift. L\'option non compensée est recommandée pour la recherche et les cartes, sauf si vous avez explicitement besoin d\'une compensation et que vous savez configurer la courbe de sensibilité.\n
+        \n
+        \t- «\u202fRecherche automatique d\'isotopes\u202f» - recherche automatique et affichage des isotopes sur un spectre.\n
+        \n
+        \t- «\u202fRépertoire de travail\u202f» - choisissez le dossier de destination pour tous les fichiers. S\'il indique <u>...</u> pour Android 8 et supérieur, il vous sera demandé un répertoire de destination. Ou vous pouvez appuyer sur <u>...</u> (ou le nom affiché) pour sélectionner manuellement l\'emplacement souhaité. Sur Android avant 8, ce paramètre ne peut pas être modifié. S\'il affiche toujours <u>...</u>, créez vous-même le dossier <u>AtomSpectra</u> à la racine du premier stockage (généralement le stockage du téléphone) et redémarrez le programme.\n
+        \t- «\u202fAjouter des coordonnées GPS aux fichiers\u202f» - ajouter des informations GPS aux fichiers de sortie (spectre, fond et .csv).\n
+        \t- «\u202fEnregistrer canaux\u202f» - combien de canaux du spectre à exporter. Remarque: son propre format stocke toutes les données.\n
+        \t- «\u202fCharger des canaux\u202f» - combien de canaux de l\'ancien fichier de spectre à charger. S\'il y a plus de 8192 canaux, ils seront compressés en 8192 canaux ou moins. Remarque: le nouveau format propre a le numéro de canal lui-même.\n
+        \t- «\u202fCompression des canaux\u202f» - réduire la quantité de canaux d\'exportation en combinant la valeur définie des canaux dans un canal.\n
+        \t- «\u202fNom\u202f» - nommer les fichiers de sortie. Préfixe - type de fichier, date - date d\'enregistrement, temps - temps d\'enregistrement, suffixe - texte personnalisé.\n
+        \n
+        \t- «\u202fLanguage\u202f» - sélectionner une langue de programme. Pour appliquer pleinement le programme doit être redémarré.\n
+        \n
     </string>
     <string name="help_version">Version: <xliff:g id="version">%1$s</xliff:g>, construction: <xliff:g id="build">%2$d</xliff:g>.</string>
 </resources>
