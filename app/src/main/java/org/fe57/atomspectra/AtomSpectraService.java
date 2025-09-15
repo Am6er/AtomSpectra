@@ -348,6 +348,7 @@ public class AtomSpectraService extends Service {
         // note: external deices are sometimes trigger multiple added/removed calls
         return new AudioDeviceCallback() {
             final HashSet<String> activeInputDeviceList = new HashSet<>();
+
             @Override
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
 //                String debug_msg = "Added audio devices:";
@@ -463,7 +464,7 @@ public class AtomSpectraService extends Service {
         refreshServiceNotification();
         Notification notification = createNewServiceNotification();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            startForeground(FOREGROUND_PROCESS_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE|ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+            startForeground(FOREGROUND_PROCESS_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
         } else {
             startForeground(FOREGROUND_PROCESS_ID, notification);
         }
@@ -569,7 +570,7 @@ public class AtomSpectraService extends Service {
         } catch (Exception e) {
             SensG = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_SENSG, (int)SensG);
+            editor.putInt(Constants.CONFIG.CONF_SENSG, (int) SensG);
             editor.apply();
         }
 
@@ -578,7 +579,7 @@ public class AtomSpectraService extends Service {
         } catch (Exception e) {
             SensGCompensated = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, (int)SensGCompensated);
+            editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, (int) SensGCompensated);
             editor.apply();
         }
 
@@ -587,7 +588,7 @@ public class AtomSpectraService extends Service {
         } catch (Exception e) {
             backgroundCps = (int) sp.getFloat(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT);
             SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_BACKGROUND, (int)backgroundCps);
+            editor.putInt(Constants.CONFIG.CONF_BACKGROUND, (int) backgroundCps);
             editor.apply();
         }
 //        GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0,3, -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW));
@@ -600,7 +601,7 @@ public class AtomSpectraService extends Service {
         dataFromAudioSourceUpdatePeriod = 1000 / sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
         adc_effective_bits = Constants.MinMax(sp.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
         frontCountsMin = sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
-        frontCountsMax= sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
+        frontCountsMax = sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
         histogramMinChannel = sp.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
         inversion = sp.getBoolean(Constants.CONFIG.CONF_INVERSION, Constants.INVERSE_DEFAULT);
         pileup = sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, Constants.PILE_UP_DEFAULT);
@@ -753,26 +754,26 @@ public class AtomSpectraService extends Service {
     }
 
     public static void setEnergyInterval(double leftEnergy, double rightEnergy) {
-        leftChannelInterval = Constants.MinMax(ForegroundSpectrum.getSpectrumCalibration().toChannel(leftEnergy),0, Constants.NUM_HIST_POINTS - 1);
+        leftChannelInterval = Constants.MinMax(ForegroundSpectrum.getSpectrumCalibration().toChannel(leftEnergy), 0, Constants.NUM_HIST_POINTS - 1);
         leftEnergyInterval = leftEnergy;
-        rightChannelInterval = Constants.MinMax(ForegroundSpectrum.getSpectrumCalibration().toChannel(rightEnergy),0, Constants.NUM_HIST_POINTS - 1);
+        rightChannelInterval = Constants.MinMax(ForegroundSpectrum.getSpectrumCalibration().toChannel(rightEnergy), 0, Constants.NUM_HIST_POINTS - 1);
         rightEnergyInterval = rightEnergy;
     }
 
     public static void setChannelInterval(int leftChannel, int rightChannel) {
-        leftChannelInterval = Constants.MinMax(leftChannel,0, Constants.NUM_HIST_POINTS - 1);
+        leftChannelInterval = Constants.MinMax(leftChannel, 0, Constants.NUM_HIST_POINTS - 1);
         leftEnergyInterval = ForegroundSpectrum.getSpectrumCalibration().toEnergy(leftChannelInterval);
-        rightChannelInterval = Constants.MinMax(rightChannel,0, Constants.NUM_HIST_POINTS - 1);
+        rightChannelInterval = Constants.MinMax(rightChannel, 0, Constants.NUM_HIST_POINTS - 1);
         rightEnergyInterval = ForegroundSpectrum.getSpectrumCalibration().toEnergy(rightChannelInterval);
     }
 
-    public static void resetInterval () {
+    public static void resetInterval() {
         leftChannelInterval = 0;
         rightChannelInterval = Constants.NUM_HIST_POINTS - 1;
         leftEnergyInterval = rightEnergyInterval = 0;
     }
 
-    public static void recalculateInterval () {
+    public static void recalculateInterval() {
         if (leftChannelInterval != 0 || rightChannelInterval != Constants.NUM_HIST_POINTS - 1) {
             setEnergyInterval(leftEnergyInterval, rightEnergyInterval);
         }
@@ -982,7 +983,7 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    public static final String[] audioDeviceNames = new String[] {
+    public static final String[] audioDeviceNames = new String[]{
             "UNKNOWN",      //0
             "EAR",          //1
             "SPEAKER",      //2
@@ -1010,6 +1011,7 @@ public class AtomSpectraService extends Service {
             "SAFE SPEAKER", //24
             "UNKNOWN"       //25
     };
+
     public static AudioDeviceInfo getDeviceOutput(Context context, int lastID, String lastName, boolean same) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             AudioDeviceInfo deviceOut = null;
@@ -1309,7 +1311,7 @@ public class AtomSpectraService extends Service {
                             for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
                                 total_counts += new_histogram[i];
                                 int value = 0;
-                                value = (int)(new_histogram[i] - old_histogram[i]);
+                                value = (int) (new_histogram[i] - old_histogram[i]);
 
                                 counts += value;
                                 if (i >= leftChannelInterval && i <= rightChannelInterval) {
@@ -1551,7 +1553,7 @@ public class AtomSpectraService extends Service {
         return freeze_update_data;
     }
 
-    public static void freeze (boolean freeze) {
+    public static void freeze(boolean freeze) {
         // TODO: looks like a hack to immediately stop everything on spectrum load
         freeze_update_data = freeze;
     }
@@ -1637,7 +1639,7 @@ public class AtomSpectraService extends Service {
         doseRateValue = new DoseRate();
     }
 
-    // called each 0.1 sec for audio, each 1 sec for USB
+    // called each [0.1, 0.2, 0.5, 1] sec for audio, each 1 sec for USB
     private DoseRate doseRateSearch(int counts, int interval_counts, int[] binned_counts, double delta_time) {
         if (delta_time == 0) {
             return doseRateValue;
@@ -1686,7 +1688,7 @@ public class AtomSpectraService extends Service {
         synchronized (windowCounts) {
             int start = windowCounts.size() > 0 ? windowCounts.size() - 1 : 0;
             for (int i = start; i >= 0; i--) {
-                if (total_counts < counts_search_window) {
+                if (total_counts < counts_search_window || total_time < min_period) {
                     total_counts += windowCounts.get(i);
                     total_time += windowDeltaTime.get(i);
                     for (int bin = 0; bin < EnergyBins.length; bin++) {
@@ -1694,7 +1696,7 @@ public class AtomSpectraService extends Service {
                     }
                 }
 
-                if (total_interval_counts < counts_search_window) {
+                if (total_interval_counts < counts_search_window || total_interval_time < min_period) {
                     total_interval_counts += windowIntervalCounts.get(i);
                     total_interval_time += windowDeltaTime.get(i);
                 }
@@ -1780,7 +1782,7 @@ public class AtomSpectraService extends Service {
     }
 
     // this function is used to release sound input
-    private void releaseAR () {
+    private void releaseAR() {
         synchronized (ARLock) {
             if (AR != null) {
                 AR.stop();
@@ -1793,6 +1795,7 @@ public class AtomSpectraService extends Service {
     // this task is used to read from audio input and update cps and spectrum information
     int audioZeroDataCount = 0;
     final int audioZeroDataMaxCount = 5;
+
     private void captureAudioTask() {
         if (inputType != INPUT_AUDIO) {
             return;
@@ -2088,7 +2091,7 @@ public class AtomSpectraService extends Service {
                 } else if (showDelta) {
                     int delta_current_time = Math.min(histogram_all_queue.size() - 1, delta_time);
                     int delta_current_back_time = histogram_all_queue.size() - 1;
-                    double backgroundScale = (double)delta_current_time / (double)delta_current_back_time;
+                    double backgroundScale = (double) delta_current_time / (double) delta_current_back_time;
                     if (isCalibrated) {
                         double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
                         double[] background_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_delta_back, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
@@ -2515,6 +2518,7 @@ public class AtomSpectraService extends Service {
     private int eachSecondDataFromAudioSourceElapsedTime = 0;
     private Timer sendDataFromAudioSourceTimer = null;
     private Timer captureDataFromAudioSourceTimer = null;
+
     private void sendDataFromAudioSourceTimerTask() {
         // hack to stop data send on spectrum load
         if (freeze_update_data) {
@@ -2602,6 +2606,7 @@ public class AtomSpectraService extends Service {
     // this timer checks that data is constantly receiving, if no data for some period - try to restart serial interface with -sta command
     private Timer usbDataWatchdogTimer = null;
     private final double usbDataWatchdogInterval = 10; // sec
+
     private final void usbDataWatchdogTimerTask() {
         synchronized (inputSync) {
             if (inputType != INPUT_SERIAL || freeze_update_data || isRecordingSuspended) {
@@ -2648,7 +2653,7 @@ public class AtomSpectraService extends Service {
                     usbDataWatchdogTimerTask();
                 }
             };
-            usbDataWatchdogTimer.schedule(watchDogTask, (int)(usbDataWatchdogInterval * 1000));
+            usbDataWatchdogTimer.schedule(watchDogTask, (int) (usbDataWatchdogInterval * 1000));
         }
     }
 
@@ -2777,8 +2782,8 @@ public class AtomSpectraService extends Service {
 
                         double angleStep = soundFreqList[Constants.MinMax((int) (cpsCurrentLevel / cpsBaseSignal * 2.0) - 1, 0, soundFreqList.length - 1)] * 2.0 * StrictMath.PI / 44100.0; //let's begin from 100Hz
                         for (int i = 0; i < soundBufferSize; i++) {
-                                soundBuffer[i + soundBufferSize * soundBufferSwitch] = (float) StrictMath.sin(soundAngle);
-                                soundAngle += angleStep;
+                            soundBuffer[i + soundBufferSize * soundBufferSwitch] = (float) StrictMath.sin(soundAngle);
+                            soundAngle += angleStep;
                         }
                         synchronized (soundSync) {
                             if (soundTrack != null && soundTrack.write(soundBuffer, soundBufferSize * soundBufferSwitch, soundBufferSize, AudioTrack.WRITE_BLOCKING) < 0) {
@@ -2828,13 +2833,13 @@ public class AtomSpectraService extends Service {
         double[] result = new double[input.length];
         if (setSmooth) {
             int shift_window, old_window;
-            shift_window = old_window = StrictMath.max((int)(0.3 * basic_window), 4);
-            int channel_0 = StrictMath.max (100, calibration.toChannel(662.0));
+            shift_window = old_window = StrictMath.max((int) (0.3 * basic_window), 4);
+            int channel_0 = StrictMath.max(100, calibration.toChannel(662.0));
             double[] GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
             //calculate the derivative for the spectrum
             double temp;
             for (int i = 0; i < input.length; i++) {
-                shift_window = StrictMath.max((int)((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double)channel_0)) * basic_window), 4);
+                shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double) channel_0)) * basic_window), 4);
                 if (old_window != shift_window) {
                     old_window = shift_window;
                     GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
