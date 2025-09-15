@@ -13,10 +13,12 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import java.util.Locale;
 
 public class AtomSpectraSpectrogram extends Activity {
+    private static boolean isActive = false;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -45,6 +47,7 @@ public class AtomSpectraSpectrogram extends Activity {
 
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM);
+        intentFilter.addAction(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
         } else {
@@ -68,6 +71,10 @@ public class AtomSpectraSpectrogram extends Activity {
         if (Constants.ACTION.ACTION_CLOSE_SPECTROGRAM.equals(action)) {
             finish();
         }
+
+        if (Constants.ACTION.ACTION_SPECTROGRAM_UPDATED.equals(action)) {
+            updateSpectrogram(false);
+        }
         }
 
     };
@@ -75,14 +82,31 @@ public class AtomSpectraSpectrogram extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        isActive = true;
 
-        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
-        spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance.getSpectrogram());
+        // scroll to bottom at first render if recording is in progress
+        boolean scrollToBottom = !AtomSpectraService.getFreeze();
+        updateSpectrogram(scrollToBottom);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        isActive = false;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mDataUpdateReceiver);
+    }
+
+    private void updateSpectrogram(boolean scrollToBottom) {
+        if (isActive) {
+            AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
+            if (spgView != null) {
+                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance.getSpectrogram(), scrollToBottom);
+            }
+        }
     }
 }

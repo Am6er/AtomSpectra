@@ -1528,6 +1528,7 @@ public class AtomSpectraService extends Service {
             closeSpectrogramFile();
         }
         AtomSpectraSpectrogramData.instance.clear();
+        notifySpectrogramUpdated();
 
         resetCpsData();
         resetDoseRateData();
@@ -2878,7 +2879,6 @@ public class AtomSpectraService extends Service {
         }
 
         OutputStreamWriter docStream = returnPair.first;
-//        String spectrumFileName = returnPair.second;
 
         Spectrum spectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
         Spectrum backSpectrum = new Spectrum(AtomSpectraService.BackgroundSpectrum);
@@ -2894,6 +2894,10 @@ public class AtomSpectraService extends Service {
                 setChannels(spectrum.getDataArray().length).
                 setChannelCompression(1).
                 saveSpectrum(docStream, this);
+    }
+
+    private void notifySpectrogramUpdated() {
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED).setPackage(Constants.PACKAGE_NAME));
     }
 
     private void createOrUpdateSpectrogramFile() {
@@ -2934,7 +2938,12 @@ public class AtomSpectraService extends Service {
                     setChannels(spgAutosaveSpectrum.getDataArray().length).
                     setChannelCompression(1).
                     saveSpectrum(docStream, this);
-            this.showToastInMainLooper(R.string.autosave_start, Toast.LENGTH_LONG);
+
+            AtomSpectraSpectrogramData.instance.clear();
+            AtomSpectraSpectrogramData.instance.setBaseSpectrum(spgAutosaveSpectrum);
+            notifySpectrogramUpdated();
+            this.showToastInMainLooper(R.string.spg_autosave_start, Toast.LENGTH_LONG);
+
             return;
         }
 
@@ -2944,13 +2953,11 @@ public class AtomSpectraService extends Service {
     private void appendDeltaToSpectrogram() {
         Spectrum newSpectrum = new Spectrum(ForegroundSpectrum);
         Spectrum deltaSpectrum = new Spectrum(newSpectrum).subtractSpectrum(spgAutosaveSpectrum);
-        spgAutosaveSpectrum = newSpectrum;
-
         if (!addGPS) {
             deltaSpectrum.setLocation(null);
         }
         deltaSpectrum.updateComments();
-        autosaveSpectrum = newSpectrum;
+        spgAutosaveSpectrum = newSpectrum;
 
         OutputStreamWriter docStream;
         try {
@@ -2966,6 +2973,7 @@ public class AtomSpectraService extends Service {
         }
 
         AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
+        notifySpectrogramUpdated();
     }
 
     private void checkGPS() {
@@ -3160,7 +3168,7 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    public static void resetRecordingSuspendedStatus(boolean withDates) {
+    private static void resetRecordingSuspendedStatus(boolean withDates) {
         synchronized (recordingSuspendedSync) {
             isRecordingSuspended = false;
             recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;

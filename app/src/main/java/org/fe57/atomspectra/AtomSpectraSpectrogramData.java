@@ -9,7 +9,7 @@ public class AtomSpectraSpectrogramData {
 
     private final Integer spectrogramSync = 1;
     private final ArrayList<double[]> spectrogram = new ArrayList<>();
-    private final ArrayList<Date[]> timestamps = new ArrayList<>();
+    private final ArrayList<Date> timestamps = new ArrayList<>();
     private final ArrayList<Double> durations = new ArrayList<>();
     private Spectrum baseSpectrum = null;
 
@@ -25,8 +25,8 @@ public class AtomSpectraSpectrogramData {
             return;
         }
 
-        int channelBinning = channels.length / this.CHANNEL_COUNT;
-        double binnedCpsData = new double[this.CHANNEL_COUNT];
+        int channelBinning = channels.length / CHANNEL_COUNT;
+        double[] binnedCpsData = new double[CHANNEL_COUNT];
         for (int i = 0; i < channels.length; i += channelBinning) {
             long summ = 0;
             for (int j = 0; j < channelBinning && (i + j) < channels.length; j++) {
@@ -52,23 +52,23 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    public double[][] getSpectrogram() {
-        return this.spectrogram.toArray();
+    public ArrayList<double[]> getSpectrogram() {
+        return new ArrayList<>(this.spectrogram);
     }
 
-    public Date[] getTimestamps() {
-        return this.timestamps.toArray();
-    }
-
-    public Date[] getDurations() {
-        return this.durations.toArray();
-    }
+//    public Date[] getTimestamps() {
+//        return this.timestamps.toArray();
+//    }
+//
+//    public Date[] getDurations() {
+//        return this.durations.toArray();
+//    }
 
     public double channelToEnergy(int channel) {
         if (this.baseSpectrum == null) {
             return 0;
         }
-        int channelBinning = this.baseSpectrum.getDataArray().length / this.CHANNEL_COUNT;
+        int channelBinning = this.baseSpectrum.getDataArray().length / CHANNEL_COUNT;
         int originalChannel = channel * channelBinning + (channelBinning - 1);
 
         return this.baseSpectrum.getSpectrumCalibration().toEnergy(originalChannel);
