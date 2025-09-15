@@ -26,7 +26,7 @@ public class Constants {
     public static final int NOISE_DISCRIMINATOR_DEFAULT = 256 >> (16 - ADC_MAX);                                         //noise discriminator
     public static final int WINDOW_OUTPUT_SIZE = 512;                                                                    //minimum number of points on the screen
     public static final boolean INVERSE_DEFAULT = false;                                                                 //inverse signal
-    public static final boolean PILE_UP_DEFAULT = true;                                                                  //detect pile-up
+    public static final boolean PILE_UP_DEFAULT = false;                                                                  //detect pile-up
     public static final boolean LOG_SCALE_DEFAULT = false;
     public static final int SCALE_DEFAULT = 16 - ADC_MAX;                                                                //default scale: 8192 channels on graph
     public static final int SCALE_MIN = 16 - ADC_MAX;                                                                    //minimum scale factor
@@ -61,7 +61,8 @@ public class Constants {
     public static final int USB_DEVICE_MINIMAL_VERSION = 11;                                                             //minimal firmware version for AtomSpectra Pro to operate correctly
     public static final int AUTOSAVE_DELTA = 5;                                                                          //minimal delta between auto saves
     public static final int AUTOSAVE_MAX_DELTA = 60;                                                                     //maximum delta between auto saves
-    public static final int AUTOSAVE_DEFAULT = 0;                                                                        // 0 is for no auto save
+    public static final int SPG_INTERVAL_DEFAULT = 0;
+    public static final boolean SPG_MIDNIGHT_RESET_DEFAULT = false;
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
     public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
     public static final String ATOMSWIFT_DR_NON_COMPENSATED = "non-compensated";
@@ -127,7 +128,8 @@ public class Constants {
         String CONF_AUTO_UPDATE_ISOTOPES = "Auto update isotopes";
         String CONF_DELTA_TIME = "Delta time";
         String CONF_LOCALE_ID = "Locale";
-        String CONF_AUTOSAVE = "File autosave";
+        String CONF_SPG_INTERVAL = "File autosave";
+        String CONF_SPG_MIDNIGHT_RESET = "Reset spectrogram at midnight";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
     }

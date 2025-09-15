@@ -211,10 +211,12 @@ public class AtomSpectraService extends Service {
 
     private final int USB_DATA_SKIP_SECONDS = 3;
     private int skip_next_cps_int_usb_calc = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
-    private static int autosaveTimeout = 0;
-    private static int autosaveIncrement = 0;
-    private Spectrum autosaveSpectrum = null;
-    private Pair<OutputStreamWriter, Uri> autosavePair = null;
+    private static int spgInterval = 0;
+    private static boolean spgMidnightReset = false;
+    private static int spgTimerIncrement = 0;
+    private Spectrum spgAutosaveSpectrum = null;
+    private Pair<OutputStreamWriter, Uri> spgAutosaveFile = null;
+    private Date spgAutosaveFileCreated = null;
 
     private static int scale_factor = Constants.SCALE_DEFAULT;
     private static int main_scale_factor = Constants.SCALE_DEFAULT;
@@ -602,7 +604,8 @@ public class AtomSpectraService extends Service {
         histogramMinChannel = sp.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
         inversion = sp.getBoolean(Constants.CONFIG.CONF_INVERSION, Constants.INVERSE_DEFAULT);
         pileup = sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, Constants.PILE_UP_DEFAULT);
-        autosaveTimeout = sp.getInt(Constants.CONFIG.CONF_AUTOSAVE, Constants.AUTOSAVE_DEFAULT);
+        spgInterval = sp.getInt(Constants.CONFIG.CONF_SPG_INTERVAL, Constants.SPG_INTERVAL_DEFAULT);
+        spgMidnightReset = sp.getBoolean(Constants.CONFIG.CONF_SPG_MIDNIGHT_RESET, Constants.SPG_MIDNIGHT_RESET_DEFAULT);
         try {
             compressGraph = sp.getInt(Constants.CONFIG.CONF_COMPRESS_GRAPH, Constants.COMPRESS_GRAPH_SUM);
         } catch (Exception e) {
@@ -780,29 +783,34 @@ public class AtomSpectraService extends Service {
         @Override
         public void run() {
             synchronized (spgAutosaveTimer) {
-                if (autosaveTimeout > 0) {
+                if (spgInterval > 0) {
                     if (!freeze_update_data) {
-                        autosaveIncrement += 1;
-                        if (autosaveIncrement >= autosaveTimeout) {
-                            autosaveHist();
-                            autosaveIncrement = 0;
+                        spgTimerIncrement += 1;
+                        if (spgTimerIncrement >= spgInterval) {
+                            createOrUpdateSpectrogramFile();
+                            spgTimerIncrement = 0;
                         }
                     } else {
-                        autosaveIncrement = 0;
-                        if (autosaveSpectrum != null) {
-                            autosaveSpectrum = null;
-                            try {
-                                autosavePair.first.close();
-                            } catch (IOException e) {
-                                //
-                            }
-                            autosavePair = null;
-                        }
+                        spgTimerIncrement = 0;
+                        closeSpectrogramFile();
                     }
                 }
             }
         }
     };
+
+    private void closeSpectrogramFile() {
+        spgAutosaveSpectrum = null;
+        if (spgAutosaveFile != null) {
+            try {
+                spgAutosaveFile.first.close();
+            } catch (IOException e) {
+                //
+            }
+        }
+        spgAutosaveFile = null;
+        spgAutosaveFileCreated = null;
+    }
 
     //Audio input data
     public static final int SET_AUDIO_RAW = 2;
@@ -1515,13 +1523,7 @@ public class AtomSpectraService extends Service {
             usbDevice.ClearHistogram();
         }
         synchronized (spgAutosaveTimer) {
-            autosaveSpectrum = null;
-            try {
-                autosavePair.first.close();
-            } catch (Exception e) {
-                // TODO: report exception?
-            }
-            autosavePair = null;
+            closeSpectrogramFile();
         }
         AtomSpectraSpectrogramData.instance.clear();
 
@@ -2859,7 +2861,12 @@ public class AtomSpectraService extends Service {
         boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
         boolean fileNameDate = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
         boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
-        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
+        String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+        if (workingDir == null) {
+            showToastInMainLooper(R.string.error_working_dir_not_set, Toast.LENGTH_LONG);
+            return;
+        }
+        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
         if (returnPair == null) {
             showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
             return;
@@ -2871,7 +2878,7 @@ public class AtomSpectraService extends Service {
         Spectrum spectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
         Spectrum backSpectrum = new Spectrum(AtomSpectraService.BackgroundSpectrum);
 
-        if (!sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
+        if (!addGPS) {
             spectrum.setLocation(null).updateComments();
             backSpectrum.setLocation(null).updateComments();
         }
@@ -2884,39 +2891,57 @@ public class AtomSpectraService extends Service {
                 saveSpectrum(docStream, this);
     }
 
-    private void autosaveHist() {
+    private void createOrUpdateSpectrogramFile() {
+        if (spgMidnightReset && spgAutosaveFile != null && spgAutosaveFileCreated != null) {
+            Date now = new Date();
+            if (now.getDate() != spgAutosaveFileCreated.getDate()) {
+                appendDeltaToSpectrogram();
+                closeSpectrogramFile();
+            }
+        }
+
         SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
         boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
 
-        if (autosaveSpectrum == null) {
-            autosaveSpectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
-            autosavePair = SpectrumFile.prepareOutputStream(this, sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null), autosaveSpectrum.getSpectrumDate(), "Spectrogram" + '-' + autosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
+        if (spgAutosaveSpectrum == null) {
+            spgAutosaveSpectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
+            String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+            if (workingDir == null) {
+                showToastInMainLooper(R.string.error_working_dir_not_set, Toast.LENGTH_LONG);
+                showToastInMainLooper(R.string.spg_autosave_start_error, Toast.LENGTH_LONG);
+                return;
+            }
+            spgAutosaveFile = SpectrumFile.prepareOutputStream(this, workingDir, System.currentTimeMillis(), "Spectrogram" + '-' + spgAutosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
+            spgAutosaveFileCreated = new Date();
 
-            if (autosavePair == null) {
+            if (spgAutosaveFile == null) {
                 this.showToastInMainLooper(R.string.perm_no_write_histogram, Toast.LENGTH_LONG);
 
-                autosaveSpectrum = null;
+                spgAutosaveSpectrum = null;
+                spgAutosaveFileCreated = null;
                 return;
             }
 
-            OutputStreamWriter docStream = autosavePair.first;
+            OutputStreamWriter docStream = spgAutosaveFile.first;
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.
-                    addSpectrum(autosaveSpectrum).
-                    setChannels(autosaveSpectrum.getDataArray().length).
+                    addSpectrum(spgAutosaveSpectrum).
+                    setChannels(spgAutosaveSpectrum.getDataArray().length).
                     setChannelCompression(1).
                     saveSpectrum(docStream, this);
-
-            AtomSpectraSpectrogramData.instance.clear();
-            AtomSpectraSpectrogramData.instance.setBaseSpectrum(autosaveSpectrum);
-
             this.showToastInMainLooper(R.string.autosave_start, Toast.LENGTH_LONG);
             return;
         }
 
+        appendDeltaToSpectrogram();
+    }
+
+    private void appendDeltaToSpectrogram() {
         Spectrum newSpectrum = new Spectrum(ForegroundSpectrum);
-        Spectrum deltaSpectrum = new Spectrum(newSpectrum).subtractSpectrum(autosaveSpectrum);
-        if (!sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
+        Spectrum deltaSpectrum = new Spectrum(newSpectrum).subtractSpectrum(spgAutosaveSpectrum);
+        spgAutosaveSpectrum = newSpectrum;
+
+        if (!addGPS) {
             deltaSpectrum.setLocation(null);
         }
         deltaSpectrum.updateComments();
@@ -2924,8 +2949,7 @@ public class AtomSpectraService extends Service {
 
         OutputStreamWriter docStream;
         try {
-//            DocumentFile fileDoc = DocumentFile.fromSingleUri(this, new File(autosavePair.second).toURI());
-            docStream = new OutputStreamWriter(service_context.getContentResolver().openOutputStream(autosavePair.second, "wa"));// new (new Uri.Builder().build());
+            docStream = new OutputStreamWriter(service_context.getContentResolver().openOutputStream(spgAutosaveFile.second, "wa"));// new (new Uri.Builder().build());
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.
                     addSpectrum(deltaSpectrum).
@@ -2933,7 +2957,7 @@ public class AtomSpectraService extends Service {
                     setChannelCompression(1).
                     saveIncrementalSpectrum(docStream, this);
         } catch (Exception e) {
-            this.showToastInMainLooper(String.format("!%s: %s", e.getMessage(), autosavePair.second), Toast.LENGTH_LONG);
+            this.showToastInMainLooper(String.format("!%s: %s", e.getMessage(), spgAutosaveFile.second), Toast.LENGTH_LONG);
         }
 
         AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);

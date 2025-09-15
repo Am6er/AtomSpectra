@@ -2,8 +2,10 @@ package org.fe57.atomspectra;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -18,15 +20,18 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Locale;
 
@@ -644,9 +649,20 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
         } catch (Exception e) {
             //nothing
         }
-        //one listener for all elements
+        // one listener to rule them all
         final OnClickListener listener = v -> {
             int num = v.getId();
+            if (num == Constants.GROUPS.GROUP_ID_ALIGN - 1) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.dialog_confirm_title);
+                builder.setMessage(R.string.isotopes_clear_selection_confirm);
+                builder.setPositiveButton(R.string.dialog_yes_button, (dialog, which) -> resetSelection());
+                builder.setNegativeButton(R.string.dialog_no_button, (dialog, which) -> dialog.dismiss());
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                return;
+            }
             if ((num >= Constants.GROUPS.GROUP_ID_ALIGN) && (num < Constants.GROUPS.ENERGY_ID_ALIGN)) {
                 checkedChains[num - Constants.GROUPS.GROUP_ID_ALIGN] = ((CheckBox) v).isChecked();
                 for (int pos : Chains.get(num - Constants.GROUPS.GROUP_ID_ALIGN)) {
@@ -731,6 +747,25 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
 
         //Add decay chains to isotope list
         LinearLayout layout = findViewById(R.id.isotope_chain_layout);
+
+        // clear selection
+        TextView clearButton = new TextView(this);
+        clearButton.setId(Constants.GROUPS.GROUP_ID_ALIGN - 1);
+        clearButton.setText(R.string.isotopes_clear_selection);
+        clearButton.setTextSize(18);
+        clearButton.setMinHeight(20);
+        clearButton.setClickable(true);
+        clearButton.setEnabled(true);
+        clearButton.setFocusable(true);
+        clearButton.setGravity(Gravity.CENTER);
+        clearButton.setPaintFlags(clearButton.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        clearButton.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        clearButton.setOnClickListener(listener);
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) clearButton.getLayoutParams();
+        params.leftMargin = 12;
+        clearButton.setLayoutParams(params);
+        layout.addView(clearButton);
+
         LinearLayout itemLayout;               //Test
         CheckBox itemName;
         TextView itemIntense;
@@ -747,6 +782,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
             itemName.setEnabled(true);
             itemName.setClickable(true);
             itemName.setOnClickListener(listener);
+
             layout.addView(itemName);
         }
         layout = findViewById(R.id.isotope_layout);
@@ -884,7 +920,6 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-//            onBackPressed();
             finish();
             return true;
         }
@@ -1000,5 +1035,31 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
         //nothing to do
+    }
+
+    private void resetSelection() {
+        for (int i = 0; i < checkedChains.length; i++) {
+            checkedChains[i] = false;
+            CheckBox cb = findViewById(Constants.GROUPS.GROUP_ID_ALIGN + i);
+            if (cb != null) {
+                cb.setChecked(false);
+            }
+        }
+
+        for (int i = 0; i < checkedIsotope.length; i++) {
+            checkedIsotope[i] = false;
+            CheckBox cb = findViewById(Constants.GROUPS.ENERGY_ID_ALIGN + i);
+            if (cb != null) {
+                cb.setChecked(false);
+            }
+        }
+
+        for (int i = 0; i < checkedIsotopeLine.length; i++) {
+            checkedIsotopeLine[i] = false;
+            CheckBox cb = findViewById(Constants.GROUPS.BUTTON_ID_ALIGN + i);
+            if (cb != null) {
+                cb.setChecked(false);
+            }
+        }
     }
 }

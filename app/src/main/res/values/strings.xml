@@ -7,7 +7,20 @@
     <string name="app_bar_spectrum_update">(updating spectrum)</string>
     <string name="app_bar_pause">Data reading is stopped</string>
     <string name="app_channel">Atom Spectra Service</string>
+
     <string name="settings">Atom Spectra Settings</string>
+    <string name="settings_audio_processing">Audio Processing</string>
+    <string name="settings_spectrum">Spectrum</string>
+    <string name="settings_spectrum_change">Spectrum Change</string>
+    <string name="settings_spectrogram">Spectrogram</string>
+    <string name="settings_dose_rate">Dose Rate</string>
+    <string name="settings_interval_search">Interval Search</string>
+    <string name="settings_atomswift_integration">AtomSwift Integration</string>
+    <string name="settings_search_isotopes">Search Isotopes</string>
+    <string name="settings_files">Files</string>
+    <string name="settings_miscellaneous">Miscellaneous</string>
+    <string name="settings_spg_midnight_reset">Create new spectrogram file at midnight</string>
+
     <string name="isotope_search">Atom Spectra Find Isotopes</string>
     <string name="app_bar_sensitivity">Atom Spectra Sensitivity</string>
     <string name="action_settings">Settings</string>
@@ -82,7 +95,7 @@
     <string name="minfront">Min front points: 5</string>
     <string name="noisediscriminator">Noise discriminator: 256</string>
     <string name="ADCroundedto">ADC is rounded to: 12 bits</string>
-    <string name="save_folder">Save folder: </string>
+    <string name="working_directory">Working directory: </string>
     <string name="compress_graph">Spectrum: Sum</string>
 
     <string name="plus">\u2192</string>
@@ -263,6 +276,8 @@
     <string name="perm_no_usb">No permission to access USB device</string>
     <string name="perm_no_gps">No GPS access, GPS data will be undefined</string>
 
+    <string name="error_working_dir_not_set">Working directory is not set. Go to settings and configure working directory.</string>
+
     <string name="ask_select_histogram">Select a spectrum</string>
     <string name="ask_select_background">Select a background spectrum</string>
     <string name="ask_select_calibration">Select a calibration file</string>
@@ -347,8 +362,16 @@
     <string name="recording_suspended_notification_suspended_at">Recording suspended: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Recording resumed: <xliff:g id="time">%1$s</xliff:g></string>
 
+    <string name="dialog_confirm_title">Confirmation</string>
+    <string name="dialog_yes_button">Yes</string>
+    <string name="dialog_no_button">No</string>
+
+    <string name="spg_autosave_start">Delta auto save function is started.</string>
+    <string name="spg_autosave_start_error">ERROR: Unable to start delta auto save function.</string>
+
     <string name="searching_isotopes">Searching isotopes…</string>
-    <string name="autosave_start">Delta auto save function is started.</string>
+    <string name="isotopes_clear_selection">Clear selection</string>
+    <string name="isotopes_clear_selection_confirm">Clear current selection of items?</string>
     <string name="isotope_list">Isotopes</string>
     <string name="action_find_isotopes">Find isotopes</string>
     <string name="find_isotopes">Find</string>
@@ -533,38 +556,50 @@
         NOTE: Device settings contain a sensitivity curve, most of the parameters in \'<annotation foreground="parameter">Atom Spectra Settings</annotation>\', and search isotope parameters excluding library type.\n
         \n
     </string>
+    Create new spectrogram file at midnight
     <string name="help_text_part8"><big><annotation foreground="caption">8. Settings:</annotation></big>\n
         \t- Graph shows \'as-is\' or \'pulse shape\' input signal. Select them by swipe left/right. Swipe up/down to scale the graph.\n
         \t- \'Enable pile-up correction\' - select to detect impulse pile-up. This parameter tries to compensate the impulse form if the impulse is too close to the previous one.\n
         \t- \'Use raw audio source\' - try to use unprocessed audio available on Android 7 and higher. This checkbox is disabled on Android before Android 7 of if the system does not allow to use unprocessed audio.\n
         \t- \'Invert input\' - choose if pulse shape is negative.\n
-        \t- \'Add GPS coordinates to files\' - add GPS information to output files (spectrum, background and .csv).\n
-        \t- \'Auto search isotopes\' - auto find and show isotopes on a spectrum.\n
-        \t- \'Send data to AtomSwift application\' - send dose/count rate data to AtomSwift application (which allows you to create maps using your spectrometer). Usage: connect spectrometer, press start button, enable option, run AtomSwift application, select AtomSpectraApp in device list. Minimum supported version of AtomSwift is 1.4.250.\n
         \t- \'Source:\' - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
-        \t- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
-        \t- \'Sound:\' - desired sound output. Press on text to select next output.\n
-        \t- \'Save folder\' - choose the destination folder for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create folder <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
-        \t- \'Show as\' - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
         \t- \'Min front points\' and \'Max front points\' - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
-        \t- \'Noise discriminator\' - do not register channels below this number to exclude noisy channels.\n
         \t- \'ADC is rounded to\' - number of upper ADC bits to be used.\n
-        \t- \'Save channels\' - how many channels from the spectrum to be exported. Note: own format stores all data.\n
-        \t- \'Load channels\' - how many channels from the old spectrum file to be loaded. If there are more than 8192 channels they will be compressed into 8192 channels or less. Note: new own format has channel number itself.\n
+        \n
+        \t- \'Show as\' - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
+        \t- \'Noise discriminator\' - do not register channels below this number to exclude noisy channels.\n
         \t- \'Maximum factor\' - a maximum polinomial factor for the calibration function\n
         \t- \'Smoothness\' - select a realtime smoothness window.\n
-        \t- \'Diff time\' - select the accumulation time between difference output (1-10 s).\n
-        \t- \'Name\' -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
-        \t- \'Save every N s\' -  the auto save delta file function. 0 - no auto save.\n
-        \t- \'Channel compression\' - reduce export channels quantity by combining set value of channels into one channel.\n
         \t- \'Spectrum\' - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
-        \t- \'Language\' - select a program language. To fully apply the program must be restarted.\n
-        \t- \'AtomSwift DR\' - select which dose rate value is sent to AtomSwift application. Non-compensated is recommended for search/maps unless you explicitly need compensated and you know how to configure sensitivity curve.\n
+        \n
+        \t- \'Diff time\' - select the duration of sliding window in spectrum change mode.\n
+        \n
+        \t- \'Create new spectrogram file at midnight\' - with the delta autosave feature enabled, a new spectrogram file will be created every day at midnight.\n
+        \t- \'Save every N s\' -  the auto save delta file function. 0 - no auto save.\n
+        \n
         \t- \'Sens\' - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
         \t- \'Sens(compensated)\' - calibration value for compensated dose rate calculation. The value must be adjusted yourself to show the right compensated dose rate value.\n
         \t- \'BckgCps\' - noise count subtracted from a simple dose rate calculation.\n
         \t- \'F\', \'M\', \'S\' - counts for fast, medium and slow dose rate averaging.\n
-        \t- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.\n\n
+        \t- \'Graph update frequency, s⁻¹\' - how often the program updates the dose rate and spectrum data per second.\n
+        \n
+        \t- \'Sound alarm\' - make a tone according to the cps level. The base level is calculated using cps value in last 5 seconds. The level can be recalculated after clearing the spectrum or by pressing the \'<annotation foreground="parameter">≈</annotation>\' button. You can select the desired energy interval in keV (A-B) to pay attention to. The cps value of the selected interval is shown in parentheses after the full cps value.\n
+        \t- \'Sound:\' - desired sound output. Press on text to select next output.\n
+        \n
+        \t- \'Send data to AtomSwift application\' - send dose/count rate data to AtomSwift application (which allows you to create maps using your spectrometer). Usage: connect spectrometer, press start button, enable option, run AtomSwift application, select AtomSpectraApp in device list. Minimum supported version of AtomSwift is 1.4.250.\n
+        \t- \'AtomSwift DR\' - select which dose rate value is sent to AtomSwift application. Non-compensated is recommended for search/maps unless you explicitly need compensated and you know how to configure sensitivity curve.\n
+        \n
+        \t- \'Auto search isotopes\' - auto find and show isotopes on a spectrum.\n
+        \n
+        \t- \'Working directory\' - choose the destination directory for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create directory <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
+        \t- \'Add GPS coordinates to files\' - add GPS information to output files (spectrum, background and .csv).\n
+        \t- \'Save channels\' - how many channels from the spectrum to be exported. Note: own format stores all data.\n
+        \t- \'Load channels\' - how many channels from the old spectrum file to be loaded. If there are more than 8192 channels they will be compressed into 8192 channels or less. Note: new own format has channel number itself.\n
+        \t- \'Channel compression\' - reduce export channels quantity by combining set value of channels into one channel.\n
+        \t- \'Name\' -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
+        \n
+        \t- \'Language\' - select a program language. To fully apply the program must be restarted.\n
+        \n
     </string>
     <string name="help_version">Version: <xliff:g id="version">%1$s</xliff:g>, build: <xliff:g id="build">%2$d</xliff:g>.</string>
 </resources>
