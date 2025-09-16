@@ -45,7 +45,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
         } catch (Exception e) {
             return false;
         }
-        for (int i = 0; i < spectrumNumber(); i++) {
+        for (int i = 0; i < spectrumsCount(); i++) {
             spectrum = spectrumList.get(i);
             dateNow = new GregorianCalendar(Locale.US);
             if (spectrum.getSpectrumDate() != 0) {
@@ -214,7 +214,12 @@ public class SpectrumFileBqMoni extends SpectrumFile {
     }
 
     @Override
-    public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
+        return false;
+    }
+
+    @Override
+    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         return false;
     }
 }

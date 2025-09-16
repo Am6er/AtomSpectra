@@ -259,6 +259,7 @@
 
     <string name="perm_no_audio">Aucune autorisation d\'ouvrir l\'audio</string>
     <string name="perm_no_read_histogram">Aucune permission de lire un spectre</string>
+    <string name="perm_no_read_spectrogram">Aucune permission de lire un spectrogramme</string>
     <string name="perm_no_read_background">Aucune autorisation de lire un fond</string>
     <string name="perm_no_read_calibration">Aucune autorisation de lire un fichier d\'étalonnage</string>
     <string name="perm_no_read_device">Aucune autorisation de lire un fichier de périphérique</string>
@@ -280,6 +281,7 @@
 
     <string name="ask_select_histogram">Sélectionnez un spectre</string>
     <string name="ask_select_background">Sélectionnez un spectre du fond</string>
+    <string name="ask_select_spectrogram">Sélectionnez un spectrogramme</string>
     <string name="ask_select_calibration">Sélectionnez un fichier d\'étalonnage</string>
     <string name="ask_select_device_file">Sélectionnez un fichier de périphérique</string>
     <string name="ask_spectrum_suffix">Suffixe de fichier pour un spectre</string>
@@ -450,6 +452,8 @@
     <string name="spectrogram_activity_title">Atom Spectra Spectrogramme</string>
     <string name="spectrogram_menu">Spectrogramme</string>
     <string name="spectrogram_load">Charge à partir…</string>
+    <string name="spectrogram_load_error">ERREUR: Impossible de charger le spectrogramme. %1$s</string>
+    <string name="spectrogram_load_success">Spectrogramme chargé avec succès.</string>
     <string name="spectrogram_view">Voir</string>
     <string name="spectrogram_row_count">Lignes: %1$d</string>
 

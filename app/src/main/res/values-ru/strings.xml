@@ -259,6 +259,7 @@
 
     <string name="perm_no_audio">Нет разрешения на чтение аудио</string>
     <string name="perm_no_read_histogram">Нет разрешения на чтение спектра</string>
+    <string name="perm_no_read_spectrogram">Нет разрешения на чтение спектрограммы</string>
     <string name="perm_no_read_background">Нет разрешения на чтение фона</string>
     <string name="perm_no_read_calibration">Нет разрешения на чтение калибровки из файла</string>
     <string name="perm_no_read_device">Нет разрешения на чтение файла устройства</string>
@@ -280,6 +281,7 @@
 
     <string name="ask_select_histogram">Выбрать спектр</string>
     <string name="ask_select_background">Выбрать спектр фона</string>
+    <string name="ask_select_spectrogram">Выбрать спектрограмму</string>
     <string name="ask_select_calibration">Выбрать файл калибровки</string>
     <string name="ask_select_device_file">Выбрать файл устройства</string>
     <string name="ask_spectrum_suffix">Выберите суффикс для спектра</string>
@@ -450,6 +452,8 @@
     <string name="spectrogram_activity_title">Atom Spectra Спектрограмма</string>
     <string name="spectrogram_menu">Спектрограмма</string>
     <string name="spectrogram_load">Загрузить из…</string>
+    <string name="spectrogram_load_error">ОШИБКА: Не удалось загрузить спектрограмму. %1$s</string>
+    <string name="spectrogram_load_success">Спектрограмма загружена успешно.</string>
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
 

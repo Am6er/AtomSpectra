@@ -54,7 +54,7 @@ public abstract class SpectrumFile {
         return backgroundSpectrum != null;
     }
 
-    public final int spectrumNumber() {
+    public final int spectrumsCount() {
         return spectrumList.size();
     }
 
@@ -183,9 +183,12 @@ public abstract class SpectrumFile {
     //load spectrum from external source
     abstract public boolean loadSpectrum(@NonNull InputStream histFile, Context context);
 
+    //load delta spectrum from external source
+    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context);
+
     //save spectrum to external source
     abstract public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context);
 
     //save incremental spectrum to external source
-    abstract public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context);
+    abstract public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context);
 }

@@ -18,14 +18,14 @@ import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.Locale;
 
-//This is the main class to load and store own Atom Spectra spectra
+//This is the main class to load and store own Atom Spectra spectrum
 public class SpectrumFileAS extends SpectrumFile {
     @Override
     public boolean loadSpectrum(@NonNull InputStream histFile, Context context) {
         boolean result = false;
-        if (spectrumNumber() == 0 && backgroundSpectrum == null) {
+        if (spectrumsCount() == 0 && backgroundSpectrum == null) {
+            BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
             try {
-                BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
 //            Log.d(TAG, filename + " loading started...");
                 String ident = fr.readLine();
                 if (!ident.matches("^[+-]?\\d+(\\.(\\d+)?)?$")) {
@@ -35,6 +35,8 @@ public class SpectrumFileAS extends SpectrumFile {
                 }
             } catch (Exception e) {
                 return false;
+            } finally {
+                fr.close();
             }
         }
         return result;
@@ -80,7 +82,6 @@ public class SpectrumFileAS extends SpectrumFile {
                     .setSpectrumOnly(tmp)
                     .setChanged(false);
 
-            fr.close();
         } catch (Exception e) {
             return false;
         }
@@ -161,7 +162,6 @@ public class SpectrumFileAS extends SpectrumFile {
                     .setSpectrumCalibration(save_calibration)
                     .setSpectrumOnly(tmp)
                     .setChanged(false);
-            fr.close();
         } catch (Exception e) {
             return false;
         }
@@ -172,7 +172,7 @@ public class SpectrumFileAS extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //We just save the only one spectrum
-        if (spectrumNumber() != 1 || backgroundSpectrum != null)
+        if (spectrumsCount() != 1 || backgroundSpectrum != null)
             return false;
 
         Spectrum spectrum = spectrumList.get(0);
@@ -209,9 +209,58 @@ public class SpectrumFileAS extends SpectrumFile {
     }
 
     @Override
-    public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
-        //We just save the only one incremental spectrum
-        if (spectrumNumber() != 1 || backgroundSpectrum != null)
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
+        if (spectrumsCount() != 0) {
+            // something already loaded
+            return false;
+        }
+
+        BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
+        try {
+            // load base spectrum
+            String ident = fr.readLine();
+            if (!ident.matches("^[+-]?\\d+(\\.(\\d+)?)?$") && loadSpectrumV3(fr, ident, context)) {
+                // load deltas
+                while (true) {
+                    Spectrum delta = new Spectrum();
+                    String dateStr = fr.readLine();
+                    if (dateStr == null || dateStr.lenght == 0) {
+                        // EOF
+                        break;
+                    }
+                    long date = Long.parseLong(dateStr);
+                    double latitude = Double.parseDouble(fr.readLine());
+                    double longitude = Double.parseDouble(fr.readLine());
+                    double duration = Double.parseDouble(fr.readLine());
+                    String[] channels = fr.readLine().split('\t');
+                    long[] tmp = new long[Constants.NUM_HIST_POINTS];
+                    for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+                        tmp[i] += Long.parseLong(channels[i]);
+                    }
+
+                    delta.setLocationOnly(latitude, longitude, date)
+                            .setSpectrumDate(date)
+                            .setSpectrumTime((long) duration * 1000.0 / Constants.UPDATE_PERIOD)
+                            .setSpectrumOnly(tmp);
+
+                    spectrumList.add(delta);
+                }
+
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            fr.close();
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
+        // We just save the only one incremental spectrum
+        if (spectrumsCount() != 1 || backgroundSpectrum != null)
             return false;
 
         Spectrum spectrum = spectrumList.get(0);
@@ -219,24 +268,17 @@ public class SpectrumFileAS extends SpectrumFile {
             OutputStreamWriter fw = docStream;
             long[] tmp = spectrum.getDataArray();
             double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
-//            fw.append("FORMAT: 3\n");
-//            fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));    //version 2
+
             if (spectrum.getSpectrumDate() == 0) {
-                fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));    //version 2
+                fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));
             } else {
-                fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));                   //version 2
+                fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));
             }
-//            fw.append(String.format(Locale.US, "%s\n", spectrum.getGPSDate()));                //version 2
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));               //version 2
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));              //version 2
-//            fw.append(spectrum.getSuffix()).append("\n"); //version 3
-//            fw.append(spectrum.getDetectedIsotopes()).append("\n");//version 3
-            fw.append(String.format(Locale.US, "%f\n", time)); //convert from counts to seconds
-//            fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
-//            fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
-//            for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
-//                fw.append(String.format(Locale.US, "%.12g\n", coeff));
-//            }
+
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));
+            fw.append(String.format(Locale.US, "%f\n", time));
+
             for (long l : tmp) {
                 fw.append(String.format(Locale.US, "%d\t", l));
             }

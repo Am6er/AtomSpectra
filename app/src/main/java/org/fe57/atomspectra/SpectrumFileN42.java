@@ -24,7 +24,7 @@ public class SpectrumFileN42 extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //can't save if nothing
-        if (spectrumNumber() == 0)
+        if (spectrumsCount() == 0)
             return false;
 
         OutputStreamWriter fw;
@@ -247,7 +247,12 @@ public class SpectrumFileN42 extends SpectrumFile {
     }
 
     @Override
-    public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
+        return false;
+    }
+
+    @Override
+    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         return false;
     }
 }

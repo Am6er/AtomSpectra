@@ -11,7 +11,6 @@ import java.util.Locale;
 
 //This class contains information about spectrum itself. To load or store use a SpectrumFile class.
 public class Spectrum {
-//    private final static String TAG = Spectrum.class.getSimpleName();
     private long[] DataArray;                     //spectrum data
     private long SpectrumTime;                    //total amount of time collected, NOT seconds, count of Constant.UPDATE_PERIOD
     private long SpectrumDate;                    //last spectrum update date
@@ -328,7 +327,7 @@ public class Spectrum {
         } else {
             Comments = prepareCommentString(new Date(SpectrumDate), counts, 0.0, realTime, GPSDate, Latitude, Longitude);
         }
-//        Changed = true;
+
         return this;
     }
 

@@ -259,6 +259,7 @@
 
     <string name="perm_no_audio">Keine Erlaubnis zum Öffnen von Audio</string>
     <string name="perm_no_read_histogram">Keine Erlaubnis zum Lesen eines Spektrums</string>
+    <string name="perm_no_read_spectrogram">Keine Erlaubnis zum Lesen eines Spektrogramms</string>
     <string name="perm_no_read_background">Keine Erlaubnis, einen Hintergrund zu lesen</string>
     <string name="perm_no_read_calibration">Keine Berechtigung zum Lesen einer Kalibrierungsdatei</string>
     <string name="perm_no_read_device">Keine Berechtigung zum Lesen einer Gerätedatei</string>
@@ -280,6 +281,7 @@
 
     <string name="ask_select_histogram">Wählen Sie ein Spektrum</string>
     <string name="ask_select_background">Wählen Sie ein Hintergrundspektrum</string>
+    <string name="ask_select_spectrogram">Wählen Sie ein Spektrogramm</string>
     <string name="ask_select_calibration">Wählen Sie eine Kalibrierungsdatei</string>
     <string name="ask_select_device_file">Wählen Sie eine Gerätedatei aus</string>
     <string name="ask_spectrum_suffix">Dateisuffix für ein Spektrum</string>
@@ -450,6 +452,8 @@
     <string name="spectrogram_activity_title">Atom Spectra Spektrogramm</string>
     <string name="spectrogram_menu">Spektrogramm</string>
     <string name="spectrogram_load">Laden von…</string>
+    <string name="spectrogram_load_error">FEHLER: Spektrogramm konnte nicht geladen werden. %1$s</string>
+    <string name="spectrogram_load_success">Spektrogramm erfolgreich geladen.</string>
     <string name="spectrogram_view">Sicht</string>
     <string name="spectrogram_row_count">Zeilen: %1$d</string>
 

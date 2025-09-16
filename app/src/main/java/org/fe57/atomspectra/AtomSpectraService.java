@@ -2967,7 +2967,7 @@ public class AtomSpectraService extends Service {
                     addSpectrum(deltaSpectrum).
                     setChannels(deltaSpectrum.getDataArray().length).
                     setChannelCompression(1).
-                    saveIncrementalSpectrum(docStream, this);
+                    saveDeltaSpectrum(docStream, this);
         } catch (Exception e) {
             this.showToastInMainLooper(String.format("!%s: %s", e.getMessage(), spgAutosaveFile.second), Toast.LENGTH_LONG);
         }

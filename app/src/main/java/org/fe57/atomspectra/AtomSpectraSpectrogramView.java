@@ -46,7 +46,7 @@ public class AtomSpectraSpectrogramView extends View {
 	};
 	private final int POINT_SIZE_PX = 2;
 	private final int TIME_AXIS_WIDTH_PX = 120;
-	private final int CHANNEL_AXIS_HEIGHT_PX = 20;
+	private final int CHANNEL_AXIS_HEIGHT_PX = 40;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;

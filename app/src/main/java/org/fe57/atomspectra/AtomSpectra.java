@@ -90,6 +90,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	public static final int REQUEST_READ_DEVICE = 14;
 	public static final int REQUEST_WRITE_DEVICE = 15;
 	public static final int REQUEST_ADD_HIST = 16;
+	public static final int REQUEST_READ_SPG = 17;
 
 	private static final String ATOM_STATE_AVERAGE = "Atom average";
 	private static final String ATOM_STATE_LOG = "Atom Log";
@@ -146,6 +147,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private final int SELECT_LOAD_DEVICE_CODE = 313;
 	private final int SELECT_SAVE_DEVICE_DIR_CODE = 314;
 	private final int ADD_HIST_CODE = 315;
+	private final int LOAD_SPG_CODE = 316;
 	private boolean isPinchMode = false;
 	private boolean isPinchModeFinished = false;
 	private boolean hasFeatureGPS = false; // GPS coordinates
@@ -581,6 +583,15 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				} else
 					Toast.makeText(this, getString(R.string.perm_no_read_histogram), Toast.LENGTH_LONG).show();
 				break;
+			case REQUEST_READ_SPG:
+				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+					Intent loadIntent = new Intent()
+							.setType("*/*")
+							.setAction(Intent.ACTION_GET_CONTENT);
+					startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_spectrogram)), LOAD_SPG_CODE);
+				} else
+					Toast.makeText(this, getString(R.string.perm_no_read_spectrogram), Toast.LENGTH_LONG).show();
+				break;
 			case REQUEST_ADD_HIST:
 				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 					Intent loadIntent = new Intent()
@@ -981,6 +992,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		updateRecordStatusMenu();
 		updateVersionInMenu();
+		updateSpectrogramMenu();
 
 		return true;
 	}
@@ -2068,19 +2080,19 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			}
 			return true;
 		} else if (item.getItemId() == R.id.action_background_load) {
-			Log.d(TAG, "loading hist file");
+			Log.d(TAG, "loading background file");
 			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
 				if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_READ_HIST)) {
 					Intent loadIntent = new Intent()
 							.setType("*/*")
 							.setAction(Intent.ACTION_GET_CONTENT);
-					startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
+					startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_BACK_CODE);
 				}
 			} else {
 				Intent loadIntent = new Intent()
 						.setType("*/*")
 						.setAction(Intent.ACTION_GET_CONTENT);
-				startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
+				startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_BACK_CODE);
 			}
 
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -2219,11 +2231,23 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			startActivity(intent_help);
 			return true;
 		} else if (item.getItemId() == R.id.action_spectrogram_load) {
-			Toast.makeText(this, "load spg", Toast.LENGTH_SHORT).show();
+			Log.d(TAG, "loading spectrogram file");
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+				if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_READ_SPG)) {
+					Intent loadIntent = new Intent()
+							.setType("*/*")
+							.setAction(Intent.ACTION_GET_CONTENT);
+					startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_spectrogram)), LOAD_SPG_CODE);
+				}
+			} else {
+				Intent loadIntent = new Intent()
+						.setType("*/*")
+						.setAction(Intent.ACTION_GET_CONTENT);
+				startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_spectrogram)), LOAD_SPG_CODE);
+			}
 			return true;
 		} else if (item.getItemId() == R.id.action_spectrogram_view) {
-			Intent intent_spectrogram = new Intent(this, AtomSpectraSpectrogram.class);
-			startActivity(intent_spectrogram);
+			showSpectrogramView();
 			return true;
 		} else if (item.getItemId() == R.id.action_hist_to_file) {
 			Log.d(TAG, "saving file");
@@ -3034,6 +3058,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			selectedFile = data.getData();
 			if (selectedFile != null)
 				shareFile(selectedFile);
+		} else if (requestCode == LOAD_SPG_CODE && resultCode == RESULT_OK) {
+			selectedFile = data.getData(); //The uri with the location of the file
+			if (selectedFile != null)
+				loadAndViewSpectrogram(selectedFile);
 		} else if (requestCode == SELECT_SAVE_HIST_DIR_CODE && resultCode == RESULT_OK && (data != null)) {
 			try {
 				final Uri dirUri = data.getData();
@@ -3456,6 +3484,40 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			} else {
 				Toast.makeText(this, getString(R.string.cal_load_error), Toast.LENGTH_LONG).show();
 			}
+			//Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
+		}
+	}
+
+	private void loadAndViewSpectrogram(Uri histFile) {
+		final String filename = histFile.getPath();
+		if (filename == null) {
+			Log.d(TAG, "Null filename");
+			Toast.makeText(this, getString(R.string.strange_file_name), Toast.LENGTH_LONG).show();
+			return;
+		}
+		Log.d(TAG, filename);
+
+		SpectrumFileAS spectrumFile = new SpectrumFileAS();
+		spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
+		try {
+			InputStream inputFile = getContentResolver().openInputStream(histFile);
+			if (spectrumFile.loadSpectrogram(inputFile, this)) {
+				AtomSpectraSpectrogramData.clear();
+
+				Spectrum baseSpectrum = spectrumFile.getSpectrum(0);
+				AtomSpectraSpectrogramData.setBaseSpectrum(baseSpectrum);
+
+				for (int i = 1; i < spectrumFile.spectrumsCount(); i++) {
+					AtomSpectraSpectrogramData.addDelta(spectrumFile.getSpectrum(i));
+				}	
+
+				showSpectrogramView();
+				Toast.makeText(this, getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG).show();
+			} else {
+				throw new Exception("");
+			}
+		} catch (Exception e) {
+			Toast.makeText(this, getString(R.string.spectrogram_load_error), Toast.LENGTH_LONG).show();
 			//Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
 		}
 	}
@@ -4175,6 +4237,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
 			inputType.setBackgroundResource(R.drawable.input_mic);
 		}
+	}
+
+	private void showSpectrogramView() {
+		Intent intent_spectrogram = new Intent(this, AtomSpectraSpectrogram.class);
+		startActivity(intent_spectrogram);
 	}
 
 	private void updateSpectrogramMenu() {

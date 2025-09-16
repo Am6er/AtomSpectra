@@ -31,7 +31,7 @@ public class SpectrumFileCSV extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //We save the only one spectrum
-        if (spectrumNumber() != 1 || backgroundSpectrum != null)
+        if (spectrumsCount() != 1 || backgroundSpectrum != null)
             return false;
 
         Spectrum spectrum = spectrumList.get(0);
@@ -75,7 +75,12 @@ public class SpectrumFileCSV extends SpectrumFile {
     }
 
     @Override
-    public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
+        return false;
+    }
+
+    @Override
+    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         return false;
     }
 }
