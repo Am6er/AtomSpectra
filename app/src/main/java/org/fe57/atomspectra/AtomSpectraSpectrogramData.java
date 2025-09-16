@@ -56,13 +56,13 @@ public class AtomSpectraSpectrogramData {
         return new ArrayList<>(this.spectrogram);
     }
 
-//    public Date[] getTimestamps() {
-//        return this.timestamps.toArray();
-//    }
-//
-//    public Date[] getDurations() {
-//        return this.durations.toArray();
-//    }
+   public ArrayList<Date[]> getTimestamps() {
+       return new ArrayList<>(this.timestamps);
+   }
+
+   public ArrayList<Date[]> getDurations() {
+       return new ArrayList<>(this.durations);
+   }
 
     public double channelToEnergy(int channel) {
         if (this.baseSpectrum == null) {

@@ -9,29 +9,41 @@ class Calibration {
     private final ArrayList<Double> EnergyList;   //list of calibration energies in keV
     private final double[] ApproximationList;     //list of channel approximation energies
     private double[] coeffArray;            //polynomial coefficients array in f(x)=a+bx+cx^2+dx^3+...
+    private final int num_hist_points;
 
-    public static Calibration defaultCalibration() {
-        Calibration calibration = new Calibration().addLine(0, 0).addLine(8192, 3000);
+    public static Calibration defaultCalibration(int channelCount) {
+        Calibration calibration = new Calibration(channelCount).addLine(0, 0).addLine(channelCount + 1, 3000);
         calibration.Calculate();
         return calibration;
     }
 
     //default constructor
     public Calibration() {
+        num_hist_points = Constants.NUM_HIST_POINTS;
         ChannelList = new ArrayList<>();
         EnergyList = new ArrayList<>();
-        ApproximationList = new double[Constants.NUM_HIST_POINTS + 1];
+        ApproximationList = new double[num_hist_points + 1];
+        coeffArray = null;
+        Arrays.fill(ApproximationList, 0.0);
+    }
+
+    public Calibration(int channelCount) {
+        num_hist_points = channelCount;
+        ChannelList = new ArrayList<>();
+        EnergyList = new ArrayList<>();
+        ApproximationList = new double[channelCount + 1];
         coeffArray = null;
         Arrays.fill(ApproximationList, 0.0);
     }
 
     //copy constructor
     public Calibration(Calibration other) {
+        num_hist_points = other.num_hist_points;
         ChannelList = new ArrayList<>();
         ChannelList.addAll(other.ChannelList);
         EnergyList = new ArrayList<>();
         EnergyList.addAll(other.EnergyList);
-        ApproximationList = new double[Constants.NUM_HIST_POINTS+1];
+        ApproximationList = new double[other.ApproximationList.length];
         System.arraycopy(other.ApproximationList, 0, ApproximationList, 0, other.ApproximationList.length);
         if (other.coeffArray == null)
             coeffArray = null;
@@ -133,7 +145,7 @@ class Calibration {
             //from here we have all coefficients we need in a last column: matrix[end][0] + x*matrix[end][1] + ...
             //prepare approximation list using polynomial
             double coeff;
-            for (int i = 0; i < Constants.NUM_HIST_POINTS+1; i++) {
+            for (int i = 0; i < ApproximationList.length; i++) {
                 coeff = 1.0;
                 x = 0.0;
                 for (int j = 0; j < factor; j++) {
@@ -146,7 +158,7 @@ class Calibration {
         } else {
             //Can't set calibration curve
             coeffArray = null;
-            for(int i = 0; i < Constants.NUM_HIST_POINTS+1; i++)
+            for(int i = 0; i < ApproximationList.length; i++)
                 ApproximationList[i] = 0.0;
         }
     }
@@ -165,7 +177,7 @@ class Calibration {
             System.arraycopy(coeffs, 0, coeffArray, 0, poli);
             double coeff;
             double x;
-            for (int i = 0; i < Constants.NUM_HIST_POINTS + 1; i++) {
+            for (int i = 0; i < ApproximationList.length; i++) {
                 coeff = 1.0;
                 x = 0.0;
                 for (int j = 0; j < poli; j++) {
@@ -186,7 +198,7 @@ class Calibration {
         coeffArray = null;
         if (!isCorrectInternal()) {
             //Can't set calibration curve
-            for (int i = 0; i < Constants.NUM_HIST_POINTS + 1; i++)
+            for (int i = 0; i < ApproximationList.length; i++)
                 ApproximationList[i] = 0.0;
             return;
         }
@@ -208,22 +220,6 @@ class Calibration {
         for (int i = 0; i <= maxFactor; i++)
             temp[i] = b.array[i][0];
         Calculate(temp);
-    }
-
-    public Calibration approximateTo(int maxFactor) {
-        if (getFactor() == 0)
-            return null;
-        if (maxFactor <= getFactor())
-            return this;
-        Calibration newCalibration = new Calibration();
-        for (int i = 0; i < 20; i++) {
-            newCalibration.addLine( i*400 + 50, ApproximationList[i*400 + 50]);
-            newCalibration.Calculate(maxFactor);
-        }
-        if (newCalibration.isCorrect())
-            return newCalibration;
-        else
-            return null;
     }
 
     public int getFactor() {
@@ -266,7 +262,7 @@ class Calibration {
             return null;
 
         double[] tmp = new double[coeffArray.length];
-        System.arraycopy(coeffArray,0,tmp,0,coeffArray.length);
+        System.arraycopy(coeffArray, 0, tmp, 0, coeffArray.length);
         return tmp;
     }
 
@@ -294,7 +290,7 @@ class Calibration {
     //get the approximation list to show instead of channels
     public double[] getApproximationList(){
         double[] tmp = new double[ApproximationList.length];
-        System.arraycopy(ApproximationList,0,tmp,0,ApproximationList.length);
+        System.arraycopy(ApproximationList, 0, tmp, 0, ApproximationList.length);
         return tmp;
     }
 
@@ -302,7 +298,7 @@ class Calibration {
     public boolean isCorrect() {
         boolean result = (coeffArray != null) && (coeffArray.length > 1);
         if (result) {
-            for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+            for (int i = 0; i < ApproximationList.length - 1; i++) {
                 if (ApproximationList[i] >= ApproximationList[i + 1]) {
                     result = false;
                     break;
@@ -333,35 +329,35 @@ class Calibration {
     double toEnergy(int channel) {
         if (channel < 0)
             return ApproximationList[0] - 1;
-        if (channel > Constants.NUM_HIST_POINTS)
-            return ApproximationList[Constants.NUM_HIST_POINTS] + 1;
+        if (channel > num_hist_points)
+            return ApproximationList[num_hist_points] + 1;
         return ApproximationList[channel];
     }
 
     //convert to channel on energy scale
     int toEnergyChannel(int channel) {
-        return (int)StrictMath.rint((ApproximationList[channel]-ApproximationList[0])/(ApproximationList[Constants.NUM_HIST_POINTS - 1] - ApproximationList[0])*(Constants.NUM_HIST_POINTS - 1));
+        return (int)StrictMath.rint((ApproximationList[channel]-ApproximationList[0])/(ApproximationList[num_hist_points - 1] - ApproximationList[0])*(num_hist_points - 1));
     }
 
     int toEnergyChannel(double energy) {
-        return (int)StrictMath.rint((energy-ApproximationList[0])/(ApproximationList[Constants.NUM_HIST_POINTS - 1] - ApproximationList[0])*(Constants.NUM_HIST_POINTS - 1));
+        return (int)StrictMath.rint((energy-ApproximationList[0])/(ApproximationList[num_hist_points - 1] - ApproximationList[0])*(num_hist_points - 1));
     }
 
     double getEnergyFromEnergyChannel(int channel, int lastChannel) {
-        return channel * (ApproximationList[lastChannel - 1] - ApproximationList[0]) / (Constants.NUM_HIST_POINTS - 1) + ApproximationList[0];
+        return channel * (ApproximationList[lastChannel - 1] - ApproximationList[0]) / (num_hist_points - 1) + ApproximationList[0];
     }
 
     //get ordinal channel from energy scale channel
     double fromEnergyChannel(int energyChannel) {
-        return (double) energyChannel /(Constants.NUM_HIST_POINTS - 1)*(ApproximationList[Constants.NUM_HIST_POINTS - 1] - ApproximationList[0]) + ApproximationList[0];
+        return (double) energyChannel /(num_hist_points - 1)*(ApproximationList[num_hist_points - 1] - ApproximationList[0]) + ApproximationList[0];
     }
 
     //convert all spectrum channels to energy
     double[] toEnergy(long[] spectrum, int lastChannel) {
-        double[] tmp = new double[Constants.NUM_HIST_POINTS];
+        double[] tmp = new double[num_hist_points];
         double energy_l, energy_r;
         double coeff_e;
-        coeff_e = (Constants.NUM_HIST_POINTS - 1) / (ApproximationList[lastChannel - 1] - ApproximationList[0]);
+        coeff_e = (num_hist_points - 1) / (ApproximationList[lastChannel - 1] - ApproximationList[0]);
         double coeff;
         for (int i = 0; i < lastChannel; i++) {
             energy_l = (ApproximationList[i] - ApproximationList[0]) * coeff_e;
@@ -371,10 +367,10 @@ class Calibration {
                 continue;
             if (energy_l < 0)
                 energy_l = 0;
-            if (energy_l > Constants.NUM_HIST_POINTS - 1)
+            if (energy_l > num_hist_points - 1)
                 continue;
-            if (energy_r >= Constants.NUM_HIST_POINTS - 1)
-                energy_r = Constants.NUM_HIST_POINTS - 1;
+            if (energy_r >= num_hist_points - 1)
+                energy_r = num_hist_points - 1;
             if (StrictMath.floor(energy_l) == StrictMath.floor(energy_r)) {
                 tmp[(int) StrictMath.floor(energy_l)] += spectrum[i];
             } else {
@@ -390,10 +386,10 @@ class Calibration {
 
     //convert all spectrum channels to energy
     double[] toEnergy(double[] spectrum, int lastChannel) {
-        double[] tmp = new double[Constants.NUM_HIST_POINTS];
+        double[] tmp = new double[num_hist_points];
         double energy_l, energy_r;
         double coeff_e;
-        coeff_e = (Constants.NUM_HIST_POINTS - 1) / (ApproximationList[lastChannel - 1] - ApproximationList[0]);
+        coeff_e = (num_hist_points - 1) / (ApproximationList[lastChannel - 1] - ApproximationList[0]);
         double coeff;
         for (int i = 0; i < lastChannel; i++) {
             energy_l = (ApproximationList[i] - ApproximationList[0]) * coeff_e;
@@ -403,10 +399,10 @@ class Calibration {
                 continue;
             if (energy_l < 0)
                 energy_l = 0;
-            if (energy_l > Constants.NUM_HIST_POINTS - 1)
+            if (energy_l > num_hist_points - 1)
                 continue;
-            if (energy_r >= Constants.NUM_HIST_POINTS - 1)
-                energy_r = Constants.NUM_HIST_POINTS - 1;
+            if (energy_r >= num_hist_points - 1)
+                energy_r = num_hist_points - 1;
             if (StrictMath.floor(energy_l) == StrictMath.floor(energy_r)) {
                 tmp[(int) StrictMath.floor(energy_l)] += spectrum[i];
             } else {
@@ -438,23 +434,23 @@ class Calibration {
         double e_l, e_m;
         e_l = (otherCalibration.ApproximationList[0]-ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
         e_m = (otherCalibration.ApproximationList[lastChannel - 1] - ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
-        double a = (e_m - e_l)/(Constants.NUM_HIST_POINTS - 1);
+        double a = (e_m - e_l)/(num_hist_points - 1);
         double b = e_l;
         double energy_l, energy_r;
         double coeff;
-        double[] tmp = new double[Constants.NUM_HIST_POINTS];
-        for(int i = 0; i < Constants.NUM_HIST_POINTS - 1; i++) {
+        double[] tmp = new double[num_hist_points];
+        for(int i = 0; i < num_hist_points - 1; i++) {
             energy_l = a*i + b;
             energy_r = a*(i + 1) + b;
             coeff = energies[i]/(energy_r - energy_l);
             if(energy_l <= 0)
                 energy_l = 0;
-            if(energy_l > Constants.NUM_HIST_POINTS - 1)
+            if(energy_l > num_hist_points - 1)
                 continue;
             if(energy_r < 0)
                 continue;
-            if(energy_r >= Constants.NUM_HIST_POINTS - 1)
-                energy_r = Constants.NUM_HIST_POINTS - 1;
+            if(energy_r >= num_hist_points - 1)
+                energy_r = num_hist_points - 1;
             if (StrictMath.floor(energy_l) == StrictMath.floor(energy_r)) {
                 tmp[(int) StrictMath.floor(energy_l)] += energies[i];
             } else {
@@ -476,23 +472,23 @@ class Calibration {
         double e_l, e_m;
         e_l = (otherCalibration.ApproximationList[0]-ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
         e_m = (otherCalibration.ApproximationList[lastChannel - 1] - ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
-        double a = (e_m - e_l)/(Constants.NUM_HIST_POINTS - 1);
+        double a = (e_m - e_l)/(num_hist_points - 1);
         double b = e_l;
         double energy_l, energy_r;
         double coeff;
-        double[] tmp = new double[Constants.NUM_HIST_POINTS];
-        for(int i = 0; i < Constants.NUM_HIST_POINTS - 1; i++) {
+        double[] tmp = new double[num_hist_points];
+        for(int i = 0; i < num_hist_points - 1; i++) {
             energy_l = a*i + b;
             energy_r = a*(i + 1) + b;
             coeff = energies[i]/(energy_r - energy_l);
             if(energy_l <= 0)
                 energy_l = 0;
-            if(energy_l > Constants.NUM_HIST_POINTS - 1)
+            if(energy_l > num_hist_points - 1)
                 continue;
             if(energy_r < 0)
                 continue;
-            if(energy_r >= Constants.NUM_HIST_POINTS - 1)
-                energy_r = Constants.NUM_HIST_POINTS - 1;
+            if(energy_r >= num_hist_points - 1)
+                energy_r = num_hist_points - 1;
             if (StrictMath.floor(energy_l) == StrictMath.floor(energy_r)) {
                 tmp[(int) StrictMath.floor(energy_l)] += energies[i];
             } else {
@@ -518,12 +514,12 @@ class Calibration {
 
     //convert energy to channel
     public int toChannel(double energy) {
-        int delta = Constants.NUM_HIST_POINTS / 2;
+        int delta = num_hist_points / 2;
         int begin = 0;
         if (energy < ApproximationList[0])
             return -1;
-        if (energy > ApproximationList[Constants.NUM_HIST_POINTS - 1])
-            return Constants.NUM_HIST_POINTS;
+        if (energy > ApproximationList[num_hist_points - 1])
+            return num_hist_points;
         while (delta > 0) {
             if (ApproximationList[begin + delta] < energy) {
                 begin += delta;
@@ -534,19 +530,19 @@ class Calibration {
     }
 
     public double toChannelDouble(double energy, int lastChannel) {
-        int delta = Constants.NUM_HIST_POINTS / 2;
+        int delta = num_hist_points / 2;
         int begin = 0;
         if (energy < ApproximationList[0])
             return -1;
-        if (energy > ApproximationList[Constants.NUM_HIST_POINTS - 1])
-            return Constants.NUM_HIST_POINTS;
+        if (energy > ApproximationList[num_hist_points - 1])
+            return num_hist_points;
         while (delta > 0) {
             if (ApproximationList[begin + delta] < energy) {
                 begin += delta;
             }
             delta = delta / 2;
         }
-        if ((ApproximationList[begin] == energy) || (begin == (Constants.NUM_HIST_POINTS - 1)))
+        if ((ApproximationList[begin] == energy) || (begin == (num_hist_points - 1)))
             return begin;
         else
             return begin + (energy-ApproximationList[begin])/(ApproximationList[begin + 1] - ApproximationList[begin]);
@@ -554,30 +550,30 @@ class Calibration {
 
     //convert all spectrum channels to energy
     public long[] toChannel(double[] spectrum) {
-        double[] tmp = new double[Constants.NUM_HIST_POINTS];
+        double[] tmp = new double[num_hist_points];
         double energy_l, energy_r;
         int channel_l, channel_r;
         double coeff_e;
-        coeff_e = (ApproximationList[Constants.NUM_HIST_POINTS - 1] - ApproximationList[0]) / (Constants.NUM_HIST_POINTS - 1);
+        coeff_e = (ApproximationList[num_hist_points - 1] - ApproximationList[0]) / (num_hist_points - 1);
         double coeff;
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+        for (int i = 0; i < num_hist_points; i++) {
             channel_l = toChannel(ApproximationList[0] + i*coeff_e);
             channel_r = toChannel(ApproximationList[0] + (i+1)*coeff_e);
-            if (channel_l >= Constants.NUM_HIST_POINTS)
+            if (channel_l >= num_hist_points)
                 continue;
             if (channel_r < 0)
                 continue;
             if (channel_l < 0)
                 channel_l = 0;
-            if (channel_r >= (Constants.NUM_HIST_POINTS - 1))
-                channel_r = Constants.NUM_HIST_POINTS - 1;
+            if (channel_r >= (num_hist_points - 1))
+                channel_r = num_hist_points - 1;
             energy_l = channel_l + (ApproximationList[0] + i*coeff_e - ApproximationList[channel_l])/(ApproximationList[channel_l+1] - ApproximationList[channel_l]);
             energy_r = channel_r + (ApproximationList[0] + (i+1)*coeff_e - ApproximationList[channel_r])/(ApproximationList[channel_r+1] - ApproximationList[channel_r]);
             coeff = spectrum[i]/(energy_r - energy_l);
-            if(energy_l > Constants.NUM_HIST_POINTS - 1)
+            if(energy_l > num_hist_points - 1)
                 continue;
-            if(energy_r >= Constants.NUM_HIST_POINTS - 1)
-                energy_r = Constants.NUM_HIST_POINTS - 1;
+            if(energy_r >= num_hist_points - 1)
+                energy_r = num_hist_points - 1;
             if (StrictMath.floor(energy_l) == StrictMath.floor(energy_r)) {
                 tmp[(int) StrictMath.floor(energy_l)] += spectrum[i];
             } else {
@@ -588,27 +584,27 @@ class Calibration {
                 tmp[(int) StrictMath.floor(energy_r)] += coeff*(energy_r - StrictMath.floor(energy_r));
             }
         }
-        long[] out = new long[Constants.NUM_HIST_POINTS];
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++)
+        long[] out = new long[num_hist_points];
+        for (int i = 0; i < num_hist_points; i++)
             out[i] = (long)StrictMath.rint(tmp[i]);
         return out;
     }
 
     //convert spectrum with another calibration data
     public long[] toChannel(long[] spectrum, Calibration otherCalibration, int lastChannel) {
-        double[] energies = new double[Constants.NUM_HIST_POINTS];
+        double[] energies = new double[num_hist_points];
         double channel_l, channel_r;
         double coeff;
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+        for (int i = 0; i < num_hist_points; i++) {
             channel_l = toChannelDouble(otherCalibration.ApproximationList[i], lastChannel);
             channel_r = toChannelDouble(otherCalibration.ApproximationList[i + 1], lastChannel);
-            if ((channel_r < 0) || (channel_l > (Constants.NUM_HIST_POINTS - 1)))
+            if ((channel_r < 0) || (channel_l > (num_hist_points - 1)))
                 continue;
             coeff = spectrum[i]/(channel_r - channel_l);
             if (channel_l < 0)
                 channel_l = 0;
-            if (channel_r > (Constants.NUM_HIST_POINTS - 1))
-                channel_r = Constants.NUM_HIST_POINTS - 1;
+            if (channel_r > (num_hist_points - 1))
+                channel_r = num_hist_points - 1;
             if (StrictMath.floor(channel_l) == StrictMath.floor(channel_r)) {
                 energies[(int) StrictMath.floor(channel_l)] += spectrum[i];
             } else {
@@ -619,27 +615,27 @@ class Calibration {
                 energies[(int) StrictMath.floor(channel_r)] += coeff*(channel_r - StrictMath.floor(channel_r));
             }
         }
-        long[] result = new long[Constants.NUM_HIST_POINTS];
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++)
+        long[] result = new long[num_hist_points];
+        for (int i = 0; i < num_hist_points; i++)
             result[i] = (long)energies[i];
         return result;
     }
 
     //convert spectrum with another calibration data
     public double[] toChannel(double[] spectrum, Calibration otherCalibration, int lastChannel) {
-        double[] energies = new double[Constants.NUM_HIST_POINTS];
+        double[] energies = new double[num_hist_points];
         double channel_l, channel_r;
         double coeff;
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+        for (int i = 0; i < num_hist_points; i++) {
             channel_l = toChannelDouble(otherCalibration.ApproximationList[i], lastChannel);
             channel_r = toChannelDouble(otherCalibration.ApproximationList[i + 1], lastChannel);
-            if ((channel_r < 0) || (channel_l > (Constants.NUM_HIST_POINTS - 1)))
+            if ((channel_r < 0) || (channel_l > (num_hist_points - 1)))
                 continue;
             coeff = spectrum[i]/(channel_r - channel_l);
             if (channel_l < 0)
                 channel_l = 0;
-            if (channel_r > (Constants.NUM_HIST_POINTS - 1))
-                channel_r = Constants.NUM_HIST_POINTS - 1;
+            if (channel_r > (num_hist_points - 1))
+                channel_r = num_hist_points - 1;
             if (StrictMath.floor(channel_l) == StrictMath.floor(channel_r)) {
                 energies[(int) StrictMath.floor(channel_l)] += spectrum[i];
             } else {
@@ -664,10 +660,10 @@ class Calibration {
     }
 
     public long[] linearChannel(long[] spectrum, int adc_bits) {
-        long[] tmp_spectrum = new long[Constants.NUM_HIST_POINTS];
+        long[] tmp_spectrum = new long[num_hist_points];
         long sum;
         int num_data = 1 << (Constants.ADC_MAX - adc_bits);
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i+= num_data) {
+        for (int i = 0; i < num_hist_points; i+= num_data) {
             sum = 0;
             for (int j = i; j < i + num_data; j++)
                 sum += spectrum[j];
@@ -679,10 +675,10 @@ class Calibration {
     }
 
     public double[] linearChannel(double[] spectrum, int adc_bits) {
-        double[] tmp_spectrum = new double[Constants.NUM_HIST_POINTS];
+        double[] tmp_spectrum = new double[num_hist_points];
         double sum;
         int num_data = 1 << (Constants.ADC_MAX - adc_bits);
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i+= num_data) {
+        for (int i = 0; i < num_hist_points; i+= num_data) {
             sum = 0;
             for (int j = i; j < i + num_data; j++)
                 sum += spectrum[j];

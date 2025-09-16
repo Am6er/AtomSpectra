@@ -1,15 +1,10 @@
 package org.fe57.atomspectra;
 
 import android.content.Context;
-import android.util.Log;
-import android.widget.GridLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.Date;
@@ -45,7 +40,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
         } catch (Exception e) {
             return false;
         }
-        for (int i = 0; i < spectrumsCount(); i++) {
+        for (int i = 0; i < spectrumCount(); i++) {
             spectrum = spectrumList.get(i);
             dateNow = new GregorianCalendar(Locale.US);
             if (spectrum.getSpectrumDate() != 0) {

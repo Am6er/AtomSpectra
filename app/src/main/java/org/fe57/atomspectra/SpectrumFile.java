@@ -4,20 +4,16 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.documentfile.provider.DocumentFile;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -33,20 +29,12 @@ public abstract class SpectrumFile {
     private static final String TAG = SpectrumFile.class.getSimpleName();
 
     public final SpectrumFile addSpectrum(@NonNull Spectrum spectrum) {
-        spectrumList.add(new Spectrum(spectrum));
+        spectrumList.add(spectrum);
         return this;
     }
 
     public final SpectrumFile addBackgroundSpectrum(@NonNull Spectrum spectrum) {
-        backgroundSpectrum = new Spectrum(spectrum);
-        return this;
-    }
-
-    public final SpectrumFile clearSpectra() {
-        backgroundSpectrum = null;
-        spectrumList.clear();
-        Channels = Constants.NUM_HIST_POINTS;
-        channelCompression = 1;
+        backgroundSpectrum = spectrum;
         return this;
     }
 
@@ -54,7 +42,7 @@ public abstract class SpectrumFile {
         return backgroundSpectrum != null;
     }
 
-    public final int spectrumsCount() {
+    public final int spectrumCount() {
         return spectrumList.size();
     }
 
@@ -79,13 +67,13 @@ public abstract class SpectrumFile {
     public final Spectrum getSpectrum(int id) {
         if (id < 0 || id >= spectrumList.size())
             return null;
-        return new Spectrum(spectrumList.get(id));
+        return spectrumList.get(id);
     }
 
     public final Spectrum getBackgroundSpectrum() {
         if (backgroundSpectrum == null)
             return null;
-        return new Spectrum(backgroundSpectrum);
+        return backgroundSpectrum;
     }
 
     public static Pair<OutputStreamWriter, Uri> prepareOutputStream(@NonNull Context context, String folder, long date, @NonNull String prefix, boolean addPrefix, String suffix, @NonNull String extension, @NonNull String mimeType, boolean addDate, boolean addTime, boolean removeFirst) {

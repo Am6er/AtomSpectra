@@ -4,9 +4,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -23,7 +21,7 @@ public class SpectrumFileSPE extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //We just save the only one spectrum
-        if (spectrumsCount() != 1 || backgroundSpectrum != null)
+        if (spectrumCount() != 1 || backgroundSpectrum != null)
             return false;
 
         GregorianCalendar dateNow = new GregorianCalendar(Locale.US);

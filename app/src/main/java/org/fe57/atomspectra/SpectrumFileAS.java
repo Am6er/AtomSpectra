@@ -1,19 +1,13 @@
 package org.fe57.atomspectra;
 
 import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.Locale;
@@ -23,7 +17,7 @@ public class SpectrumFileAS extends SpectrumFile {
     @Override
     public boolean loadSpectrum(@NonNull InputStream histFile, Context context) {
         boolean result = false;
-        if (spectrumsCount() == 0 && backgroundSpectrum == null) {
+        if (spectrumCount() == 0 && backgroundSpectrum == null) {
             BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
             try {
 //            Log.d(TAG, filename + " loading started...");
@@ -33,10 +27,10 @@ public class SpectrumFileAS extends SpectrumFile {
                 } else {
                     result = loadSpectrumV1(fr, ident, context);
                 }
+
+                fr.close();
             } catch (Exception e) {
                 return false;
-            } finally {
-                fr.close();
             }
         }
         return result;
@@ -172,7 +166,7 @@ public class SpectrumFileAS extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //We just save the only one spectrum
-        if (spectrumsCount() != 1 || backgroundSpectrum != null)
+        if (spectrumCount() != 1 || backgroundSpectrum != null)
             return false;
 
         Spectrum spectrum = spectrumList.get(0);
@@ -210,7 +204,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
     @Override
     public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
-        if (spectrumsCount() != 0) {
+        if (spectrumCount() != 0) {
             // something already loaded
             return false;
         }
@@ -224,7 +218,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 while (true) {
                     Spectrum delta = new Spectrum();
                     String dateStr = fr.readLine();
-                    if (dateStr == null || dateStr.lenght == 0) {
+                    if (dateStr == null || dateStr.isEmpty()) {
                         // EOF
                         break;
                     }
@@ -232,7 +226,7 @@ public class SpectrumFileAS extends SpectrumFile {
                     double latitude = Double.parseDouble(fr.readLine());
                     double longitude = Double.parseDouble(fr.readLine());
                     double duration = Double.parseDouble(fr.readLine());
-                    String[] channels = fr.readLine().split('\t');
+                    String[] channels = fr.readLine().split("\t");
                     long[] tmp = new long[Constants.NUM_HIST_POINTS];
                     for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
                         tmp[i] += Long.parseLong(channels[i]);
@@ -240,18 +234,19 @@ public class SpectrumFileAS extends SpectrumFile {
 
                     delta.setLocationOnly(latitude, longitude, date)
                             .setSpectrumDate(date)
-                            .setSpectrumTime((long) duration * 1000.0 / Constants.UPDATE_PERIOD)
+                            .setRealSpectrumTime(duration)
                             .setSpectrumOnly(tmp);
 
                     spectrumList.add(delta);
                 }
 
+                fr.close();
                 return true;
+            } else {
+                fr.close();
             }
         } catch (Exception e) {
             return false;
-        } finally {
-            fr.close();
         }
 
         return false;
@@ -260,7 +255,7 @@ public class SpectrumFileAS extends SpectrumFile {
     @Override
     public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         // We just save the only one incremental spectrum
-        if (spectrumsCount() != 1 || backgroundSpectrum != null)
+        if (spectrumCount() != 1 || backgroundSpectrum != null)
             return false;
 
         Spectrum spectrum = spectrumList.get(0);

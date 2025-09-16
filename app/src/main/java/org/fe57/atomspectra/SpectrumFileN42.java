@@ -1,13 +1,10 @@
 package org.fe57.atomspectra;
 
 import android.content.Context;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.Date;
@@ -24,7 +21,7 @@ public class SpectrumFileN42 extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //can't save if nothing
-        if (spectrumsCount() == 0)
+        if (spectrumCount() == 0)
             return false;
 
         OutputStreamWriter fw;

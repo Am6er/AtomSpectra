@@ -2186,7 +2186,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			app_menu.findItem(R.id.action_background_clear).setEnabled(false);
 			app_menu.findItem(R.id.action_background_suffix).setEnabled(false);
 			app_menu.findItem(R.id.action_background_suffix).setEnabled(false);
-			AtomSpectraService.BackgroundSpectrum.initSpectrumData().setSuffix(getString(R.string.background_suffix));
+			AtomSpectraService.BackgroundSpectrum
+				.initSpectrumData(Constants.NUM_HIST_POINTS, Calibration.defaultCalibration(Constants.NUM_HIST_POINTS))
+				.setSuffix(getString(R.string.background_suffix));
 			TextView view = findViewById(R.id.backgroundSuffixView);
 			view.setText(getResources().getText(R.string.background));
 			view.setVisibility(TextView.INVISIBLE);
@@ -3502,14 +3504,14 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		try {
 			InputStream inputFile = getContentResolver().openInputStream(histFile);
 			if (spectrumFile.loadSpectrogram(inputFile, this)) {
-				AtomSpectraSpectrogramData.clear();
+				AtomSpectraSpectrogramData.instance.clear();
 
 				Spectrum baseSpectrum = spectrumFile.getSpectrum(0);
-				AtomSpectraSpectrogramData.setBaseSpectrum(baseSpectrum);
+				AtomSpectraSpectrogramData.instance.setBaseSpectrum(baseSpectrum);
 
-				for (int i = 1; i < spectrumFile.spectrumsCount(); i++) {
-					AtomSpectraSpectrogramData.addDelta(spectrumFile.getSpectrum(i));
-				}	
+				for (int i = 1; i < spectrumFile.spectrumCount(); i++) {
+					AtomSpectraSpectrogramData.instance.addDelta(spectrumFile.getSpectrum(i));
+				}
 
 				showSpectrogramView();
 				Toast.makeText(this, getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG).show();

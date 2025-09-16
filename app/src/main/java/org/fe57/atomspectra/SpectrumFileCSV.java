@@ -4,9 +4,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -31,7 +29,7 @@ public class SpectrumFileCSV extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //We save the only one spectrum
-        if (spectrumsCount() != 1 || backgroundSpectrum != null)
+        if (spectrumCount() != 1 || backgroundSpectrum != null)
             return false;
 
         Spectrum spectrum = spectrumList.get(0);

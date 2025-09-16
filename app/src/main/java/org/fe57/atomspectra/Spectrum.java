@@ -24,13 +24,20 @@ public class Spectrum {
     private boolean Changed;                      // functions ...Only don't change this state
 
     public Spectrum () {
-        initSpectrumData();
+        initSpectrumData(Constants.NUM_HIST_POINTS, Calibration.defaultCalibration(Constants.NUM_HIST_POINTS));
+    }
+
+    public Spectrum (int channelCount) {
+        initSpectrumData(channelCount, Calibration.defaultCalibration(channelCount));
     }
 
     public Spectrum(long[] data, long time, Calibration calibration) {
-        initSpectrumData();
+        initSpectrumData(data.length, calibration);
         DataArray = Arrays.copyOf(data, data.length);
-        SpectrumCalibration = (calibration != null && calibration.isCorrect()) ? new Calibration(calibration) : Calibration.defaultCalibration();
+        if (calibration == null || !calibration.isCorrect()) {
+            SpectrumCalibration = Calibration.defaultCalibration(data.length);
+        }
+        
         SpectrumTime = time;
         Changed = false;
     }
@@ -365,9 +372,9 @@ public class Spectrum {
         return Suffix;
     }
 
-    public Spectrum initSpectrumData() {
-        DataArray = new long[Constants.NUM_HIST_POINTS];
-        SpectrumCalibration = Calibration.defaultCalibration();
+    public Spectrum initSpectrumData(int channelCount, Calibration calibration) {
+        DataArray = new long[channelCount];
+        SpectrumCalibration = calibration;
         SpectrumTime = 0;
         Comments = "";
         SpectrumDate = 0;

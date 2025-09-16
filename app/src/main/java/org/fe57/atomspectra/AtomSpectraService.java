@@ -441,7 +441,7 @@ public class AtomSpectraService extends Service {
         Stop();
         DeleteSpc();
         service_context = null;
-        BackgroundSpectrum.initSpectrumData();
+        BackgroundSpectrum.initSpectrumData(Constants.NUM_HIST_POINTS, Calibration.defaultCalibration(Constants.NUM_HIST_POINTS));
         background_show = false;
         freeze_update_data = true;
         sp.unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
@@ -1535,7 +1535,9 @@ public class AtomSpectraService extends Service {
 
         Arrays.fill(histogram, 0);
         Arrays.fill(referencePulse, 0);
-        ForegroundSpectrum.initSpectrumData().setSuffix(getContextStringOrDefault(R.string.hist_suffix));
+        ForegroundSpectrum
+            .initSpectrumData(Constants.NUM_HIST_POINTS, Calibration.defaultCalibration(Constants.NUM_HIST_POINTS))
+            .setSuffix(getContextStringOrDefault(R.string.hist_suffix));
 
         resetSpectrumChangeWindow();
         synchronized (histogram_all_queue) {

@@ -16,7 +16,7 @@ import java.util.ArrayList;
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
 public class AtomSpectraSpectrogramView extends View {
 	private static final int[] IRON_PALETTE = new int[] {
-		/*0xFF00000A, 0xFF000014, 0xFF00001E, 0xFF000025, 0xFF00002A,*/ 0xFF00002E, 0xFF000032, 0xFF000036, 0xFF00003A, 0xFF00003E, 0xFF000042, 0xFF000046, 0xFF00004A, 0xFF00004F, 0xFF000052, 0xFF010055,
+		0xFF00000A, 0xFF000014, 0xFF00001E, 0xFF000025, 0xFF00002A, 0xFF00002E, 0xFF000032, 0xFF000036, 0xFF00003A, 0xFF00003E, 0xFF000042, 0xFF000046, 0xFF00004A, 0xFF00004F, 0xFF000052, 0xFF010055,
 		0xFF010057, 0xFF020059, 0xFF02005C, 0xFF03005E, 0xFF040061, 0xFF040063, 0xFF050065, 0xFF060067, 0xFF070069, 0xFF08006B, 0xFF09006E, 0xFF0A0070, 0xFF0B0073, 0xFF0C0074, 0xFF0D0075, 0xFF0D0076,
 		0xFF0E0077, 0xFF100078, 0xFF120079, 0xFF13007B, 0xFF15007C, 0xFF17007D, 0xFF19007E, 0xFF1B0080, 0xFF1C0081, 0xFF1E0083, 0xFF200084, 0xFF220085, 0xFF240086, 0xFF260087, 0xFF280089, 0xFF2A0089,
 		0xFF2C008A, 0xFF2E008B, 0xFF30008C, 0xFF32008D, 0xFF34008E, 0xFF36008E, 0xFF38008F, 0xFF390090, 0xFF3B0091, 0xFF3C0092, 0xFF3E0093, 0xFF3F0093, 0xFF410094, 0xFF420095, 0xFF440095, 0xFF450096,
@@ -60,7 +60,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private float lastTouchX;
 	private boolean isDragging;
 
-	private Bitmap spectrogramBitmap = null;
+	private final Integer spectrogramBitmapSync = 1;
+	private volatile Bitmap spectrogramBitmap = null;
 	private boolean autoScroll = true;
 
 	public AtomSpectraSpectrogramView(Context context) {
@@ -78,8 +79,12 @@ public class AtomSpectraSpectrogramView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if (this.spectrogramBitmap != null) {
-			Paint paint = new Paint();
-			canvas.drawBitmap(this.spectrogramBitmap, 0, 0, paint);
+			synchronized (spectrogramBitmapSync) {
+				if (this.spectrogramBitmap != null) {
+					Paint paint = new Paint();
+					canvas.drawBitmap(this.spectrogramBitmap, 0, 0, paint);
+				}
+			}
 		}
 	}
 
@@ -88,25 +93,6 @@ public class AtomSpectraSpectrogramView extends View {
 		super.onLayout(changed, left, top, right, bottom);
 
 		this.renderSpectrogramToBitmap();
-	}
-
-	public void renderSpectrogram(ArrayList<double[]> spectrogram, boolean scrollToBottom) {
-		this.spectrogramData = spectrogram;
-		this.maxValue = 0;
-		for (double[] deltas : spectrogram) {
-			for (double value : deltas) {
-				if (value > this.maxValue) {
-					this.maxValue = value;
-				}
-			}
-		}
-	
-		if (scrollToBottom) {
-			verticalOffsetPx = this.spectrogramData.size() * POINT_SIZE_PX;
-		}
-
-		renderSpectrogramToBitmap();
-		this.invalidate();
 	}
 
 	@Override
@@ -146,7 +132,30 @@ public class AtomSpectraSpectrogramView extends View {
 		return super.onTouchEvent(event);
 	}
 
+	public void renderSpectrogram(ArrayList<double[]> spectrogram, boolean scrollToBottom) {
+		this.spectrogramData = spectrogram;
+		this.maxValue = 0;
+		for (double[] deltas : spectrogram) {
+			for (double value : deltas) {
+				if (value > this.maxValue) {
+					this.maxValue = value;
+				}
+			}
+		}
+	
+		if (scrollToBottom) {
+			verticalOffsetPx = this.spectrogramData.size() * POINT_SIZE_PX;
+		}
+
+		renderSpectrogramToBitmap();
+		this.invalidate();
+	}
+
 	private void renderSpectrogramToBitmap() {
+		if (spectrogramData == null || spectrogramData.isEmpty()) {
+			return;
+		}
+
 		int viewWidth = getWidth();
 		int viewHeight = getHeight();
 		if (viewWidth <= 0 || viewHeight <= 0) {
@@ -229,6 +238,14 @@ public class AtomSpectraSpectrogramView extends View {
 
 			if (this.autoScroll) {
 				verticalOffsetPx += rowHeightPx;
+			}
+		}
+
+		if (this.spectrogramBitmap != null) {
+			synchronized (spectrogramBitmapSync) {
+				if (this.spectrogramBitmap != null) {
+					this.spectrogramBitmap.recycle();
+				}
 			}
 		}
 
