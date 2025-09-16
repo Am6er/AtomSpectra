@@ -45,7 +45,7 @@ public class AtomSpectraSpectrogramView extends View {
 		0xFFFFF8C4, 0xFFFFF9C7, 0xFFFFF9CA, 0xFFFFF9CD, 0xFFFFFAD1, 0xFFFFFAD4, 0xFFFFFBD8, 0xFFFFFCDB, 0xFFFFFCDF, 0xFFFFFDE2, 0xFFFFFDE5, 0xFFFFFDE8, 0xFFFFFEEB, 0xFFFFFEEE, 0xFFFFFEF1, 0xFFFFFEF4
 	};
 	private final int POINT_SIZE_PX = 2;
-	private final int TIME_AXIS_WIDTH_PX = 80;
+	private final int TIME_AXIS_WIDTH_PX = 120;
 	private final int CHANNEL_AXIS_HEIGHT_PX = 20;
 
 	// cps data
@@ -216,7 +216,7 @@ public class AtomSpectraSpectrogramView extends View {
 				for (int col = startCol; col <= endCol; col++) {
 					double value = spectrogramData.get(row)[col];
 					int color = mapValueToColor(value);
-					int pxTopLeftIndex = (row - startRow) * colsToRenderWidthPx * rowHeightPx + col * POINT_SIZE_PX;
+					int pxTopLeftIndex = (row - startRow) * colsToRenderWidthPx * rowHeightPx + (col - startCol) * colWidthPx;
 					for (int i = 0; i < POINT_SIZE_PX; i++) {
 						for (int j = 0; j < POINT_SIZE_PX; j++) {
 							spgPixels[pxTopLeftIndex + i * colsToRenderWidthPx + j] = color;
