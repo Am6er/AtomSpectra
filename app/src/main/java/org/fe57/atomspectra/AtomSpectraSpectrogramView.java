@@ -45,15 +45,19 @@ public class AtomSpectraSpectrogramView extends View {
 		0xFFFFF8C4, 0xFFFFF9C7, 0xFFFFF9CA, 0xFFFFF9CD, 0xFFFFFAD1, 0xFFFFFAD4, 0xFFFFFBD8, 0xFFFFFCDB, 0xFFFFFCDF, 0xFFFFFDE2, 0xFFFFFDE5, 0xFFFFFDE8, 0xFFFFFEEB, 0xFFFFFEEE, 0xFFFFFEF1, 0xFFFFFEF4
 	};
 	private final int POINT_SIZE_PX = 2;
+	private final int TIME_AXIS_WIDTH_PX = 80;
+	private final int CHANNEL_AXIS_HEIGHT_PX = 20;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;
 	private double maxValue = 0;
 	private double minValue = 0;
 
-	// vertical drag
+	// vertical/horizontal drag
 	private int verticalOffsetPx = 0;
+	private int horizontalOffsetPx = 0;
 	private float lastTouchY;
+	private float lastTouchX;
 	private boolean isDragging;
 
 	private Bitmap spectrogramBitmap = null;
@@ -73,8 +77,6 @@ public class AtomSpectraSpectrogramView extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		Resources res = getResources();
-
 		if (this.spectrogramBitmap != null) {
 			Paint paint = new Paint();
 			canvas.drawBitmap(this.spectrogramBitmap, 0, 0, paint);
@@ -98,20 +100,12 @@ public class AtomSpectraSpectrogramView extends View {
 				}
 			}
 		}
-
-		if (!this.spectrogramData.isEmpty()) {
-			ViewGroup.LayoutParams layoutParams = this.getLayoutParams();
-            layoutParams.width = this.spectrogramData.get(0).length * POINT_SIZE_PX;
-			this.setLayoutParams(layoutParams);
-			this.requestLayout();
-
-			if (scrollToBottom) {
-				verticalOffsetPx = this.spectrogramData.size() * POINT_SIZE_PX;
-			}
-
-			renderSpectrogramToBitmap();
+	
+		if (scrollToBottom) {
+			verticalOffsetPx = this.spectrogramData.size() * POINT_SIZE_PX;
 		}
 
+		renderSpectrogramToBitmap();
 		this.invalidate();
 	}
 
@@ -124,15 +118,20 @@ public class AtomSpectraSpectrogramView extends View {
 		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_DOWN:
 				lastTouchY = event.getY();
+				lastTouchX = event.getX();
 				isDragging = true;
 				return true;
 			case MotionEvent.ACTION_MOVE:
 				if (isDragging) {
 					float currentY = event.getY();
+					float currentX = event.getX();
 					int dy = Math.round(lastTouchY - currentY);
-					if (dy != 0) {
+					int dx = Math.round(lastTouchX - currentX);
+					if (dy != 0 || dx != 0) {
 						verticalOffsetPx += dy;
+						horizontalOffsetPx += dx;
 						lastTouchY = currentY;
+						lastTouchX = currentX;
 
 						renderSpectrogramToBitmap();
 						invalidate();
@@ -157,16 +156,20 @@ public class AtomSpectraSpectrogramView extends View {
 
 		Bitmap bitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888);
 		if (!spectrogramData.isEmpty()) {
+			int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX;
+			int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX;
+
 			int rowCount = spectrogramData.size();
 			int colCount = spectrogramData.get(0).length;
 
 			int rowHeightPx = POINT_SIZE_PX;
-			int rowWidthPx = colCount * POINT_SIZE_PX;
-			int maxRowsInView = viewHeight / rowHeightPx;
+			int colWidthPx = POINT_SIZE_PX;
+			int maxRowsInView = spgViewHeight / rowHeightPx;
+			int maxColsInView = spgViewWidth / colWidthPx;
 
-			// validate offset value
+			// validate offset values
 			int totalSpgHeight = rowCount * rowHeightPx;
-			if (totalSpgHeight < viewHeight) {
+			if (totalSpgHeight < spgViewHeight) {
 				verticalOffsetPx = 0;
 			} else {
 				if (verticalOffsetPx < 0) {
@@ -182,27 +185,47 @@ public class AtomSpectraSpectrogramView extends View {
 				}
 			}
 
+			int totalSpgWidth = colCount * colWidthPx;
+			if (totalSpgWidth < spgViewWidth) {
+				horizontalOffsetPx = 0;
+			} else {
+				if (horizontalOffsetPx < 0) {
+					horizontalOffsetPx = 0;
+				}
+
+				int maxOffset = totalSpgWidth - maxColsInView * colWidthPx;
+				if (horizontalOffsetPx >= maxOffset) {
+					horizontalOffsetPx = maxOffset;
+				}
+			}
+
 			// render visible area
-			int startRow = Math.max(0, verticalOffsetPx / POINT_SIZE_PX);
+			int startRow = Math.max(0, verticalOffsetPx / rowHeightPx);
 			int endRow = Math.min(rowCount - 1, startRow + maxRowsInView - 1);
 			int rowsToRender = endRow - startRow + 1;
 			int rowsToRenderHeightPx = rowsToRender * rowHeightPx;
-			int totalPixels = rowsToRender * rowHeightPx * rowWidthPx;
+
+			int startCol = Math.max(0, horizontalOffsetPx / colWidthPx);
+			int endCol = Math.min(colCount - 1, startCol + maxColsInView - 1);
+			int colsToRender = endCol - startCol + 1;
+			int colsToRenderWidthPx = colsToRender * colWidthPx;
+
+			int totalPixels = rowsToRender * rowHeightPx * colsToRenderWidthPx;
 			int[] spgPixels = new int[totalPixels];
 			for (int row = startRow; row <= endRow; row++) {
-				for (int col = 0; col < colCount; col++) {
+				for (int col = startCol; col <= endCol; col++) {
 					double value = spectrogramData.get(row)[col];
 					int color = mapValueToColor(value);
-					int pxTopLeftIndex = (row - startRow) * rowWidthPx * rowHeightPx + col * POINT_SIZE_PX;
+					int pxTopLeftIndex = (row - startRow) * colsToRenderWidthPx * rowHeightPx + col * POINT_SIZE_PX;
 					for (int i = 0; i < POINT_SIZE_PX; i++) {
 						for (int j = 0; j < POINT_SIZE_PX; j++) {
-							spgPixels[pxTopLeftIndex + i * rowWidthPx + j] = color;
+							spgPixels[pxTopLeftIndex + i * colsToRenderWidthPx + j] = color;
 						}
 					}
 				}
 			}
 
-			bitmap.setPixels(spgPixels, 0, rowWidthPx, 0, 0, rowWidthPx, rowsToRenderHeightPx);
+			bitmap.setPixels(spgPixels, 0, colsToRenderWidthPx, TIME_AXIS_WIDTH_PX, 0, colsToRenderWidthPx, rowsToRenderHeightPx);
 
 			if (this.autoScroll) {
 				verticalOffsetPx += rowHeightPx;

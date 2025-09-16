@@ -24,20 +24,9 @@
             android:textSize="14sp" />
     </LinearLayout>
 
-    <HorizontalScrollView
+    <org.fe57.atomspectra.AtomSpectraSpectrogramView
+        android:id="@+id/viewSpectrogram"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <org.fe57.atomspectra.AtomSpectraSpectrogramView
-                android:id="@+id/viewSpectrogram"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </LinearLayout>
-    </HorizontalScrollView>
+        android:layout_height="match_parent" />
 
 </LinearLayout>

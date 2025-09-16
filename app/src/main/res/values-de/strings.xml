@@ -447,11 +447,11 @@
         <item>16</item>
     </string-array>
 
-    <string name="spectrogram_activity_title">Atom Spectra Spectrogram</string>
-    <string name="spectrogram_menu">Spectrogram</string>
-    <string name="spectrogram_load">Load from…</string>
-    <string name="spectrogram_view">View</string>
-    <string name="spectrogram_row_count">Rows: %1$d</string>
+    <string name="spectrogram_activity_title">Atom Spectra Spektrogramm</string>
+    <string name="spectrogram_menu">Spektrogramm</string>
+    <string name="spectrogram_load">Laden von…</string>
+    <string name="spectrogram_view">Sicht</string>
+    <string name="spectrogram_row_count">Zeilen: %1$d</string>
 
     <string name="help_menu">Hilfe</string>
     <string name="help">Atom Spectra Schnelle Hilfe</string>
