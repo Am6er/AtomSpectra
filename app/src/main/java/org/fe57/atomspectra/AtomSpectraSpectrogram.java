@@ -13,8 +13,10 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 public class AtomSpectraSpectrogram extends Activity {
@@ -103,9 +105,15 @@ public class AtomSpectraSpectrogram extends Activity {
 
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
+            ArrayList<double[]> spg = AtomSpectraSpectrogramData.instance.getSpectrogram();
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance.getSpectrogram(), scrollToBottom);
+                spgView.renderSpectrogram(spg, scrollToBottom);
+            }
+
+            TextView rowCount = findViewById(R.id.textViewRowCount);
+            if (rowCount != null) {
+                rowCount.setText(getString(R.string.spectrogram_row_count, spg.size()));
             }
         }
     }
