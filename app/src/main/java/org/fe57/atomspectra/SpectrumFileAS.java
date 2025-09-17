@@ -223,9 +223,8 @@ public class SpectrumFileAS extends SpectrumFile {
                     ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
                     ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
                     activityManager.getMemoryInfo(memoryInfo);
-                    if (memoryInfo.availMem < 250 * 1024 * 1024) { // 250 Mb
+                    if (memoryInfo.lowMemory) {
                         Toast.makeText(context, "WARNING: Spectrogram truncated due to memory limitations", Toast.LENGTH_LONG).show();
-
                         break;
                     }
 
@@ -254,7 +253,7 @@ public class SpectrumFileAS extends SpectrumFile {
                             summ += Long.parseLong(channelsStr[i + j]);
                         }
 
-                        channels[i] = summ;
+                        channels[i / binFactor] = summ;
                     }
 
                     target.addDelta(channels, duration, date);

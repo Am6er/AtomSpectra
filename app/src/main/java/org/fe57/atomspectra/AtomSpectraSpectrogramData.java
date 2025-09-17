@@ -32,7 +32,7 @@ public class AtomSpectraSpectrogramData {
 
         int channelBinning = channels.length / CHANNEL_COUNT;
         if (channelBinning < 1) {
-            throw new Exception("Unsupported channels array lenght: " + channels.length);
+            throw new IllegalArgumentException("Unsupported channels array lenght: " + channels.length);
         }
 
         double[] binnedCpsData = new double[CHANNEL_COUNT];
@@ -65,7 +65,7 @@ public class AtomSpectraSpectrogramData {
         return new ArrayList<>(this.spectrogram);
     }
 
-   public ArrayList<Date> getTimestamps() {
+   public ArrayList<Long> getTimestamps() {
        return new ArrayList<>(this.timestamps);
    }
 

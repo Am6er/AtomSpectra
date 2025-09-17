@@ -3510,7 +3510,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				throw new Exception("");
 			}
 		} catch (Exception e) {
-			Toast.makeText(this, getString(R.string.spectrogram_load_error, ""), Toast.LENGTH_LONG).show();
+			Toast.makeText(this, getString(R.string.spectrogram_load_error, e.getMessage()), Toast.LENGTH_LONG).show();
 			//Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
 		}
 	}
