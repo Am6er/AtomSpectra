@@ -2,6 +2,8 @@ package org.fe57.atomspectra;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -13,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 //This is the main class to load and store own Atom Spectra spectrum
 public class SpectrumFileAS extends SpectrumFile {
@@ -205,7 +208,7 @@ public class SpectrumFileAS extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, Consumer<int> onDeltasLoaded) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded) {
         if (spectrumCount() != 0) {
             // something already loaded
             return false;
@@ -221,7 +224,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 // load deltas
                 while (true) {
                     if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
-                        showToastInMainLooper("WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG);
+                        showToastInMainLooper(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG);
                         break;
                     }
 
@@ -305,7 +308,7 @@ public class SpectrumFileAS extends SpectrumFile {
         return true;
     }
 
-    private void showToastInMainLooper(String text, int duration) {
-        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+    private void showToastInMainLooper(Context context, String text, int duration) {
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, text, duration).show());
     }
 }

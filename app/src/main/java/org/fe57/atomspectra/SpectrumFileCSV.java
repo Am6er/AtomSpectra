@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class SpectrumFileCSV extends SpectrumFile {
     private boolean addEnergy = false;
@@ -73,7 +74,7 @@ public class SpectrumFileCSV extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, Consumer<int> onDeltasLoaded) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded) {
         return false;
     }
 

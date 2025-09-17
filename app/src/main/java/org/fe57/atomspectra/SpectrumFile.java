@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 //This class helps read and write spectra in different formats
 //To use it create a class with appropriate load/save methods.
@@ -173,7 +174,7 @@ public abstract class SpectrumFile {
     abstract public boolean loadSpectrum(@NonNull InputStream histFile, Context context);
 
     //load delta spectrum from external source
-    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, Consumer<int> onDeltasLoaded);
+    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded);
 
     //save spectrum to external source
     abstract public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context);

@@ -22,7 +22,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.DocumentsContract;
 import android.text.InputType;
 import android.text.method.NumberKeyListener;
@@ -3510,12 +3512,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		AlertDialog loadingDialog = alert.show();
 
 		Handler mainHandler = new Handler(Looper.getMainLooper());
+		Context context = this;
 		new Thread(new Runnable() {
             @Override
             public void run() {
 				try {
 					InputStream inputFile = getContentResolver().openInputStream(histFile);
-					if (spectrumFile.loadSpectrogram(inputFile, this, AtomSpectraSpectrogramData.instance, rowCount -> {
+					if (spectrumFile.loadSpectrogram(inputFile, context, AtomSpectraSpectrogramData.instance, rowCount -> {
 						mainHandler.post(new Runnable() {
 							@Override
 							public void run() {

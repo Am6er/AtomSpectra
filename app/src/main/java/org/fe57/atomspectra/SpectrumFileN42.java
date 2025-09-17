@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class SpectrumFileN42 extends SpectrumFile {
     @Override
@@ -244,7 +245,7 @@ public class SpectrumFileN42 extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, Consumer<int> onDeltasLoaded) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded) {
         return false;
     }
 
