@@ -229,28 +229,35 @@ public class SpectrumFileAS extends SpectrumFile {
                         break;
                     }
 
-                    Spectrum delta = new Spectrum();
                     String dateStr = fr.readLine();
                     if (dateStr == null || dateStr.isEmpty()) {
                         // EOF
                         break;
                     }
+
                     long date = Long.parseLong(dateStr);
-                    double latitude = Double.parseDouble(fr.readLine());
-                    double longitude = Double.parseDouble(fr.readLine());
+
+                    // skip lat/lon as those values not used at the time (slightly speeds up parsing)
+                    // double latitude = Double.parseDouble(fr.readLine());
+                    // double longitude = Double.parseDouble(fr.readLine());
+                    fr.readLine();
+                    fr.readLine();
+
                     double duration = Double.parseDouble(fr.readLine());
-                    String[] channels = fr.readLine().split("\t");
-                    long[] tmp = new long[Constants.NUM_HIST_POINTS];
-                    for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
-                        tmp[i] += Long.parseLong(channels[i]);
+                    String[] channelsStr = fr.readLine().split("\t");
+
+                    int binFactor = Constants.NUM_HIST_POINTS / AtomSpectraSpectrogramData.CHANNEL_COUNT;
+                    long[] channels = new long[AtomSpectraSpectrogramData.CHANNEL_COUNT];
+                    for (int i = 0; i < Constants.NUM_HIST_POINTS; i += binFactor) {
+                        long summ = 0;
+                        for (int j = 0; j < binFactor && (i + j) < channelsStr.length; j++) {
+                            summ += Long.parseLong(channelsStr[i + j]);
+                        }
+
+                        channels[i] = summ;
                     }
 
-                    delta.setLocationOnly(latitude, longitude, date)
-                            .setSpectrumDate(date)
-                            .setRealSpectrumTime(duration)
-                            .setSpectrumOnly(tmp);
-
-                    target.addDelta(delta);
+                    target.addDelta(channels, duration, date);
                 }
 
                 fr.close();

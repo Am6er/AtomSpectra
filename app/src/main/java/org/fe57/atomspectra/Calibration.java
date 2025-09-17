@@ -13,6 +13,7 @@ class Calibration {
 
     public static Calibration defaultCalibration(int channelCount) {
         Calibration calibration = new Calibration(channelCount).addLine(0, 0).addLine(channelCount + 1, 3000);
+        // TODO: implement lazy calculation, each time ne spectrum instance is created it consumes a lot of time
         calibration.Calculate();
         return calibration;
     }

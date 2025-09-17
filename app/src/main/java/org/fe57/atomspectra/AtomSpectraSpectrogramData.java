@@ -9,7 +9,7 @@ public class AtomSpectraSpectrogramData {
 
     private final Integer spectrogramSync = 1;
     private final ArrayList<double[]> spectrogram = new ArrayList<>();
-    private final ArrayList<Date> timestamps = new ArrayList<>();
+    private final ArrayList<Long> timestamps = new ArrayList<>();
     private final ArrayList<Double> durations = new ArrayList<>();
     private Spectrum baseSpectrum = null;
 
@@ -20,12 +20,21 @@ public class AtomSpectraSpectrogramData {
     public void addDelta(Spectrum delta) {
         long[] channels = delta.getDataArray();
         double duration = delta.getRealSpectrumTime();
-        Date timestamp = new Date(delta.getSpectrumDate());
+        long timestamp = delta.getSpectrumDate();
+        
+        this.addDelta(channels, duration, timestamp);
+    }
+
+    public void addDelta(long[] channels, double duration, long timestamp) {
         if (duration == 0) {
             return;
         }
 
         int channelBinning = channels.length / CHANNEL_COUNT;
+        if (channelBinning < 1) {
+            throw new Exception("Unsupported channels array lenght: " + channels.length);
+        }
+
         double[] binnedCpsData = new double[CHANNEL_COUNT];
         for (int i = 0; i < channels.length; i += channelBinning) {
             long summ = 0;
