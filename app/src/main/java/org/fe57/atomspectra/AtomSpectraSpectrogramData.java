@@ -6,6 +6,7 @@ import java.util.Date;
 public class AtomSpectraSpectrogramData {
     public static final AtomSpectraSpectrogramData instance = new AtomSpectraSpectrogramData();
     public static final int CHANNEL_COUNT = 512; // must be 2^n and less then 8192
+    public static final int MAX_ROWS = 25000;
 
     private final Integer spectrogramSync = 1;
     private final ArrayList<double[]> spectrogram = new ArrayList<>();
@@ -49,7 +50,17 @@ public class AtomSpectraSpectrogramData {
             this.spectrogram.add(binnedCpsData);
             this.durations.add(duration);
             this.timestamps.add(timestamp);
+
+            if (this.rowCount() > MAX_ROWS) {
+                this.spectrogram.remove(0);
+                this.durations.remove(0);
+                this.timestamps.remove(0);
+            }
         }
+    }
+
+    public int rowCount() {
+        return this.spectrogram.size();
     }
 
     public void clear() {

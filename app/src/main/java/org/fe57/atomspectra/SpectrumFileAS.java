@@ -220,11 +220,8 @@ public class SpectrumFileAS extends SpectrumFile {
                 target.setBaseSpectrum(this.spectrumList.get(0));
                 // load deltas
                 while (true) {
-                    ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-                    ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
-                    activityManager.getMemoryInfo(memoryInfo);
-                    if (memoryInfo.lowMemory) {
-                        Toast.makeText(context, "WARNING: Spectrogram truncated due to memory limitations", Toast.LENGTH_LONG).show();
+                    if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
+                        Toast.makeText(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG).show();
                         break;
                     }
 
