@@ -12,7 +12,11 @@ import android.view.View;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
 public class AtomSpectraSpectrogramView extends View {
@@ -46,11 +50,11 @@ public class AtomSpectraSpectrogramView extends View {
 		0xFFFFF8C4, 0xFFFFF9C7, 0xFFFFF9CA, 0xFFFFF9CD, 0xFFFFFAD1, 0xFFFFFAD4, 0xFFFFFBD8, 0xFFFFFCDB, 0xFFFFFCDF, 0xFFFFFDE2, 0xFFFFFDE5, 0xFFFFFDE8, 0xFFFFFEEB, 0xFFFFFEEE, 0xFFFFFEF1, 0xFFFFFEF4
 	};
 	private final int POINT_SIZE_PX = 2;
-	private final int TIME_AXIS_WIDTH_PX = 120;
+	private final int TIME_AXIS_WIDTH_PX = 140;
 	private final int TIMESTAMP_EACH_ROWS = 25;
-	private final int TIMESTAMP_MARGIN_LEFT = 8;
-	private final int TIMESTAMP_FONT_SIZE = 10;
-	private final int TIMESTAMP_TICK_WIDTH_PX = 16;
+	private final int TIMESTAMP_MARGIN_LEFT = 2;
+	private final int TIMESTAMP_FONT_SIZE = 16;
+	private final int TIMESTAMP_TICK_WIDTH_PX = 8;
 	private final int CHANNEL_AXIS_HEIGHT_PX = 40;
 
 	// cps data
@@ -271,32 +275,31 @@ public class AtomSpectraSpectrogramView extends View {
 				if (this.spectrogramBitmap != null) {
 					Canvas canvas = new Canvas(this.spectrogramBitmap);
 					Paint paint = new Paint();
+					paint.setAntiAlias(true);
 					paint.setColor(Color.WHITE);
 					paint.setTextSize(TIMESTAMP_FONT_SIZE);
-					paint.setStrokeWidth(POINT_SIZE_PX);
-					paint.setStyle(Paint.Style.STROKE);
+					paint.setStyle(Paint.Style.FILL);
+					paint.setStrokeWidth(1);
 
 					for (int tsIndex = startRow; tsIndex <= endRow; tsIndex++) {
 						if (tsIndex % TIMESTAMP_EACH_ROWS != 0) {
 							continue;
 						}
 						long timestamp = this.timestamps.get(tsIndex);
-						String timestampStr = formatDate(new Date(timestamp)).split(" ");
-						String dateLabel = timestampStr[0] + ' : ' + tsIndex;
+						String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
+						String dateLabel = timestampStr[0] + " : " + String.format("%5d", tsIndex);
 						String timeLabel = timestampStr[1];
 
 						// label tick
-						int tickWidth = tsIndex % 100 === 0
+						int tickWidth = tsIndex % 100 == 0
 							? TIMESTAMP_TICK_WIDTH_PX
 							: TIMESTAMP_TICK_WIDTH_PX / 2;
-							for (let x = constants.timeAxisWidth - tickWidth; x < constants.timeAxisWidth; x++) {
-								ctx.fillRect(x, tsIndex, 1, 1);
-							}
-						int tickX = TIME_AXIS_WIDTH_PX - TIMESTAMP_TICK_WIDTH_PX;
-						int tickY = tsIndex * POINT_SIZE_PX;
-						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT, tickY, paint);
-						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT, tickY + TIMESTAMP_FONT_SIZE + 4, paint);
-						canvas.drawLine(tickX, tickY, TIME_AXIS_WIDTH_PX, tickY, paint);
+
+						int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
+						int tickY = (tsIndex - startRow) * POINT_SIZE_PX;
+						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT, tickY + TIMESTAMP_FONT_SIZE, paint);
+						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT, tickY + 2 * TIMESTAMP_FONT_SIZE + 2, paint);
+						canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
 					}
 				}
 			}

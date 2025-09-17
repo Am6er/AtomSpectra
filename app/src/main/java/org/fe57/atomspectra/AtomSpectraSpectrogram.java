@@ -106,9 +106,10 @@ public class AtomSpectraSpectrogram extends Activity {
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
             ArrayList<double[]> spg = AtomSpectraSpectrogramData.instance.getSpectrogram();
+            ArrayList<Long> timestamps = AtomSpectraSpectrogramData.instance.getTimestamps();
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                spgView.renderSpectrogram(spg, scrollToBottom);
+                spgView.renderSpectrogram(spg, timestamps, scrollToBottom);
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
