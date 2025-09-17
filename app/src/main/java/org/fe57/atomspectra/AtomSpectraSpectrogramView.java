@@ -47,10 +47,15 @@ public class AtomSpectraSpectrogramView extends View {
 	};
 	private final int POINT_SIZE_PX = 2;
 	private final int TIME_AXIS_WIDTH_PX = 120;
+	private final int TIMESTAMP_EACH_ROWS = 25;
+	private final int TIMESTAMP_MARGIN_LEFT = 8;
+	private final int TIMESTAMP_FONT_SIZE = 10;
+	private final int TIMESTAMP_TICK_WIDTH_PX = 16;
 	private final int CHANNEL_AXIS_HEIGHT_PX = 40;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;
+	private ArrayList<Long> timestamps = null;
 	private double maxValue = 0;
 	private double minValue = 0;
 
@@ -134,8 +139,9 @@ public class AtomSpectraSpectrogramView extends View {
 		return super.onTouchEvent(event);
 	}
 
-	public void renderSpectrogram(ArrayList<double[]> spectrogram, boolean scrollToBottom) {
+	public void renderSpectrogram(ArrayList<double[]> spectrogram, ArrayList<Long> timestamps, boolean scrollToBottom) {
 		this.spectrogramData = spectrogram;
+		this.timestamps = timestamps;
 		this.maxValue = 0;
 		for (double[] deltas : spectrogram) {
 			for (double value : deltas) {
@@ -259,6 +265,45 @@ public class AtomSpectraSpectrogramView extends View {
 			}
 		}
 
+		// render time axis
+		if (this.timestamps != null && this.timestamps.size() == this.spectrogramData.size()) {
+			synchronized (this.spectrogramBitmapSync) {
+				if (this.spectrogramBitmap != null) {
+					Canvas canvas = new Canvas(this.spectrogramBitmap);
+					Paint paint = new Paint();
+					paint.setColor(Color.WHITE);
+					paint.setTextSize(TIMESTAMP_FONT_SIZE);
+					paint.setStrokeWidth(POINT_SIZE_PX);
+					paint.setStyle(Paint.Style.STROKE);
+
+					for (int tsIndex = startRow; tsIndex <= endRow; tsIndex++) {
+						if (tsIndex % TIMESTAMP_EACH_ROWS != 0) {
+							continue;
+						}
+						long timestamp = this.timestamps.get(tsIndex);
+						String timestampStr = formatDate(new Date(timestamp)).split(" ");
+						String dateLabel = timestampStr[0] + ' : ' + tsIndex;
+						String timeLabel = timestampStr[1];
+
+						// label tick
+						int tickWidth = tsIndex % 100 === 0
+							? TIMESTAMP_TICK_WIDTH_PX
+							: TIMESTAMP_TICK_WIDTH_PX / 2;
+							for (let x = constants.timeAxisWidth - tickWidth; x < constants.timeAxisWidth; x++) {
+								ctx.fillRect(x, tsIndex, 1, 1);
+							}
+						int tickX = TIME_AXIS_WIDTH_PX - TIMESTAMP_TICK_WIDTH_PX;
+						int tickY = tsIndex * POINT_SIZE_PX;
+						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT, tickY, paint);
+						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT, tickY + TIMESTAMP_FONT_SIZE + 4, paint);
+						canvas.drawLine(tickX, tickY, TIME_AXIS_WIDTH_PX, tickY, paint);
+					}
+				}
+			}
+		}
+		
+		// render energy axis
+
 		if (this.autoScroll) {
 			verticalOffsetPx += rowHeightPx;
 		}
@@ -294,4 +339,11 @@ public class AtomSpectraSpectrogramView extends View {
 
 		return palette[(int)colorIndex];
 	}
+
+	private static String formatDate(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getDefault());
+
+        return sdf.format(date);
+    }
 }
