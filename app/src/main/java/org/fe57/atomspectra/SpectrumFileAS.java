@@ -205,7 +205,7 @@ public class SpectrumFileAS extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, Consumer<int> onDeltasLoaded) {
         if (spectrumCount() != 0) {
             // something already loaded
             return false;
@@ -221,7 +221,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 // load deltas
                 while (true) {
                     if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
-                        Toast.makeText(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG);
                         break;
                     }
 
@@ -254,6 +254,10 @@ public class SpectrumFileAS extends SpectrumFile {
                     }
 
                     target.addDelta(channels, duration, date);
+
+                    if (target.rowCount() > 0 && target.rowCount() % 100 == 0) {
+                        onDeltasLoaded.accept(target.rowCount());
+                    }
                 }
 
                 fr.close();
@@ -299,5 +303,9 @@ public class SpectrumFileAS extends SpectrumFile {
             return false;
         }
         return true;
+    }
+
+    private void showToastInMainLooper(String text, int duration) {
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
     }
 }

@@ -3501,18 +3501,52 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		SpectrumFileAS spectrumFile = new SpectrumFileAS();
 		spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
-		try {
-			InputStream inputFile = getContentResolver().openInputStream(histFile);
-			if (spectrumFile.loadSpectrogram(inputFile, this, AtomSpectraSpectrogramData.instance)) {
-				showSpectrogramView();
-				Toast.makeText(this, getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG).show();
-			} else {
-				throw new Exception("");
-			}
-		} catch (Exception e) {
-			Toast.makeText(this, getString(R.string.spectrogram_load_error, e.getMessage()), Toast.LENGTH_LONG).show();
-			//Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
-		}
+		AtomSpectraSpectrogramData.instance.clear();
+
+		final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+				.setTitle("Loading Spectrogram...")
+				.setMessage("Wait until loading complete. Loaded rows: " + AtomSpectraSpectrogramData.instance.rowCount() + "...")
+				.setCancelable(false);
+		AlertDialog loadingDialog = alert.show();
+
+		Handler mainHandler = new Handler(Looper.getMainLooper());
+		new Thread(new Runnable() {
+            @Override
+            public void run() {
+				try {
+					InputStream inputFile = getContentResolver().openInputStream(histFile);
+					if (spectrumFile.loadSpectrogram(inputFile, this, AtomSpectraSpectrogramData.instance, rowCount -> {
+						mainHandler.post(new Runnable() {
+							@Override
+							public void run() {
+								loadingDialog.setMessage("Wait until loading complete. Loaded rows: " + AtomSpectraSpectrogramData.instance.rowCount() + "...");
+							}
+						});
+					})) {
+						mainHandler.post(new Runnable() {
+							@Override
+							public void run() {
+								loadingDialog.dismiss();
+								showSpectrogramView();
+							}
+						});
+						
+						showToastInMainLooper(getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG);
+					} else {
+						throw new Exception("");
+					}
+				} catch (Exception e) {
+					mainHandler.post(new Runnable() {
+						@Override
+						public void run() {
+							loadingDialog.dismiss();
+						}
+					});
+
+					showToastInMainLooper(getString(R.string.spectrogram_load_error, e.getMessage()), Toast.LENGTH_LONG);
+				}
+            }
+        }).start();
 	}
 
 	private void saveHist(String suffix) {
@@ -4322,4 +4356,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			showRecordingSuspendedDialog();
 		}
 	}
+
+	private void showToastInMainLooper(String text, int duration) {
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+    }
 }
