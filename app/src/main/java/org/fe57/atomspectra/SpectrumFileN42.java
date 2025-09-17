@@ -244,7 +244,7 @@ public class SpectrumFileN42 extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target) {
         return false;
     }
 

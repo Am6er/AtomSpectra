@@ -3503,16 +3503,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
 		try {
 			InputStream inputFile = getContentResolver().openInputStream(histFile);
-			if (spectrumFile.loadSpectrogram(inputFile, this)) {
-				AtomSpectraSpectrogramData.instance.clear();
-
-				Spectrum baseSpectrum = spectrumFile.getSpectrum(0);
-				AtomSpectraSpectrogramData.instance.setBaseSpectrum(baseSpectrum);
-
-				for (int i = 1; i < spectrumFile.spectrumCount(); i++) {
-					AtomSpectraSpectrogramData.instance.addDelta(spectrumFile.getSpectrum(i));
-				}
-
+			if (spectrumFile.loadSpectrogram(inputFile, this, AtomSpectraSpectrogramData.instance)) {
 				showSpectrogramView();
 				Toast.makeText(this, getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG).show();
 			} else {

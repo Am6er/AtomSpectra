@@ -1,6 +1,8 @@
 package org.fe57.atomspectra;
 
+import android.app.ActivityManager;
 import android.content.Context;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -203,7 +205,7 @@ public class SpectrumFileAS extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target) {
         if (spectrumCount() != 0) {
             // something already loaded
             return false;
@@ -214,8 +216,19 @@ public class SpectrumFileAS extends SpectrumFile {
             // load base spectrum
             String ident = fr.readLine();
             if (!ident.matches("^[+-]?\\d+(\\.(\\d+)?)?$") && loadSpectrumV3(fr, ident, context)) {
+                target.clear();
+                target.setBaseSpectrum(this.spectrumList.get(0));
                 // load deltas
                 while (true) {
+                    ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                    ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+                    activityManager.getMemoryInfo(memoryInfo);
+                    if (memoryInfo.availMem < 250 * 1024 * 1024) { // 250 Mb
+                        Toast.makeText(context, "WARNING: Spectrogram truncated due to memory limitations", Toast.LENGTH_LONG).show();
+
+                        break;
+                    }
+
                     Spectrum delta = new Spectrum();
                     String dateStr = fr.readLine();
                     if (dateStr == null || dateStr.isEmpty()) {
@@ -237,7 +250,7 @@ public class SpectrumFileAS extends SpectrumFile {
                             .setRealSpectrumTime(duration)
                             .setSpectrumOnly(tmp);
 
-                    spectrumList.add(delta);
+                    target.addDelta(delta);
                 }
 
                 fr.close();
