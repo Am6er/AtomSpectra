@@ -50,7 +50,7 @@ public class AtomSpectraSpectrogramView extends View {
 		0xFFFFF8C4, 0xFFFFF9C7, 0xFFFFF9CA, 0xFFFFF9CD, 0xFFFFFAD1, 0xFFFFFAD4, 0xFFFFFBD8, 0xFFFFFCDB, 0xFFFFFCDF, 0xFFFFFDE2, 0xFFFFFDE5, 0xFFFFFDE8, 0xFFFFFEEB, 0xFFFFFEEE, 0xFFFFFEF1, 0xFFFFFEF4
 	};
 	private final int POINT_SIZE_PX = 2;
-	private final int TIME_AXIS_WIDTH_PX = 140;
+	private final int TIME_AXIS_WIDTH_PX = 150;
 	private final int TIMESTAMP_EACH_ROWS = 25;
 	private final int TIMESTAMP_MARGIN_LEFT = 2;
 	private final int TIMESTAMP_FONT_SIZE = 16;
@@ -301,6 +301,8 @@ public class AtomSpectraSpectrogramView extends View {
 						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT, tickY + 2 * TIMESTAMP_FONT_SIZE + 2, paint);
 						canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
 					}
+
+					canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, 0, TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight, paint);
 				}
 			}
 		}
