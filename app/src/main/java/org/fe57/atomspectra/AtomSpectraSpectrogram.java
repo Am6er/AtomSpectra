@@ -112,7 +112,7 @@ public class AtomSpectraSpectrogram extends Activity {
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
             if (rowCount != null) {
-                rowCount.setText(getString(R.string.spectrogram_row_count, spg.size()));
+                rowCount.setText(getString(R.string.spectrogram_row_count, AtomSpectraSpectrogramData.instance.rowCount()));
             }
         }
     }

@@ -15,7 +15,9 @@ import android.view.ViewGroup;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
@@ -56,12 +58,12 @@ public class AtomSpectraSpectrogramView extends View {
 	private final int TEXT_FONT_SIZE_PX = 16;
 	private final int TIMESTAMP_TICK_WIDTH_PX = 8;
 	private final int ENERGY_TICK_HEIGHT_PX = 8;
-	private final int CHANNEL_AXIS_HEIGHT_PX = 40;
+	private final int CHANNEL_AXIS_HEIGHT_PX = 50;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;
 	private ArrayList<Long> timestamps = null;
-	private Map<Int, Int> energyTicks = null;
+	private HashMap<Integer, Integer> energyTicks = null;
 	private double maxValue = 0;
 	private double minValue = 0;
 
@@ -149,7 +151,7 @@ public class AtomSpectraSpectrogramView extends View {
 		this.spectrogramData = data.getSpectrogram();
 		this.timestamps = data.getTimestamps();
 		this.maxValue = 0;
-		for (double[] deltas : spectrogram) {
+		for (double[] deltas : this.spectrogramData) {
 			for (double value : deltas) {
 				if (value > this.maxValue) {
 					this.maxValue = value;
@@ -159,14 +161,14 @@ public class AtomSpectraSpectrogramView extends View {
 
 		
 		// calculate energy for each channel
-		double[] allEnergies = new double[CHANNEL_COUNT];
-		for (int i = 0; i < CHANNEL_COUNT; i++) {
+		double[] allEnergies = new double[AtomSpectraSpectrogramData.CHANNEL_COUNT];
+		for (int i = 0; i < AtomSpectraSpectrogramData.CHANNEL_COUNT; i++) {
 			double energy = data.channelToEnergy(i);
 			allEnergies[i] = energy;
 		}
 
 		// calculate channels for 0, 100, 200, 300... enegries 
-		this.energyTicks = new Map<>();
+		this.energyTicks = new HashMap<>();
 		for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 100) {
 			while (allEnergies[channel] < energy) {
 				channel++;
@@ -346,35 +348,37 @@ public class AtomSpectraSpectrogramView extends View {
 				boolean kevRendered = false;
 				boolean chRendered = false;
 				for (int col = startCol; col <= endCol; col++) {
-					int tickX = (col - startCol) * POINT_SIZE_PX;
+					int tickX = (col - startCol) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
 
-					if (this.energyTicks != null && this.energyTicks.hasKey(col)) {
-						int energy = this.energyTicks.getValue(col);	
+					if (this.energyTicks != null && this.energyTicks.containsKey(col)) {
+						Integer energy = this.energyTicks.get(col);
 
-						// render kev label
-						if (energy % 500 === 0) {
-							String label = kevRendered ? energy.toString() : energy + ' keV';
-							canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX);
-							kevRendered = true;
-						}
+						if (energy != null) {
+							// render kev label
+							if (energy % 500 == 0) {
+								String label = kevRendered ? String.format("%d", energy) : energy + " keV";
+								canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + 3, paint);
+								kevRendered = true;
+							}
 
-						// render kev tick
-						if (energy % 100 === 0) {
-							int tickHeight = energy % 500 === 0 ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
-							canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
+							// render kev tick
+							if (energy % 100 == 0) {
+								int tickHeight = energy % 500 == 0 ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
+								canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
+							}
 						}
 					}
 					
 					// render ch label
-					if (col % 100 === 0) {
-						String label = chRendered ? col + ' ch' : col;
-						canvas.drawText(label, tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX);
+					if (col % 100 == 0) {
+						String label = chRendered ? String.format("%d", col) : col + " ch";
+						canvas.drawText(label, tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + 3, paint);
 						chRendered = true;
 					}
 
 					// render ch tick
-					if (col % 10 === 0) {
-						String tickHeight = col % 50 === 0 ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
+					if (col % 10 == 0) {
+						int tickHeight = col % 50 == 0 ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
 						canvas.drawLine(tickX - 0.5f, channelAxisBaseline, tickX - 0.5f, channelAxisBaseline + tickHeight, paint);
 					}
 				}
