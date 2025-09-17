@@ -77,9 +77,9 @@ public class Spectrum {
 
     public Spectrum setSpectrumCalibration(Calibration calibration) {
         if (calibration != null && calibration.isCorrect())
-            SpectrumCalibration = new Calibration(calibration);
+            SpectrumCalibration = calibration;
         else
-            SpectrumCalibration = Calibration.defaultCalibration();
+            SpectrumCalibration = Calibration.defaultCalibration(getDataArray().length);
         return this;
     }
 

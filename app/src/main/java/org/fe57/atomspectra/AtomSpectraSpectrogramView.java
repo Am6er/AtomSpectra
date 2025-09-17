@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -94,13 +95,6 @@ public class AtomSpectraSpectrogramView extends View {
 			this.recycleBitmap();
 			this.renderSpectrogramToBitmap();
 		}
-	}
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-
-		this.recycleBitmap();
 	}
 
 	@Override

@@ -56,11 +56,11 @@ public class AtomSpectraSpectrogramData {
         return new ArrayList<>(this.spectrogram);
     }
 
-   public ArrayList<Date[]> getTimestamps() {
+   public ArrayList<Date> getTimestamps() {
        return new ArrayList<>(this.timestamps);
    }
 
-   public ArrayList<Date[]> getDurations() {
+   public ArrayList<Double> getDurations() {
        return new ArrayList<>(this.durations);
    }
 
