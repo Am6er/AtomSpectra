@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -107,7 +108,13 @@ public class AtomSpectraSpectrogram extends Activity {
         if (isActive) {
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, scrollToBottom);
+                int channelBin = 1;
+                int orientation = getResources().getConfiguration().orientation;
+                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    channelBin = 2;
+                }
+
+                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, 1, channelBin, scrollToBottom);
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);

@@ -147,8 +147,33 @@ public class AtomSpectraSpectrogramView extends View {
 		return super.onTouchEvent(event);
 	}
 
-	public void renderSpectrogram(AtomSpectraSpectrogramData data, boolean scrollToBottom) {
-		this.spectrogramData = data.getSpectrogram();
+	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBin, int channelBin, boolean scrollToBottom) {
+		ArrayList<double[]> originalSpectrogram = data.getSpectrogram();
+		ArrayList<double[]> binnedSpectrogram;
+		int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
+		int binnedChannelCount = originalChannelCount / channelBin;
+		if (channelBin > 1) {
+			binnedSpectrogram = new ArrayList<>(originalSpectrogram.size());
+			for (double[] row : originalSpectrogram) {
+				double[] binnedRow = new double[binnedChannelCount];
+				for (int i = 0; i < originalChannelCount; i += channelBin) {
+					double sum = 0;
+					for (int j = 0; j < channelBin && (i + j) < originalChannelCount; j++) {
+						sum += row[i + j];
+					}
+
+					binnedRow[i / channelBin] = sum / channelBin;
+				}
+
+				binnedSpectrogram.add(binnedRow);
+			}
+		} else {
+			binnedSpectrogram = originalSpectrogram;
+		}
+
+		// TODO: implement spectrum binning
+
+		this.spectrogramData = binnedSpectrogram;
 		this.timestamps = data.getTimestamps();
 		this.maxValue = 0;
 		for (double[] deltas : this.spectrogramData) {
@@ -159,15 +184,14 @@ public class AtomSpectraSpectrogramView extends View {
 			}
 		}
 
-		
 		// calculate energy for each channel
-		double[] allEnergies = new double[AtomSpectraSpectrogramData.CHANNEL_COUNT];
-		for (int i = 0; i < AtomSpectraSpectrogramData.CHANNEL_COUNT; i++) {
-			double energy = data.channelToEnergy(i);
+		double[] allEnergies = new double[binnedChannelCount];
+		for (int i = 0; i < binnedChannelCount; i++) {
+			double energy = data.channelToEnergy(i * channelBin + channelBin - 1);
 			allEnergies[i] = energy;
 		}
 
-		// calculate channels for 0, 100, 200, 300... enegries 
+		// calculate channels for 0, 100, 200, 300... energies
 		this.energyTicks = new HashMap<>();
 		for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 100) {
 			while (allEnergies[channel] < energy) {
