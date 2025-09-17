@@ -454,6 +454,9 @@
     <string name="spectrogram_load">Laden von…</string>
     <string name="spectrogram_load_error">FEHLER: Spektrogramm konnte nicht geladen werden. %1$s</string>
     <string name="spectrogram_load_success">Spektrogramm erfolgreich geladen.</string>
+    <string name="spectrogram_loading_dialog_title">Spektrogramm wird geladen…</string>
+    <string name="spectrogram_loading_dialog_message">Warten Sie, bis der Ladevorgang abgeschlossen ist. Geladene Zeilen: %1$d…</string>
+    <string name="spectrogram_loading_dialog_stop">Anhalten und ansehen geladen</string>
     <string name="spectrogram_view">Sicht</string>
     <string name="spectrogram_row_count">Zeilen: %1$d</string>
 

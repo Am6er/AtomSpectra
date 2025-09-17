@@ -454,6 +454,9 @@
     <string name="spectrogram_load">Charge à partir…</string>
     <string name="spectrogram_load_error">ERREUR: Impossible de charger le spectrogramme. %1$s</string>
     <string name="spectrogram_load_success">Spectrogramme chargé avec succès.</string>
+    <string name="spectrogram_loading_dialog_title">Spectrogramme de chargement…</string>
+    <string name="spectrogram_loading_dialog_message">Attendez la fin du chargement. Lignes chargées: %1$d…</string>
+    <string name="spectrogram_loading_dialog_stop">Arrêtez et visualisez le chargement</string>
     <string name="spectrogram_view">Voir</string>
     <string name="spectrogram_row_count">Lignes: %1$d</string>
 

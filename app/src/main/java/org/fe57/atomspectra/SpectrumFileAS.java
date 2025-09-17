@@ -208,7 +208,7 @@ public class SpectrumFileAS extends SpectrumFile {
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) {
         if (spectrumCount() != 0) {
             // something already loaded
             return false;
@@ -223,6 +223,10 @@ public class SpectrumFileAS extends SpectrumFile {
                 target.setBaseSpectrum(this.spectrumList.get(0));
                 // load deltas
                 while (true) {
+                    if (cancellationToken.isCancellationRequested()) {
+                        break;
+                    }
+
                     if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
                         showToastInMainLooper(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG);
                         break;

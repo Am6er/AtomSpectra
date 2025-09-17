@@ -174,7 +174,7 @@ public abstract class SpectrumFile {
     abstract public boolean loadSpectrum(@NonNull InputStream histFile, Context context);
 
     //load delta spectrum from external source
-    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded);
+    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken);
 
     //save spectrum to external source
     abstract public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context);

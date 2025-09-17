@@ -454,6 +454,9 @@
     <string name="spectrogram_load">Load from…</string>
     <string name="spectrogram_load_error">ERROR: Unable to load spectrogram. %1$s</string>
     <string name="spectrogram_load_success">Spectrogram loaded successfully.</string>
+    <string name="spectrogram_loading_dialog_title">Loading spectrogram…</string>
+    <string name="spectrogram_loading_dialog_message">Wait until loading complete. Rows loaded: %1$d…</string>
+    <string name="spectrogram_loading_dialog_stop">Stop and view loaded</string>
     <string name="spectrogram_view">View</string>
     <string name="spectrogram_row_count">Rows: %1$d</string>
 

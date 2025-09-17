@@ -454,6 +454,9 @@
     <string name="spectrogram_load">Загрузить из…</string>
     <string name="spectrogram_load_error">ОШИБКА: Не удалось загрузить спектрограмму. %1$s</string>
     <string name="spectrogram_load_success">Спектрограмма загружена успешно.</string>
+    <string name="spectrogram_loading_dialog_title">Загрузка спектрограммы…</string>
+    <string name="spectrogram_loading_dialog_message">Дождитесь окончания загрузки. Строк загружено: %1$d…</string>
+    <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
 
