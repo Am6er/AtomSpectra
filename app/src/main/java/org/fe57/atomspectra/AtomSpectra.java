@@ -3496,7 +3496,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 
 	private static boolean isLoadingSpectrogram = false;
-	private static CancellationTokenSource loadingSpectrogramCancellationSource = null;
 	private static CancellationToken loadingSpectrogramCancellationToken = null;
 	private static AlertDialog spectrogramLoadingDialog = null;
 	private void showSpectrogramLoadingDialog() {
@@ -3504,8 +3503,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			.setTitle(R.string.spectrogram_loading_dialog_title)
 			.setMessage(getString(R.string.spectrogram_loading_dialog_message, AtomSpectraSpectrogramData.instance.rowCount()))
 			.setPositiveButton(getString(R.string.spectrogram_loading_dialog_stop), (dialog, whichButton) -> {
-				if (loadingSpectrogramCancellationSource != null) {
-					loadingSpectrogramCancellationSource.cancel();
+				if (loadingSpectrogramCancellationToken != null) {
+					loadingSpectrogramCancellationToken.cancel();
 				}
 			})
 			.setCancelable(false);
@@ -3544,61 +3543,41 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
 		AtomSpectraSpectrogramData.instance.clear();
 
-		loadingSpectrogramCancellationSource = new CancellationTokenSource();
-		loadingSpectrogramCancellationToken = cancellationSource.getToken();
+		loadingSpectrogramCancellationToken = new CancellationToken();
 		showSpectrogramLoadingDialog();
 
 		Handler mainHandler = new Handler(Looper.getMainLooper());
 		Context context = this;
-		new Thread(new Runnable() {
-            @Override
-            public void run() {
-				isLoadingSpectrogram = true;
-				mainHandler.post(new Runnable() {
-					@Override
-					public void run() {
-						updateSpectrogramMenu();
-					}
-				});
+		new Thread(() -> {
+            isLoadingSpectrogram = true;
+            mainHandler.post(() -> updateSpectrogramMenu());
 
-				try {
-					InputStream inputFile = getContentResolver().openInputStream(histFile);
-					if (spectrumFile.loadSpectrogram(inputFile, context, AtomSpectraSpectrogramData.instance, rowCount -> {
-						mainHandler.post(new Runnable() {
-							@Override
-							public void run() {
-								if (active && spectrogramLoadingDialog != null) {
-									spectrogramLoadingDialog.setMessage(getString(R.string.spectrogram_loading_dialog_message, AtomSpectraSpectrogramData.instance.rowCount()))
-								}	
-							}
-						});
-					}, loadingSpectrogramCancellationToken)) {
-						mainHandler.post(new Runnable() {
-							@Override
-							public void run() {
-								if (active) {
-									dismissSpectrogramLoadingDialog();
-									showSpectrogramView();
-								}
-							}
-						});
-						
-						showToastInMainLooper(getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG);
-					} else {
-						throw new Exception("");
-					}
-				} catch (Exception e) {
-					showToastInMainLooper(getString(R.string.spectrogram_load_error, e.getMessage()), Toast.LENGTH_LONG);
-				} finally {
-					isLoadingSpectrogram = false;
-					mainHandler.post(new Runnable() {
-						@Override
-						public void run() {
-							dismissSpectrogramLoadingDialog();
-							updateSpectrogramMenu();
-						}
-					});
-				}
+            try {
+                InputStream inputFile = getContentResolver().openInputStream(histFile);
+                if (spectrumFile.loadSpectrogram(inputFile, context, AtomSpectraSpectrogramData.instance, rowCount -> {
+                    mainHandler.post(() -> {
+                        if (active && spectrogramLoadingDialog != null) {
+                            spectrogramLoadingDialog.setMessage(getString(R.string.spectrogram_loading_dialog_message, AtomSpectraSpectrogramData.instance.rowCount()));
+                        }
+                    });
+                }, loadingSpectrogramCancellationToken)) {
+                    mainHandler.post(() -> {
+						dismissSpectrogramLoadingDialog();
+						showSpectrogramView();
+                    });
+
+                    showToastInMainLooper(getString(R.string.spectrogram_load_success), Toast.LENGTH_LONG);
+                } else {
+                    throw new Exception("");
+                }
+            } catch (Exception e) {
+                showToastInMainLooper(getString(R.string.spectrogram_load_error, e.getMessage()), Toast.LENGTH_LONG);
+            } finally {
+                isLoadingSpectrogram = false;
+                mainHandler.post(() -> {
+                    dismissSpectrogramLoadingDialog();
+                    updateSpectrogramMenu();
+                });
             }
         }).start();
 	}

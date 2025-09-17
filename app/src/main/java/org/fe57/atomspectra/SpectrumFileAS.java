@@ -223,7 +223,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 target.setBaseSpectrum(this.spectrumList.get(0));
                 // load deltas
                 while (true) {
-                    if (cancellationToken.isCancellationRequested()) {
+                    if (cancellationToken.isCancelled()) {
                         break;
                     }
 
@@ -262,7 +262,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
                     target.addDelta(channels, duration, date);
 
-                    if (target.rowCount() > 0 && target.rowCount() % 100 == 0) {
+                    if (target.rowCount() > 0 && target.rowCount() % 50 == 0) {
                         onDeltasLoaded.accept(target.rowCount());
                     }
                 }
