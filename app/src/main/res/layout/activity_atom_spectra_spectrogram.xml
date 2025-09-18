@@ -10,7 +10,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="20dp"
+        android:layout_height="28dp"
         android:layout_marginLeft="2dp"
         android:layout_marginRight="2dp"
         android:orientation="horizontal">
@@ -21,7 +21,47 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/spectrogram_row_count"
-            android:textSize="14sp" />
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/textViewBinMinus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:onClick="onBinMinusClick"
+            android:text="--"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/textViewSpcBinValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="↕bin:1x"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/textViewBinPlus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:onClick="onBinPlusClick"
+            android:text="++"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/textViewSpgScale"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="right"
+            android:onClick="onScaleClick"
+            android:text="SQRT"
+            android:textSize="20sp" />
+
     </LinearLayout>
 
     <org.fe57.atomspectra.AtomSpectraSpectrogramView

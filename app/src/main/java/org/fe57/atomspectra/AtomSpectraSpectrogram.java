@@ -15,13 +15,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
 
 public class AtomSpectraSpectrogram extends Activity {
     private static boolean isActive = false;
+    private static int sbin = 1;
+    private static String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -56,6 +58,21 @@ public class AtomSpectraSpectrogram extends Activity {
         } else {
             registerReceiver(mDataUpdateReceiver, intentFilter);
         }
+
+        // validate sbin and scale
+        if (sbin < 1) {
+            sbin = 1;
+        }
+        if (sbin > 128) {
+            sbin = 128;
+        }
+
+        HashSet<String> allowedScale = new HashSet<>(Arrays.asList(AtomSpectraSpectrogramView.SCALE_SQRT, AtomSpectraSpectrogramView.SCALE_LOG, AtomSpectraSpectrogramView.SCALE_LIN));
+        if (!allowedScale.contains(scale)) {
+            scale = AtomSpectraSpectrogramView.SCALE_SQRT;
+        }
+
+        updateControlPanel();
     }
 
     @Override
@@ -65,6 +82,43 @@ public class AtomSpectraSpectrogram extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onBinPlusClick(View view) {
+        if (sbin < 128) {
+            sbin *= 2;
+
+            updateControlPanel();
+            updateSpectrogram(false);
+        }
+    }
+
+    public void onBinMinusClick(View view) {
+        if (sbin > 1) {
+            sbin /= 2;
+
+            updateControlPanel();
+            updateSpectrogram(false);
+        }
+    }
+
+    public void onScaleClick(View view) {
+        switch (scale) {
+            case AtomSpectraSpectrogramView.SCALE_LIN:
+                scale = AtomSpectraSpectrogramView.SCALE_SQRT;
+                break;
+            case AtomSpectraSpectrogramView.SCALE_SQRT:
+                scale = AtomSpectraSpectrogramView.SCALE_LOG;
+                break;
+            case AtomSpectraSpectrogramView.SCALE_LOG:
+                scale = AtomSpectraSpectrogramView.SCALE_LIN;
+                break;
+            default:
+                scale = AtomSpectraSpectrogramView.SCALE_SQRT;
+        }
+
+        updateControlPanel();
+        updateSpectrogram(false);
     }
 
     private final BroadcastReceiver mDataUpdateReceiver = new BroadcastReceiver() {
@@ -114,13 +168,26 @@ public class AtomSpectraSpectrogram extends Activity {
                     channelBin = 2;
                 }
 
-                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, 1, channelBin, scrollToBottom);
+                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, channelBin, scale, scrollToBottom);
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
             if (rowCount != null) {
                 rowCount.setText(getString(R.string.spectrogram_row_count, AtomSpectraSpectrogramData.instance.rowCount()));
             }
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private void updateControlPanel() {
+        TextView textSpectrumBin = findViewById(R.id.textViewSpcBinValue);
+        if (textSpectrumBin != null) {
+            textSpectrumBin.setText(String.format("↕bin:%dx", sbin));
+        }
+
+        TextView textScale = findViewById(R.id.textViewSpgScale);
+        if (textScale != null) {
+            textScale.setText(scale);
         }
     }
 }

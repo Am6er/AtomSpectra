@@ -22,6 +22,10 @@ import java.util.TimeZone;
 
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
 public class AtomSpectraSpectrogramView extends View {
+	public final static String SCALE_LIN = "lin";
+	public final static String SCALE_SQRT = "sqrt";
+	public final static String SCALE_LOG = "log";
+
 	private static final int[] IRON_PALETTE = new int[] {
 		0xFF00000A, 0xFF000014, 0xFF00001E, 0xFF000025, 0xFF00002A, 0xFF00002E, 0xFF000032, 0xFF000036, 0xFF00003A, 0xFF00003E, 0xFF000042, 0xFF000046, 0xFF00004A, 0xFF00004F, 0xFF000052, 0xFF010055,
 		0xFF010057, 0xFF020059, 0xFF02005C, 0xFF03005E, 0xFF040061, 0xFF040063, 0xFF050065, 0xFF060067, 0xFF070069, 0xFF08006B, 0xFF09006E, 0xFF0A0070, 0xFF0B0073, 0xFF0C0074, 0xFF0D0075, 0xFF0D0076,
@@ -53,7 +57,7 @@ public class AtomSpectraSpectrogramView extends View {
 	};
 	private final int POINT_SIZE_PX = 2;
 	private final int TIME_AXIS_WIDTH_PX = 150;
-	private final int TIMESTAMP_EACH_ROWS = 25;
+	private final int TIMESTAMP_EACH_ROWS = 20;
 	private final int TIMESTAMP_MARGIN_LEFT = 2;
 	private final int TEXT_FONT_SIZE_PX = 16;
 	private final int TIMESTAMP_TICK_WIDTH_PX = 8;
@@ -66,6 +70,9 @@ public class AtomSpectraSpectrogramView extends View {
 	private HashMap<Integer, Integer> energyTicks = null;
 	private double maxValue = 0;
 	private double minValue = 0;
+	private int channelBin = 1;
+	private int spectrumBin = 1;
+	private String scale = SCALE_SQRT;
 
 	// vertical/horizontal drag
 	private int verticalOffsetPx = 0;
@@ -147,7 +154,13 @@ public class AtomSpectraSpectrogramView extends View {
 		return super.onTouchEvent(event);
 	}
 
-	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBin, int channelBin, boolean scrollToBottom) {
+	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBin, int channelBin, String scale, boolean scrollToBottom) {
+		// TODO: validate bin values, must be 2^n
+
+		this.spectrumBin = spectrumBin;
+		this.channelBin = channelBin;
+		this.scale = scale;
+
 		ArrayList<double[]> originalSpectrogram = data.getSpectrogram();
 		ArrayList<double[]> binnedSpectrogram;
 		int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
@@ -171,7 +184,31 @@ public class AtomSpectraSpectrogramView extends View {
 			binnedSpectrogram = originalSpectrogram;
 		}
 
-		// TODO: implement spectrum binning
+		if (spectrumBin > 1) {
+			ArrayList<Double> originalDurations = data.getDurations();
+			if (originalDurations.size() == originalSpectrogram.size()) {
+				ArrayList<double[]> spcBinnedSpectrogram = new ArrayList<>(binnedSpectrogram.size() / spectrumBin);
+				for (int i = 0; i < binnedSpectrogram.size(); i += spectrumBin) {
+					double binnedDuration = 0;
+					double[] binnedRow = new double[binnedChannelCount];
+					for (int j = 0; j < spectrumBin && (i + j) < binnedSpectrogram.size(); j++) {
+						double rowDuration = originalDurations.get(i + j);
+						binnedDuration += rowDuration;
+						for (int k = 0; k < binnedChannelCount; k++) {
+							binnedRow[k] += binnedSpectrogram.get(i + j)[k] * rowDuration; // counts
+						}
+					}
+
+					for (int k = 0; k < binnedChannelCount; k++) {
+						binnedRow[k] /= binnedDuration; // cps
+					}
+
+					spcBinnedSpectrogram.add(binnedRow);
+				}
+
+				binnedSpectrogram = spcBinnedSpectrogram;
+			}
+		}
 
 		this.spectrogramData = binnedSpectrogram;
 		this.timestamps = data.getTimestamps();
@@ -316,7 +353,7 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 
 		// render time axis
-		if (this.timestamps != null && this.timestamps.size() == this.spectrogramData.size()) {
+		if (this.timestamps != null && this.timestamps.size() == this.spectrogramData.size() * spectrumBin) {
 			synchronized (this.spectrogramBitmapSync) {
 				if (this.spectrogramBitmap != null) {
 					Canvas canvas = new Canvas(this.spectrogramBitmap);
@@ -328,12 +365,15 @@ public class AtomSpectraSpectrogramView extends View {
 					paint.setStrokeWidth(1);
 
 					for (int tsIndex = startRow; tsIndex <= endRow; tsIndex++) {
-						if (tsIndex % TIMESTAMP_EACH_ROWS != 0) {
+						int originalRowIndex = tsIndex * spectrumBin + (spectrumBin - 1);
+						int displayRowIndex = originalRowIndex + 1; // 1 - based
+						if (tsIndex > 0 && displayRowIndex % (TIMESTAMP_EACH_ROWS * spectrumBin) != 0) {
 							continue;
 						}
-						long timestamp = this.timestamps.get(tsIndex);
+
+						long timestamp = this.timestamps.get(originalRowIndex);
 						String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
-						String dateLabel = timestampStr[0] + " : " + String.format("%5d", tsIndex);
+						String dateLabel = timestampStr[0] + " : " + String.format("%5d", displayRowIndex);
 						String timeLabel = timestampStr[1];
 
 						// label tick
@@ -419,7 +459,6 @@ public class AtomSpectraSpectrogramView extends View {
 
 	private int mapValueToColor(double value) {
 		int[] palette = IRON_PALETTE;
-		String scale = "sqrt";
 
 		double lowerBound = this.minValue;
 		double upperBound = this.maxValue;
@@ -430,11 +469,11 @@ public class AtomSpectraSpectrogramView extends View {
 
     	double ratio = value / (upperBound - lowerBound);
 		long colorIndex = Math.round(ratio * (palette.length - 1));
-		switch (scale) {
-			case "log":
+		switch (this.scale) {
+			case AtomSpectraSpectrogramView.SCALE_LOG:
 				colorIndex = Math.round((Math.log(colorIndex + 1) / Math.log(palette.length)) * (palette.length - 1));
 				break;
-			case "sqrt":
+			case AtomSpectraSpectrogramView.SCALE_SQRT:
 				colorIndex = Math.round((Math.sqrt(colorIndex) / Math.sqrt(palette.length)) * (palette.length - 1));
 				break;
 			default:
