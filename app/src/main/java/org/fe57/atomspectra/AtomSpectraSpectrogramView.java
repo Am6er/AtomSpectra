@@ -204,6 +204,7 @@ public class AtomSpectraSpectrogramView extends View {
 	private float lastTouchX;
 	private boolean isDragging;
 	private boolean lockHorizontalMove;
+	private boolean lockVerticalMove;
 
 	private final Integer spectrogramBitmapSync = 1;
 	private volatile Bitmap spectrogramBitmap = null;
@@ -255,6 +256,9 @@ public class AtomSpectraSpectrogramView extends View {
 				if (lastTouchX < TIME_AXIS_WIDTH_PX) {
 					lockHorizontalMove = true;
 				}
+				if (!lockHorizontalMove && lastTouchY > getHeight() - CHANNEL_AXIS_HEIGHT_PX) {
+					lockVerticalMove = true;
+				}
 				return true;
 			case MotionEvent.ACTION_MOVE:
 				if (isDragging) {
@@ -263,8 +267,10 @@ public class AtomSpectraSpectrogramView extends View {
 					int dy = Math.round(lastTouchY - currentY);
 					int dx = Math.round(lastTouchX - currentX);
 					if (dy != 0 || dx != 0) {
-						verticalOffsetPx += dy;
-						lastTouchY = currentY;
+						if (!lockVerticalMove) {
+							verticalOffsetPx += dy;
+							lastTouchY = currentY;
+						}
 
 						if (!lockHorizontalMove) {
 							horizontalOffsetPx += dx;
@@ -280,6 +286,7 @@ public class AtomSpectraSpectrogramView extends View {
 			case MotionEvent.ACTION_CANCEL:
 				isDragging = false;
 				lockHorizontalMove = false;
+				lockVerticalMove = false;
 				return true;
 		}
 		return super.onTouchEvent(event);
