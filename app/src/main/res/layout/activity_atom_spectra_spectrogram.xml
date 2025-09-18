@@ -33,6 +33,15 @@
             android:textSize="14sp" />
 
         <TextView
+            android:id="@+id/textViewChBinValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="↔bin:1x"
+            android:textSize="14sp" />
+
+        <TextView
             android:id="@+id/textViewSpgScale"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

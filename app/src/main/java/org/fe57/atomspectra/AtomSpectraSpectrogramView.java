@@ -8,16 +8,15 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.MotionEvent;
-import android.view.ViewGroup;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
@@ -177,14 +176,23 @@ public class AtomSpectraSpectrogramView extends View {
 			0xFFFFFADC, 0xFFFFFADF, 0xFFFFFAE1, 0xFFFFFBE4, 0xFFFFFBE6, 0xFFFFFCE8, 0xFFFFFCEA, 0xFFFFFDED, 0xFFFFFDEF, 0xFFFFFDF1, 0xFFFFFEF4, 0xFFFFFEF6, 0xFFFFFEF9, 0xFFFFFEFB, 0xFFFFFFFD
 	};
 
-	private final int POINT_SIZE_PX = 2;
-	private final int TIME_AXIS_WIDTH_PX = 150;
-	private final int TIMESTAMP_EACH_ROWS = 25;
-	private final int TIMESTAMP_MARGIN_LEFT = 2;
-	private final int TEXT_FONT_SIZE_PX = 16;
-	private final int TIMESTAMP_TICK_WIDTH_PX = 8;
-	private final int ENERGY_TICK_HEIGHT_PX = 8;
-	private final int CHANNEL_AXIS_HEIGHT_PX = 50;
+	private int POINT_SIZE_DP = 2;
+	private int TIME_AXIS_WIDTH_DP = 100;
+	private int TIMESTAMP_MARGIN_LEFT_DP = 2;
+	private int TEXT_FONT_SIZE_DP = 11;
+	private int TIMESTAMP_TICK_WIDTH_DP = 8;
+	private int ENERGY_TICK_HEIGHT_DP = 8;
+	private int CHANNEL_AXIS_HEIGHT_DP = 40;
+
+	private int POINT_SIZE_PX = POINT_SIZE_DP;
+	private int TIME_AXIS_WIDTH_PX = TIME_AXIS_WIDTH_DP;
+	private int TIMESTAMP_MARGIN_LEFT_PX = TIMESTAMP_MARGIN_LEFT_DP;
+	private int TEXT_FONT_SIZE_PX = TEXT_FONT_SIZE_DP;
+	private int TIMESTAMP_TICK_WIDTH_PX = TIMESTAMP_TICK_WIDTH_DP;
+	private int ENERGY_TICK_HEIGHT_PX = ENERGY_TICK_HEIGHT_DP;
+	private int CHANNEL_AXIS_HEIGHT_PX = CHANNEL_AXIS_HEIGHT_DP;
+	
+	private int TIMESTAMP_EACH_ROWS = 20;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;
@@ -252,11 +260,12 @@ public class AtomSpectraSpectrogramView extends View {
 			case MotionEvent.ACTION_DOWN:
 				lastTouchY = event.getY();
 				lastTouchX = event.getX();
-				isDragging = true;
 				if (lastTouchX < TIME_AXIS_WIDTH_PX) {
+					isDragging = true;
 					lockHorizontalMove = true;
 				}
 				if (!lockHorizontalMove && lastTouchY > getHeight() - CHANNEL_AXIS_HEIGHT_PX) {
+					isDragging = true;
 					lockVerticalMove = true;
 				}
 				return true;
@@ -382,6 +391,16 @@ public class AtomSpectraSpectrogramView extends View {
 		this.invalidate();
 	}
 
+	private void calcPxFromDp() {
+		POINT_SIZE_PX = dpToPx(POINT_SIZE_DP);
+		TIME_AXIS_WIDTH_PX = dpToPx(TIME_AXIS_WIDTH_DP);
+		TIMESTAMP_MARGIN_LEFT_PX = dpToPx(TIMESTAMP_MARGIN_LEFT_DP);
+		TEXT_FONT_SIZE_PX = dpToPx(TEXT_FONT_SIZE_DP);
+		TIMESTAMP_TICK_WIDTH_PX = dpToPx(TIMESTAMP_TICK_WIDTH_DP);
+		ENERGY_TICK_HEIGHT_PX = dpToPx(ENERGY_TICK_HEIGHT_DP);
+		CHANNEL_AXIS_HEIGHT_PX = dpToPx(CHANNEL_AXIS_HEIGHT_DP);
+	}
+
 	private void recycleBitmap() {
 		if (this.spectrogramBitmap != null) {
 			synchronized (spectrogramBitmapSync) {
@@ -401,6 +420,7 @@ public class AtomSpectraSpectrogramView extends View {
 			return;
 		}
 
+		calcPxFromDp();
 		synchronized (spectrogramBitmapSync) {
 			if (this.spectrogramBitmap == null) {
 				this.spectrogramBitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888);
@@ -523,8 +543,8 @@ public class AtomSpectraSpectrogramView extends View {
 
 						int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
 						int tickY = (tsIndex - startRow) * POINT_SIZE_PX;
-						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT, tickY + TEXT_FONT_SIZE_PX, paint);
-						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT, tickY + 2 * TEXT_FONT_SIZE_PX + 2, paint);
+						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + 2 * TEXT_FONT_SIZE_PX + dpToPx(2), paint);
 						canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
 					}
 
@@ -557,21 +577,25 @@ public class AtomSpectraSpectrogramView extends View {
 							// render kev label
 							if (energy % 500 == 0) {
 								String label = energy == 0 ? String.format("%d kev", energy) : String.format("%d", energy);
-								canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + 3, paint);
+								canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
 							}
 
 							// render kev tick
 							if (energy % 100 == 0) {
-								int tickHeight = energy % 500 == 0 ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
+								int tickHeight = energy % 500 == 0
+										? ENERGY_TICK_HEIGHT_PX
+										:  channelBin < 4
+											? ENERGY_TICK_HEIGHT_PX / 2
+											: 0;
 								canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
 							}
 						}
 					}
 
 					// render ch label
-					if (col % 100 == 0) {
+					if (col % 50 == 0) {
 						String label = col == 0 ? String.format("%d ch", col) : String.format("%d", col);
-						canvas.drawText(label, tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + 3, paint);
+						canvas.drawText(label, tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
 					}
 
 					// render ch tick
@@ -581,8 +605,8 @@ public class AtomSpectraSpectrogramView extends View {
 					}
 				}
 
-				canvas.drawLine(TIME_AXIS_WIDTH_PX, energyAxisBaseline - 0.5f, viewWidth, energyAxisBaseline - 0.5f, paint);
-				canvas.drawLine(TIME_AXIS_WIDTH_PX, channelAxisBaseline - 0.5f, viewWidth, channelAxisBaseline - 0.5f, paint);
+				canvas.drawLine(TIME_AXIS_WIDTH_PX, energyAxisBaseline - 0.5f, TIME_AXIS_WIDTH_PX + colsToRenderWidthPx, energyAxisBaseline - 0.5f, paint);
+				canvas.drawLine(TIME_AXIS_WIDTH_PX, channelAxisBaseline - 0.5f, TIME_AXIS_WIDTH_PX + colsToRenderWidthPx, channelAxisBaseline - 0.5f, paint);
 			}
 		}
 
@@ -640,5 +664,9 @@ public class AtomSpectraSpectrogramView extends View {
 		sdf.setTimeZone(TimeZone.getDefault());
 
 		return sdf.format(date);
+	}
+
+	private int dpToPx(int dp) {
+		return ((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, Resources.getSystem().getDisplayMetrics()));
 	}
 }

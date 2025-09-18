@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -30,6 +31,7 @@ import java.util.Locale;
 public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
     private static int sbin = 1;
+    private static int cbin = 1;
     private static String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
     private static String palette = AtomSpectraSpectrogramView.PALETTE_IRON;
     private GestureDetector gestureDetector;
@@ -70,12 +72,18 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             registerReceiver(mDataUpdateReceiver, intentFilter);
         }
 
-        // validate sbin and scale, init cintrol panel
+        // validate sbin and scale, init control panel
         if (sbin < 1) {
             sbin = 1;
         }
         if (sbin > 128) {
             sbin = 128;
+        }
+        if (cbin < 1) {
+            cbin = 1;
+        }
+        if (cbin > 4) {
+            cbin = 4;
         }
         HashSet<String> allowedScale = new HashSet<>(Arrays.asList(AtomSpectraSpectrogramView.SCALE_SQRT, AtomSpectraSpectrogramView.SCALE_LOG, AtomSpectraSpectrogramView.SCALE_LIN));
         if (!allowedScale.contains(scale)) {
@@ -182,13 +190,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (isActive) {
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                int channelBin = 1;
-                int orientation = getResources().getConfiguration().orientation;
-                if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                    channelBin = 2;
-                }
-
-                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, channelBin, scale, palette, scrollToBottom);
+                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom);
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
@@ -203,6 +205,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         TextView textSpectrumBin = findViewById(R.id.textViewSpcBinValue);
         if (textSpectrumBin != null) {
             textSpectrumBin.setText(String.format("↕bin:%dx", sbin));
+        }
+
+        TextView textChannelBin = findViewById(R.id.textViewChBinValue);
+        if (textChannelBin != null) {
+            textChannelBin.setText(String.format("↔bin:%dx", cbin));
         }
 
         TextView textPalette = findViewById(R.id.textViewSpgPalette);
@@ -267,26 +274,62 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         return false;
     }
 
+    public float pxToDp(float px) {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        return px / displayMetrics.density;
+    }
+
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
         public void onScaleEnd(ScaleGestureDetector detector) {
-            double factor = detector.getScaleFactor();
-            if (factor > 1) {
-              if (sbin > 1) {
-                sbin /= 2;
+            float currentSpanX = detector.getCurrentSpanX();
+            float previousSpanX = detector.getPreviousSpanX();
+            float deltaXDp = pxToDp(Math.abs(currentSpanX - previousSpanX));
+            float currentSpanY = detector.getCurrentSpanY();
+            float previousSpanY = detector.getPreviousSpanY();
+            float deltaYDp = pxToDp(Math.abs(currentSpanY - previousSpanY));
 
-                updateControlPanel();
-                updateSpectrogram(false);
-              }
+            float horizontalFactor = currentSpanX / previousSpanX;
+            float verticalFactor = currentSpanY / previousSpanY;
+
+            if (deltaXDp > 50) {
+                if (horizontalFactor > 1.4) {
+                    // reduce channel bin
+                    if (cbin > 1) {
+                        cbin /= 2;
+                        updateControlPanel();
+                        updateSpectrogram(false);
+                    }
+                }
+
+                if (horizontalFactor < 0.7) {
+                    // increase channel bin
+                    if (cbin < 4) {
+                        cbin *= 2;
+                        updateControlPanel();
+                        updateSpectrogram(false);
+                    }
+                }
             }
 
-            if (factor < 1) {
-              if (sbin < 128) {
-                sbin *= 2;
+            if (deltaYDp > 50) {
+                if (verticalFactor > 1.4) {
+                    // reduce spectrum bin
+                    if (sbin > 1) {
+                        sbin /= 2;
+                        updateControlPanel();
+                        updateSpectrogram(false);
+                    }
+                }
 
-                updateControlPanel();
-                updateSpectrogram(false);
-              }
+                if (verticalFactor < 0.7) {
+                    // increase spectrum bin
+                    if (sbin < 128) {
+                        sbin *= 2;
+                        updateControlPanel();
+                        updateSpectrogram(false);
+                    }
+                }
             }
         }
     }
