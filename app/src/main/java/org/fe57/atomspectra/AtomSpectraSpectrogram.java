@@ -11,16 +11,22 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.GestureDetector;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 
-public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
+public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
     private static int sbin = 1;
     private static String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
@@ -40,7 +46,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,14 +90,17 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         gestureDetector = new GestureDetector(this, this);
         gestureDetector.setOnDoubleTapListener(this);
         scaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
-        findViewById(R.id.viewSpectrogram).setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                gestureDetector.onTouchEvent(event);
-                scaleGestureDetector.onTouchEvent(event);
-                return true;
-            }
+        findViewById(R.id.viewSpectrogram).setOnTouchListener((v, event) -> {
+            gestureDetector.onTouchEvent(event);
+            scaleGestureDetector.onTouchEvent(event);
+
+            return false;
         });
+    }
+
+    @Override
+    public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+        return false;
     }
 
     @Override
@@ -115,6 +124,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         updateSpectrogram(false);
 
         return true;
+    }
+
+    @Override
+    public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
+        return false;
     }
 
     @Override
@@ -201,9 +215,39 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
     }
 
+    @Override
+    public boolean onDown(@NonNull MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(@NonNull MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(@NonNull MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
+        return false;
+    }
+
+    @Override
+    public void onLongPress(@NonNull MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+        return false;
+    }
+
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
-        public boolean onScaleEnd(ScaleGestureDetector detector) {
+        public void onScaleEnd(ScaleGestureDetector detector) {
             double factor = detector.getScaleFactor();
             if (factor > 1) {
               if (sbin > 1) {
@@ -222,8 +266,6 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                 updateSpectrogram(false);
               }
             }
-
-            return true;
         }
     }
 }
