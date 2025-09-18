@@ -18,6 +18,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -237,7 +238,28 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     @Override
     public void onLongPress(@NonNull MotionEvent e) {
+        // update palette
+        switch (palette) {
+            case AtomSpectraSpectrogramView.PALETTE_IRON:
+                palette = AtomSpectraSpectrogramView.PALETTE_LIME;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_LIME:
+                palette = AtomSpectraSpectrogramView.PALETTE_YELLOW;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_YELLOW:
+                palette = AtomSpectraSpectrogramView.PALETTE_GLOW;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_GLOW:
+                palette = AtomSpectraSpectrogramView.PALETTE_GRAY;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_GRAY:
+            default:
+                palette = AtomSpectraSpectrogramView.PALETTE_IRON;
+                break;
+        }
 
+        updateControlPanel();
+        updateSpectrogram(false);
     }
 
     @Override
