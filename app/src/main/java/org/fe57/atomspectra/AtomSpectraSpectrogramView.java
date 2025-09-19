@@ -8,6 +8,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.MotionEvent;
@@ -32,7 +33,7 @@ public class AtomSpectraSpectrogramView extends View {
 	public final static String PALETTE_GLOW = "glow";
 
 	private static final int[] IRON_PALETTE = new int[]{
-			0xFF00000A, 0xFF000014, 0xFF00001E, 0xFF000025, 0xFF00002A, 0xFF00002E, 0xFF000032, 0xFF000036, 0xFF00003A, 0xFF00003E, 0xFF000042, 0xFF000046, 0xFF00004A, 0xFF00004F, 0xFF000052, 0xFF010055,
+			/*0xFF00000A, */0xFF000014, 0xFF00001E, 0xFF000025, 0xFF00002A, 0xFF00002E, 0xFF000032, 0xFF000036, 0xFF00003A, 0xFF00003E, 0xFF000042, 0xFF000046, 0xFF00004A, 0xFF00004F, 0xFF000052, 0xFF010055,
 			0xFF010057, 0xFF020059, 0xFF02005C, 0xFF03005E, 0xFF040061, 0xFF040063, 0xFF050065, 0xFF060067, 0xFF070069, 0xFF08006B, 0xFF09006E, 0xFF0A0070, 0xFF0B0073, 0xFF0C0074, 0xFF0D0075, 0xFF0D0076,
 			0xFF0E0077, 0xFF100078, 0xFF120079, 0xFF13007B, 0xFF15007C, 0xFF17007D, 0xFF19007E, 0xFF1B0080, 0xFF1C0081, 0xFF1E0083, 0xFF200084, 0xFF220085, 0xFF240086, 0xFF260087, 0xFF280089, 0xFF2A0089,
 			0xFF2C008A, 0xFF2E008B, 0xFF30008C, 0xFF32008D, 0xFF34008E, 0xFF36008E, 0xFF38008F, 0xFF390090, 0xFF3B0091, 0xFF3C0092, 0xFF3E0093, 0xFF3F0093, 0xFF410094, 0xFF420095, 0xFF440095, 0xFF450096,
@@ -191,8 +192,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private int TIMESTAMP_TICK_WIDTH_PX = TIMESTAMP_TICK_WIDTH_DP;
 	private int ENERGY_TICK_HEIGHT_PX = ENERGY_TICK_HEIGHT_DP;
 	private int CHANNEL_AXIS_HEIGHT_PX = CHANNEL_AXIS_HEIGHT_DP;
-	
-	private int TIMESTAMP_EACH_ROWS = 20;
+
+	private int TIMESTAMP_EACH_ROWS = 25;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;
@@ -392,32 +393,27 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	private void setupPxValues() {
-    POINT_SIZE_PX = dpToPx(POINT_SIZE_DP);
-    DisplayMetrics metrics = getResources().getDisplayMetrics();
-    switch (metrics.densityDpi) {
-      case DENSITY_LOW: // 120 dpi
-        POINT_SIZE_PX = 1;
-        TIMESTAMP_EACH_ROWS = 25;    
-        break;
-      case DENSITY_MEDIUM: // 160 dpi
-      case DENSITY_TV: // 220 dpi??
-        POINT_SIZE_PX = 2;
-        TIMESTAMP_EACH_ROWS = 20;    
-        break;
-      case DENSITY_HIGH: // 240 dpi
-      case DENSITY_XHIGH: // 320 dpi
-        POINT_SIZE_PX = 3;
-        TIMESTAMP_EACH_ROWS = 20;
-        break;
-      case DENSITY_XXHIGH: // 480 dpi
-        POINT_SIZE_PX = 4;
-        TIMESTAMP_EACH_ROWS = 20;
-      case DENSITY_XXXHIGH: // 640 dpi
-        POINT_SIZE_PX = 5;
-        TIMESTAMP_EACH_ROWS = 25;
-        break;
-    }
-		
+		POINT_SIZE_PX = dpToPx(POINT_SIZE_DP);
+		DisplayMetrics metrics = getResources().getDisplayMetrics();
+		switch (metrics.densityDpi) {
+			case DisplayMetrics.DENSITY_LOW: // 120 dpi
+				POINT_SIZE_PX = 1;
+				break;
+			case DisplayMetrics.DENSITY_MEDIUM: // 160 dpi
+			case DisplayMetrics.DENSITY_TV: // 220 dpi??
+				POINT_SIZE_PX = 2;
+				break;
+			case DisplayMetrics.DENSITY_HIGH: // 240 dpi
+			case DisplayMetrics.DENSITY_XHIGH: // 320 dpi
+				POINT_SIZE_PX = 2;
+				break;
+			case DisplayMetrics.DENSITY_XXHIGH: // 480 dpi
+				POINT_SIZE_PX = 3;
+				break;
+			case DisplayMetrics.DENSITY_XXXHIGH: // 640 dpi
+				POINT_SIZE_PX = 4;
+				break;
+		}
 
 
 		TIME_AXIS_WIDTH_PX = dpToPx(TIME_AXIS_WIDTH_DP);
@@ -601,19 +597,27 @@ public class AtomSpectraSpectrogramView extends View {
 						Integer energy = this.energyTicks.get(col);
 
 						if (energy != null) {
-							// render kev label
-							if (energy % 500 == 0) {
-								String label = energy == 0 ? String.format("%d kev", energy) : String.format("%d", energy);
+							// render MeV label
+							int majorTick = 500;
+							int minorTick = 100;
+							if (channelBin == 2) {
+								majorTick = 1000;
+								minorTick = 200;
+							}
+							if (channelBin == 4) {
+								majorTick = 1000;
+								minorTick = 500;
+							}
+							if (energy % majorTick == 0) {
+								String label = energy == 0 ? "0 MeV" : String.format("%1.1f", energy / 1000.0f);
 								canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
 							}
 
-							// render kev tick
-							if (energy % 100 == 0) {
-								int tickHeight = energy % 500 == 0
+							// render MeV tick
+							if (energy % minorTick == 0) {
+								int tickHeight = energy % majorTick == 0
 										? ENERGY_TICK_HEIGHT_PX
-										:  channelBin < 4
-											? ENERGY_TICK_HEIGHT_PX / 2
-											: 0;
+										: ENERGY_TICK_HEIGHT_PX / 2;
 								canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
 							}
 						}
@@ -621,7 +625,7 @@ public class AtomSpectraSpectrogramView extends View {
 
 					// render ch label
 					if (col % 50 == 0) {
-						String label = col == 0 ? String.format("%d ch", col) : String.format("%d", col);
+						String label = col == 0 ? "0 ch" : String.format("%d", col);
 						canvas.drawText(label, tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
 					}
 
