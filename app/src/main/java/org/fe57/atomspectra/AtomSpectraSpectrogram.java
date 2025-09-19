@@ -30,6 +30,8 @@ import java.util.Locale;
 
 public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
+    private static final int MAX_SBIN = 128;
+    private static final int MAX_CBIN = 4;
     private static int sbin = 1;
     private static int cbin = 1;
     private static String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
@@ -76,15 +78,16 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (sbin < 1) {
             sbin = 1;
         }
-        if (sbin > 128) {
-            sbin = 128;
+        if (sbin > MAX_SBIN) {
+            sbin = MAX_SBIN;
         }
-        if (cbin < 1) {
-            cbin = 1;
+        int orientation = getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            cbin = 2;
+        } else {
+          cbin = 1;
         }
-        if (cbin > 4) {
-            cbin = 4;
-        }
+        
         HashSet<String> allowedScale = new HashSet<>(Arrays.asList(AtomSpectraSpectrogramView.SCALE_SQRT, AtomSpectraSpectrogramView.SCALE_LOG, AtomSpectraSpectrogramView.SCALE_LIN));
         if (!allowedScale.contains(scale)) {
             scale = AtomSpectraSpectrogramView.SCALE_SQRT;
@@ -304,7 +307,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
                 if (horizontalFactor < 0.7) {
                     // increase channel bin
-                    if (cbin < 4) {
+                    if (cbin < MAX_CBIN) {
                         cbin *= 2;
                         updateControlPanel();
                         updateSpectrogram(false);
@@ -324,7 +327,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
                 if (verticalFactor < 0.7) {
                     // increase spectrum bin
-                    if (sbin < 128) {
+                    if (sbin < MAX_SBIN) {
                         sbin *= 2;
                         updateControlPanel();
                         updateSpectrogram(false);

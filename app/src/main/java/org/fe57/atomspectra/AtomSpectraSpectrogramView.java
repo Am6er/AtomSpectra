@@ -391,8 +391,35 @@ public class AtomSpectraSpectrogramView extends View {
 		this.invalidate();
 	}
 
-	private void calcPxFromDp() {
-		POINT_SIZE_PX = dpToPx(POINT_SIZE_DP);
+	private void setupPxValues() {
+    POINT_SIZE_PX = dpToPx(POINT_SIZE_DP);
+    DisplayMetrics metrics = getResources().getDisplayMetrics();
+    switch (metrics.densityDpi) {
+      case DENSITY_LOW: // 120 dpi
+        POINT_SIZE_PX = 1;
+        TIMESTAMP_EACH_ROWS = 25;    
+        break;
+      case DENSITY_MEDIUM: // 160 dpi
+      case DENSITY_TV: // 220 dpi??
+        POINT_SIZE_PX = 2;
+        TIMESTAMP_EACH_ROWS = 20;    
+        break;
+      case DENSITY_HIGH: // 240 dpi
+      case DENSITY_XHIGH: // 320 dpi
+        POINT_SIZE_PX = 3;
+        TIMESTAMP_EACH_ROWS = 20;
+        break;
+      case DENSITY_XXHIGH: // 480 dpi
+        POINT_SIZE_PX = 4;
+        TIMESTAMP_EACH_ROWS = 20;
+      case DENSITY_XXXHIGH: // 640 dpi
+        POINT_SIZE_PX = 5;
+        TIMESTAMP_EACH_ROWS = 25;
+        break;
+    }
+		
+
+
 		TIME_AXIS_WIDTH_PX = dpToPx(TIME_AXIS_WIDTH_DP);
 		TIMESTAMP_MARGIN_LEFT_PX = dpToPx(TIMESTAMP_MARGIN_LEFT_DP);
 		TEXT_FONT_SIZE_PX = dpToPx(TEXT_FONT_SIZE_DP);
@@ -420,7 +447,7 @@ public class AtomSpectraSpectrogramView extends View {
 			return;
 		}
 
-		calcPxFromDp();
+		setupPxValues();
 		synchronized (spectrogramBitmapSync) {
 			if (this.spectrogramBitmap == null) {
 				this.spectrogramBitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888);
