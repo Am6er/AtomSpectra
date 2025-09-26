@@ -4374,8 +4374,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				.setTitle(getString(R.string.recording_suspended_dialog_title))
 				.setMessage(message)
 				.setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
-					AtomSpectraService.freeze(true);
 					sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+					dismissRecordingSuspendedDialog();
 				})
 				.setCancelable(false);
 		recordingSuspendedAlert = alert.show();
