@@ -360,8 +360,11 @@ public class AtomSpectraService extends Service {
                 super.onAudioDevicesAdded(addedDevices);
                 HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
                 for (AudioDeviceInfo addedDevice : addedDevices) {
-                    if (addedDevice.isSource()) {
-                        activeInputDeviceList.add(addedDevice.getProductName().toString());
+                    String deviceName = addedDevice.getProductName().toString();
+                    if (!activeInputDeviceList.has(deviceName)) {
+                        activeInputDeviceList.add(deviceName);
+                        // TODO: localize
+                        AtomSpectraLog.addMessage(service_context, String.format("Audio input device added: %s", deviceName));
                     }
                 }
                 if (prevState.equals(activeInputDeviceList)) {
@@ -400,7 +403,12 @@ public class AtomSpectraService extends Service {
                 HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
                 for (AudioDeviceInfo removedDevice : removedDevices) {
                     if (removedDevice.isSource()) {
-                        activeInputDeviceList.remove(removedDevice.getProductName().toString());
+                        String deviceName = removedDevice.getProductName().toString();
+                        if (activeInputDeviceList.has(deviceName)) {
+                            activeInputDeviceList.remove(deviceName);
+                            // TODO: localize
+                            AtomSpectraLog.addMessage(service_context, String.format("Audio input device removed: %s", deviceName));
+                        }
                     }
                 }
                 if (prevState.equals(activeInputDeviceList)) {
@@ -1505,7 +1513,7 @@ public class AtomSpectraService extends Service {
         AtomSpectraIsotopes.foundList.clear();
         AtomSpectraIsotopes.showFoundIsotopes = false;
         newCalibration.clear();
-        AtomSpectraLog.clear();
+        AtomSpectraLog.clear(service_context);
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES).setPackage(Constants.PACKAGE_NAME));
@@ -1577,9 +1585,9 @@ public class AtomSpectraService extends Service {
             }
 
             if (freeze) {
-                AtomSpectraLog.addMessage(String.format("Stop recording (%s)", inputTypeText));
+                AtomSpectraLog.addMessage(service_context, String.format("Stop recording (%s)", inputTypeText));
             } else {
-                AtomSpectraLog.addMessage(String.format("Start recording (%s)", inputTypeText));
+                AtomSpectraLog.addMessage(service_context, String.format("Start recording (%s)", inputTypeText));
             }
         }
 
@@ -1867,6 +1875,11 @@ public class AtomSpectraService extends Service {
                 } else {
                     try {
                         AR.startRecording();
+                        Device device = AR.getRoutedDevice();
+                        if (device != null) {
+                            String deviceName = device.getProductName().toString();
+                            AtomSpectraLog.addMessage(service_context, String.format("Fetching data from audio source: %s", ));
+                        }
                     } catch (IllegalStateException e) {
                         AR.release();
                         AR = null;
@@ -1910,6 +1923,7 @@ public class AtomSpectraService extends Service {
             audioZeroDataCount++;
 
             if (audioZeroDataCount >= audioZeroDataMaxCount) {
+                AtomSpectraLog.addMessage(service_context, String.format("Zero audio buffer recieved several times in a row (%d), restarting audio...", audioZeroDataCount));
                 audioZeroDataCount = 0;
                 if (AR != null) {
                     AR.stop();
@@ -2705,9 +2719,10 @@ public class AtomSpectraService extends Service {
         }
 
         if (usbDevice.isOpened() || usbDevice.Open(device)) {
+            showToastInMainLooper(R.string.action_usb_attached, Toast.LENGTH_LONG);
+
             usbDevice.sendTextCommand("-inf", SERVICE_INF_ID);
             usbDevice.sendTextCommand("-mode 0", SERVICE_MODE_ID);
-
             synchronized (recordingSuspendedSync) {
                 if (isRecordingSuspended && recordingSuspendInputType == INPUT_SERIAL) {
                     usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
@@ -2719,14 +2734,14 @@ public class AtomSpectraService extends Service {
 
             sendDataToUI(); // initial render
             refreshServiceNotification();
-
-            showToastInMainLooper(R.string.action_usb_attached, Toast.LENGTH_LONG);
         } else {
             onUSBNoAccess();
         }
     }
 
     private final void onUSBDetached() {
+        showToastInMainLooper(R.string.action_usb_detached, Toast.LENGTH_LONG);
+
         if (!freeze_update_data && inputType == INPUT_SERIAL) {
             onUSBConnectionLostDuringRecording();
         } else {
@@ -2740,8 +2755,6 @@ public class AtomSpectraService extends Service {
         usbDevice.Close();
         cancelUsbDataWatchdog();
         refreshServiceNotification();
-
-        showToastInMainLooper(R.string.action_usb_detached, Toast.LENGTH_LONG);
     }
 
     private final void onUSBNoAccess() {
@@ -3113,7 +3126,7 @@ public class AtomSpectraService extends Service {
 
     private void showToastInMainLooper(String text, int duration) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
-        AtomSpectraLog.addMessage(text);
+        AtomSpectraLog.addMessage(service_context, text);
     }
 
     private void showToastInMainLooper(int res_id, int duration) {
@@ -3168,7 +3181,7 @@ public class AtomSpectraService extends Service {
         playNotificationSound();
 
         // TODO: localize
-        AtomSpectraLog.addMessage("Recording suspended");
+        AtomSpectraLog.addMessage(service_context, "Recording suspended");
     }
 
     private void onRecordingResumed() {
@@ -3178,7 +3191,7 @@ public class AtomSpectraService extends Service {
         playNotificationSound();
 
         // TODO: localize
-        AtomSpectraLog.addMessage("Recording resumed");
+        AtomSpectraLog.addMessage(service_context, "Recording resumed");
     }
 
     private void skipUnreliableUSBData() {

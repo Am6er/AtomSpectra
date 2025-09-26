@@ -23,7 +23,6 @@
                 android:id="@+id/logText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:onClick="onLogTextClick"
                 android:scrollbars="vertical"
                 android:text=""
                 android:textColor="#FFFFFFFF"

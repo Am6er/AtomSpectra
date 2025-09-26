@@ -38,7 +38,7 @@ public class AtomSpectraLog extends Activity {
     private static final int MAX_MESSAGES = 1000;
     private static boolean active = false;
 
-    public static void addMessage(String message) {
+    public static void addMessage(Context context, String message) {
         synchronized(logSync) {
             if (log.size() >= MAX_MESSAGES) {
                 log.remove();
@@ -47,12 +47,22 @@ public class AtomSpectraLog extends Activity {
             Date now = new Date();
             log.add(String.format("%s: %s", formatDate(now), message));
         }
+
+        notifyLogUpdated(context);
     }
 
-    public static void clear() {
+    public static void clear(Context context) {
         synchronized (logSync) {
             log.clear();
         }
+
+        notifyLogUpdated(context);
+    }
+
+    private static void notifyLogUpdated(Context context) {
+      if (context != null) {
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
+      }
     }
 
     @Override
@@ -81,17 +91,13 @@ public class AtomSpectraLog extends Activity {
 
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_LOG);
+        intentFilter.addAction(Constants.ACTION.ACTION_LOG_UPDATED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(mDataUpdateReceiver, intentFilter);
         }
     }
-
-    public void onLogTextClick(View v) {
-        renderLog();
-    }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -108,6 +114,9 @@ public class AtomSpectraLog extends Activity {
             final String action = intent.getAction();
             if (Constants.ACTION.ACTION_CLOSE_LOG.equals(action)) {
                 finish();
+            }
+            if (Constants.ACTION.ACTION_LOG_UPDATED.equals(action)) {
+                renderLog();
             }
 
         }
@@ -149,7 +158,7 @@ public class AtomSpectraLog extends Activity {
                     logText = "No records yet";
 
                 }
-                logText += String.format("\n\nRendered at %s, tap to refresh...", formatDate(new Date()));
+                
                 logView.setText(logText);
             }
             ScrollView scrollView = findViewById(R.id.logTextScroll);
