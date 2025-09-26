@@ -894,7 +894,7 @@ public class AtomSpectraService extends Service {
             if (soundTrack != null && soundTrack.getState() != AudioTrack.STATE_INITIALIZED) {
                 soundTrack.release();
                 soundTrack = null;
-                Toast.makeText(context, getText(R.string.no_audio_output_available), Toast.LENGTH_LONG).show();
+                showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
             }
         }
 
@@ -1252,7 +1252,7 @@ public class AtomSpectraService extends Service {
                     usbDevice.Close();
                     SystemClock.sleep(USB_WAIT_DEVICE);
                     if (!usbManager.hasPermission(device)) {
-                        //Toast.makeText(context, "Asking permissions", Toast.LENGTH_LONG).show();
+                        //showToastInMainLooper("Asking permissions", Toast.LENGTH_LONG);
                         PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
                         usbManager.requestPermission(device, pi);
                     } else {
@@ -1297,7 +1297,7 @@ public class AtomSpectraService extends Service {
                                 old_count += old_histogram[i];
                                 new_count += new_histogram[i];
                             }
-                            Toast.makeText(context, "old_time: " + old_time + " new_time: " + new_time + " old_count: " + old_count + " new_count: " + new_count, Toast.LENGTH_SHORT).show();
+                            showToastInMainLooper("old_time: " + old_time + " new_time: " + new_time + " old_count: " + old_count + " new_count: " + new_count, Toast.LENGTH_SHORT);
                              */
                         }
 
@@ -1368,13 +1368,13 @@ public class AtomSpectraService extends Service {
                 // answer from USB device
                 if (SERVICE_INF_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // Toast.makeText(context, "AtomSpectraService -inf answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    // showToastInMainLooper("AtomSpectraService -inf answer: " + commandResult, Toast.LENGTH_LONG);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        Toast.makeText(context, "-inf command failed", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-inf command failed", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        Toast.makeText(context, "-inf command timeout", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-inf command timeout", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_OK.equals(commandResult)) {
@@ -1397,25 +1397,25 @@ public class AtomSpectraService extends Service {
                 }
                 if (SERVICE_MODE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // Toast.makeText(context, "AtomSpectraService -mode 0 answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    // showToastInMainLooper("AtomSpectraService -mode 0 answer: " + commandResult, Toast.LENGTH_LONG);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        Toast.makeText(context, "-mode 0 command failed", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-mode 0 command failed", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        Toast.makeText(context, "-mode 0 command timeout", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-mode 0 command timeout", Toast.LENGTH_LONG);
                         return;
                     }
                 }
                 if (SERVICE_STT_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // Toast.makeText(context, "AtomSpectraService -stt answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    // showToastInMainLooper("AtomSpectraService -stt answer: " + commandResult, Toast.LENGTH_LONG);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        Toast.makeText(context, "-stt command failed", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper(context, "-stt command failed", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        Toast.makeText(context, "-stt command timeout", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-stt command timeout", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_OK_COLLECTING.equals(commandResult)) {
@@ -1429,17 +1429,17 @@ public class AtomSpectraService extends Service {
                 }
                 if (SERVICE_STA_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // Toast.makeText(context, "AtomSpectraService -sta answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    // showToastInMainLooper("AtomSpectraService -sta answer: " + commandResult, Toast.LENGTH_LONG);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        Toast.makeText(context, "-sta command failed", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-sta command failed", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        Toast.makeText(context, "-sta command timeout", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-sta command timeout", Toast.LENGTH_LONG);
                         return;
                     }
 
@@ -1447,17 +1447,17 @@ public class AtomSpectraService extends Service {
                 }
                 if (SERVICE_STO_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // Toast.makeText(context, "AtomSpectraService -sto answer: " + commandResult, Toast.LENGTH_LONG).show();
+                    // showToastInMainLooper("AtomSpectraService -sto answer: " + commandResult, Toast.LENGTH_LONG);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        Toast.makeText(context, "-sto command failed", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-sto command failed", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        Toast.makeText(context, "-sto command timeout", Toast.LENGTH_LONG).show();
+                        showToastInMainLooper("-sto command timeout", Toast.LENGTH_LONG);
                         return;
                     }
                 }
@@ -1505,10 +1505,12 @@ public class AtomSpectraService extends Service {
         AtomSpectraIsotopes.foundList.clear();
         AtomSpectraIsotopes.showFoundIsotopes = false;
         newCalibration.clear();
+        AtomSpectraLog.clear();
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_HELP).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_LOG).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SENSITIVITY).setPackage(Constants.PACKAGE_NAME));
         sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_APP).setPackage(Constants.PACKAGE_NAME));
@@ -1563,6 +1565,24 @@ public class AtomSpectraService extends Service {
 
     // method used to start/stop data collecting timers
     private void setFreeze(boolean freeze) {
+        if (freeze != freeze_update_data) {
+          String inputTypeText = "none";
+          switch (inputType) {
+            case INPUT_AUDIO:
+              inputTypeText = "audio";
+              break;
+            case INPUT_SERIAL:
+              inputTypeText = "usb";
+              break;
+          }
+
+          if (freeze) {
+            AtomSpectraLog.addMessage(String.format("Stop recording (%s)", inputTypeText));
+          } else {
+            AtomSpectraLog.addMessage(String.format("Start recording (%s)", inputTypeText));
+          }
+        }
+
         freeze_update_data = freeze;
         synchronized (inputSync) {
             if (inputType == INPUT_SERIAL) {
@@ -2642,7 +2662,7 @@ public class AtomSpectraService extends Service {
 
     private final void restartUsbDataWatchdog() {
         // debug line
-        // Toast.makeText(this, "USB data watchdog: re-schedule timer.", Toast.LENGTH_SHORT).show();
+        // showToastInMainLooper("USB data watchdog: re-schedule timer.", Toast.LENGTH_SHORT);
         synchronized (inputSync) {
             cancelUsbDataWatchdog();
             if (inputType != INPUT_SERIAL) {
@@ -3089,11 +3109,12 @@ public class AtomSpectraService extends Service {
 
     private void showToastInMainLooper(String text, int duration) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+        AtomSpectraLog.addMessage(text);
     }
 
     private void showToastInMainLooper(int res_id, int duration) {
         String text = getContextStringOrDefault(res_id);
-        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+        showToastInMainLooper(text, duration);
     }
 
     private void suspendAudioRecording(int suspend_reason) {
@@ -3141,6 +3162,9 @@ public class AtomSpectraService extends Service {
         sendBroadcast(new Intent(ACTION_RECORDING_SUSPENDED).setPackage(Constants.PACKAGE_NAME));
         refreshServiceNotification();
         playNotificationSound();
+
+        // TODO: localize
+        AtomSpectraLog.addMessage("Recording suspended");
     }
 
     private void onRecordingResumed() {
@@ -3148,6 +3172,9 @@ public class AtomSpectraService extends Service {
         sendBroadcast(new Intent(ACTION_RECORDING_RESUMED).setPackage(Constants.PACKAGE_NAME));
         refreshServiceNotification();
         playNotificationSound();
+
+        // TODO: localize
+        AtomSpectraLog.addMessage("Recording resumed");
     }
 
     private void skipUnreliableUSBData() {

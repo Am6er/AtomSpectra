@@ -449,6 +449,8 @@
         <item>16</item>
     </string-array>
 
+    <string name="log_activity_title">Atom Spectra Log</string>
+
     <string name="spectrogram_activity_title">Atom Spectra Spectrogram</string>
     <string name="spectrogram_menu">Spectrogram</string>
     <string name="spectrogram_load">Load from…</string>

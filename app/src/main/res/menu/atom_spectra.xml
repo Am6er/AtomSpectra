@@ -383,7 +383,7 @@
         android:id="@+id/action_app_version"
         android:checkable="false"
         android:checked="false"
-        android:enabled="false"
+        android:enabled="true"
         android:icon="@android:drawable/btn_dialog"
         android:orderInCategory="113"
         android:showAsAction="ifRoom" />
