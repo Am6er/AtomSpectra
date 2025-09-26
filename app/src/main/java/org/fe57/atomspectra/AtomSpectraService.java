@@ -361,7 +361,7 @@ public class AtomSpectraService extends Service {
                 HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
                 for (AudioDeviceInfo addedDevice : addedDevices) {
                     String deviceName = addedDevice.getProductName().toString();
-                    if (!activeInputDeviceList.has(deviceName)) {
+                    if (!activeInputDeviceList.contains(deviceName)) {
                         activeInputDeviceList.add(deviceName);
                         // TODO: localize
                         AtomSpectraLog.addMessage(service_context, String.format("Audio input device added: %s", deviceName));
@@ -404,7 +404,7 @@ public class AtomSpectraService extends Service {
                 for (AudioDeviceInfo removedDevice : removedDevices) {
                     if (removedDevice.isSource()) {
                         String deviceName = removedDevice.getProductName().toString();
-                        if (activeInputDeviceList.has(deviceName)) {
+                        if (activeInputDeviceList.contains(deviceName)) {
                             activeInputDeviceList.remove(deviceName);
                             // TODO: localize
                             AtomSpectraLog.addMessage(service_context, String.format("Audio input device removed: %s", deviceName));
@@ -1834,6 +1834,9 @@ public class AtomSpectraService extends Service {
         if (freeze_update_data) {
             return;
         }
+        if (isRecordingSuspended) {
+            return;
+        }
         if (SetAudioSource == SET_AUDIO_VOICE) {
             AudioSource = AUDIO_SOURCE_VOICE;
             releaseAR();
@@ -1875,10 +1878,16 @@ public class AtomSpectraService extends Service {
                 } else {
                     try {
                         AR.startRecording();
-                        Device device = AR.getRoutedDevice();
-                        if (device != null) {
-                            String deviceName = device.getProductName().toString();
-                            AtomSpectraLog.addMessage(service_context, String.format("Fetching data from audio source: %s", ));
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                            AudioDeviceInfo device = AR.getRoutedDevice();
+                            if (device != null) {
+                                String deviceName = device.getProductName().toString();
+                                // TODO: localize
+                                AtomSpectraLog.addMessage(service_context, String.format("Fetching data from audio source: %s...", deviceName));
+                            }
+                        } else {
+                            // TODO: localize
+                            AtomSpectraLog.addMessage(service_context, "Fetching data from audio source...");
                         }
                     } catch (IllegalStateException e) {
                         AR.release();

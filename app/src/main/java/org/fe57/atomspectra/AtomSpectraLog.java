@@ -39,7 +39,7 @@ public class AtomSpectraLog extends Activity {
     private static boolean active = false;
 
     public static void addMessage(Context context, String message) {
-        synchronized(logSync) {
+        synchronized (logSync) {
             if (log.size() >= MAX_MESSAGES) {
                 log.remove();
             }
@@ -60,9 +60,9 @@ public class AtomSpectraLog extends Activity {
     }
 
     private static void notifyLogUpdated(Context context) {
-      if (context != null) {
-        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
-      }
+        if (context != null) {
+            context.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
+        }
     }
 
     @Override
@@ -149,7 +149,7 @@ public class AtomSpectraLog extends Activity {
                 synchronized (logSync) {
                     for (String message : log) {
                         stringBuilder.append(message);
-                        stringBuilder.append("\n");
+                        stringBuilder.append("\n\n");
                     }
                 }
 
@@ -158,7 +158,7 @@ public class AtomSpectraLog extends Activity {
                     logText = "No records yet";
 
                 }
-                
+
                 logView.setText(logText);
             }
             ScrollView scrollView = findViewById(R.id.logTextScroll);
