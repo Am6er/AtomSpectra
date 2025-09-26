@@ -1411,7 +1411,7 @@ public class AtomSpectraService extends Service {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
                     // showToastInMainLooper("AtomSpectraService -stt answer: " + commandResult, Toast.LENGTH_LONG);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        showToastInMainLooper(context, "-stt command failed", Toast.LENGTH_LONG);
+                        showToastInMainLooper("-stt command failed", Toast.LENGTH_LONG);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
@@ -1538,8 +1538,8 @@ public class AtomSpectraService extends Service {
         Arrays.fill(histogram, 0);
         Arrays.fill(referencePulse, 0);
         ForegroundSpectrum
-            .initSpectrumData(Constants.NUM_HIST_POINTS, Calibration.defaultCalibration(Constants.NUM_HIST_POINTS))
-            .setSuffix(getContextStringOrDefault(R.string.hist_suffix));
+                .initSpectrumData(Constants.NUM_HIST_POINTS, Calibration.defaultCalibration(Constants.NUM_HIST_POINTS))
+                .setSuffix(getContextStringOrDefault(R.string.hist_suffix));
 
         resetSpectrumChangeWindow();
         synchronized (histogram_all_queue) {
@@ -1566,21 +1566,21 @@ public class AtomSpectraService extends Service {
     // method used to start/stop data collecting timers
     private void setFreeze(boolean freeze) {
         if (freeze != freeze_update_data) {
-          String inputTypeText = "none";
-          switch (inputType) {
-            case INPUT_AUDIO:
-              inputTypeText = "audio";
-              break;
-            case INPUT_SERIAL:
-              inputTypeText = "usb";
-              break;
-          }
+            String inputTypeText = "none";
+            switch (inputType) {
+                case INPUT_AUDIO:
+                    inputTypeText = "audio";
+                    break;
+                case INPUT_SERIAL:
+                    inputTypeText = "usb";
+                    break;
+            }
 
-          if (freeze) {
-            AtomSpectraLog.addMessage(String.format("Stop recording (%s)", inputTypeText));
-          } else {
-            AtomSpectraLog.addMessage(String.format("Start recording (%s)", inputTypeText));
-          }
+            if (freeze) {
+                AtomSpectraLog.addMessage(String.format("Stop recording (%s)", inputTypeText));
+            } else {
+                AtomSpectraLog.addMessage(String.format("Start recording (%s)", inputTypeText));
+            }
         }
 
         freeze_update_data = freeze;
@@ -1989,7 +1989,9 @@ public class AtomSpectraService extends Service {
             interval_counts_from_audio = 0;
             Arrays.fill(binned_counts_from_audio, 0);
         }
-    };
+    }
+
+    ;
 
     // finds isotopes and sends data to UI
     // should to be called each second
@@ -2471,7 +2473,9 @@ public class AtomSpectraService extends Service {
         if (service_context != null) {
             service_context.sendBroadcast(intent);
         }
-    };
+    }
+
+    ;
 
     public class LocalBinder extends Binder {
         AtomSpectraService getService() {

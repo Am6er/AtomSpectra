@@ -177,21 +177,22 @@ public class AtomSpectraSpectrogramView extends View {
 			0xFFFFFADC, 0xFFFFFADF, 0xFFFFFAE1, 0xFFFFFBE4, 0xFFFFFBE6, 0xFFFFFCE8, 0xFFFFFCEA, 0xFFFFFDED, 0xFFFFFDEF, 0xFFFFFDF1, 0xFFFFFEF4, 0xFFFFFEF6, 0xFFFFFEF9, 0xFFFFFEFB, 0xFFFFFFFD
 	};
 
-	private int POINT_SIZE_DP = 2;
-	private int TIME_AXIS_WIDTH_DP = 100;
-	private int TIMESTAMP_MARGIN_LEFT_DP = 2;
-	private int TEXT_FONT_SIZE_DP = 11;
-	private int TIMESTAMP_TICK_WIDTH_DP = 8;
-	private int ENERGY_TICK_HEIGHT_DP = 8;
-	private int CHANNEL_AXIS_HEIGHT_DP = 40;
+	private float STROKE_WIDTH_DP = 1.5f;
+	private float POINT_SIZE_DP = 2f;
+	private float TIME_AXIS_WIDTH_DP = 100f;
+	private float TIMESTAMP_MARGIN_LEFT_DP = 2f;
+	private float TEXT_FONT_SIZE_DP = 11f;
+	private float TIMESTAMP_TICK_WIDTH_DP = 8f;
+	private float ENERGY_TICK_HEIGHT_DP = 8f;
+	private float CHANNEL_AXIS_HEIGHT_DP = 40f;
 
-	private int POINT_SIZE_PX = POINT_SIZE_DP;
-	private int TIME_AXIS_WIDTH_PX = TIME_AXIS_WIDTH_DP;
-	private int TIMESTAMP_MARGIN_LEFT_PX = TIMESTAMP_MARGIN_LEFT_DP;
-	private int TEXT_FONT_SIZE_PX = TEXT_FONT_SIZE_DP;
-	private int TIMESTAMP_TICK_WIDTH_PX = TIMESTAMP_TICK_WIDTH_DP;
-	private int ENERGY_TICK_HEIGHT_PX = ENERGY_TICK_HEIGHT_DP;
-	private int CHANNEL_AXIS_HEIGHT_PX = CHANNEL_AXIS_HEIGHT_DP;
+	private int POINT_SIZE_PX = (int)POINT_SIZE_DP;
+	private int TIME_AXIS_WIDTH_PX = (int)TIME_AXIS_WIDTH_DP;
+	private int TIMESTAMP_MARGIN_LEFT_PX = (int)TIMESTAMP_MARGIN_LEFT_DP;
+	private int TEXT_FONT_SIZE_PX = (int)TEXT_FONT_SIZE_DP;
+	private int TIMESTAMP_TICK_WIDTH_PX = (int)TIMESTAMP_TICK_WIDTH_DP;
+	private int ENERGY_TICK_HEIGHT_PX = (int)ENERGY_TICK_HEIGHT_DP;
+	private int CHANNEL_AXIS_HEIGHT_PX = (int)CHANNEL_AXIS_HEIGHT_DP;
 
 	private int TIMESTAMP_EACH_ROWS = 25;
 
@@ -541,7 +542,7 @@ public class AtomSpectraSpectrogramView extends View {
 					paint.setColor(Color.WHITE);
 					paint.setTextSize(TEXT_FONT_SIZE_PX);
 					paint.setStyle(Paint.Style.FILL);
-					paint.setStrokeWidth(1);
+					paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
 					for (int tsIndex = startRow; tsIndex <= endRow; tsIndex++) {
 						int originalRowIndex = tsIndex * spectrumBin + (spectrumBin - 1);
@@ -585,7 +586,7 @@ public class AtomSpectraSpectrogramView extends View {
 				paint.setColor(Color.WHITE);
 				paint.setTextSize(TEXT_FONT_SIZE_PX);
 				paint.setStyle(Paint.Style.FILL);
-				paint.setStrokeWidth(1);
+				paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
 				// energy axis render
 				int energyAxisBaseline = spgViewHeight;
@@ -697,7 +698,7 @@ public class AtomSpectraSpectrogramView extends View {
 		return sdf.format(date);
 	}
 
-	private int dpToPx(int dp) {
+	private int dpToPx(float dp) {
 		return ((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, Resources.getSystem().getDisplayMetrics()));
 	}
 }

@@ -17,40 +17,43 @@ import android.text.SpannableString;
 import android.text.SpannedString;
 import android.text.style.ForegroundColorSpan;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class AtomSpectraLog extends Activity {
     private static final Integer logSync = 1;
     private static final LinkedList<String> log = new LinkedList<>();
     private static final int MAX_MESSAGES = 1000;
+    private static boolean active = false;
 
     public static void addMessage(String message) {
-      syncronized(logSync) {
-        if (log.size() >= MAX_MESSAGES) {
-          log.remove();
+        synchronized(logSync) {
+            if (log.size() >= MAX_MESSAGES) {
+                log.remove();
+            }
+
+            Date now = new Date();
+            log.add(String.format("%s: %s", formatDate(now), message));
         }
-
-        Date now = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
-        sdf.setTimeZone(TimeZone.getDefault());
-
-        log.add(String.format("%s: %s", sdf.format(now), message));
-      }
     }
 
     public static void clear() {
-      synchronized(logSync) {
-        log.clear();
-      }
+        synchronized (logSync) {
+            log.clear();
+        }
     }
-
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -83,13 +86,16 @@ public class AtomSpectraLog extends Activity {
         } else {
             registerReceiver(mDataUpdateReceiver, intentFilter);
         }
+    }
 
+    public void onLogTextClick(View v) {
         renderLog();
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if(item.getItemId() == android.R.id.home){
+        if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
         }
@@ -110,6 +116,14 @@ public class AtomSpectraLog extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        active = true;
+        renderLog();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        active = false;
     }
 
     @Override
@@ -119,17 +133,41 @@ public class AtomSpectraLog extends Activity {
     }
 
     private void renderLog() {
-      TextView logView = findViewById(R.id.logText);
-      if (logView != null) {
-        synchronized(logSync) {
-          StringBuilder stringBuilder = new StringBuilder();
-          for (String message : log) {
-            stringBuilder.append(message);
-            stringBuilder.append("\n");
-          }
-        }
+        if (active) {
+            TextView logView = findViewById(R.id.logText);
+            if (logView != null) {
+                StringBuilder stringBuilder = new StringBuilder();
+                synchronized (logSync) {
+                    for (String message : log) {
+                        stringBuilder.append(message);
+                        stringBuilder.append("\n");
+                    }
+                }
 
-        logView.setText(stringBuilder.toString());
-      }
+                String logText = stringBuilder.toString();
+                if (logText.isEmpty()) {
+                    logText = "No records yet";
+
+                }
+                logText += String.format("\n\nRendered at %s, tap to refresh...", formatDate(new Date()));
+                logView.setText(logText);
+            }
+            ScrollView scrollView = findViewById(R.id.logTextScroll);
+            if (scrollView != null) {
+                scrollView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+                    }
+                });
+            }
+        }
+    }
+
+    private static String formatDate(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getDefault());
+
+        return sdf.format(date);
     }
 }

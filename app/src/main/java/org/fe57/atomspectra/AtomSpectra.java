@@ -2236,6 +2236,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			Intent intent_help = new Intent(this, AtomSpectraHelp.class);
 			startActivity(intent_help);
 			return true;
+		} else if (item.getItemId() == R.id.action_app_version) {
+			Intent intent_log = new Intent(this, AtomSpectraLog.class);
+			startActivity(intent_log);
+			return true;
 		} else if (item.getItemId() == R.id.action_spectrogram_load) {
 			Log.d(TAG, "loading spectrogram file");
 			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {

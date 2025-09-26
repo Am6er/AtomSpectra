@@ -87,7 +87,7 @@
             android:name=".AtomSpectraHelp"
             android:label="@string/help" />
         <activity
-            android:name=".AtomSpectraLog"
+            android:name=".AtomSpectraSpectrogram"
             android:label="@string/spectrogram_activity_title" />
         <activity
             android:name=".AtomSpectraLog"
