@@ -368,8 +368,29 @@
     <string name="dialog_yes_button">Да</string>
     <string name="dialog_no_button">Нет</string>
 
-    <string name="spg_autosave_start">Функция автозаписи дельт включена.</string>
-    <string name="spg_autosave_start_error">ОШИБКА: Не удалось включить функцию автозаписи дельт.</string>
+    <string name="log_no_records">Нет записей</string>
+    <string name="log_recording_suspended">Запись приостановлена</string>
+    <string name="log_recording_resumed">Запись возобновлена</string>
+    <string name="log_audio_input_added">Добавлено устройство аудио входа: %1$s</string>
+    <string name="log_audio_input_removed">Удалено устройство аудио входа: %1$s</string>
+    <string name="log_audio_zero_buffers_detected">Аудио буфер нулевой длины получен несколько раз подряд (%1$d), перезапуск аудио</string>
+    <string name="log_fetching_data_from_audio">Получение данных из аудио входа: %1$s</string>
+    <string name="log_wrong_sens_curve_pref">Не удалось прочесть кривую чувствительности из настроек, используется кривая по умолчанию</string>
+    <string name="log_usb_command_failed">Ошибка выполнения USB команды %1$s</string>
+    <string name="log_usb_command_timeout">Превышено время ожидания выполнения USB команды %1$s</string>
+    <string name="log_usb_device_version_error">Ошибка чтения версии USB устройства</string>
+    <string name="log_usb_device_version_unknown">Неизвестная версия USB устройства</string>
+    <string name="log_usb_watchdog_no_data_triggered">Контроль USB данных: нет данных из USB в течение %1$d секунд. Попытка переподключения и выполнения команды -sta</string>
+    <string name="log_usb_watchdog_unable_open_device">Контроль USB данных: не удалось открыть USB устройство</string>
+    <string name="log_usb_watchdog_device_no_perm">Контроль USB данных: нет доступа к USB устройству</string>
+    <string name="log_usb_watchdog_device_not_found">Контроль USB данных: USB устройство не найдено</string>
+    <string name="log_start_recording">Начало записи (%1$s)</string>
+    <string name="log_stop_recording">Остановка записи (%1$s)</string>
+    <string name="log_no_perm_to_save_spectrum">Нет разрешения сохранить файл спектра (%1$s)</string>
+    <string name="log_spg_no_perm_to_save">Нет разрешения сохранить файл спектрограммы</string>
+    <string name="log_spg_midnight_restart">Перезапуск спектрограммы в полночь</string>
+    <string name="log_spg_autosave_start">Функция автозаписи дельт включена</string>
+    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить функцию автозаписи дельт</string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>
     <string name="isotope_list">Изотопы</string>
@@ -449,7 +470,7 @@
         <item>16</item>
     </string-array>
 
-    <string name="log_activity_title">Atom Spectra Log</string>
+    <string name="log_activity_title">Atom Spectra Журнал</string>
 
     <string name="spectrogram_activity_title">Atom Spectra Спектрограмма</string>
     <string name="spectrogram_menu">Спектрограмма</string>

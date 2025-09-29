@@ -368,8 +368,29 @@
     <string name="dialog_yes_button">Yes</string>
     <string name="dialog_no_button">No</string>
 
-    <string name="spg_autosave_start">Delta auto save function is started.</string>
-    <string name="spg_autosave_start_error">ERROR: Unable to start delta auto save function.</string>
+    <string name="log_no_records">No records</string>
+    <string name="log_recording_suspended">Recording suspended</string>
+    <string name="log_recording_resumed">Recording resumed</string>
+    <string name="log_audio_input_added">Audio input device added: %1$s</string>
+    <string name="log_audio_input_removed">Audio input device removed: %1$s</string>
+    <string name="log_audio_zero_buffers_detected">Zero audio buffer received several times in a row (%1$d), restarting audio</string>
+    <string name="log_fetching_data_from_audio">Fetching data from audio source: %1$s</string>
+    <string name="log_wrong_sens_curve_pref">Unable to load device sensitivity curve from preferences, resetting to default</string>
+    <string name="log_usb_command_failed">%1$s USB command failed</string>
+    <string name="log_usb_command_timeout">%1$s USB command timeout</string>
+    <string name="log_usb_device_version_error">USB device version read error</string>
+    <string name="log_usb_device_version_unknown">USB device version in unknown</string>
+    <string name="log_usb_watchdog_no_data_triggered">USB data watchdog: no data from USB for %1$d seconds. Trying to reconnect and execute -sta command</string>
+    <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
+    <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>
+    <string name="log_usb_watchdog_device_not_found">USB data watchdog: USB device not found</string>
+    <string name="log_start_recording">Start recording (%1$s)</string>
+    <string name="log_stop_recording">Stop recording (%1$s)</string>
+    <string name="log_no_perm_to_save_spectrum">No permission to save spectrum file (%1$s)</string>
+    <string name="log_spg_no_perm_to_save">No permission to save spectrogram file</string>
+    <string name="log_spg_midnight_restart">Restarting spectrogram at midnight</string>
+    <string name="log_spg_autosave_start">Delta auto save function is started</string>
+    <string name="log_spg_autosave_start_error">ERROR: Unable to start delta auto save function</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
     <string name="isotopes_clear_selection">Clear selection</string>

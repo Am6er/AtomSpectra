@@ -368,8 +368,29 @@
     <string name="dialog_yes_button">Oui</string>
     <string name="dialog_no_button">Non</string>
 
-    <string name="spg_autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
-    <string name="spg_autosave_start_error">ERREUR: Impossible de démarrer la fonction de sauvegarde automatique delta.</string>
+    <string name="log_no_records">Aucun enregistrement</string>
+    <string name="log_recording_suspended">Enregistrement suspendu</string>
+    <string name="log_recording_resumed">L\'enregistrement a repris</string>
+    <string name="log_audio_input_added">Périphérique d\'entrée audio ajouté: %1$s</string>
+    <string name="log_audio_input_removed">Périphérique d\'entrée audio supprimé: %1$s</string>
+    <string name="log_audio_zero_buffers_detected">Tampon audio nul reçu plusieurs fois de suite (%1$d), redémarrage de l\'audio</string>
+    <string name="log_fetching_data_from_audio">Récupération de données à partir d\'une source audio: %1$s</string>
+    <string name="log_wrong_sens_curve_pref">Impossible de charger la courbe de sensibilité de l\'appareil à partir des préférences, réinitialisation par défaut</string>
+    <string name="log_usb_command_failed">La commande USB %1$s a échoué</string>
+    <string name="log_usb_command_timeout">Délai d\'expiration de la commande USB %1$s</string>
+    <string name="log_usb_device_version_error">Erreur de lecture de la version du périphérique USB</string>
+    <string name="log_usb_device_version_unknown">Version du périphérique USB inconnue</string>
+    <string name="log_usb_watchdog_no_data_triggered">Surveillance des données USB: aucune donnée USB depuis %1$d secondes. Tentative de reconnexion et d\'exécution de la commande -sta</string>
+    <string name="log_usb_watchdog_unable_open_device">Surveillance des données USB: impossible d\'ouvrir le périphérique USB</string>
+    <string name="log_usb_watchdog_device_no_perm">Surveillance des données USB: aucune autorisation pour le périphérique USB</string>
+    <string name="log_usb_watchdog_device_not_found">Surveillance des données USB: périphérique USB introuvable</string>
+    <string name="log_start_recording">Démarrer l\'enregistrement (%1$s)</string>
+    <string name="log_stop_recording">Arrêter l\'enregistrement (%1$s)</string>
+    <string name="log_no_perm_to_save_spectrum">Aucune autorisation pour enregistrer le fichier de spectre (%1$s)</string>
+    <string name="log_spg_no_perm_to_save">Aucune autorisation pour enregistrer le fichier spectrogramme</string>
+    <string name="log_spg_midnight_restart">Redémarrage du spectrogramme à minuit</string>
+    <string name="log_spg_autosave_start">La fonction de sauvegarde automatique Delta est démarrée.</string>
+    <string name="log_spg_autosave_start_error">ERREUR: Impossible de démarrer la fonction de sauvegarde automatique delta.</string>
 
     <string name="searching_isotopes">Recherche d\'isotopes…</string>
     <string name="isotope_list">Isotopes</string>
@@ -449,7 +470,7 @@
         <item>16</item>
     </string-array>
     
-    <string name="log_activity_title">Atom Spectra Log</string>
+    <string name="log_activity_title">Atom Spectra Journal</string>
 
     <string name="spectrogram_activity_title">Atom Spectra Spectrogramme</string>
     <string name="spectrogram_menu">Spectrogramme</string>

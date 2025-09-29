@@ -368,8 +368,29 @@
     <string name="dialog_yes_button">Ja</string>
     <string name="dialog_no_button">Nein</string>
 
-    <string name="spg_autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
-    <string name="spg_autosave_start_error">FEHLER: Die Delta-Auto-Save-Funktion kann nicht gestartet werden.</string>
+    <string name="log_no_records">Keine Aufzeichnungen</string>
+    <string name="log_recording_suspended">Aufzeichnung ausgesetzt</string>
+    <string name="log_recording_resumed">Aufnahme fortgesetzt</string>
+    <string name="log_audio_input_added">Audioeingabegerät hinzugefügt: %1$s</string>
+    <string name="log_audio_input_removed">Audioeingabegerät entfernt: %1$s</string>
+    <string name="log_audio_zero_buffers_detected">Zero audio buffer received several times in a row (%1$d), restarting audio</string>
+    <string name="log_fetching_data_from_audio">Daten werden von der Audioquelle abgerufen: %1$s</string>
+    <string name="log_wrong_sens_curve_pref">Die Geräteempfindlichkeitskurve kann nicht aus den Einstellungen geladen werden. Auf Standard zurücksetzen</string>
+    <string name="log_usb_command_failed">%1$s USB-Befehl fehlgeschlagen</string>
+    <string name="log_usb_command_timeout">%1$s USB-Befehl-Timeout</string>
+    <string name="log_usb_device_version_error">Fehler beim Lesen der USB-Geräteversion</string>
+    <string name="log_usb_device_version_unknown">USB-Geräteversion unbekannt</string>
+    <string name="log_usb_watchdog_no_data_triggered">USB-Daten-Watchdog: Keine Daten vom USB seit %1$d Sekunden. Versuch, die Verbindung wiederherzustellen und den Befehl -sta auszuführen</string>
+    <string name="log_usb_watchdog_unable_open_device">USB-Daten-Watchdog: USB-Gerät kann nicht geöffnet werden</string>
+    <string name="log_usb_watchdog_device_no_perm">USB-Daten-Watchdog: Keine Berechtigung für USB-Gerät</string>
+    <string name="log_usb_watchdog_device_not_found">USB-Daten-Watchdog: USB-Gerät nicht gefunden</string>
+    <string name="log_start_recording">Start recording (%1$s)</string>
+    <string name="log_stop_recording">Aufnahme beenden (%1$s)</string>
+    <string name="log_no_perm_to_save_spectrum">Keine Berechtigung zum Speichern der Spektrumdatei (%1$s)</string>
+    <string name="log_spg_no_perm_to_save">Keine Berechtigung zum Speichern der Spektrogrammdatei</string>
+    <string name="log_spg_midnight_restart">Neustart des Spektrogramms um Mitternacht</string>
+    <string name="log_spg_autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
+    <string name="log_spg_autosave_start_error">FEHLER: Die Delta-Auto-Save-Funktion kann nicht gestartet werden.</string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
     <string name="isotopes_clear_selection">Auswahl löschen</string>
@@ -449,7 +470,7 @@
         <item>16</item>
     </string-array>
 
-    <string name="log_activity_title">Atom Spectra Log</string>
+    <string name="log_activity_title">Atom Spectra Protokoll</string>
 
     <string name="spectrogram_activity_title">Atom Spectra Spektrogramm</string>
     <string name="spectrogram_menu">Spektrogramm</string>

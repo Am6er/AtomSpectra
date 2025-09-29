@@ -59,6 +59,18 @@ public class AtomSpectraLog extends Activity {
         notifyLogUpdated(context);
     }
 
+    public static String getText() {
+        StringBuilder stringBuilder = new StringBuilder();
+        synchronized (logSync) {
+            for (String message : log) {
+                stringBuilder.append(message);
+                stringBuilder.append("\n\n");
+            }
+        }
+
+        return stringBuilder.toString();
+    }
+
     private static void notifyLogUpdated(Context context) {
         if (context != null) {
             context.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
@@ -145,17 +157,9 @@ public class AtomSpectraLog extends Activity {
         if (active) {
             TextView logView = findViewById(R.id.logText);
             if (logView != null) {
-                StringBuilder stringBuilder = new StringBuilder();
-                synchronized (logSync) {
-                    for (String message : log) {
-                        stringBuilder.append(message);
-                        stringBuilder.append("\n\n");
-                    }
-                }
-
-                String logText = stringBuilder.toString();
+                String logText = getText();
                 if (logText.isEmpty()) {
-                    logText = "No records yet";
+                    logText = getString(R.string.log_no_records);
 
                 }
 
