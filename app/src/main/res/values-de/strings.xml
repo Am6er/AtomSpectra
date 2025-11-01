@@ -587,7 +587,9 @@
         HINWEIS: Die Geräteeinstellungen enthalten eine Empfindlichkeitskurve, die meisten Parameter in „<annotation foreground="parameter">Atom Spectra Einstellungen</annotation>“ und Suchisotopenparameter ohne Bibliothekstyp.\n
         \n
     </string>
-    <string name="help_text_part8"><big><annotation foreground="caption">8. Einstellungen:</annotation></big>\n
+    <string name="help_text_part8"><big><annotation foreground="caption">8. Save/view spectrogram:</annotation></big>\n
+    </string>
+    <string name="help_text_part9"><big><annotation foreground="caption">9. Einstellungen:</annotation></big>\n
         \t- Die Grafik zeigt das Eingangssignal „wie besehen“ oder „Impulsform“. Wählen Sie sie aus, indem Sie nach links/rechts wischen. Wischen Sie nach oben/unten, um das Diagramm zu skalieren.\n
         \t- „Aktivieren Sie die Stapelkorrektur“ - Wählen Sie diese Option, um Impulsstapel zu erkennen. Dieser Parameter versucht, die Impulsform zu kompensieren, wenn der Impuls zu nahe an der vorherigen liegt.\n
         \t- „Verwenden eine rohe Audioquelle“ - Versuchen Sie, unverarbeitetes Audio zu verwenden, das unter Android 7 und höher verfügbar ist. Dieses Kontrollkästchen ist unter Android vor Android 7 deaktiviert, wenn das System die Verwendung von unverarbeitetem Audio nicht zulässt.\n

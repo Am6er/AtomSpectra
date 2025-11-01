@@ -592,8 +592,10 @@
         REMARQUE: les paramètres de l\'appareil contiennent une courbe de sensibilité, la plupart des paramètres dans «\u202f<annotation foreground="parameter">Les Paramètres d\'Atom Spectra</annotation>\u202f» et les paramètres d\'isotope de recherche à l\'exclusion du type de bibliothèque.\n
         \n
     </string>
-    <string name="help_text_part8">
-        <big><annotation foreground="caption">8. Les Paramètres:</annotation></big>\n
+    <string name="help_text_part8"><big><annotation foreground="caption">8. Save/view spectrogram:</annotation></big>\n
+    </string>
+    <string name="help_text_part9">
+        <big><annotation foreground="caption">9. Les Paramètres:</annotation></big>\n
         \t- Le graphique montre le signal d\'entrée «\u202ftel quel\u202f» ou «\u202fforme d\'impulsion\u202f». Sélectionnez-les en glissant vers la gauche/droite. Balayez vers le haut/bas pour mettre à l\'échelle le graphique. Il fonctionne uniquement avec l\'entrée audio et non avec le périphérique «\u202fAtom Nano Pro\u202f».\n
         \t- «\u202fActiver la correction d\'empilement\u202f» - sélectionner pour détecter l\'empilement d\'impulsions. Ce paramètre tente de compenser la forme d\'impulsion si l\'impulsion est trop proche de la précédente.\n
         \t- «\u202fUtiliser une source audio brut\u202f» - essayez d\'utiliser l\'audio non traité disponible sur Android 7 et supérieur. Cette case à cocher est désactivée sur Android avant Android 7 ou si le système ne permet pas d\'utiliser l\'audio non traité.\n

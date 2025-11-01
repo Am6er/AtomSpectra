@@ -2965,7 +2965,7 @@ public class AtomSpectraService extends Service {
                 showToastInMainLooper(R.string.log_spg_autosave_start_error, Toast.LENGTH_LONG);
                 return;
             }
-            spgAutosaveFile = SpectrumFile.prepareOutputStream(this, workingDir, System.currentTimeMillis(), "Spectrogram" + '-' + spgAutosaveSpectrum.getSuffix(), fileNamePrefix, "auto", ".txt", "text/plain", true, true, false);
+            spgAutosaveFile = SpectrumFile.prepareOutputStream(this, workingDir, System.currentTimeMillis(), "Spectrogram" + '-' + spgAutosaveSpectrum.getSuffix(), fileNamePrefix, "", ".txt", "text/plain", true, true, false);
             spgAutosaveFileCreated = new Date();
 
             if (spgAutosaveFile == null) {

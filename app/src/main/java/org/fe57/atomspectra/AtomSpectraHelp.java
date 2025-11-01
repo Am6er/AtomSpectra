@@ -63,6 +63,7 @@ public class AtomSpectraHelp extends Activity {
         renderSection(R.id.helpTextPart6, R.string.help_text_part6, 6);
         renderSection(R.id.helpTextPart7, R.string.help_text_part7, 7);
         renderSection(R.id.helpTextPart8, R.string.help_text_part8, 8);
+        renderSection(R.id.helpTextPart9, R.string.help_text_part9, 9);
 
         try {
             VersionInfo versionInfo = getVersionInfo(this);

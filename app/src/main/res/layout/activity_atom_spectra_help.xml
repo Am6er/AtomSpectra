@@ -100,6 +100,15 @@
                 android:textSize="16sp" />
 
             <TextView
+                android:id="@+id/helpTextPart9"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="vertical"
+                android:text=""
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
                 android:id="@+id/helpTextVersion"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

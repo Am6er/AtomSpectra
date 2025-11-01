@@ -587,8 +587,9 @@
         NOTE: Device settings contain a sensitivity curve, most of the parameters in \'<annotation foreground="parameter">Atom Spectra Settings</annotation>\', and search isotope parameters excluding library type.\n
         \n
     </string>
-    Create new spectrogram file at midnight
-    <string name="help_text_part8"><big><annotation foreground="caption">8. Settings:</annotation></big>\n
+    <string name="help_text_part8"><big><annotation foreground="caption">8. Save/view spectrogram:</annotation></big>\n
+    </string>
+    <string name="help_text_part9"><big><annotation foreground="caption">9. Settings:</annotation></big>\n
         \t- Graph shows \'as-is\' or \'pulse shape\' input signal. Select them by swipe left/right. Swipe up/down to scale the graph.\n
         \t- \'Enable pile-up correction\' - select to detect impulse pile-up. This parameter tries to compensate the impulse form if the impulse is too close to the previous one.\n
         \t- \'Use raw audio source\' - try to use unprocessed audio available on Android 7 and higher. This checkbox is disabled on Android before Android 7 of if the system does not allow to use unprocessed audio.\n
