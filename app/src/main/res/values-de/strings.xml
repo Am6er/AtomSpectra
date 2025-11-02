@@ -196,7 +196,7 @@
     <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spektrum: <xliff:g id="type">%1$s</xliff:g></string>
-    <string name="autosave_timeout">Alle <xliff:g id="duration">%1$d</xliff:g> s speichern</string>
+    <string name="settings_spg_delta_duration">Speichere Delta alle <xliff:g id="duration">%1$d</xliff:g> Sekunden</string>
     <string-array name="compress_graph_array">
         <item>Summe</item>
         <item>Durchschnitt</item>
@@ -389,8 +389,8 @@
     <string name="log_no_perm_to_save_spectrum">Keine Berechtigung zum Speichern der Spektrumdatei (%1$s)</string>
     <string name="log_spg_no_perm_to_save">Keine Berechtigung zum Speichern der Spektrogrammdatei</string>
     <string name="log_spg_midnight_restart">Neustart des Spektrogramms um Mitternacht</string>
-    <string name="log_spg_autosave_start">Delta Auto Save-Funktion wird gestartet.</string>
-    <string name="log_spg_autosave_start_error">FEHLER: Die Delta-Auto-Save-Funktion kann nicht gestartet werden.</string>
+    <string name="log_spg_autosave_start">Die Spektrogrammaufzeichnung wird gestartet.</string>
+    <string name="log_spg_autosave_start_error">FEHLER: Spektrogrammaufzeichnung konnte nicht gestartet werden.</string>
 
     <string name="searching_isotopes">Isotope suchen…</string>
     <string name="isotopes_clear_selection">Auswahl löschen</string>
@@ -492,6 +492,7 @@
         \n
     </string>
     <string name="help_text_part1"><big><annotation foreground="caption">1. Betriebs:</annotation></big>\n
+        \tSpektrumanzeige- und Suchmodi:\n
         \t- Verwenden Sie eine horizontale Prise, um Kanäle/Energien zu skalieren. Nehmen Sie die Finger vom Bildschirm, um eine Prise aufzutragen.\n
         \t- Verwenden Sie eine vertikale Prise, um die Anzahl zu skalieren. Nehmen Sie die Finger vom Bildschirm, um eine Prise aufzutragen.\n
         \t- Verwenden Sie eine diagonale Prise, um Kanäle / Energien zu skalieren und gleichzeitig zu zählen. Nehmen Sie die Finger vom Bildschirm, um eine Prise aufzutragen.\n
@@ -505,6 +506,14 @@
         \t- Verwenden Sie die Schaltfläche „<annotation foreground="parameter">KNI</annotation>“ rechts neben dem Bildschirm, um zwischen den Ausgabemodi Spektrum und Dosisleistung umzuschalten.\n
         \t- Drücken Sie kurz auf „<annotation foreground="parameter">cps</annotation>“ oder auf die Ausgabe der Dosisleistung, um alle zeitlichen Durchschnitts-cps („<i>~cps</i>“) und eine Gesamtsumme anzuzeigen Zeit in Sekunden („<i>Zeit</i>“). Drücken Sie kurz auf „<annotation foreground="parameter">~cps</annotation>“ oder „<annotation foreground="parameter">Zeit</annotation>“, um die Basis- („<i>≈cps</i>“) und Signalpegel („<i>♪cps</i>“) anzuzeigen. Drücken Sie kurz auf „<annotation foreground="parameter">≈cps</annotation>“ oder „<annotation foreground="parameter">♪cps</annotation>“, um die Koordinaten anzuzeigen. Die Koordinaten zeigen die aktuellen Werte während der Spektrumaktualisierung. Sie zeigen die letzte Position an, bevor die Aufzeichnung gestoppt wurde. Sie zeigen die Position der zuletzt gelesenen Datei. Drücken Sie lange auf die Koordinaten, um zu einem Kartenprogramm zu springen. Drücken Sie erneut kurz, um zurückzukehren.\n
         \n
+        \tSpektrogramm-Anzeigemodus:\n
+        \t- Verwenden Sie eine horizontale Prise, um das Spektrogramm horizontal zu skalieren (Kanal/Energie). Nehmen Sie die Finger vom Bildschirm, um die Pinch-Geste auszuführen.\n
+        \t- Verwenden Sie eine vertikale Prise, um das Spektrogramm vertikal zu skalieren (Zeit). Nehmen Sie die Finger vom Bildschirm, um die Pinch-Geste auszuführen.\n
+        \t- Verwenden Sie einen Wisch nach links / rechts, um das Spektrogramm nach links/rechts zu verschieben.\n
+        \t- Verwenden Sie einen Wisch nach oben/unten, um das Spektrogramm nach oben/unten zu verschieben.\n
+        \t- Wählen Sie durch Doppeltippen den linearen, quadratischen oder logarithmischen Modus für die Anzeige der Werteskala (Farbskala) des Spektrogramms.\n
+        \t- Tippen Sie lange, um die Farbpalette des Spektrogramms zu wechseln.\n
+        \n
     </string>
     <string name="help_text_part2"><big><annotation foreground="caption">2. Spektrenausgabe:</annotation></big>\n
         \t- Das Programm kann ein Hauptspektrum, ein Hauptspektrum mit einem Hintergrundspektrum und einen Unterschied zwischen ihnen zeigen. Alle Modi werden im Untermenü „<annotation foreground="parameter">Hintergrund</annotation>“ ausgewählt.\n
@@ -513,8 +522,9 @@
         \t- Sie können Hintergrunddaten im Programm löschen.\n
         \t- Um das Spektrum „wie es ist“ zu sehen, stellen Sie den ADC auf Maximum und zeigen Sie ihn als 1024 Kanäle an. Andere Werte machen das Spektrum und den Hintergrund glatt.\n
         \t- Sie können Spektren glätten oder rückgängig machen, indem Sie „<annotation foreground="parameter">Glatt</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“-Untermenü verwenden.\n
-        \t- Sie können die Zustandsänderung des Spektrums im gleitenden Zeitfenstermodus über „<annotation foreground="parameter">Spektrumsänderung</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrum</annotation>“ anzeigen. Die Größe des gleitenden Fensters kann im Bereich von 1 bis 300 s im Parameter „<annotation foreground="parameter">Differenzzeit</annotation>“ in „<annotation foreground="parameter">Einstellungen</annotation>“ ausgewählt werden. In diesem Modus werden zwei Spektren mit unterschiedlichen Gleitfensterdauern angezeigt: n Sekunden und 4n Sekunden (z. B. 30/120). Die Farbe des kurzen Fensterspektrums (n Sekunden) in diesem Modus ist violett und die des langen (4n Sekunden) grün. Die Linien, die die Gesamtaufnahmezeit und Zählrate des Hauptspektrums anzeigen, werden durch eine Anzeige der Fenstergrößen und Zählraten innerhalb dieser Fenster (kurz/lang) ersetzt.\n
         \t- Während der Cursorausgabe können Sie Beschreibungen für Spektrum und Hintergrund bearbeiten und anzeigen. Diese Beschreibungen werden beim Speichern als Suffix verwendet. Um sie zu ändern, verwenden Sie „<annotation foreground="parameter">Beschreibung eingeben</annotation>“ in einem „<annotation foreground="parameter">Spektrum</annotation>“- oder „<annotation foreground="parameter">Hintergrund</annotation>“-Untermenü.\n
+        \t- Sie können die Zustandsänderung des Spektrums im gleitenden Zeitfenstermodus über „<annotation foreground="parameter">Spektrumsänderung</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrum</annotation>“ anzeigen. Die Größe des gleitenden Fensters kann im Bereich von 1 bis 300 s im Parameter „<annotation foreground="parameter">Differenzzeit</annotation>“ in „<annotation foreground="parameter">Einstellungen</annotation>“ ausgewählt werden. In diesem Modus werden zwei Spektren mit unterschiedlichen Gleitfensterdauern angezeigt: n Sekunden und 4n Sekunden (z. B. 30/120). Die Farbe des kurzen Fensterspektrums (n Sekunden) in diesem Modus ist violett und die des langen (4n Sekunden) grün. Die Linien, die die Gesamtaufnahmezeit und Zählrate des Hauptspektrums anzeigen, werden durch eine Anzeige der Fenstergrößen und Zählraten innerhalb dieser Fenster (kurz/lang) ersetzt.\n
+        \tHINWEIS: Die Verwendung des Modus „<annotation foreground="parameter">Spektrumänderung</annotation>“ führt zu einem erhöhten RAM-Verbrauch.
         \n
     </string>
     <string name="help_text_part3"><big><annotation foreground="caption">3. Energiekalibrierung:</annotation></big>\n
@@ -573,7 +583,7 @@
     </string>
     <string name="help_text_part7"><big><annotation foreground="caption">7. Datenspeicher:</annotation></big>\n
         \t- Sie können das Hauptspektrum speichern, um es später anzuzeigen. Das Spektrum wird in einer eigenen Formatdatei mit dem Namen „<i>Spectrum-date.txt</i>“ gespeichert, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
-        \t- Ein gespeichertes Spektrum kann über das Menü in das Programm geladen werden. Beim Laden des Spektrums wird eine Spektrumaktualisierung automatisch angehalten, aber ein cps und eine Dosisleistung funktionieren weiterhin.\n
+        \t- Ein gespeichertes Spektrum kann über das Menü in das Programm geladen werden. Beim Laden des Spektrums wird eine Spektrumaktualisierung automatisch angehalten.\n
         \t- Das Hauptspektrum kann in einem „<i>.xml</i>“-Format exportiert werden, das mit „BecquerelMonitor“ kompatibel ist. Die Dateien heißen „<i>Bq-date.xml</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen. Wenn der Hintergrund in der Grafik angezeigt wird, wird er auch als Hintergrundspektrum zur Ausgabedatei hinzugefügt.\n
         \t- Das Hauptspektrum kann in einem „<i>.spe</i>“-Format exportiert werden, das mit anderen spektroskopischen Programmen kompatibel ist. Die Dateien heißen „<i>MCA-date.spe</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
         \t- Das Hauptspektrum kann in einem „<i>.N42</i>“-Format exportiert werden, das mit anderen spektroskopischen Programmen kompatibel ist. Die Dateien heißen „<i>MCA-date.N42</i>“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
@@ -581,15 +591,24 @@
         \t- Das Hauptspektrum kann in einem „<i>.csv</i>“-Format mit einer „;“ Aufteilung zwischen Feldern mit einer mit „<i>Microsoft Excel</i>“ kompatiblen Energiespalte exportiert werden. Die Dateien heißen „Export-date.csv“, wobei „date“ das aktuelle Datum ist. Sie können ein Suffix nach dem Datum als Notiz hinzufügen.\n
         \t- Die Namen der Ausgabedateien können unter „<annotation foreground="parameter">Name</annotation>“ in den „<annotation foreground="parameter">Einstellungen</annotation>“ geändert werden. Präfix, Datum oder Zeit können unabhängig voneinander entfernt werden.\n
         \t- Der Hintergrund wird in einer einzelnen Datei mit dem Namen „<i>Background</i>“ gespeichert und von dieser oder einer anderen Datei geladen. Sie können es auch in das Hauptspektrum laden und dann in den Hintergrund verschieben. Hinweis: Sie können Hintergrund nur speichern, wenn Sie Hintergrunddaten haben, andernfalls wird der Menübefehl deaktiviert.\n
-        \t- Sie können die Spektrumaktualisierung stoppen, indem Sie in einem Hauptmenü oder in einer Verknüpfungsleiste „<annotation foreground="parameter">Aufnahme anhalten</annotation>“ auswählen. Nach der Auswahl wechselt es zu „<annotation foreground="parameter">Aufnahme fortsetzen</annotation>“. Alle während der Pause empfangenen Impulse gehen verloren. Dieser Modus stoppt cps und die Berechnung der Dosisleistung nicht.\n
+        \t- Sie können die Spektrumaktualisierung stoppen, indem Sie in einem Hauptmenü oder in einer Verknüpfungsleiste „<annotation foreground="parameter">Aufnahme anhalten</annotation>“ auswählen. Nach der Auswahl wechselt es zu „<annotation foreground="parameter">Aufnahme fortsetzen</annotation>“. Alle während der Pause empfangenen Impulse gehen verloren.\n
         \t- Jede gespeicherte Datei kann über ein anderes Programm mit dem Menüpunkt „<annotation foreground="parameter">Datei freigeben</annotation>“ an ein anderes Programm, einen anderen Benutzer oder über das Internet gesendet werden.\n
         \t- Geräteeinstellungen können über das „<annotation foreground="parameter">Save device…</annotation>“ im „<annotation foreground="parameter">Gerät</annotation>“-Untermenü in einem gespeichert werden Format „<i>.txt</i>“. Gerätedaten werden in einer eigenen Formatdatei mit dem Namen „<i>Device-Suffix.txt</i>“ gespeichert, wobei „Suffix“ festgelegt werden kann oder ein Datum sein kann, wenn es leer ist. Gespeicherte Geräteeinstellungen können über das Untermenü „<annotation foreground="parameter">Gerät laden…</annotation>“ im Untermenü „<annotation foreground="parameter">Gerät</annotation>“ in das Programm geladen werden.\n
-        HINWEIS: Die Geräteeinstellungen enthalten eine Empfindlichkeitskurve, die meisten Parameter in „<annotation foreground="parameter">Atom Spectra Einstellungen</annotation>“ und Suchisotopenparameter ohne Bibliothekstyp.\n
+        \tHINWEIS: Die Geräteeinstellungen enthalten eine Empfindlichkeitskurve, die meisten Parameter in „<annotation foreground="parameter">Atom Spectra Einstellungen</annotation>“ und Suchisotopenparameter ohne Bibliothekstyp.\n
         \n
     </string>
-    <string name="help_text_part8"><big><annotation foreground="caption">8. Save/view spectrogram:</annotation></big>\n
+    <string name="help_text_part8"><big><annotation foreground="caption">8. Speichern und Anzeigen von Spektrogrammen:</annotation></big>\n
+        \tEin Delta ist die Differenz zwischen zwei aufeinanderfolgenden Zuständen des aufgenommenen Spektrums. Ein Spektrogramm ist eine Liste, die aus einer Sequenz von Deltas des aufgenommenen Spektrums besteht. Somit ermöglicht ein Spektrogramm die Untersuchung der Dynamik von Spektrumänderungen im Zeitverlauf.\n
+        \t- Um ein Spektrogramm mit einem festgelegten Zeitintervall (Delta-Dauer) zu speichern, setzen Sie das Aufnahmeintervall im Parameter „<annotation foreground="parameter">Speichere Delta alle N Sekunden</annotation>“ auf einen Wert größer als null. Jedes Mal, wenn eine Spektrumsaufnahme beginnt, wird ein neues Spektrogramm erstellt. Der Dateiname des Spektrogramms folgt dem Muster „Spectrogram-'Spektrumbeschreibung'-'Datum_Uhrzeit_des-Aufnahmebeginns'.txt\n
+        \t- Sie können das aktuell aufgezeichnete Spektrogramm über den Befehl „<annotation foreground="parameter">Sicht</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrogramm</annotation>“ anzeigen. Die erste Zeile des Spektrogramms erscheint nach zwei Aufnahmeintervallen.\n
+        \t- Sie können ein zuvor aufgezeichnetes Spektrogramm mit dem Befehl „<annotation foreground="parameter">Laden von…</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrogramm</annotation>“ anzeigen.\n
+        \t- Um Spektrogramme rund um die Uhr aufzuzeichnen, gibt es die Option „<annotation foreground="parameter">Erstellen Sie um Mitternacht eine neue Spektrogrammdatei</annotation>“, mit der Sie die Größe der aufgezeichneten Dateien begrenzen können.\n
+        \t- Beim Speichern von Spektrogrammen werden die vollständigen Daten aller 8192 Spektrumkanäle aufgezeichnet. Bei der Anzeige werden die Spektrogrammdaten auf 512 Kanäle komprimiert.\n
+        \tHINWEIS: Die Verwendung des Spektrogramm-Aufzeichnungsmodus führt zu einem erhöhten RAM-Verbrauch.\n
+        \n
     </string>
     <string name="help_text_part9"><big><annotation foreground="caption">9. Einstellungen:</annotation></big>\n
+        \tAudioverarbeitung:\n
         \t- Die Grafik zeigt das Eingangssignal „wie besehen“ oder „Impulsform“. Wählen Sie sie aus, indem Sie nach links/rechts wischen. Wischen Sie nach oben/unten, um das Diagramm zu skalieren.\n
         \t- „Aktivieren Sie die Stapelkorrektur“ - Wählen Sie diese Option, um Impulsstapel zu erkennen. Dieser Parameter versucht, die Impulsform zu kompensieren, wenn der Impuls zu nahe an der vorherigen liegt.\n
         \t- „Verwenden eine rohe Audioquelle“ - Versuchen Sie, unverarbeitetes Audio zu verwenden, das unter Android 7 und höher verfügbar ist. Dieses Kontrollkästchen ist unter Android vor Android 7 deaktiviert, wenn das System die Verwendung von unverarbeitetem Audio nicht zulässt.\n
@@ -598,38 +617,47 @@
         \t- „Min. Frontpunkte“ and „Max. Frontpunkte“ - minimale und maximale Länge in Zählungen der zu erfassenden Impulsfront. Gelbe Punkte in der Grafik zeigen die minimal erforderliche Länge an der Impulsfront, grüne Punkte zeigen eine akzeptable Länge der Impulsfront zwischen der minimalen und maximalen Anzahl von Zählungen. Die Standardparameter sind für alle <u>AtomSpectra</u>-Geräte optimal.\n
         \t- „ADC ist gerundet auf“ - Anzahl der zu verwendenden oberen ADC-Bits.\n
         \n
+        \tSpektrum:\n
         \t- „Zeigen als“ - Komprimierungsspektrum auf diese Anzahl von Punkten angezeigt. Das Programm reduziert den 1024-Kanal des Spektrums oder die Dosisleistung auf die ausgewählte Zahl und zeigt sie in der Grafik an, um die Ausgabe zu beschleunigen.\n
         \t- „Geräuschdiskriminator“ - Registrieren Sie keine Kanäle unterhalb dieser Nummer, um verrauschte Kanäle auszuschließen.\n
         \t- „Maximaler Grad“ - maximaler Polnomfaktor für die Kalibrierfunktion\n
         \t- „Glätte“ - Wählen Sie ein Echtzeit-Glattheitsfenster.\n
         \t- „Spektrum“ - Wählen Sie während der Wertekomprimierung den Summen-, Spitzen- oder Durchschnittswert im Spektraldiagramm. Spitzenwerte helfen dabei, kleine Spitzen nicht zu verlieren. Die Mittelwertbildung ergibt ein richtiges Diagramm. Die Summe zeigt das Gespenst, da das Gerät weniger Kanäle hat.\n
         \n
+        \tSpektrumänderung:\n
         \t- „Differenzzeit“ - Wählen Sie die Dauer des gleitenden Fensters im Spektrumänderungsmodus.\n
         \n
-        \t- „Erstellen Sie um Mitternacht eine neue Spektrogrammdatei“ - Wenn die Delta-Autosave-Funktion aktiviert ist, wird jeden Tag um Mitternacht eine neue Spektrogrammdatei erstellt.\n
-        \t- „Alle N s speichern“ - die Funktion zum automatischen Speichern von Deltadateien. 0 - keine automatische Speicherung.\n
+        \tSpektrogramm:\n
+        \t- „Erstellen Sie um Mitternacht eine neue Spektrogrammdatei“ - wenn die Spektrogrammaufzeichnung aktiviert ist, wird jeden Tag um Mitternacht eine neue Spektrogrammdatei erstellt.\n
+        \t- „Speichere Delta alle N Sekunden“ - aktiviert die Spektrogrammaufzeichnung während der Spektrumserfassung; der Wert definiert die Spektrums-Delta-Dauer in Sekunden. 0 - Spektrogrammaufzeichnung deaktiviert.\n
         \n
-\t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
+        \tDosisleistung:\n
+        \t- „Empf“ - Kalibrierwert für die Dosisleistungsberechnung. Der Wert muss selbst angepasst werden, um den richtigen Dosisleistungswert anzuzeigen.\n
         \t- „Empf(kompensiert)“ - Kalibrierungswert für die Berechnung der kompensierten Dosisleistung. Der Wert muss selbst angepasst werden, um den richtigen kompensierten Dosisleistungswert anzuzeigen.\n
         \t- „HintZähl“ - Rauschzahl von einer einfachen Dosisleistungsberechnung abgezogen.\n
         \t- „S“, „M“, „L“ - zählt für die Mittelung der schnellen, mittleren und langsamen Dosisleistung.\n
         \t- „Grafikaktualisierungshäufigkeit, s⁻¹“ - Programmaktualisierungshäufigkeit der Dosisleistung und der Spektrumsdaten pro Sekunde.\n
         \n
+        \tIntervallsuche:\n
         \t- „Tonalarm“ - Es macht einen Ton entsprechend der cps-Stufe. Der Basispegel wird anhand des cps-Werts in den letzten 5 Sekunden berechnet. Der Pegel kann nach Löschen des Spektrums oder durch Drücken der Taste „<annotation foreground="parameter">≈</annotation>“ neu berechnet werden. Sie können das gewünschte Energieintervall in keV auswählen (A-B), auf das Sie achten müssen. Der Zählratenwert des ausgewählten Intervalls wird in Klammern hinter dem vollen Zählratenwert angezeigt.\n
         \t- „Sound:“ - gewünschte Tonausgabe. Drücken Sie auf Text, um die nächste Ausgabe auszuwählen.\n
         \n
+        \tAtomSwift-Integration:\n
         \t- „Senden Sie Daten an die AtomSwift-Anwendung“ - Senden Sie Dosis-/Zählratendaten an die AtomSwift-Anwendung (mit der Sie Karten mit Ihrem Spektrometer erstellen können). Verwendung: Spektrometer anschließen, Starttaste drücken, Option aktivieren, AtomSwift-Anwendung ausführen, AtomSpectraApp in der Geräteliste auswählen. Die minimal unterstützte Version von AtomSwift ist 1.4.250.\n
         \t- „AtomSwift D“ - Wählen Sie aus, welcher Dosisleistungswert an die AtomSwift-Anwendung gesendet wird. Für die Suche/Karten wird die Option „Nicht kompensiert“ empfohlen, es sei denn, Sie benötigen ausdrücklich eine Kompensation und wissen, wie Sie die Empfindlichkeitskurve konfigurieren.\n
         \n
+        \tSuche nach Isotopen:\n
         \t- „Automatische Suche nach Isotopen“ - Isotope in einem Spektrum automatisch finden und anzeigen.\n
         \n
+        \tDateien:\n
         \t- „Arbeitsverzeichnis“ - Wählen Sie den Zielordner für alle Dateien. Wenn <u>...</u> für Android 8 und höher angezeigt wird, werden Sie nach einem Zielverzeichnis gefragt. Oder Sie drücken <u>...</u> (oder den angezeigten Namen), um den gewünschten Ort manuell auszuwählen. Unter Android vor 8 kann dieser Parameter nicht geändert werden. Wenn weiterhin <u>...</u> angezeigt wird, erstellen Sie den Ordner <u>AtomSpectra</u> im Stammverzeichnis des ersten Speichers (normalerweise des Telefonspeichers) selbst und starten Sie das Programm neu.\n
         \t- „Fügen Dateien GPS-Koordinaten hinzu“ - Hinzufügen von GPS-Informationen zu Ausgabedateien (Spektrum, Hintergrund und CSV).\n
         \t- „Kanäle speichern“ - Wie viele Kanäle aus dem Spektrum sollen exportiert werden? Hinweis: Das eigene Format speichert alle Daten.\n
         \t- „Kanäle laden“ - Wie viele Kanäle aus der alten Spektrumdatei sollen geladen werden? Wenn mehr als 8192 Kanäle vorhanden sind, werden diese auf 8192 Kanäle oder weniger komprimiert. Hinweis: Das neue eigene Format hat die Kanalnummer selbst.\n
         \t- „Kanalkomprimierung“ - Reduzieren Sie die Anzahl der Exportkanäle, indem Sie den eingestellten Wert der Kanäle in einem Kanal kombinieren.\n
-        \t- „Name“ - Benennen der Ausgabedateien. Präfix – Dateityp, Datum – Aufnahmedatum, Zeit – Aufnahmezeit, Suffix – benutzerdefinierter Text.\n
+        \t- „Name“ - Benennen der Ausgabedateien. Präfix - Dateityp, Datum - Aufnahmedatum, Zeit - Aufnahmezeit, Suffix - benutzerdefinierter Text.\n
         \n
+        \tVerschiedenes:\n
         \t- „Language“ - Wählen Sie eine Programmsprache aus. Zur vollständigen Anwendung muss das Programm neu gestartet werden.\n
         \n
     </string>

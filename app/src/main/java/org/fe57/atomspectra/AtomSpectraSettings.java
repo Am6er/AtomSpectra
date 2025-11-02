@@ -202,7 +202,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mTextField.setText(getString(R.string.channel_compression_format, sp.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));
         mTextField = findViewById(R.id.localeText);
         TextView mDataField = findViewById(R.id.autosaveNameText);
-        mDataField.setText(getString(R.string.autosave_timeout, sp.getInt(Constants.CONFIG.CONF_SPG_INTERVAL, Constants.SPG_INTERVAL_DEFAULT)));
+        mDataField.setText(getString(R.string.settings_spg_delta_duration, sp.getInt(Constants.CONFIG.CONF_SPG_INTERVAL, Constants.SPG_INTERVAL_DEFAULT)));
         int r = sp.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
         r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
         mTextField.setText(String.format(Locale.US,"Language: %s", Constants.LOCALES[r]));
@@ -1512,7 +1512,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         prefEditor.apply();
 
         TextView mDataField = findViewById(R.id.autosaveNameText);
-        mDataField.setText(getString(R.string.autosave_timeout, val));
+        mDataField.setText(getString(R.string.settings_spg_delta_duration, val));
     }
 
     public void onClick_autosaveName_plus(View v) {
@@ -1529,7 +1529,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         prefEditor.apply();
 
         TextView mDataField = findViewById(R.id.autosaveNameText);
-        mDataField.setText(getString(R.string.autosave_timeout, val));
+        mDataField.setText(getString(R.string.settings_spg_delta_duration, val));
     }
 
     public void onClick_compression_minus(View v) {
