@@ -509,8 +509,8 @@
         \tSpektrogramm-Anzeigemodus:\n
         \t- Verwenden Sie eine horizontale Prise, um das Spektrogramm horizontal zu skalieren (Kanal/Energie). Nehmen Sie die Finger vom Bildschirm, um die Pinch-Geste auszuführen.\n
         \t- Verwenden Sie eine vertikale Prise, um das Spektrogramm vertikal zu skalieren (Zeit). Nehmen Sie die Finger vom Bildschirm, um die Pinch-Geste auszuführen.\n
-        \t- Verwenden Sie einen Wisch nach links / rechts, um das Spektrogramm nach links/rechts zu verschieben.\n
-        \t- Verwenden Sie einen Wisch nach oben/unten, um das Spektrogramm nach oben/unten zu verschieben.\n
+        \t- Durch Wischen nach links/rechts entlang der Energie-/Kanalachse des Spektrogramms kann das Spektrogramm nach links/rechts verschoben werden.\n
+        \t- Verwenden Sie eine Wischbewegung nach oben/unten entlang der Zeitachse des Spektrogramms, um das Spektrogramm nach oben/unten zu verschieben.\n
         \t- Wählen Sie durch Doppeltippen den linearen, quadratischen oder logarithmischen Modus für die Anzeige der Werteskala (Farbskala) des Spektrogramms.\n
         \t- Tippen Sie lange, um die Farbpalette des Spektrogramms zu wechseln.\n
         \n
@@ -599,7 +599,7 @@
     </string>
     <string name="help_text_part8"><big><annotation foreground="caption">8. Speichern und Anzeigen von Spektrogrammen:</annotation></big>\n
         \tEin Delta ist die Differenz zwischen zwei aufeinanderfolgenden Zuständen des aufgenommenen Spektrums. Ein Spektrogramm ist eine Liste, die aus einer Sequenz von Deltas des aufgenommenen Spektrums besteht. Somit ermöglicht ein Spektrogramm die Untersuchung der Dynamik von Spektrumänderungen im Zeitverlauf.\n
-        \t- Um ein Spektrogramm mit einem festgelegten Zeitintervall (Delta-Dauer) zu speichern, setzen Sie das Aufnahmeintervall im Parameter „<annotation foreground="parameter">Speichere Delta alle N Sekunden</annotation>“ auf einen Wert größer als null. Jedes Mal, wenn eine Spektrumsaufnahme beginnt, wird ein neues Spektrogramm erstellt. Der Dateiname des Spektrogramms folgt dem Muster „Spectrogram-'Spektrumbeschreibung'-'Datum_Uhrzeit_des-Aufnahmebeginns'.txt\n
+        \t- Um ein Spektrogramm mit einem festgelegten Zeitintervall (Delta-Dauer) zu speichern, setzen Sie das Aufnahmeintervall im Parameter „<annotation foreground="parameter">Speichere Delta alle N Sekunden</annotation>“ auf einen Wert größer als null. Jedes Mal, wenn eine Spektrumsaufnahme beginnt, wird ein neues Spektrogramm erstellt. Der Dateiname des Spektrogramms folgt dem Muster „Spectrogram-\'Spektrumbeschreibung\'-\'Datum_Uhrzeit_des-Aufnahmebeginns\'.txt\n
         \t- Sie können das aktuell aufgezeichnete Spektrogramm über den Befehl „<annotation foreground="parameter">Sicht</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrogramm</annotation>“ anzeigen. Die erste Zeile des Spektrogramms erscheint nach zwei Aufnahmeintervallen.\n
         \t- Sie können ein zuvor aufgezeichnetes Spektrogramm mit dem Befehl „<annotation foreground="parameter">Laden von…</annotation>“ im Untermenü „<annotation foreground="parameter">Spektrogramm</annotation>“ anzeigen.\n
         \t- Um Spektrogramme rund um die Uhr aufzuzeichnen, gibt es die Option „<annotation foreground="parameter">Erstellen Sie um Mitternacht eine neue Spektrogrammdatei</annotation>“, mit der Sie die Größe der aufgezeichneten Dateien begrenzen können.\n
