@@ -706,6 +706,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
         });
         alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1145,6 +1146,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             stopRecording();
         });
         alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1252,11 +1254,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             SharedPreferences.Editor prefEditor = settings.edit();
             prefEditor.putInt(Constants.CONFIG.CONF_SAVE_CHANNELS, intValue);
             prefEditor.apply();
-
-
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1328,11 +1328,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             SharedPreferences.Editor prefEditor = settings.edit();
             prefEditor.putInt(Constants.CONFIG.CONF_LOAD_CHANNELS, intValue);
             prefEditor.apply();
-
-
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1601,9 +1599,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             prefEditor.putInt(Constants.CONFIG.CONF_COMPRESSION, intValue);
             prefEditor.apply();
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-            // comment
-        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1763,6 +1760,27 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
         }
         return returnvalue;
+    }
+
+    private static void closeKeyboard(final View view) {
+        caller.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+        }, 1);
+    }
+
+    private void closeKeyboard() {
+        View view = getActivity().getCurrentFocus();
+        if (view != null) {
+            closeKeyboard(view);
+        }
+    }
+
+    private void closeKeyboardOnAlertDismiss(AlertDialog.Builder alertDialog) {
+        alertDialog.setOnDismissListener(dialog -> closeKeyboard());
     }
 
     private GestureDetector initGestureDetector() {
