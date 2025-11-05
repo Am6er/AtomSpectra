@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.text.InputType;
 import android.text.method.NumberKeyListener;
@@ -32,6 +33,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -43,6 +45,7 @@ import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -664,12 +667,12 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             @NonNull
             @Override
             protected char[] getAcceptedChars() {
-                return new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ',', '-'};
+                return new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.'};
             }
 
             @Override
             public int getInputType() {
-                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_VARIATION_NORMAL;
+                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_VARIATION_NORMAL;
             }
         });
         input.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -1762,21 +1765,17 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         return returnvalue;
     }
 
-    private static void closeKeyboard(final View view) {
-        caller.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-            }
-        }, 1);
-    }
-
     private void closeKeyboard() {
-        View view = getActivity().getCurrentFocus();
-        if (view != null) {
-            closeKeyboard(view);
-        }
+        // commented out as works not in all cases
+//        new Handler().postDelayed(() -> {
+//            View view = getCurrentFocus();
+//            if (view == null) {
+//                view = new View(this.getApplicationContext());
+//            }
+//
+//            InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+//            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+//        }, 100);
     }
 
     private void closeKeyboardOnAlertDismiss(AlertDialog.Builder alertDialog) {
