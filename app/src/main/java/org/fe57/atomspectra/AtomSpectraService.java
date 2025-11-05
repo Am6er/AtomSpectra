@@ -785,38 +785,70 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private final Timer spgAutosaveTimer = new Timer();
-    private final TimerTask spgAutosaveTask = new TimerTask() {
-        @Override
-        public void run() {
-            synchronized (spgAutosaveTimer) {
-                if (spgInterval > 0) {
-                    if (!freeze_update_data) {
-                        spgTimerIncrement += 1;
-                        if (spgTimerIncrement >= spgInterval) {
-                            createOrUpdateSpectrogramFile();
-                            spgTimerIncrement = 0;
+    private final Integer spgAutosaveSync = 1;
+    private Timer spgAutosaveTimer;
+    private void startSpgAutosaveTimer() {
+        synchronized (spgAutosaveSync) {
+            if (spgAutosaveTimer != null) {
+                // TODO: localize
+                String message = "ERROR: trying to start spectrogram recording while recording is already in progress";
+                showToastInMainLooper(message, Toast.LENGTH_LONG);
+                AtomSpectraLog.addMessage(service_context, message);
+                return;
+            }
+
+            spgAutosaveTimer = new Timer();
+            TimerTask spgAutosaveTask = new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (spgAutosaveSync) {
+                        if (spgInterval > 0) {
+                            if (!freeze_update_data) {
+                                spgTimerIncrement += 1;
+                                if (spgTimerIncrement >= spgInterval) {
+                                    createOrUpdateSpectrogramFile();
+                                    spgTimerIncrement = 0;
+                                }
+                            } else {
+                                spgTimerIncrement = 0;
+                                closeSpectrogramFile();
+                            }
                         }
-                    } else {
-                        spgTimerIncrement = 0;
-                        closeSpectrogramFile();
                     }
                 }
-            }
+            };
+
+            spgTimerIncrement = 0;
+            spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, 0, 1000);
+            createOrUpdateSpectrogramFile();
         }
-    };
+    }
+
+    private void stopSpgAutosaveTimer() {
+        synchronized (spgAutosaveSync) {
+            if (spgAutosaveTimer != null) {
+                spgAutosaveTimer.cancel();
+                spgAutosaveTimer.purge();
+                spgAutosaveTimer = null;
+            }
+
+            closeSpectrogramFile();
+        }
+    }
 
     private void closeSpectrogramFile() {
-        spgAutosaveSpectrum = null;
-        if (spgAutosaveFile != null) {
-            try {
-                spgAutosaveFile.first.close();
-            } catch (IOException e) {
-                //
+        synchronized (spgAutosaveSync) {
+            spgAutosaveSpectrum = null;
+            if (spgAutosaveFile != null) {
+                try {
+                    spgAutosaveFile.first.close();
+                } catch (IOException e) {
+                    //
+                }
             }
+            spgAutosaveFile = null;
+            spgAutosaveFileCreated = null;
         }
-        spgAutosaveFile = null;
-        spgAutosaveFileCreated = null;
     }
 
     //Audio input data
@@ -925,7 +957,6 @@ public class AtomSpectraService extends Service {
             showToastInMainLooper(R.string.no_audio_available, Toast.LENGTH_LONG);
         }
 
-        spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, 0, 1000);
         alarmTimer.scheduleAtFixedRate(alarmTimerTask, Constants.UPDATE_PERIOD, Constants.UPDATE_PERIOD);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -1490,8 +1521,8 @@ public class AtomSpectraService extends Service {
         Log.d(TAG, "recording Stop");
         stopCapturingAudioSource();
         cancelUsbDataWatchdog();
+        stopSpgAutosaveTimer();
         alarmTimer.cancel();
-        spgAutosaveTimer.cancel();
         usbDevice.Close();
         usbDevice.Destroy();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
@@ -1532,7 +1563,7 @@ public class AtomSpectraService extends Service {
         if (inputType == INPUT_SERIAL) {
             usbDevice.ClearHistogram();
         }
-        synchronized (spgAutosaveTimer) {
+        synchronized (spgAutosaveSync) {
             closeSpectrogramFile();
         }
         AtomSpectraSpectrogramData.instance.clear();
@@ -1621,6 +1652,11 @@ public class AtomSpectraService extends Service {
             resetSearchWindow();
             resetSpectrumChangeWindow();
             resetRecordingSuspendedStatus(false);
+            stopSpgAutosaveTimer();
+        } else {
+            if (spgInterval > 0) {
+                startSpgAutosaveTimer();
+            }
         }
 
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
