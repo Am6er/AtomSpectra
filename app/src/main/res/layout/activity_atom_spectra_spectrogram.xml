@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:orientation="vertical"
+    tools:context=".AtomSpectraSpectrogram">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="2dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textViewRowCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/spectrogram_row_count"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/textViewSpcBinValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="↕bin:1x"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/textViewChBinValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="↔bin:1x"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/textViewSpgScale"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="sqrt"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/textViewSpgPalette"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="right"
+            android:text="iron"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <org.fe57.atomspectra.AtomSpectraSpectrogramView
+        android:id="@+id/viewSpectrogram"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout>

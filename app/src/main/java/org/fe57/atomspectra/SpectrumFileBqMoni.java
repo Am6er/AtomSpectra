@@ -1,20 +1,16 @@
 package org.fe57.atomspectra;
 
 import android.content.Context;
-import android.util.Log;
-import android.widget.GridLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class SpectrumFileBqMoni extends SpectrumFile {
     @Override
@@ -45,7 +41,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
         } catch (Exception e) {
             return false;
         }
-        for (int i = 0; i < spectrumNumber(); i++) {
+        for (int i = 0; i < spectrumCount(); i++) {
             spectrum = spectrumList.get(i);
             dateNow = new GregorianCalendar(Locale.US);
             if (spectrum.getSpectrumDate() != 0) {
@@ -214,7 +210,12 @@ public class SpectrumFileBqMoni extends SpectrumFile {
     }
 
     @Override
-    public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) {
+        return false;
+    }
+
+    @Override
+    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         return false;
     }
 }

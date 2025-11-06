@@ -4,15 +4,14 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import java.io.BufferedWriter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public class SpectrumFileSPE extends SpectrumFile {
     @Override
@@ -23,7 +22,7 @@ public class SpectrumFileSPE extends SpectrumFile {
     @Override
     public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         //We just save the only one spectrum
-        if (spectrumNumber() != 1 || backgroundSpectrum != null)
+        if (spectrumCount() != 1 || backgroundSpectrum != null)
             return false;
 
         GregorianCalendar dateNow = new GregorianCalendar(Locale.US);
@@ -186,7 +185,12 @@ public class SpectrumFileSPE extends SpectrumFile {
     }
 
     @Override
-    public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
+    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) {
+        return false;
+    }
+
+    @Override
+    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
         return false;
     }
 }

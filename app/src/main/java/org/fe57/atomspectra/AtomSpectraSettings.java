@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.text.InputType;
 import android.text.method.NumberKeyListener;
@@ -32,6 +33,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -43,6 +45,7 @@ import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -87,7 +90,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         if (r > 0) {
             lang = Constants.LOCALES_ID[r];
         }
-        super.attachBaseContext(MyContextWrapper.wrap(newBase, lang));
+        super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
     @Override
@@ -202,7 +205,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mTextField.setText(getString(R.string.channel_compression_format, sp.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));
         mTextField = findViewById(R.id.localeText);
         TextView mDataField = findViewById(R.id.autosaveNameText);
-        mDataField.setText(getString(R.string.autosave_timeout, sp.getInt(Constants.CONFIG.CONF_SPG_INTERVAL, Constants.SPG_INTERVAL_DEFAULT)));
+        mDataField.setText(getString(R.string.settings_spg_delta_duration, sp.getInt(Constants.CONFIG.CONF_SPG_INTERVAL, Constants.SPG_INTERVAL_DEFAULT)));
         int r = sp.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
         r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
         mTextField.setText(String.format(Locale.US,"Language: %s", Constants.LOCALES[r]));
@@ -664,12 +667,12 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             @NonNull
             @Override
             protected char[] getAcceptedChars() {
-                return new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', ',', '-'};
+                return new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.'};
             }
 
             @Override
             public int getInputType() {
-                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_VARIATION_NORMAL;
+                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_VARIATION_NORMAL;
             }
         });
         input.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -706,6 +709,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
         });
         alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1145,6 +1149,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             stopRecording();
         });
         alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1252,11 +1257,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             SharedPreferences.Editor prefEditor = settings.edit();
             prefEditor.putInt(Constants.CONFIG.CONF_SAVE_CHANNELS, intValue);
             prefEditor.apply();
-
-
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1328,11 +1331,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             SharedPreferences.Editor prefEditor = settings.edit();
             prefEditor.putInt(Constants.CONFIG.CONF_LOAD_CHANNELS, intValue);
             prefEditor.apply();
-
-
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1512,7 +1513,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         prefEditor.apply();
 
         TextView mDataField = findViewById(R.id.autosaveNameText);
-        mDataField.setText(getString(R.string.autosave_timeout, val));
+        mDataField.setText(getString(R.string.settings_spg_delta_duration, val));
     }
 
     public void onClick_autosaveName_plus(View v) {
@@ -1529,7 +1530,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         prefEditor.apply();
 
         TextView mDataField = findViewById(R.id.autosaveNameText);
-        mDataField.setText(getString(R.string.autosave_timeout, val));
+        mDataField.setText(getString(R.string.settings_spg_delta_duration, val));
     }
 
     public void onClick_compression_minus(View v) {
@@ -1601,9 +1602,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             prefEditor.putInt(Constants.CONFIG.CONF_COMPRESSION, intValue);
             prefEditor.apply();
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-            // comment
-        });
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
 
@@ -1763,6 +1763,23 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
         }
         return returnvalue;
+    }
+
+    private void closeKeyboard() {
+        // commented out as works not in all cases
+//        new Handler().postDelayed(() -> {
+//            View view = getCurrentFocus();
+//            if (view == null) {
+//                view = new View(this.getApplicationContext());
+//            }
+//
+//            InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+//            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+//        }, 100);
+    }
+
+    private void closeKeyboardOnAlertDismiss(AlertDialog.Builder alertDialog) {
+        alertDialog.setOnDismissListener(dialog -> closeKeyboard());
     }
 
     private GestureDetector initGestureDetector() {

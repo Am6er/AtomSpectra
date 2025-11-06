@@ -4,22 +4,20 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.documentfile.provider.DocumentFile;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 //This class helps read and write spectra in different formats
 //To use it create a class with appropriate load/save methods.
@@ -33,20 +31,12 @@ public abstract class SpectrumFile {
     private static final String TAG = SpectrumFile.class.getSimpleName();
 
     public final SpectrumFile addSpectrum(@NonNull Spectrum spectrum) {
-        spectrumList.add(new Spectrum(spectrum));
+        spectrumList.add(spectrum);
         return this;
     }
 
     public final SpectrumFile addBackgroundSpectrum(@NonNull Spectrum spectrum) {
-        backgroundSpectrum = new Spectrum(spectrum);
-        return this;
-    }
-
-    public final SpectrumFile clearSpectra() {
-        backgroundSpectrum = null;
-        spectrumList.clear();
-        Channels = Constants.NUM_HIST_POINTS;
-        channelCompression = 1;
+        backgroundSpectrum = spectrum;
         return this;
     }
 
@@ -54,7 +44,7 @@ public abstract class SpectrumFile {
         return backgroundSpectrum != null;
     }
 
-    public final int spectrumNumber() {
+    public final int spectrumCount() {
         return spectrumList.size();
     }
 
@@ -79,13 +69,13 @@ public abstract class SpectrumFile {
     public final Spectrum getSpectrum(int id) {
         if (id < 0 || id >= spectrumList.size())
             return null;
-        return new Spectrum(spectrumList.get(id));
+        return spectrumList.get(id);
     }
 
     public final Spectrum getBackgroundSpectrum() {
         if (backgroundSpectrum == null)
             return null;
-        return new Spectrum(backgroundSpectrum);
+        return backgroundSpectrum;
     }
 
     public static Pair<OutputStreamWriter, Uri> prepareOutputStream(@NonNull Context context, String folder, long date, @NonNull String prefix, boolean addPrefix, String suffix, @NonNull String extension, @NonNull String mimeType, boolean addDate, boolean addTime, boolean removeFirst) {
@@ -183,9 +173,12 @@ public abstract class SpectrumFile {
     //load spectrum from external source
     abstract public boolean loadSpectrum(@NonNull InputStream histFile, Context context);
 
+    //load delta spectrum from external source
+    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken);
+
     //save spectrum to external source
     abstract public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context);
 
     //save incremental spectrum to external source
-    abstract public boolean saveIncrementalSpectrum(@NonNull OutputStreamWriter docStream, Context context);
+    abstract public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context);
 }
