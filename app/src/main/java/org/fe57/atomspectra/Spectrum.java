@@ -132,12 +132,22 @@ public class Spectrum {
         return this;
     }
 
-    public Spectrum subtractSpectrum(Spectrum spectrum) {
+    public Spectrum getDeltaSpectrum(Spectrum spectrum) {
         if (DataArray.length != spectrum.DataArray.length)
             return null;
-        for(int i = 0; i < DataArray.length; i++)
+
+        for (int i = 0; i < DataArray.length; i++) {
             DataArray[i] -= spectrum.DataArray[i];
+            if (DataArray[i] < 0) {
+                DataArray[i] = 0;
+            }
+        }
+
         SpectrumTime -= spectrum.SpectrumTime;
+        if (SpectrumTime < 0) {
+            SpectrumTime = 0;
+        }
+
         SpectrumDate = System.currentTimeMillis();
         Changed = true;
         return this;
