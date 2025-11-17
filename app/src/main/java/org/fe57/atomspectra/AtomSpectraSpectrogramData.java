@@ -27,8 +27,8 @@ public class AtomSpectraSpectrogramData {
     }
 
     public void addDelta(long[] channels, double duration, long timestamp) {
-        if (duration == 0) {
-            return;
+        if (duration <= 0) {
+            duration = 1;
         }
 
         int channelBinning = channels.length / CHANNEL_COUNT;

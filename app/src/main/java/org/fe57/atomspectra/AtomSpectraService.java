@@ -818,9 +818,9 @@ public class AtomSpectraService extends Service {
                 }
             };
 
-            spgTimerIncrement = 0;
-            spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, 0, 1000);
-            createOrUpdateSpectrogramFile();
+            spgTimerIncrement = spgInterval; // save base spectrum on first timer trigger
+            // delay to let pro device provide valid data
+            spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, USB_DATA_SKIP_SECONDS * 1000, 1000);
         }
     }
 
@@ -1621,18 +1621,24 @@ public class AtomSpectraService extends Service {
         }
 
         freeze_update_data = freeze;
+
+        if (freeze) {
+            resetSearchWindow();
+            resetSpectrumChangeWindow();
+            resetRecordingSuspendedStatus(false);
+            stopSpgAutosaveTimer();
+        } else {
+            if (spgInterval > 0) {
+                startSpgAutosaveTimer();
+            }
+        }
+
         synchronized (inputSync) {
             if (inputType == INPUT_SERIAL) {
                 if (freeze_update_data) {
                     cancelUsbDataWatchdog();
                     usbDevice.sendTextCommand("-sto", SERVICE_STO_ID);
                 } else {
-                    // spectrum from device has priority over current spectrum
-                    long[] empty_hist = new long[ForegroundSpectrum.getDataArray().length];
-                    Arrays.fill(empty_hist, 0);
-                    ForegroundSpectrum.setSpectrum(empty_hist);
-                    ForegroundSpectrum.setSpectrumTime(0);
-                    ForegroundSpectrum.updateComments();
                     // HACK! when started, AtomSpectraSerial often sends wrong data for 1-2 seconds
                     // calculate spectrum based values (cps interval, dose rate etc.) only when data is more stable
                     skipUnreliableUSBData();
@@ -1645,17 +1651,6 @@ public class AtomSpectraService extends Service {
                 } else {
                     startCapturingAudioSource();
                 }
-            }
-        }
-
-        if (freeze) {
-            resetSearchWindow();
-            resetSpectrumChangeWindow();
-            resetRecordingSuspendedStatus(false);
-            stopSpgAutosaveTimer();
-        } else {
-            if (spgInterval > 0) {
-                startSpgAutosaveTimer();
             }
         }
 
@@ -3033,7 +3028,14 @@ public class AtomSpectraService extends Service {
 
     private void appendDeltaToSpectrogram() {
         Spectrum newSpectrum = new Spectrum(ForegroundSpectrum);
-        Spectrum deltaSpectrum = new Spectrum(newSpectrum).subtractSpectrum(spgAutosaveSpectrum);
+        Spectrum deltaSpectrum = new Spectrum(newSpectrum).getDeltaSpectrum(spgAutosaveSpectrum);
+
+        if (deltaSpectrum == null) {
+            // TODO: localize
+            showToastInMainLooper("Unexpected: delta spectrum is null", Toast.LENGTH_LONG);
+            return;
+        }
+
         if (!addGPS) {
             deltaSpectrum.setLocation(null);
         }
