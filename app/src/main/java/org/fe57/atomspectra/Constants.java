@@ -73,6 +73,10 @@ public class Constants {
     public static final String DISPLAY_DOSE_NON_COMPENSATED = "dose-non-compensated";
     public static final String DISPLAY_DOSE_INTERVAL = "dose-interval";
     public static final String DISPLAY_DOSE_DEFAULT = DISPLAY_DOSE_COMPENSATED;
+    public static final double ALARM_BASELINE_ERROR_PERCENT_THRESHOLD = 5;
+    public static final int ALARM_BASELINE_MAX_DURATION = 30;
+    public static final int ALARM_DETECTION_LEVEL_DEFAULT = 3;
+    public static final float ALARM_VOLUME_DEFAULT = 0.5f;
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";

@@ -78,10 +78,10 @@
     <string name="atom_swift_app_dr_interval">AtomSwift DR: Interval</string>
     <string name="input_sound">Source:</string>
     <string name="input_sound_absent">No input source! Use default.</string>
-    <string name="output_sound">Sound alarm: </string>
-    <string name="output_sound_full">Full</string>
-    <string name="output_sound_format">%1$.2f–%2$.2f keV</string>
-    <string name="output_sound_device">Sound:</string>
+    <string name="interval_search_output_sound_enabled">Enable sound alarm</string>
+    <string name="interval_search_energy_range_full">Energy range: Full</string>
+    <string name="interval_search_energy_range_format">Energy range: %1$.2f - %2$.2f keV</string>
+    <string name="output_sound_device">Output sound device:</string>
     <string name="use_raw_audio_source">Use raw audio source</string>
     <string name="no_audio_available">Can\'t use audio input!</string>
     <string name="no_usb_available">Can\'t use USB input!</string>
@@ -193,8 +193,9 @@
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
-    <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
-    <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
+    <string name="cps_alarm_baseline">≈cps: <xliff:g id="cps">%1$.1f</xliff:g> ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="cps_alarm_baseline_timer">≈cps: [<xliff:g id="time">%1$d</xliff:g> s] <xliff:g id="cps">%2$.1f</xliff:g> ±<xliff:g id="cps_error">%3$d</xliff:g>%%</string>
+    <string name="cps_alarm_levels">♪cps: <xliff:g id="level_high">%1$.1f</xliff:g>/<xliff:g id="level_low">%2$.1f</xliff:g></string>
     <string name="compress_graph_format">Spectrum: <xliff:g id="type">%1$s</xliff:g></string>
     <string name="settings_spg_delta_duration">Save delta every <xliff:g id="duration">%1$d</xliff:g> s</string>
     <string-array name="compress_graph_array">

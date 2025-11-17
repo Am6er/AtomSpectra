@@ -713,19 +713,12 @@
                 android:layout_marginBottom="5sp"
                 android:orientation="horizontal">
 
-                <CheckBox
-                    android:id="@+id/CheckSound"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/output_sound"
-                    android:textColor="#FFFFFFFF" />
-
                 <TextView
-                    android:id="@+id/CheckSoundText"
+                    android:id="@+id/intervalSearchEnergyRange"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:onClick="onSelectIntervalClick"
-                    android:text="@string/output_sound_full"
+                    android:text="@string/interval_search_energy_range_full"
                     android:textColor="#FFFFFF"
                     android:textSize="18sp" />
             </LinearLayout>
@@ -737,8 +730,23 @@
                 android:layout_marginBottom="5sp"
                 android:orientation="horizontal">
 
+                <CheckBox
+                    android:id="@+id/intervalSearchSoundEnabled"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/interval_search_output_sound_enabled"
+                    android:textColor="#FFFFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5sp"
+                android:layout_marginBottom="5sp"
+                android:orientation="horizontal">
+
                 <TextView
-                    android:id="@+id/textView2"
+                    android:id="@+id/intervalSearchSoundDeviceLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:singleLine="true"
@@ -747,7 +755,7 @@
                     android:textSize="18sp" />
 
                 <TextView
-                    android:id="@+id/outputSoundText"
+                    android:id="@+id/intervalSearchSoundOutputDevice"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:onClick="onSelectAudioOutputClick"

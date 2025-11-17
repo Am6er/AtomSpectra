@@ -71,26 +71,25 @@ public class AtomSpectraService extends Service {
     public static boolean isCalibrated = false;
 
     //Output sound to the speaker
-    private static boolean outputSound = false;
+    private static boolean intervalSearchAlarmEnabled = false;
     private static int outputSoundID = -1;
     private static String outputSoundName = null;
     private static boolean inputSound = false;
     private static int inputSoundID = -1;
     private static String inputSoundName = null;
-    private static double cpsBaseLevel = 0;
-    private static double cpsBaseSignal = 0;
-    private static double cpsCurrentLevel = 0;
-    private static final Integer soundSync = 1;
-    private static AudioTrack soundTrack = null;
-    private static int soundBufferSize = 0;
-    private static float[] soundBuffer = null;
-    private static int soundBufferSwitch = 0;
-    private static final double minMeanSoundTime = 10.0;
-    private static int soundPeriodCount = 0;
-    private static int soundPeriodNum = 0;
-    private static final double[] soundFreqList = new double[]{400, 420, 450, 490, 580, 630, 700, 800, 900, 980, 1050, 1260, 1470, 2100, 2450, 3150, 4010, 4410, 4900, 6300, 7350};
-    private static final double soundSigma = 4.0;
-    private static final double soundSigmaTime = 4.0; //in seconds
+
+    private static final Integer intervalSearchAlarmSync = 1;
+    private static AudioTrack intervalSearchAlarmAudioTrack = null;
+    private static final double intervalSearchAlarmDuration = 0.2; // seconds
+    // TODO: introduce setting
+    private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
+    // TODO: introduce setting
+    private static int intervalSearchAlarmDetectionLevel = Constants.ALARM_DETECTION_LEVEL_DEFAULT; // number of sigmas
+    private static final int intervalSearchLowFreq = 750;
+    private static final int intervalSearchHighFreqMin = 1500;
+    private static final int intervalSearchHighFreqMax = 3500;
+    private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
+
     public static int lastCalibrationChannel = Constants.NUM_HIST_POINTS;
     public static int leftChannelInterval = 0;
     public static int rightChannelInterval = Constants.NUM_HIST_POINTS - 1;
@@ -339,6 +338,10 @@ public class AtomSpectraService extends Service {
     private AtomSpectraSerial usbDevice = null;
 
     private GPSLocator Locator = null;
+
+    public static AlarmBaseline getIntervalSearchAlarmBaseline() {
+        return intervalSearchAlarmBaseline;
+    }
 
     @TargetApi(Build.VERSION_CODES.M)
     private AudioDeviceCallback createAudioDeviceCallback() {
@@ -597,8 +600,8 @@ public class AtomSpectraService extends Service {
             editor.putInt(Constants.CONFIG.CONF_BACKGROUND, (int) backgroundCps);
             editor.apply();
         }
-//        GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0,3, -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW));
-        basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
+
+        smooth_basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
         delta_time = sp.getInt(Constants.CONFIG.CONF_DELTA_TIME, Constants.DEFAULT_DELTA_TIME);
         SearchFSM = sp.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0);
         SEARCH_FAST = sp.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT);
@@ -621,14 +624,14 @@ public class AtomSpectraService extends Service {
         CharSequence[] data = getResources().getTextArray(R.array.compress_graph_array);
         compressGraph = Constants.MinMax(compressGraph, 0, data.length - 1);
         isCalibrated = sp.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true);
-        outputSound = sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
+        intervalSearchAlarmEnabled = sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         outputSoundID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
         outputSoundName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
 
-        outputSoundInit();
+        setAlarmAudioTrackDevice();
         boolean inputS = sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         int inputSID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
         String inputSN = sp.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
@@ -751,14 +754,6 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    public static void reloadBaseLevel() {
-        synchronized (soundSync) {
-            cpsBaseLevel = 0;
-            cpsCurrentLevel = 0;
-            cpsBaseSignal = 0;
-        }
-    }
-
     public static void setEnergyInterval(double leftEnergy, double rightEnergy) {
         leftChannelInterval = Constants.MinMax(ForegroundSpectrum.getSpectrumCalibration().toChannel(leftEnergy), 0, Constants.NUM_HIST_POINTS - 1);
         leftEnergyInterval = leftEnergy;
@@ -836,6 +831,92 @@ public class AtomSpectraService extends Service {
         }
     }
 
+    private Timer intervalSearchAlarmTimer;
+    private void startIntervalSearchAlarmTimer() {
+        synchronized (intervalSearchAlarmSync) {
+            if (intervalSearchAlarmTimer != null) {
+                // TODO: localize
+                String message = "ERROR: trying to start interval search alarm timer while timer is already in progress";
+                showToastInMainLooper(message, Toast.LENGTH_LONG);
+                AtomSpectraLog.addMessage(service_context, message);
+                return;
+            }
+
+            intervalSearchAlarmTimer = new Timer();
+            TimerTask intervalSearchAlarmTask = new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (intervalSearchAlarmSync) {
+                        if (intervalSearchAlarmEnabled && !freeze_update_data && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            if (intervalSearchAlarmAudioTrack != null) {
+                                double currentCps = doseRateValue.intervalCps;
+                                double baseCps = intervalSearchAlarmBaseline.getCps();
+                                double levelLow = intervalSearchAlarmBaseline.getAlarmLevelLow();
+                                double levelHigh = intervalSearchAlarmBaseline.getAlarmLevelHigh();
+                                if (baseCps == 0 || (currentCps > levelLow && currentCps < levelHigh)) {
+                                    return;
+                                }
+
+                                int beepDuration = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
+                                // level low as default
+                                double beepStartFrequency = intervalSearchLowFreq;
+                                double beepEndFrequency = intervalSearchLowFreq;
+                                // level high
+                                if (currentCps >= levelHigh) {
+                                    int steps = 20;
+                                    int freqRange = intervalSearchHighFreqMax - intervalSearchHighFreqMin;
+                                    int stepFreq = freqRange / steps;
+                                    int sweepStep = 250;
+                                    beepStartFrequency = intervalSearchHighFreqMin + (currentCps / baseCps) / steps * freqRange;
+                                    beepStartFrequency = Math.floor(beepStartFrequency / stepFreq) * stepFreq;
+                                    if (beepStartFrequency > intervalSearchHighFreqMax) {
+                                        beepStartFrequency = intervalSearchHighFreqMax;
+                                    }
+
+                                    beepEndFrequency = beepStartFrequency + sweepStep;
+                                }
+
+                                float[] outputAudioBuffer = new float[beepDuration];
+                                for (int i = 0; i < beepDuration; i++) {
+                                    double beepFrequency = beepStartFrequency + (beepEndFrequency - beepStartFrequency) * i / beepDuration;
+                                    outputAudioBuffer[i] = (float) (0.25f * Math.sin(2.0 * Math.PI * beepFrequency * i / 44100.0));
+                                }
+                                int fadeInOutDuration = beepDuration / 10;
+                                for (int i = 0; i < fadeInOutDuration; i++) {
+                                    outputAudioBuffer[i] *= (float)i / fadeInOutDuration;
+                                }
+                                for (int i = beepDuration - 1; i >= beepDuration - fadeInOutDuration; i--) {
+                                    outputAudioBuffer[i] *= (float)(beepDuration - 1 - i) / fadeInOutDuration;
+                                }
+
+                                setAlarmAudioTrackDevice();
+                                intervalSearchAlarmAudioTrack.stop();
+                                intervalSearchAlarmAudioTrack.flush();
+                                intervalSearchAlarmAudioTrack.setVolume(intervalSearchAlarmVolume);
+                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, beepDuration, AudioTrack.WRITE_BLOCKING);
+                                intervalSearchAlarmAudioTrack.play();
+                            }
+                        }
+                    }
+                }
+            };
+
+            intervalSearchAlarmTimer.scheduleAtFixedRate(intervalSearchAlarmTask, 1000, 1000);
+        }
+    }
+
+    private void stopIntervalSearchAlarmTimer() {
+        synchronized (intervalSearchAlarmSync) {
+            if (intervalSearchAlarmTimer != null) {
+                intervalSearchAlarmTimer.cancel();
+                intervalSearchAlarmTimer.purge();
+                intervalSearchAlarmTimer = null;
+            }
+
+            intervalSearchAlarmBaseline.reset();
+        }
+    }
+
     private void closeSpectrogramFile() {
         synchronized (spgAutosaveSync) {
             spgAutosaveSpectrum = null;
@@ -862,7 +943,7 @@ public class AtomSpectraService extends Service {
     private static int AudioSource = AUDIO_SOURCE_VOICE;
     public static int SetAudioSource = SET_AUDIO_OK;
     private Context service_context = null;
-    private static int basic_window = 7;
+    private static int smooth_basic_window = 7;
 
     @SuppressLint({"UnspecifiedRegisterReceiverFlag", "DiscouragedApi"})
     public void Start(final Context context) {
@@ -900,42 +981,9 @@ public class AtomSpectraService extends Service {
         usbDevice = new AtomSpectraSerial(context);
         sp = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
         sp.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
-        basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
+        smooth_basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
 
-        soundBufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT) / 4;
-        soundPeriodCount = soundBufferSize / 4410;    //4410 - number of samples in 100ms buffer
-        int fraction = soundBufferSize % 4410;
-        if (fraction != 0) {
-            soundPeriodCount++;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            soundBufferSize = soundPeriodCount * 4410;
-            soundBuffer = new float[soundBufferSize * 2];
-            try {
-                soundTrack = new AudioTrack.Builder().
-                        setAudioAttributes(new AudioAttributes.Builder().
-                                setUsage(AudioAttributes.USAGE_ALARM).
-                                setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).
-                                setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED).
-                                build()).
-                        setAudioFormat(new AudioFormat.Builder().
-                                setSampleRate(44100).
-                                setEncoding(AudioFormat.ENCODING_PCM_FLOAT).
-                                setChannelMask(AudioFormat.CHANNEL_OUT_MONO).
-                                build()).
-                        setTransferMode(AudioTrack.MODE_STREAM).
-                        setBufferSizeInBytes(soundBufferSize * 4).
-                        build();
-            } catch (Exception ignored) {
-                soundTrack = null;
-            }
-            if (soundTrack != null && soundTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-                soundTrack.release();
-                soundTrack = null;
-                showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
-            }
-        }
-
+        initOutputAudioTrack();
         loadSettings();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -957,7 +1005,6 @@ public class AtomSpectraService extends Service {
             showToastInMainLooper(R.string.no_audio_available, Toast.LENGTH_LONG);
         }
 
-        alarmTimer.scheduleAtFixedRate(alarmTimerTask, Constants.UPDATE_PERIOD, Constants.UPDATE_PERIOD);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (manager != null)
@@ -966,6 +1013,49 @@ public class AtomSpectraService extends Service {
 
         inputType = INPUT_NONE;
         Log.d(TAG, "AtomSpectraService START");
+    }
+
+    private void initOutputAudioTrack() {
+        synchronized (intervalSearchAlarmSync) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    int sampleRate = 44100;
+                    int bufferSize = (int)(44100 * intervalSearchAlarmDuration);
+                    intervalSearchAlarmAudioTrack = new AudioTrack.Builder().
+                            setAudioAttributes(new AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_ALARM)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                                    .build())
+                                            .setAudioFormat(new AudioFormat.Builder()
+                                                    .setSampleRate(sampleRate)
+                                                    .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                                                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                                                    .build())
+                                                            .setTransferMode(AudioTrack.MODE_STREAM)
+                                                            .setBufferSizeInBytes(bufferSize * 4)
+                                                            .build();
+                } catch (Exception ignored) {
+                    intervalSearchAlarmAudioTrack = null;
+                }
+                if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
+                    intervalSearchAlarmAudioTrack.release();
+                    intervalSearchAlarmAudioTrack = null;
+                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
+                }
+            }
+        }
+    }
+
+    private static void releaseOutputAudioTrack() {
+        synchronized (intervalSearchAlarmSync) {
+            if (intervalSearchAlarmAudioTrack != null) {
+                intervalSearchAlarmAudioTrack.pause();
+                intervalSearchAlarmAudioTrack.flush();
+                intervalSearchAlarmAudioTrack.release();
+                intervalSearchAlarmAudioTrack = null;
+            }
+        }
     }
 
     private static void setLocaleFromPreferences(Context context) {
@@ -984,36 +1074,18 @@ public class AtomSpectraService extends Service {
         resources.updateConfiguration(config, resources.getDisplayMetrics());
     }
 
-    private void outputSoundInit() {
+    private void setAlarmAudioTrackDevice() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
-            if (outputSound && soundTrack != null) {
+            if (intervalSearchAlarmAudioTrack != null) {
                 AudioDeviceInfo deviceOut = getDeviceOutput(service_context, outputSoundID, outputSoundName, true);
                 if (deviceOut == null) {
                     deviceOut = getDeviceOutput(service_context, -1, null, false);
                 }
                 if (deviceOut != null) {
-                    synchronized (soundSync) {
+                    synchronized (intervalSearchAlarmSync) {
                         outputSoundID = deviceOut.getId();
                         outputSoundName = deviceOut.getProductName().toString();
-                        soundPeriodNum = 0;
-                        soundTrack.setPreferredDevice(deviceOut);
-                        soundTrack.play();
-                    }
-                } else {
-                    soundTrack.pause();
-                    soundTrack.flush();
-//                    soundPeriodCount = 10;
-                }
-            } else {
-                cpsBaseLevel = 0;
-                cpsBaseSignal = 0;
-                cpsCurrentLevel = 0;
-//                cpsPrevLevel = 0;
-                if (soundTrack != null) {
-                    synchronized (soundSync) {
-                        soundTrack.pause();
-                        soundTrack.flush();
-                        soundBufferSwitch = 0;
+                        intervalSearchAlarmAudioTrack.setPreferredDevice(deviceOut);
                     }
                 }
             }
@@ -1064,20 +1136,6 @@ public class AtomSpectraService extends Service {
                             device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET ||
                             device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
                             device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
-//                        boolean isFound = false;
-//                        for (int i = 0; i < device.getEncodings().length; i++) {
-//                            if (device.getEncodings()[i] == AudioFormat.ENCODING_PCM_FLOAT)
-//                                isFound = true;
-//                        }
-//                        if (!isFound)
-//                            continue;
-//                        isFound = false;
-//                        for (int i = 0; i < device.getSampleRates().length; i++) {
-//                            if (device.getSampleRates()[i] == 44100)
-//                                isFound = true;
-//                        }
-//                        if (!isFound && (device.getSampleRates().length > 0))
-//                            continue;
                         //find device with minimal id not less than desired
                         if (same) {
                             if (lastID == device.getId() || device.getProductName().equals(lastName)) {
@@ -1164,14 +1222,6 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    public static double getCpsBaseLevel() {
-        return cpsBaseLevel;
-    }
-
-    public static double getCpsBaseSignal() {
-        return cpsBaseSignal;
-    }
-
     private static IntentFilter makeAtomSpectraServiceIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
@@ -1238,16 +1288,7 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
                 Log.i(TAG, "Received Stop Foreground Intent");
                 canOpenAudio = false;
-                if (soundTrack != null) {
-                    synchronized (soundSync) {
-                        soundTrack.pause();
-                        soundTrack.flush();
-                        soundTrack.release();
-                        soundTrack = null;
-                        soundBuffer = null;
-                        soundBufferSwitch = 0;
-                    }
-                }
+                releaseOutputAudioTrack();
                 Log.d(TAG, "recording Stop");
                 Stop();
                 return;
@@ -1522,7 +1563,6 @@ public class AtomSpectraService extends Service {
         stopCapturingAudioSource();
         cancelUsbDataWatchdog();
         stopSpgAutosaveTimer();
-        alarmTimer.cancel();
         usbDevice.Close();
         usbDevice.Destroy();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
@@ -1583,12 +1623,6 @@ public class AtomSpectraService extends Service {
             histogram_all_queue.clear();
         }
         total_counts = 0;
-
-        synchronized (soundSync) {
-            cpsBaseLevel = 0;
-            cpsBaseSignal = 0;
-            cpsCurrentLevel = 0;
-        }
     }
 
     public static boolean getFreeze() {
@@ -1603,6 +1637,7 @@ public class AtomSpectraService extends Service {
     // method used to start/stop data collecting timers
     private void setFreeze(boolean freeze) {
         if (freeze != freeze_update_data) {
+            // log event to debug view
             String inputTypeText = "none";
             switch (inputType) {
                 case INPUT_AUDIO:
@@ -1627,10 +1662,13 @@ public class AtomSpectraService extends Service {
             resetSpectrumChangeWindow();
             resetRecordingSuspendedStatus(false);
             stopSpgAutosaveTimer();
+            stopIntervalSearchAlarmTimer();
         } else {
             if (spgInterval > 0) {
                 startSpgAutosaveTimer();
             }
+
+            startIntervalSearchAlarmTimer();
         }
 
         synchronized (inputSync) {
@@ -1710,18 +1748,23 @@ public class AtomSpectraService extends Service {
             if (windowDeltaTime.size() > SEARCH_WINDOW_SIZE) {
                 windowDeltaTime.removeFirst();
             }
+
             windowBinnedCounts.addLast(binned_counts);
             if (windowBinnedCounts.size() > SEARCH_WINDOW_SIZE) {
                 windowBinnedCounts.removeFirst();
             }
+
             windowCounts.addLast(counts);
             if (windowCounts.size() > SEARCH_WINDOW_SIZE) {
                 windowCounts.removeFirst();
             }
+
             windowIntervalCounts.addLast(interval_counts);
             if (windowIntervalCounts.size() > SEARCH_WINDOW_SIZE) {
                 windowIntervalCounts.removeFirst();
             }
+
+            intervalSearchAlarmBaseline.updateBaseline(interval_counts, delta_time);
         }
 
         int counts_search_window = 0;
@@ -1820,6 +1863,8 @@ public class AtomSpectraService extends Service {
                 doseIntervalHistory.removeFirst();
             }
         }
+
+        intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
 
         return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_cps, interval_cps_error);
     }
@@ -2093,15 +2138,15 @@ public class AtomSpectraService extends Service {
         switch (AtomSpectra.DisplayDose) {
             case Constants.DISPLAY_DOSE_NON_COMPENSATED:
                 dose_rate = doseRateValue.nonCompensated;
-                dose_rate_error = doseRateValue.nonCompensatedError;
+                dose_rate_error = doseRateValue.nonCompensatedErrorPercent;
                 break;
             case Constants.DISPLAY_DOSE_COMPENSATED:
                 dose_rate = doseRateValue.compensated;
-                dose_rate_error = doseRateValue.compensatedError;
+                dose_rate_error = doseRateValue.compensatedErrorPercent;
                 break;
             case Constants.DISPLAY_DOSE_INTERVAL:
                 dose_rate = doseRateValue.intervalCps;
-                dose_rate_error = doseRateValue.intervalCpsError;
+                dose_rate_error = doseRateValue.intervalCpsErrorPercent;
                 break;
         }
         mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, dose_rate);
@@ -2804,87 +2849,16 @@ public class AtomSpectraService extends Service {
         showToastInMainLooper(R.string.action_usb_no_access, Toast.LENGTH_LONG);
     }
 
-    // alarm timer
-    // tracks cps and makes alarm sound
-    private final Timer alarmTimer = new Timer();
-    private final TimerTask alarmTimerTask = new TimerTask() {
-        @Override
-        public void run() {
-            if (outputSound) {
-                if (outputSoundID == -1) {
-                    outputSoundInit();
-                }
-                soundPeriodNum++;
-                if (cpsBaseLevel == 0) {
-                    cpsCurrentLevel = 0;
-                    double soundTime = 0;
-                    double cpsTime = 0;
-                    synchronized (windowIntervalCounts) {
-                        if (!windowIntervalCounts.isEmpty()) {
-                            for (int i = windowIntervalCounts.size() - 1; i >= 0; i--) {
-                                soundTime += windowDeltaTime.get(i);
-                                cpsTime += windowIntervalCounts.get(i);
-                                if (soundTime >= minMeanSoundTime)
-                                    break;
-                            }
-                        }
-                    }
-                    if (soundTime >= minMeanSoundTime) {
-                        cpsBaseLevel = cpsTime / soundTime;
-                        cpsBaseSignal = cpsBaseLevel + soundSigma * StrictMath.sqrt(cpsBaseLevel * soundSigmaTime + 80) / soundSigmaTime;
-                        cpsCurrentLevel = cpsBaseLevel;
-                    }
-                }
-                if (soundPeriodNum >= soundPeriodCount) {
-                    soundPeriodNum = 0;
-                    double boost = 0.0;
-                    synchronized (windowIntervalCounts) {
-                        int sizeDose = windowIntervalCounts.size();
-                        if (sizeDose > 2) {
-                            if (windowIntervalCounts.get(sizeDose - 1) > 1.05 * windowIntervalCounts.get(sizeDose - 2) && windowIntervalCounts.get(sizeDose - 2) > 1.05 * windowIntervalCounts.get(sizeDose - 3))
-                                boost = 0.5;
-                            if (1.05 * windowIntervalCounts.get(sizeDose - 1) < windowIntervalCounts.get(sizeDose - 2) && 1.05 * windowIntervalCounts.get(sizeDose - 2) < windowIntervalCounts.get(sizeDose - 3))
-                                boost = 0.5;
-                        }
-                    }
-                    if (cpsInterval > 1.02 * cpsCurrentLevel) {
-                        cpsCurrentLevel = cpsInterval + boost * (cpsInterval - cpsCurrentLevel);
-                    } else if (cpsInterval * 1.02 < cpsCurrentLevel) {
-                        cpsCurrentLevel = cpsInterval + boost * (cpsInterval - cpsCurrentLevel);
-                    }
-                    cpsCurrentLevel = StrictMath.max(cpsCurrentLevel, 0.0);
-                    if (cpsBaseSignal > 0 && (cpsCurrentLevel > cpsBaseSignal)) {
-                        double soundAngle = 0.0;
-
-                        double angleStep = soundFreqList[Constants.MinMax((int) (cpsCurrentLevel / cpsBaseSignal * 2.0) - 1, 0, soundFreqList.length - 1)] * 2.0 * StrictMath.PI / 44100.0; //let's begin from 100Hz
-                        for (int i = 0; i < soundBufferSize; i++) {
-                            soundBuffer[i + soundBufferSize * soundBufferSwitch] = (float) StrictMath.sin(soundAngle);
-                            soundAngle += angleStep;
-                        }
-                        synchronized (soundSync) {
-                            if (soundTrack != null && soundTrack.write(soundBuffer, soundBufferSize * soundBufferSwitch, soundBufferSize, AudioTrack.WRITE_BLOCKING) < 0) {
-                                soundTrack.pause();
-                                soundTrack.flush();
-                                outputSoundID = -1;
-                            }
-                        }
-                        soundBufferSwitch = 1 - soundBufferSwitch;
-                    }
-                }
-            }
-        }
-    };
-
     public static double[] makeSmooth(double[] input, Calibration calibration) {
         if (setSmooth) {
             double[] result = new double[input.length];
             int shift_window, old_window;
-            shift_window = old_window = StrictMath.max((int) (0.3 * basic_window), 4);
+            shift_window = old_window = StrictMath.max((int) (0.3 * smooth_basic_window), 4);
             int channel_0 = StrictMath.max(100, calibration.toChannel(662.0));
             double[] GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
             double temp;
             for (int i = 0; i < input.length; i++) {
-                shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double) channel_0)) * basic_window), 4);
+                shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double) channel_0)) * smooth_basic_window), 4);
                 if (old_window != shift_window) {
                     old_window = shift_window;
                     GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
@@ -2909,13 +2883,13 @@ public class AtomSpectraService extends Service {
         double[] result = new double[input.length];
         if (setSmooth) {
             int shift_window, old_window;
-            shift_window = old_window = StrictMath.max((int) (0.3 * basic_window), 4);
+            shift_window = old_window = StrictMath.max((int) (0.3 * smooth_basic_window), 4);
             int channel_0 = StrictMath.max(100, calibration.toChannel(662.0));
             double[] GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
             //calculate the derivative for the spectrum
             double temp;
             for (int i = 0; i < input.length; i++) {
-                shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double) channel_0)) * basic_window), 4);
+                shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double) channel_0)) * smooth_basic_window), 4);
                 if (old_window != shift_window) {
                     old_window = shift_window;
                     GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
@@ -3107,15 +3081,15 @@ public class AtomSpectraService extends Service {
         switch (atomSwiftDRType) {
             case Constants.ATOMSWIFT_DR_COMPENSATED:
                 dr = doseRate.compensated;
-                dr_error = doseRate.compensatedError;
+                dr_error = doseRate.compensatedErrorPercent;
                 break;
             case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
                 dr = doseRate.nonCompensated;
-                dr_error = doseRate.nonCompensatedError;
+                dr_error = doseRate.nonCompensatedErrorPercent;
                 break;
             case Constants.ATOMSWIFT_DR_INTERVAL:
                 dr = doseRate.intervalCps;
-                dr_error = doseRate.intervalCpsError;
+                dr_error = doseRate.intervalCpsErrorPercent;
                 break;
         }
 
@@ -3304,28 +3278,127 @@ public class AtomSpectraService extends Service {
 
     private static class DoseRate {
         public final double compensated; // uSv/h
-        public final double compensatedError; // one sigma %
+        public final double compensatedErrorPercent; // 1 sigma %
         public final double nonCompensated; // uSv/h
-        public final double nonCompensatedError; // one sigma %
+        public final double nonCompensatedErrorPercent; // 1 sigma %
         public final double intervalCps; // cps
-        public final double intervalCpsError; // one sigma %
+        public final double intervalCpsErrorPercent; // 1 sigma %
 
         private DoseRate() {
             this.compensated = 0;
-            this.compensatedError = 0;
+            this.compensatedErrorPercent = 0;
             this.nonCompensated = 0;
-            this.nonCompensatedError = 0;
+            this.nonCompensatedErrorPercent = 0;
             this.intervalCps = 0;
-            this.intervalCpsError = 0;
+            this.intervalCpsErrorPercent = 0;
         }
 
-        private DoseRate(double compensated, double compensatedError, double nonCompensated, double nonCompensatedError, double intervalCps, double intervalCpsError) {
+        private DoseRate(
+                double compensated,
+                double compensatedErrorPercent,
+                double nonCompensated,
+                double nonCompensatedErrorPercent,
+                double intervalCps,
+                double intervalCpsErrorPercent) {
             this.compensated = compensated;
-            this.compensatedError = compensatedError;
+            this.compensatedErrorPercent = compensatedErrorPercent;
             this.nonCompensated = nonCompensated;
-            this.nonCompensatedError = nonCompensatedError;
+            this.nonCompensatedErrorPercent = nonCompensatedErrorPercent;
             this.intervalCps = intervalCps;
-            this.intervalCpsError = intervalCpsError;
+            this.intervalCpsErrorPercent = intervalCpsErrorPercent;
+        }
+    }
+
+    public static class AlarmBaseline {
+        private int totalCounts;
+        private double totalTime;
+        private double alarmLevelHigh;
+        private double alarmLevelLow;
+        private final double errorThresholdPercent; // 1 sigma %
+        private final int maxDuration;
+
+        public AlarmBaseline() {
+            this.errorThresholdPercent = Constants.ALARM_BASELINE_ERROR_PERCENT_THRESHOLD;
+            this.maxDuration = Constants.ALARM_BASELINE_MAX_DURATION;
+        }
+
+        public AlarmBaseline(double errorThresholdPercent, int maxDuration) {
+            this.errorThresholdPercent = errorThresholdPercent;
+            this.maxDuration = maxDuration;
+        }
+
+        public void updateBaseline(int counts, double time) {
+            if (!this.isStable()) {
+                this.totalCounts += counts;
+                this.totalTime += time;
+            }
+        }
+
+        public void updateAlarmLevels(double cps, double cpsErrorPercent, int detectionLevel) {
+            if (this.totalTime <= 0) {
+                return;
+            }
+
+            double baseCps = this.getCps();
+            double baseErrorValue = baseCps * (this.getError() / 100);
+            double cpsErrorValue = cps * (cpsErrorPercent / 100);
+            double overallErrorValue = Math.sqrt(baseErrorValue * baseErrorValue + cpsErrorValue * cpsErrorValue);
+            double delta = detectionLevel * overallErrorValue;
+
+            alarmLevelHigh = baseCps + delta;
+            if (delta > baseCps) {
+                alarmLevelLow = 0;
+            } else {
+                alarmLevelLow = baseCps - delta;
+            }
+        }
+
+        public void reset() {
+            this.totalTime = 0;
+            this.totalCounts = 0;
+            this.alarmLevelLow = 0;
+            this.alarmLevelHigh = 0;
+        }
+
+        public boolean isStable() {
+            double error = this.getError();
+            boolean isPrecise = error > 0 && error <= errorThresholdPercent;
+
+            return this.totalTime >= maxDuration || isPrecise;
+        }
+
+        public double getCps() {
+            if (this.totalTime <= 0) {
+                return 0;
+            }
+
+            return this.totalCounts / this.totalTime;
+        }
+
+        public double getError() {
+            if (totalCounts <= 0) {
+                return 0;
+            }
+
+            double sigma = Math.sqrt(totalCounts);
+            return sigma / totalCounts * 100.0;
+        }
+
+        public double getAlarmLevelHigh() {
+            return alarmLevelHigh;
+        }
+
+        public double getAlarmLevelLow() {
+            return alarmLevelLow;
+        }
+
+        public int getRemainingTime() {
+            int remaining = this.maxDuration - (int)this.totalTime;
+            if (remaining < 0) {
+                remaining = 0;
+            }
+
+            return remaining;
         }
     }
 }

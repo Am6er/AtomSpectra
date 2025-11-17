@@ -1124,8 +1124,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							}
 							break;
 						case SHOW_BASE:
-							cpsView.setText(getString(R.string.cps_base_show, (int) AtomSpectraService.getCpsBaseLevel()));
-							doseRateText.setText(getString(R.string.cps_signal_show, (int) AtomSpectraService.getCpsBaseSignal()));
+							AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
+							error95Percent = Math.round(2 * baseline.getError());
+							if (baseline.isStable()) {
+								// show baseline
+								cpsView.setText(getString(R.string.cps_alarm_baseline, baseline.getCps(), error95Percent));
+							} else {
+								// show timer
+								cpsView.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getCps(), error95Percent));
+							}
+
+							doseRateText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
 							break;
 						case SHOW_COORD:
 							if (AtomSpectraService.ForegroundSpectrum.getGPSDate() == 0) {
@@ -1523,7 +1532,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	}
 
 	public void onClick_Sound(View v) {
-		AtomSpectraService.reloadBaseLevel();
+		AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
+		baseline.reset();
 	}
 
 	public void onClick_Channel(View v) {

@@ -78,10 +78,10 @@
     <string name="atom_swift_app_dr_interval">AtomSwift DD: Intervalle</string>
     <string name="input_sound">Source:</string>
     <string name="input_sound_absent">Aucune source d\'entrée! L\'utilisation par défaut.</string>
-    <string name="output_sound">Alarme sonore: </string>
-    <string name="output_sound_full">Complet</string>
-    <string name="output_sound_format">%1$.2f–%2$.2f keV</string>
-    <string name="output_sound_device">Audio:</string>
+    <string name="interval_search_output_sound_enabled">Activer l\'alarme sonore</string>
+    <string name="interval_search_energy_range_full">Gamme énergétique: Pleine</string>
+    <string name="interval_search_energy_range_format">Gamme énergétique: %1$.2f - %2$.2f keV</string>
+    <string name="output_sound_device">Périphérique de sortie audio:</string>
     <string name="use_raw_audio_source">Utiliser une source audio brut</string>
     <string name="no_audio_available">Impossible d\'utiliser l\'audio d\'entrée!</string>
     <string name="no_usb_available">Impossible d\'utiliser l\'entrée USB!</string>
@@ -193,8 +193,6 @@
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
-    <string name="cps_base_show">≈cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
-    <string name="cps_signal_show">♪cps: <xliff:g id="cps_base_show">%1$d</xliff:g></string>
     <string name="compress_graph_format">Spectre: <xliff:g id="type">%1$s</xliff:g></string>
     <string name="settings_spg_delta_duration">Sauver le delta chaque <xliff:g id="duration">%1$d</xliff:g> s</string>
     <string-array name="compress_graph_array">

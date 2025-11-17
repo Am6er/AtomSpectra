@@ -124,7 +124,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         fastSens = findViewById(R.id.FastSens);
 
         folderToStore = findViewById(R.id.directoryText);
-        outputDevice = findViewById(R.id.outputSoundText);
+        outputDevice = findViewById(R.id.intervalSearchSoundOutputDevice);
         inputDevice = findViewById(R.id.inputSoundText);
 
         slowSens.setOnEditorActionListener(editorActionListener);
@@ -176,11 +176,11 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         }
 
         TextView mTextField;
-        mTextField = findViewById(R.id.CheckSoundText);
+        mTextField = findViewById(R.id.intervalSearchEnergyRange);
         if (AtomSpectraService.leftChannelInterval != 0 || AtomSpectraService.rightChannelInterval != Constants.NUM_HIST_POINTS - 1)
-            mTextField.setText(getString(R.string.output_sound_format, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval)));
+            mTextField.setText(getString(R.string.interval_search_energy_range_format, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval)));
         else
-            mTextField.setText(getString(R.string.output_sound_full));
+            mTextField.setText(getString(R.string.interval_search_energy_range_full));
         mTextField = findViewById(R.id.channelText);
         mTextField.setText(getString(R.string.reduced_to_format, sp.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT)));
         mTextField = findViewById(R.id.minFrontText);
@@ -208,13 +208,13 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mDataField.setText(getString(R.string.settings_spg_delta_duration, sp.getInt(Constants.CONFIG.CONF_SPG_INTERVAL, Constants.SPG_INTERVAL_DEFAULT)));
         int r = sp.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
         r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        mTextField.setText(String.format(Locale.US,"Language: %s", Constants.LOCALES[r]));
+        mTextField.setText(String.format(Locale.US, "Language: %s", Constants.LOCALES[r]));
 
         mTextField = findViewById(R.id.outputNameText);
         mTextField.setText(getResources().getTextArray(R.array.file_name_array)[
-                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT) ? 4 : 0) +
-                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME,   Constants.OUTPUT_FILE_NAME_TIME_DEFAULT)   ? 2 : 0) +
-                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE,   Constants.OUTPUT_FILE_NAME_DATE_DEFAULT)   ? 1 : 0)
+                (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT) ? 4 : 0) +
+                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT) ? 2 : 0) +
+                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT) ? 1 : 0)
                 ]);
 
         mTextField = findViewById(R.id.graphTypeText);
@@ -241,7 +241,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
             int outputDeviceType;
             if (deviceOut == null) {
-                    outputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
+                outputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
             } else {
                 outputDeviceType = deviceOut.getType();
             }
@@ -300,7 +300,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         mCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && !inputDeviceName.equals("(none)"));
         mCheckBox.setEnabled(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
 
-        mCheckBox = findViewById(R.id.CheckSound);
+        mCheckBox = findViewById(R.id.intervalSearchSoundEnabled);
         mCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
         mCheckBox.setEnabled(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
 
@@ -522,7 +522,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void addListenerOnSound() {
-        CheckBox checkOutput = findViewById(R.id.CheckSound);
+        CheckBox checkOutput = findViewById(R.id.intervalSearchSoundEnabled);
         checkOutput.setOnClickListener(v -> {
             saveBooleanPref(checkOutput.isChecked(), Constants.CONFIG.CONF_OUTPUT_SOUND);
             sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
@@ -656,7 +656,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         }
     }
 
-    public void onSelectIntervalClick(View v) {
+    public void onSelectIntervalClick(View intervalSearchRangeView) {
         final AlertDialog.Builder alert = new AlertDialog.Builder(this);
 
         alert.setTitle(getString(R.string.ask_select_interval_title));
@@ -682,8 +682,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             String value = input.getText().toString();
             if ("-1".equals(value)) {
                 AtomSpectraService.resetInterval();
-                TextView e = (TextView)v;
-                e.setText(getString(R.string.output_sound_full));
+                TextView textView = (TextView) intervalSearchRangeView;
+                textView.setText(getString(R.string.interval_search_energy_range_full));
             } else {
                 if (value.contains("-")) {
                     String num1 = value.substring(0, value.indexOf("-"));
@@ -696,19 +696,19 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                         if (number1 < 0 || number1 >= number2 || number2 >= Constants.NUM_HIST_POINTS - 1)
                             return;
                         AtomSpectraService.setEnergyInterval(val1, val2);
-                        TextView e = (TextView) v;
+                        TextView textView = (TextView) intervalSearchRangeView;
                         if (AtomSpectraService.leftChannelInterval != 0 || AtomSpectraService.rightChannelInterval != Constants.NUM_HIST_POINTS - 1)
-                            e.setText(getString(R.string.output_sound_format, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval)));
+                            textView.setText(getString(R.string.interval_search_energy_range_format, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval)));
                         else
-                            e.setText(getString(R.string.output_sound_full));
-                    }
-                    catch (Exception ignored) {
+                            textView.setText(getString(R.string.interval_search_energy_range_full));
+                    } catch (Exception ignored) {
 
                     }
                 }
             }
         });
-        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {});
+        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
+        });
         closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
@@ -822,8 +822,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                                 mText.setText(getString(R.string.noise_discriminator_format, Integer.parseInt(val)));
                                 retrySend = true;
                                 usb_noise_value = Integer.parseInt(val);
-                            }
-                            catch (NumberFormatException nfe) {
+                            } catch (NumberFormatException nfe) {
                                 //nothing
                             }
                         } else {
@@ -860,7 +859,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                     }
                     int outputDeviceType;
                     if (deviceOut == null) {
-                            outputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
+                        outputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
                     } else {
                         outputDeviceType = deviceOut.getType();
                     }
@@ -868,7 +867,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 } else {
                     outputDevice.setEnabled(false);
                 }
-                mCheckBox = findViewById(R.id.CheckSound);
+                mCheckBox = findViewById(R.id.intervalSearchSoundEnabled);
                 if (!sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false))
                     mCheckBox.setChecked(false);
                 inputDeviceID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
@@ -882,7 +881,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                     }
                     int inputDeviceType;
                     if (deviceIn == null) {
-                            inputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
+                        inputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
                     } else {
                         inputDeviceType = deviceIn.getType();
                     }
@@ -1148,7 +1147,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             }
             stopRecording();
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
+        });
         closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
@@ -1258,7 +1258,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             prefEditor.putInt(Constants.CONFIG.CONF_SAVE_CHANNELS, intValue);
             prefEditor.apply();
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
+        });
         closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
@@ -1332,7 +1333,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             prefEditor.putInt(Constants.CONFIG.CONF_LOAD_CHANNELS, intValue);
             prefEditor.apply();
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
+        });
         closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
@@ -1602,7 +1604,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             prefEditor.putInt(Constants.CONFIG.CONF_COMPRESSION, intValue);
             prefEditor.apply();
         });
-        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {});
+        alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
+        });
         closeKeyboardOnAlertDismiss(alert);
         alert.show();
     }
@@ -1647,7 +1650,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         prefEditor.apply();
 
         TextView mDataField = findViewById(R.id.localeText);
-        mDataField.setText(String.format(Locale.US,"Language: %s", Constants.LOCALES[r]));
+        mDataField.setText(String.format(Locale.US, "Language: %s", Constants.LOCALES[r]));
     }
 
     public void onClick_Locale_minus(View v) {
@@ -1659,7 +1662,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         prefEditor.apply();
 
         TextView mDataField = findViewById(R.id.localeText);
-        mDataField.setText(String.format(Locale.US,"Language: %s", Constants.LOCALES[r]));
+        mDataField.setText(String.format(Locale.US, "Language: %s", Constants.LOCALES[r]));
     }
 
     public void onClick_AtomSwiftDR_plus(View v) {
