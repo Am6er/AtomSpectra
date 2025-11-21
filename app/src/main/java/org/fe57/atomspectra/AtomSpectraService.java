@@ -242,6 +242,7 @@ public class AtomSpectraService extends Service {
     public final static String EXTRA_DATA_INT_CPS_INTERVAL =
             "org.fe57.atomspectra.EXTRA_DATA_INT_CPS_INTERVAL";
 
+    // spectrum change data
     public final static String EXTRA_DATA_LONG_DELTA_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_LONG_DELTA_COUNTS";
     public final static String EXTRA_DATA_INT_DELTA_TIME =
@@ -251,10 +252,12 @@ public class AtomSpectraService extends Service {
     public final static String EXTRA_DATA_INT_DELTA_BACK_TIME =
             "org.fe57.atomspectra.EXTRA_DATA_INT_DELTA_BACK_TIME";
 
-    public final static String EXTRA_DATA_ARRAY_LONG_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_COUNTS";
-    public final static String EXTRA_DATA_ARRAY_BACK_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_BACK_COUNTS";
+    // spectrum data
+    public final static String EXTRA_DATA_ARRAY_LONG_FG_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_FG_COUNTS";
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS";
+
     public final static String EXTRA_DATA_SHOW_BACK_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_SHOW_BACK_COUNTS";
     public final static String EXTRA_DATA_ARRAY_INT_SOUND =
@@ -1362,7 +1365,7 @@ public class AtomSpectraService extends Service {
                             old_histogram = Arrays.copyOf(old_histogram, old_histogram.length);
 
                             new_time = intent.getIntExtra(EXTRA_DATA_TOTAL_TIME, 1);
-                            new_histogram = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_COUNTS);
+                            new_histogram = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_FG_COUNTS);
                             if (new_histogram != null) {
                                 new_histogram = Arrays.copyOf(new_histogram, new_histogram.length);
                                 ForegroundSpectrum.setSpectrum(new_histogram).setRealSpectrumTime(new_time).updateComments();
@@ -2448,8 +2451,8 @@ public class AtomSpectraService extends Service {
                     }
                 }
 
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
                 break;
 
@@ -2494,8 +2497,8 @@ public class AtomSpectraService extends Service {
                     }
                 }
 
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
                 break;
 
@@ -2526,8 +2529,8 @@ public class AtomSpectraService extends Service {
                     }
                 }
 
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, histData);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, new double[1024]);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histData);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, new double[1024]);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
                 break;
 
@@ -2539,8 +2542,8 @@ public class AtomSpectraService extends Service {
                             realTimeX[i] = AudioData[i];
                     }
                 }
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, realTimeX);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, realTimeX);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
                 break;
 
@@ -2554,8 +2557,8 @@ public class AtomSpectraService extends Service {
                         }
                     }
                 }
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_COUNTS, referenceDoublePulse);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_BACK_COUNTS, background_histogram);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, referenceDoublePulse);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
                 mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
                 break;
 

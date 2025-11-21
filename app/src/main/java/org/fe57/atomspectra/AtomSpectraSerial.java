@@ -6,7 +6,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -369,7 +368,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
                     }
                     Intent intentScope = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
-                    intentScope.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
+                    intentScope.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histogram);
                     intentScope.putExtra(AtomSpectraService.EXTRA_DATA_SCOPE_COUNTS, scope);
                     intentScope.putExtra(EXTRA_DATA_TYPE, CODE_SCOPE);
                     context.sendBroadcast(intentScope);
@@ -428,7 +427,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     }
                     Intent intent = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_SCOPE_COUNTS, new long[1024]);
-                    intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_COUNTS, histogram);
+                    intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histogram);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_CPS, cps);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_TOTAL_TIME, total_time);
                     intent.putExtra(EXTRA_DATA_TYPE, CODE_DATA);

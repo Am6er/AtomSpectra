@@ -20,7 +20,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.text.InputType;
 import android.text.method.NumberKeyListener;
@@ -33,7 +32,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -45,7 +43,6 @@ import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -754,8 +751,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action) && active) {
                 Bundle mBundle = intent.getExtras();
                 if (mBundle != null) {
-                    double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_COUNTS);
-                    double[] hist_back = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_BACK_COUNTS);
+                    double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_FG_COUNTS);
+                    double[] hist_back = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS);
                     int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS);
                     int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS_INTERVAL);
                     mTextField.setText(getString(R.string.cps_show, cps, cps_interval));

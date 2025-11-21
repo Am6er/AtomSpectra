@@ -1061,8 +1061,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action)) {
 				Bundle mBundle = intent.getExtras();
 				if (mBundle != null) {
-					double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_COUNTS);
-					double[] hist_back = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_BACK_COUNTS);
+					double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_FG_COUNTS);
+					double[] hist_back = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS);
 					boolean show_back = mBundle.getBoolean(AtomSpectraService.EXTRA_DATA_SHOW_BACK_COUNTS);
 
 					int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS);
@@ -1095,7 +1095,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						case SHOW_CPS:
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
 							long error95Percent = Math.round(dose_rate_error * 2);
-							if (DisplayDose == Constants.DISPLAY_DOSE_INTERVAL) {
+							if (Constants.DISPLAY_DOSE_INTERVAL.equals(DisplayDose)) {
 								if (dose_rate < 10) {
 									doseRateText.setText(getString(R.string.dose_rate_1cps_format, dose_rate, error95Percent));
 								} else if (dose_rate < 100) {
@@ -1148,7 +1148,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 					showCursorInfo(false);
 
-					//mAtomSpectraShapeView.showShape(counts_array,array_length);
 					int num_first_channel = AtomSpectraService.getFirstChannel();
 					int num_scale_factor = AtomSpectraService.getScaleFactor();
 					if (AtomSpectraService.showCalibrationFunction && num_scale_factor < Constants.SCALE_COUNT_MODE) {
