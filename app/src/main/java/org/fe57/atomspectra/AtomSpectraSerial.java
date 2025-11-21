@@ -427,7 +427,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     }
                     Intent intent = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS, new long[1024]);
-                    intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS, histogram);
+                    intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SERIAL_SPECTRUM_COUNTS, histogram);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_CP1S, cps);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME, total_time);
                     intent.putExtra(EXTRA_DATA_TYPE, CODE_DATA);

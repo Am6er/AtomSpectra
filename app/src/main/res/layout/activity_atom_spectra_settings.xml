@@ -222,7 +222,7 @@
                 android:layout_gravity="center_vertical|center_horizontal">
 
                 <Button
-                    android:id="@+id/addPointButton"
+                    android:id="@+id/decReducedTo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -240,7 +240,7 @@
                     android:textColor="#FFFFFF" />
 
                 <Button
-                    android:id="@+id/removeCalibrationButton"
+                    android:id="@+id/incReducedTo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"

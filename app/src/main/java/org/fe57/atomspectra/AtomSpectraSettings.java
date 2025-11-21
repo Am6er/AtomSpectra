@@ -755,8 +755,11 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                     int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
                     mTextField.setText(getString(R.string.cps_show, cps, cps_interval));
                     SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-                    if (AtomSpectraService.getScaleFactor() == Constants.SCALE_OSCILLOSCOPE_MODE)
-                        double[] realtime_audio_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA, new double[1024]);
+                    if (AtomSpectraService.getScaleFactor() == Constants.SCALE_OSCILLOSCOPE_MODE) {
+                        double[] realtime_audio_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA);
+                        if (realtime_audio_data == null) {
+                            realtime_audio_data = new double[1024];
+                        }
                         mAtomSpectraSignalView.showShape(
                                 realtime_audio_data,
                                 new double[1024],
@@ -776,8 +779,11 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                                 -1,
                                 settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
                                 settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
-                    else {
-                        double[] reference_pulse_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA, new double[1024]);
+                    } else {
+                        double[] reference_pulse_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA);
+                        if (reference_pulse_data == null) {
+                            reference_pulse_data = new double[1024];
+                        }
                         mAtomSpectraSignalView.showShape(
                                 reference_pulse_data,
                                 new double[1024],
@@ -797,6 +803,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                                 -1,
                                 settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
                                 settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+                    }
 
 
                     //	Log.d(TAG, "data received from service  "+ String.valueOf(array_length));

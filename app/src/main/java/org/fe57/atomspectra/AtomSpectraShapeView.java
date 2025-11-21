@@ -436,7 +436,11 @@ public class AtomSpectraShapeView extends View {
 						if (X[i - 1] >= margin_left)
 							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
 					if (background_show) {
-						squareColor.setColor(Color.GREEN);
+						if (dose_mode) {
+							squareColor.setColor(Color.GRAY);
+						} else {
+							squareColor.setColor(Color.GREEN);
+						}
 						for (int i = 2; i < N; i++)
 							if (X[i - 1] >= margin_left)
 								canvas.drawLine(X[i - 1], back_Y[i - 1], X[i], back_Y[i], squareColor);
@@ -813,7 +817,7 @@ public class AtomSpectraShapeView extends View {
 		calibrationScale = AtomSpectraService.showCalibrationFunction && xZoom_factor < Constants.SCALE_OSCILLOSCOPE_MODE;
 		if (xZoom_factor == Constants.SCALE_DOSE_MODE) {
 			for (int i = 0; i < size; i++) {
-				yf[i] = y[i] * Constants.DOSE_SCALE;
+				yf[i] = y[i];
 			}
 		} else {
 			System.arraycopy(y, 0, yf, 0, size);

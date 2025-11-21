@@ -80,7 +80,7 @@ public class AtomSpectraService extends Service {
 
     private static final Integer intervalSearchAlarmSync = 1;
     private static AudioTrack intervalSearchAlarmAudioTrack = null;
-    private static final double intervalSearchAlarmDuration = 0.2; // seconds
+    private static final double intervalSearchAlarmDuration = 0.1; // seconds
     // TODO: introduce setting
     private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
     // TODO: introduce setting
@@ -260,7 +260,7 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS";
     // whether to show background spectrum
     public final static String EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM =
-            "org.fe57.atomspectra.EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM"; 
+            "org.fe57.atomspectra.EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM";
     // calibration function
     public final static String EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION";
@@ -268,7 +268,7 @@ public class AtomSpectraService extends Service {
     // +++ spectrum change counts and time +++
     // total counts in the foreground spectrum change window
     public final static String EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS"; 
+            "org.fe57.atomspectra.EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS";
     // time in seconds in the foreground spectrum change window
     public final static String EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME =
             "org.fe57.atomspectra.EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME";
@@ -294,7 +294,7 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N";
     // error in non-compensated dose rate (1 sigma percent)
     public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR =
-            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR"; 
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR";
     // non-compensated dose rate history array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY";
@@ -314,7 +314,7 @@ public class AtomSpectraService extends Service {
     // interval cps low alarm history array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY";
-    
+
     // +++ spectra pro data +++
     public final static String EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS";
@@ -323,10 +323,10 @@ public class AtomSpectraService extends Service {
 
     // +++ audio data +++
     // latest data from audio input
-    public final static String EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA = 
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA";
     // reference pulse shape from audio input
-    public final static String EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA = 
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA";
 
     // --- [end] AtomSpectraService data bundle parameters ---
@@ -834,6 +834,7 @@ public class AtomSpectraService extends Service {
 
     private final Integer spgAutosaveSync = 1;
     private Timer spgAutosaveTimer;
+
     private void startSpgAutosaveTimer() {
         synchronized (spgAutosaveSync) {
             if (spgAutosaveTimer != null) {
@@ -884,6 +885,7 @@ public class AtomSpectraService extends Service {
     }
 
     private Timer intervalSearchAlarmTimer;
+
     private void startIntervalSearchAlarmTimer() {
         synchronized (intervalSearchAlarmSync) {
             if (intervalSearchAlarmTimer != null) {
@@ -918,7 +920,7 @@ public class AtomSpectraService extends Service {
                                     int steps = 20;
                                     int freqRange = intervalSearchHighFreqMax - intervalSearchHighFreqMin;
                                     int stepFreq = freqRange / steps;
-                                    int sweepStep = 250;
+                                    int sweepStep = 100;
                                     beepStartFrequency = intervalSearchHighFreqMin + (currentCps / baseCps) / steps * freqRange;
                                     beepStartFrequency = Math.floor(beepStartFrequency / stepFreq) * stepFreq;
                                     if (beepStartFrequency > intervalSearchHighFreqMax) {
@@ -933,12 +935,12 @@ public class AtomSpectraService extends Service {
                                     double beepFrequency = beepStartFrequency + (beepEndFrequency - beepStartFrequency) * i / beepDuration;
                                     outputAudioBuffer[i] = (float) (0.25f * Math.sin(2.0 * Math.PI * beepFrequency * i / 44100.0));
                                 }
-                                int fadeInOutDuration = beepDuration / 10;
+                                int fadeInOutDuration = beepDuration / 2;
                                 for (int i = 0; i < fadeInOutDuration; i++) {
-                                    outputAudioBuffer[i] *= (float)i / fadeInOutDuration;
+                                    outputAudioBuffer[i] *= (float) i / fadeInOutDuration;
                                 }
                                 for (int i = beepDuration - 1; i >= beepDuration - fadeInOutDuration; i--) {
-                                    outputAudioBuffer[i] *= (float)(beepDuration - 1 - i) / fadeInOutDuration;
+                                    outputAudioBuffer[i] *= (float) (beepDuration - 1 - i) / fadeInOutDuration;
                                 }
 
                                 setAlarmAudioTrackDevice();
@@ -1072,21 +1074,21 @@ public class AtomSpectraService extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 try {
                     int sampleRate = 44100;
-                    int bufferSize = (int)(44100 * intervalSearchAlarmDuration);
+                    int bufferSize = (int) (44100 * intervalSearchAlarmDuration);
                     intervalSearchAlarmAudioTrack = new AudioTrack.Builder().
                             setAudioAttributes(new AudioAttributes.Builder()
                                     .setUsage(AudioAttributes.USAGE_ALARM)
                                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                                     .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
                                     .build())
-                                            .setAudioFormat(new AudioFormat.Builder()
-                                                    .setSampleRate(sampleRate)
-                                                    .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                                                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                                                    .build())
-                                                            .setTransferMode(AudioTrack.MODE_STREAM)
-                                                            .setBufferSizeInBytes(bufferSize * 4)
-                                                            .build();
+                            .setAudioFormat(new AudioFormat.Builder()
+                                    .setSampleRate(sampleRate)
+                                    .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                                    .build())
+                            .setTransferMode(AudioTrack.MODE_STREAM)
+                            .setBufferSizeInBytes(bufferSize * 4)
+                            .build();
                 } catch (Exception ignored) {
                     intervalSearchAlarmAudioTrack = null;
                 }
@@ -1920,11 +1922,11 @@ public class AtomSpectraService extends Service {
             if (doseIntervalHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseIntervalHistory.removeFirst();
             }
-            doseIntervalHighAlarmHistory.addLast(intervalSearchAlarmBaseline.getHighAlarmLevel());
+            doseIntervalHighAlarmHistory.addLast(intervalSearchAlarmBaseline.getAlarmLevelHigh());
             if (doseIntervalHighAlarmHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseIntervalHighAlarmHistory.removeFirst();
             }
-            doseIntervalLowAlarmHistory.addLast(intervalSearchAlarmBaseline.getLowAlarmLevel());
+            doseIntervalLowAlarmHistory.addLast(intervalSearchAlarmBaseline.getAlarmLevelLow());
             if (doseIntervalLowAlarmHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseIntervalLowAlarmHistory.removeFirst();
             }
@@ -2503,7 +2505,7 @@ public class AtomSpectraService extends Service {
                     mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS, histogram);
                     mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
                     mBundle.putBoolean(EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM, background_show && (!BackgroundSpectrum.isEmpty()));
-                } 
+                }
                 break;
 
             case 7:
@@ -2597,14 +2599,14 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private Array<Double> searchHistoryToArray(LinkedList<Double> history) {
+    private double[] searchHistoryToArray(LinkedList<Double> history) {
         double[] histData = new double[SEARCH_WINDOW_SIZE];
         int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - history.size(), 0);
         synchronized (doseHistory) {
             for (double v : history) {
                 if (num_data >= SEARCH_WINDOW_SIZE)
                     break;
-                histData[num_data] = v / Constants.DOSE_SCALE;
+                histData[num_data] = v;
                 num_data++;
             }
         }
@@ -3433,7 +3435,7 @@ public class AtomSpectraService extends Service {
         }
 
         public int getRemainingTime() {
-            int remaining = this.maxDuration - (int)this.totalTime;
+            int remaining = this.maxDuration - (int) this.totalTime;
             if (remaining < 0) {
                 remaining = 0;
             }
