@@ -1061,67 +1061,78 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action)) {
 				Bundle mBundle = intent.getExtras();
 				if (mBundle != null) {
-					double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_FG_COUNTS);
-					double[] hist_back = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS);
-					boolean show_back = mBundle.getBoolean(AtomSpectraService.EXTRA_DATA_SHOW_BACK_COUNTS);
-
-					int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS);
-					int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CPS_INTERVAL);
-
-					double dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH);
-					double dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOSERATE_SEARCH_ERROR);
-					double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_TOTAL_TIME);
-					long total_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_COUNTS);
-
-					long delta_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_DELTA_COUNTS);
-					long delta_back_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_DELTA_BACK_COUNTS);
-					int delta_time = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_DELTA_TIME);
-					int delta_back_time = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_DELTA_BACK_TIME);
-
 					switch (show_average_cps) {
 						case SHOW_AVERAGE:
-							if (AtomSpectraService.showDelta) {
+							if (AtomSpectraService.showSpectrumChange) {
+                long delta_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS);
+					      long delta_back_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_SP_CHNG_BG_TOTAL_COUNTS);
+					      int delta_time = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME);
+					      int delta_back_time = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_SP_CHNG_BG_TOTAL_TIME);
+
 								double delta_cps = delta_time > 0 ? delta_counts / (double)delta_time : 0.0;
 								double delta_back_cps = delta_back_time > 0 ? delta_back_counts / (double)delta_back_time : 0.0;
 
 								cpsView.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
 								doseRateText.setText(getString(R.string.delta_time_format, delta_time, delta_back_time));
 							} else {
+                double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME);
+					      long total_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_TOTAL_FG_COUNTS);
+
 								cpsView.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
 								doseRateText.setText(getString(R.string.total_time_format, total_time));
 							}
 
 							break;
 						case SHOW_CPS:
+              int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
+					    int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
 							cpsView.setText(getString(R.string.cps_show, cps, cps_interval));
-							long error95Percent = Math.round(dose_rate_error * 2);
+
+              long error95Percent = 0;
 							if (Constants.DISPLAY_DOSE_INTERVAL.equals(DisplayDose)) {
+                double search_int_cps = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS);
+					      double search_int_cps_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR);
+                error95Percent = Math.round(search_int_cps_error * 2);
+
 								if (dose_rate < 10) {
-									doseRateText.setText(getString(R.string.dose_rate_1cps_format, dose_rate, error95Percent));
+									doseRateText.setText(getString(R.string.dose_rate_1cps_format, search_int_cps, error95Percent));
 								} else if (dose_rate < 100) {
-									doseRateText.setText(getString(R.string.dose_rate_10cps_format, dose_rate, error95Percent));
+									doseRateText.setText(getString(R.string.dose_rate_10cps_format, search_int_cps, error95Percent));
 								} else if (dose_rate < 1000) {
-									doseRateText.setText(getString(R.string.dose_rate_100cps_format, dose_rate, error95Percent));
+									doseRateText.setText(getString(R.string.dose_rate_100cps_format, search_int_cps, error95Percent));
 								} else if (dose_rate < 10000) {
-									doseRateText.setText(getString(R.string.dose_rate_1kcps_format, dose_rate / 1000.0, error95Percent));
+									doseRateText.setText(getString(R.string.dose_rate_1kcps_format, search_int_cps / 1000.0, error95Percent));
 								} else if (dose_rate < 100000) {
-									doseRateText.setText(getString(R.string.dose_rate_10kcps_format, dose_rate / 1000.0, error95Percent));
+									doseRateText.setText(getString(R.string.dose_rate_10kcps_format, search_int_cps / 1000.0, error95Percent));
 								} else { // > 100k cps
-									doseRateText.setText(getString(R.string.dose_rate_100kcps_format, dose_rate / 1000.0, error95Percent));
+									doseRateText.setText(getString(R.string.dose_rate_100kcps_format, search_int_cps / 1000.0, error95Percent));
 								}
-							} else if (dose_rate < 10) {
-								doseRateText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
-							} else if (dose_rate < 100) {
-								doseRateText.setText(getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent));
-							} else if (dose_rate < 1000) {
-								doseRateText.setText(getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent));
-							} else if (dose_rate < 10000) {
-								doseRateText.setText(getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent));
-							} else if (dose_rate < 100000) {
-								doseRateText.setText(getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent));
-							} else { // > 100 mSv/h
-								doseRateText.setText(getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent));
-							}
+							} else {
+                double dose_rate = 0;
+                double dose_rate_error = 0;
+                if (Constants.DISPLAY_DOSE_COMPENSATED.equals(DisplayDose)) {
+                  dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
+                  dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR);
+                } else {
+                  dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N);
+                  dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR);                  
+                }
+                error95Percent = Math.round(dose_rate_error * 2);
+
+                if (dose_rate < 10) {
+                  doseRateText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
+                } else if (dose_rate < 100) {
+                  doseRateText.setText(getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent));
+                } else if (dose_rate < 1000) {
+                  doseRateText.setText(getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent));
+                } else if (dose_rate < 10000) {
+                  doseRateText.setText(getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent));
+                } else if (dose_rate < 100000) {
+                  doseRateText.setText(getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent));
+                } else { // > 100 mSv/h
+                  doseRateText.setText(getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent));
+                }
+              } 
 							break;
 						case SHOW_BASE:
 							AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
@@ -1150,15 +1161,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 					int num_first_channel = AtomSpectraService.getFirstChannel();
 					int num_scale_factor = AtomSpectraService.getScaleFactor();
-					if (AtomSpectraService.showCalibrationFunction && num_scale_factor < Constants.SCALE_COUNT_MODE) {
+					if (AtomSpectraService.showCalibrationFunction && num_scale_factor < Constants.SCALE_OSCILLOSCOPE_MODE) {
 						if (AtomSpectraService.getScaleFactor() > Constants.SCALE_MAX) {
 							AtomSpectraService.restoreScaleFactor();
 							num_scale_factor = AtomSpectraService.getScaleFactor();
 						}
 						// Toast.makeText(context, "show calibration", Toast.LENGTH_SHORT).show();
+            double[] calibration_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION, new double[1024]);
 						mAtomSpectraShapeView.showShape(
-								histogram,
-								hist_back,
+								calibration_data,
+								new double[1024],
 								false,
 								false,
 								false,
@@ -1177,14 +1189,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
 					} else {
 						if (num_scale_factor <= Constants.SCALE_MAX) {
+              double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS, new double[1024]);
+					    double[] hist_back = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, new double[1024]);
+					    boolean show_back = mBundle.getBoolean(AtomSpectraService.EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM, false);
 							// spectrum view
 							if (XCalibrated) {
 								// Toast.makeText(context, "spectrum kev", Toast.LENGTH_SHORT).show();
 								mAtomSpectraShapeView.showShape(
 										histogram,
 										hist_back,
-										show_back || AtomSpectraService.showDelta,
-										background_subtract && !AtomSpectraService.showDelta,
+										show_back || AtomSpectraService.showSpectrumChange,
+										background_subtract && !AtomSpectraService.showSpectrumChange,
 										true,
 										1024,
 										reducedTo,
@@ -1204,8 +1219,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 								mAtomSpectraShapeView.showShape(
 										histogram,
 										hist_back,
-										show_back || AtomSpectraService.showDelta,
-										background_subtract && !AtomSpectraService.showDelta,
+										show_back || AtomSpectraService.showSpectrumChange,
+										background_subtract && !AtomSpectraService.showSpectrumChange,
 										false,
 										1024,
 										reducedTo,
@@ -1224,9 +1239,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						} else if (num_scale_factor == Constants.SCALE_DOSE_MODE) {
 							// search view
 							// Toast.makeText(context, "search mode", Toast.LENGTH_SHORT).show();
+              double[] search_data;
+              switch (DisplayDose) {
+                case Constants.DISPLAY_DOSE_INTERVAL:
+                  search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY, new double[AtomSpectraService.SEARCH_WINDOW_SIZE]);
+                  break;
+                case Constants.DISPLAY_DOSE_COMPENSATED:
+                  search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY, new double[AtomSpectraService.SEARCH_WINDOW_SIZE]);
+                  break;
+                case Constants.DISPLAY_DOSE_NON_COMPENSATED: 
+                  search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_NC_HISTORY, new double[AtomSpectraService.SEARCH_WINDOW_SIZE]);
+                  break;
+                default:
+                  search_data = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                  break;
+              }
+
 							mAtomSpectraShapeView.showShape(
-									histogram,
-									hist_back,
+									search_data,
+									new double[AtomSpectraService.SEARCH_WINDOW_SIZE],
 									false,
 									false,
 									false,
@@ -2784,10 +2815,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		} else if (item.getItemId() == R.id.action_hist_delta) {
 			if (item.isChecked()) {
 				item.setChecked(false);
-				AtomSpectraService.showDelta = false;
+				AtomSpectraService.showSpectrumChange = false;
 			} else {
 				item.setChecked(true);
-				AtomSpectraService.showDelta = true;
+				AtomSpectraService.showSpectrumChange = true;
 			}
 
 			sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));

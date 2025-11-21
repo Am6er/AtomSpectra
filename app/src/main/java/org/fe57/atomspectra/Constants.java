@@ -32,8 +32,8 @@ public class Constants {
     public static final int SCALE_MIN = 16 - ADC_MAX;                                                                    //minimum scale factor
     public static final int SCALE_MAX = 16 - ADC_MIN + 1;                                                                //maximum scale factor
     public static final int SCALE_DOSE_MODE = 10;                                                                        //dose scale factor
-    public static final int SCALE_COUNT_MODE = 100;                                                                      //data from audio input
-    public static final int SCALE_IMPULSE_MODE = 101;                                                                    //impulse show
+    public static final int SCALE_OSCILLOSCOPE_MODE = 100;                                                                      //data from audio input
+    public static final int SCALE_AUDIO_REFERENCE_PULSE_MODE = 101;                                                                    //impulse show
     public static final int UPDATE_DOSE_DEFAULT = 1;                                                                     //dose rate update per second
     public static final int MAX_POLI_SIZE = 4;                                                                           //maximum polynom size of y=a+bx+cx^2+... To add higher size you need to add more menu items to menu and its checks
     public static final int MAX_CALIBRATION_POINTS = 10;                                                                 //maximum new calibration points

@@ -103,7 +103,7 @@ public class AtomSpectraService extends Service {
 
 
     public static boolean setSmooth = false;
-    public static boolean showDelta = false;
+    public static boolean showSpectrumChange = false;
     private static int delta_time = Constants.DEFAULT_DELTA_TIME;
     private static int delta_back_time_ratio = 4;
     public static boolean isStarted = false;
@@ -115,14 +115,14 @@ public class AtomSpectraService extends Service {
     private static int atomSwiftIntermediateCps = 0;
     private static boolean atomSwiftHasIntermediateData = false;
 
-    //data for spectrum
+    // data for spectrum
     private static final double[] histogram = new double[1024];
-    public static long[] histogram_all_delta = new long[Constants.NUM_HIST_POINTS];       //array to store delta
-    public static long[] histogram_all_delta_back = new long[Constants.NUM_HIST_POINTS];       //array to store delta
+    public static long[] histogram_all_sp_change_fg = new long[Constants.NUM_HIST_POINTS];       //array to store delta
+    public static long[] histogram_all_sp_change_bg = new long[Constants.NUM_HIST_POINTS];       //array to store delta
     public static final LinkedList<long[]> histogram_all_queue = new LinkedList<long[]>();      //array to store delta window
     private static final long[] referencePulse = new long[1024];
     private static final double[] referenceDoublePulse = new double[1024];
-    private static final double[] realTimeX = new double[1024];
+    private static final double[] realTimeAudioData = new double[1024];
 
     //data for background
     private static final double[] background_histogram = new double[1024];                              //back histogram to draw with the main histogram
@@ -227,51 +227,111 @@ public class AtomSpectraService extends Service {
     // read by AtomSpectraSettings (audio pulse data)
     public final static String ACTION_DATA_AVAILABLE =
             "org.fe57.atomspectra.ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_DATA =
-            "org.fe57.atomspectra.EXTRA_DATA";
 
+    // sent by AtomSpectraService when recording is suspended/resumed due to hardware issues (disconnects)
     public final static String ACTION_RECORDING_SUSPENDED =
             "org.fe57.atomspectra.ACTION_RECORDING_SUSPENDED";
     public final static String ACTION_RECORDING_RESUMED =
             "org.fe57.atomspectra.ACTION_RECORDING_RESUMED";
 
-    public final static String EXTRA_DATA_LONG_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_LONG_COUNTS";
-    public final static String EXTRA_DATA_INT_CPS =
-            "org.fe57.atomspectra.EXTRA_DATA_INT_CPS";
-    public final static String EXTRA_DATA_INT_CPS_INTERVAL =
-            "org.fe57.atomspectra.EXTRA_DATA_INT_CPS_INTERVAL";
 
-    // spectrum change data
-    public final static String EXTRA_DATA_LONG_DELTA_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_LONG_DELTA_COUNTS";
-    public final static String EXTRA_DATA_INT_DELTA_TIME =
-            "org.fe57.atomspectra.EXTRA_DATA_INT_DELTA_TIME";
-    public final static String EXTRA_DATA_LONG_DELTA_BACK_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_LONG_DELTA_BACK_COUNTS";
-    public final static String EXTRA_DATA_INT_DELTA_BACK_TIME =
-            "org.fe57.atomspectra.EXTRA_DATA_INT_DELTA_BACK_TIME";
+    // --- AtomSpectraService data bundle parameters ---
 
-    // spectrum data
-    public final static String EXTRA_DATA_ARRAY_LONG_FG_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_FG_COUNTS";
+    // +++ count rates +++
+    // cps during the last second
+    public final static String EXTRA_DATA_INT_CP1S =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_CP1S";
+    // cps in user defined energy range during the last second
+    public final static String EXTRA_DATA_INT_CP1S_INTERVAL =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_CP1S_INTERVAL";
+
+    // +++ spectrum data (also used for spectrum change mode) +++
+    // total counts in the foreground spectrum
+    public final static String EXTRA_DATA_LONG_TOTAL_FG_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_LONG_TOTAL_FG_COUNTS";
+    // time in seconds in the foreground spectrum
+    public final static String EXTRA_DATA_INT_FG_TOTAL_TIME =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_FG_TOTAL_TIME";
+    // foreground spectrum counts array
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS";
+    // background spectrum counts array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS";
+    // whether to show background spectrum
+    public final static String EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM =
+            "org.fe57.atomspectra.EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM"; 
+    // calibration function
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION";
 
-    public final static String EXTRA_DATA_SHOW_BACK_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_SHOW_BACK_COUNTS";
-    public final static String EXTRA_DATA_ARRAY_INT_SOUND =
-            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_INT_SOUND";
-    public final static String EXTRA_DATA_ARRAY_INT_SOUND_LENGTH =
-            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_INT_SOUND_LENGTH";
-    public final static String EXTRA_DATA_TOTAL_TIME =
-            "org.fe57.atomspectra.EXTRA_DATA_TOTAL_TIME";
-    public final static String EXTRA_DATA_DOSERATE_SEARCH =
-            "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH";
-    public final static String EXTRA_DATA_DOSERATE_SEARCH_ERROR =
-            "org.fe57.atomspectra.EXTRA_DATA_DOSERATE_SEARCH_ERROR";
-    public final static String EXTRA_DATA_SCOPE_COUNTS =
-            "org.fe57.atomspectra.EXTRA_DATA_SCOPE_COUNTS";
+    // +++ spectrum change counts and time +++
+    // total counts in the foreground spectrum change window
+    public final static String EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS"; 
+    // time in seconds in the foreground spectrum change window
+    public final static String EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME";
+    // total counts in the background spectrum change window
+    public final static String EXTRA_DATA_LONG_SP_CHNG_BG_TOTAL_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_LONG_SP_CHNG_BG_TOTAL_COUNTS";
+    // time in seconds in the background spectrum change window
+    public final static String EXTRA_DATA_INT_SP_CHNG_BG_TOTAL_TIME =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_SP_CHNG_BG_TOTAL_TIME";
+
+    // +++ search mode values +++
+    // compensated dose rate in uSv/h
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_C =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_C";
+    // error in compensated dose rate (1 sigma percent)
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR";
+    // compensated dose rate history array
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY";
+    // non-compensated dose rate in uSv/h
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_N =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N";
+    // error in non-compensated dose rate (1 sigma percent)
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR"; 
+    // non-compensated dose rate history array
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY";
+    // interval cps
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_INT_CPS =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS";
+    // error in interval cps (1 sigma percent)
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR";
+    // TODO: add alarm levels and baseline info
+    // interval cps history array
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY";
+    // interval cps high alarm history array
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY";
+    // interval cps low alarm history array
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY";
+    
+    // +++ spectra pro data +++
+    public final static String EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS";
+    public final static String EXTRA_DATA_ARRAY_LONG_SERIAL_SPECTRUM_COUNTS =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_SERIAL_SPECTRUM_COUNTS";
+
+    // +++ audio data +++
+    // latest data from audio input
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA = 
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA";
+    // reference pulse shape from audio input
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA = 
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA";
+
+    // --- [end] AtomSpectraService data bundle parameters ---
+
+
     private final static String SERVICE_INF_ID = "Service command -inf";
     private final static String SERVICE_STA_ID = "Service command -sta";
     private final static String SERVICE_STO_ID = "Service command -sto";
@@ -678,9 +738,7 @@ public class AtomSpectraService extends Service {
     }
 
     public static int getScaleFactor() {
-        synchronized (sync_factor) {
-            return scale_factor;
-        }
+        return scale_factor;
     }
 
     public static void setScaleFactor(int factor) {
@@ -706,19 +764,10 @@ public class AtomSpectraService extends Service {
                                     Constants.NUM_HIST_POINTS - Constants.WINDOW_OUTPUT_SIZE * (1 << (Constants.SCALE_MAX - scale_factor)));
                     break;
                 case Constants.SCALE_DOSE_MODE:
-//                    if ((inputType == INPUT_SERIAL) && (usbDevice.isOpened())) {
-//                        usbDevice.sendTextCommand("-mode 0", SERVICE_ID);
-//                    }
                     break;
-                case Constants.SCALE_COUNT_MODE:
-//                if ((inputType == INPUT_SERIAL) && (usbDevice.isOpened())) {
-//                    usbDevice.sendTextCommand("-mode 1", SERVICE_ID);
-//                }
+                case Constants.SCALE_OSCILLOSCOPE_MODE:
                     break;
-                case Constants.SCALE_IMPULSE_MODE:
-//                if ((inputType == INPUT_SERIAL) && (usbDevice.isOpened())) {
-//                    usbDevice.sendTextCommand("-mode 2", SERVICE_ID);
-//                }
+                case Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE:
                     break;
             }
         }
@@ -1364,8 +1413,8 @@ public class AtomSpectraService extends Service {
                             old_histogram = ForegroundSpectrum.getDataArray();
                             old_histogram = Arrays.copyOf(old_histogram, old_histogram.length);
 
-                            new_time = intent.getIntExtra(EXTRA_DATA_TOTAL_TIME, 1);
-                            new_histogram = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_FG_COUNTS);
+                            new_time = intent.getIntExtra(EXTRA_DATA_INT_FG_TOTAL_TIME, 1);
+                            new_histogram = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_SERIAL_SPECTRUM_COUNTS);
                             if (new_histogram != null) {
                                 new_histogram = Arrays.copyOf(new_histogram, new_histogram.length);
                                 ForegroundSpectrum.setSpectrum(new_histogram).setRealSpectrumTime(new_time).updateComments();
@@ -1382,7 +1431,7 @@ public class AtomSpectraService extends Service {
                              */
                         }
 
-                        cps = intent.getIntExtra(EXTRA_DATA_INT_CPS, 0);
+                        cps = intent.getIntExtra(EXTRA_DATA_INT_CP1S, 0);
                         total_counts = 0;
                         boolean isReliableData = false;
 
@@ -1428,12 +1477,12 @@ public class AtomSpectraService extends Service {
 
                     case AtomSpectraSerial.CODE_SCOPE:
                         //it is useless for Nano Pro
-//                        long[] scope = intent.getLongArrayExtra(EXTRA_DATA_SCOPE_COUNTS);
+//                        long[] scope = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS);
 //                        if(scope != null) {
-//                            if (scale_factor == Constants.SCALE_COUNT_MODE) {
+//                            if (scale_factor == Constants.SCALE_OSCILLOSCOPE_MODE) {
 //                                Arrays.fill(x, 0);
 //                                System.arraycopy(scope, 0, x, 0, StrictMath.min(scope.length, x.length));
-//                            } else if (scale_factor == Constants.SCALE_IMPULSE_MODE) {
+//                            } else if (scale_factor == Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE) {
 //                                Arrays.fill(referencePulse, 0);
 //                                System.arraycopy(scope, 0, referencePulse, 0, StrictMath.min(scope.length, referencePulse.length));
 //                            }
@@ -1558,7 +1607,7 @@ public class AtomSpectraService extends Service {
         notify_cancel_all();
         canOpenAudio = false;
         isStarted = false;
-        showDelta = false;
+        showSpectrumChange = false;
 
         resetRecordingSuspendedStatus(true);
 
@@ -1710,6 +1759,8 @@ public class AtomSpectraService extends Service {
     private static final LinkedList<Double> doseHistory = new LinkedList<>();
     private static final LinkedList<Double> doseCompensatedHistory = new LinkedList<>();
     private static final LinkedList<Double> doseIntervalHistory = new LinkedList<>();
+    private static final LinkedList<Double> doseIntervalHighAlarmHistory = new LinkedList<>();
+    private static final LinkedList<Double> doseIntervalLowAlarmHistory = new LinkedList<>();
 
     private static void resetCpsData() {
         Arrays.fill(cpsArray, 0);
@@ -1735,6 +1786,8 @@ public class AtomSpectraService extends Service {
             doseHistory.clear();
             doseCompensatedHistory.clear();
             doseIntervalHistory.clear();
+            doseIntervalHighAlarmHistory.clear();
+            doseIntervalLowAlarmHistory.clear();
         }
 
         doseRateValue = new DoseRate();
@@ -1852,6 +1905,8 @@ public class AtomSpectraService extends Service {
 
         double interval_cps = (total_interval_counts / total_interval_time);
         double interval_cps_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
+        intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
+
         synchronized (doseHistory) {
             doseHistory.addLast(dose_rate);
             if (doseHistory.size() > SEARCH_WINDOW_SIZE) {
@@ -1865,9 +1920,15 @@ public class AtomSpectraService extends Service {
             if (doseIntervalHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseIntervalHistory.removeFirst();
             }
+            doseIntervalHighAlarmHistory.addLast(intervalSearchAlarmBaseline.getHighAlarmLevel());
+            if (doseIntervalHighAlarmHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseIntervalHighAlarmHistory.removeFirst();
+            }
+            doseIntervalLowAlarmHistory.addLast(intervalSearchAlarmBaseline.getLowAlarmLevel());
+            if (doseIntervalLowAlarmHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseIntervalLowAlarmHistory.removeFirst();
+            }
         }
-
-        intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
 
         return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_cps, interval_cps_error);
     }
@@ -2104,7 +2165,7 @@ public class AtomSpectraService extends Service {
     // shows spectrum for the last n seconds (sliding window)
     // window size - delta_time
     private final void calcSpectrumChangeData() {
-        if (showDelta) {
+        if (showSpectrumChange) {
             long[] currentState = Arrays.copyOf(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getDataArray().length);
             long[] previousState = currentState;
             long[] backState = currentState;
@@ -2124,8 +2185,8 @@ public class AtomSpectraService extends Service {
             }
 
             for (int i = 0; i < currentState.length; i++) {
-                histogram_all_delta[i] = currentState[i] - previousState[i];
-                histogram_all_delta_back[i] = currentState[i] - backState[i];
+                histogram_all_sp_change_fg[i] = currentState[i] - previousState[i];
+                histogram_all_sp_change_bg[i] = currentState[i] - backState[i];
             }
         } else {
             resetSpectrumChangeWindow();
@@ -2136,53 +2197,38 @@ public class AtomSpectraService extends Service {
         final Intent intent = new Intent(ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME);
         Bundle mBundle = new Bundle();
 
-        double dose_rate = -1;
-        double dose_rate_error = -1;
-        switch (AtomSpectra.DisplayDose) {
-            case Constants.DISPLAY_DOSE_NON_COMPENSATED:
-                dose_rate = doseRateValue.nonCompensated;
-                dose_rate_error = doseRateValue.nonCompensatedErrorPercent;
-                break;
-            case Constants.DISPLAY_DOSE_COMPENSATED:
-                dose_rate = doseRateValue.compensated;
-                dose_rate_error = doseRateValue.compensatedErrorPercent;
-                break;
-            case Constants.DISPLAY_DOSE_INTERVAL:
-                dose_rate = doseRateValue.intervalCps;
-                dose_rate_error = doseRateValue.intervalCpsErrorPercent;
-                break;
-        }
-        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH, dose_rate);
-        mBundle.putDouble(EXTRA_DATA_DOSERATE_SEARCH_ERROR, dose_rate_error);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_C, doseRateValue.compensated);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR, doseRateValue.compensatedErrorPercent);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_N, doseRateValue.nonCompensated);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR, doseRateValue.nonCompensatedErrorPercent);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_INT_CPS, doseRateValue.intervalCps);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR, doseRateValue.intervalCpsErrorPercent);
 
-        mBundle.putInt(EXTRA_DATA_INT_CPS, cps);
-        mBundle.putInt(EXTRA_DATA_INT_CPS_INTERVAL, cpsInterval);
+        mBundle.putInt(EXTRA_DATA_INT_CP1S, cps);
+        mBundle.putInt(EXTRA_DATA_INT_CP1S_INTERVAL, cpsInterval);
 
-        mBundle.putLong(EXTRA_DATA_LONG_COUNTS, total_counts);
-        mBundle.putDouble(EXTRA_DATA_TOTAL_TIME, ForegroundSpectrum.getRealSpectrumTime());
+        mBundle.putLong(EXTRA_DATA_LONG_TOTAL_FG_COUNTS, total_counts);
+        mBundle.putDouble(EXTRA_DATA_INT_FG_TOTAL_TIME, ForegroundSpectrum.getRealSpectrumTime());
 
-        if (AtomSpectraService.showDelta && histogram_all_queue.size() > 1) {
+        if (AtomSpectraService.showSpectrumChange && histogram_all_queue.size() > 1) {
             int delta_current_time = Math.min(histogram_all_queue.size() - 1, delta_time);
             int delta_current_back_time = histogram_all_queue.size() - 1;
             long delta_counts = 0;
             long delta_back_counts = 0;
-            for (int i = 0; i < histogram_all_delta.length; i++) {
-                delta_counts += histogram_all_delta[i];
-                delta_back_counts += histogram_all_delta_back[i];
+            for (int i = 0; i < histogram_all_sp_change_fg.length; i++) {
+                delta_counts += histogram_all_sp_change_fg[i];
+                delta_back_counts += histogram_all_sp_change_bg[i];
             }
-            mBundle.putLong(EXTRA_DATA_LONG_DELTA_COUNTS, delta_counts);
-            mBundle.putLong(EXTRA_DATA_LONG_DELTA_BACK_COUNTS, delta_back_counts);
-            mBundle.putInt(EXTRA_DATA_INT_DELTA_TIME, delta_current_time);
-            mBundle.putInt(EXTRA_DATA_INT_DELTA_BACK_TIME, delta_current_back_time);
+            mBundle.putLong(EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS, delta_counts);
+            mBundle.putLong(EXTRA_DATA_LONG_SP_CHNG_BG_TOTAL_COUNTS, delta_back_counts);
+            mBundle.putInt(EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME, delta_current_time);
+            mBundle.putInt(EXTRA_DATA_INT_SP_CHNG_BG_TOTAL_TIME, delta_current_back_time);
         } else {
-            mBundle.putLong(EXTRA_DATA_LONG_DELTA_COUNTS, 0);
-            mBundle.putLong(EXTRA_DATA_LONG_DELTA_BACK_COUNTS, 0);
-            mBundle.putInt(EXTRA_DATA_INT_DELTA_TIME, 0);
-            mBundle.putInt(EXTRA_DATA_INT_DELTA_BACK_TIME, 0);
+            mBundle.putLong(EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS, 0);
+            mBundle.putLong(EXTRA_DATA_LONG_SP_CHNG_BG_TOTAL_COUNTS, 0);
+            mBundle.putInt(EXTRA_DATA_INT_SP_CHNG_FG_TOTAL_TIME, 0);
+            mBundle.putInt(EXTRA_DATA_INT_SP_CHNG_BG_TOTAL_TIME, 0);
         }
-
-        mBundle.putInt(EXTRA_DATA_ARRAY_INT_SOUND_LENGTH, BufferSize / 2);
-        mBundle.putIntArray(EXTRA_DATA_ARRAY_INT_SOUND, AudioData);
 
         int num_values;
         int num_scale_factor;
@@ -2211,249 +2257,253 @@ public class AtomSpectraService extends Service {
                         }
                         histogram[i] = histogram[i] / num_values;
                     }
-                } else if (showDelta) {
-                    int delta_current_time = Math.min(histogram_all_queue.size() - 1, delta_time);
-                    int delta_current_back_time = histogram_all_queue.size() - 1;
-                    double backgroundScale = (double) delta_current_time / (double) delta_current_back_time;
-                    if (isCalibrated) {
-                        double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
-                        double[] background_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_delta_back, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
-                        double sum_element;
-                        double back_sum_element;
-                        switch (compressGraph) {
-                            case Constants.COMPRESS_GRAPH_SUM:
-                                for (int i = 0; i < 1024; i++) {
-                                    sum_element = 0;
-                                    back_sum_element = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
-                                        back_sum_element += background_e_all[num_first_channel + i * num_values + j];
-                                    }
-                                    histogram[i] = sum_element;
-                                    background_histogram[i] = back_sum_element * backgroundScale;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_AVERAGE:
-                                for (int i = 0; i < 1024; i++) {
-                                    sum_element = 0;
-                                    back_sum_element = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
-                                        back_sum_element += background_e_all[num_first_channel + i * num_values + j];
-                                    }
-                                    histogram[i] = sum_element / num_values;
-                                    background_histogram[i] = back_sum_element / num_values * backgroundScale;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_MAX:
-                                for (int i = 0; i < 1024; i++) {
-                                    sum_element = 0;
-                                    back_sum_element = 0;
-                                    if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
-                                        for (int j = 0; j < num_values; j++) {
-                                            sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
-                                            back_sum_element = StrictMath.max(back_sum_element, background_e_all[num_first_channel + i * num_values + j]);
-                                        }
-                                        histogram[i] = sum_element;
-                                        background_histogram[i] = back_sum_element * backgroundScale;
-                                    }
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    } else {
-                        double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_delta, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
-                        double[] back_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_delta_back, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
-                        switch (compressGraph) {
-                            case Constants.COMPRESS_GRAPH_SUM:
-                                for (int i = 0; i < 1024; i++) {
-                                    histogram[i] = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                                        background_histogram[i] += back_temp[num_first_channel + i * num_values + j];
-                                    }
-                                    background_histogram[i] *= backgroundScale;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_AVERAGE:
-                                for (int i = 0; i < 1024; i++) {
-                                    histogram[i] = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                                        background_histogram[i] += back_temp[num_first_channel + i * num_values + j];
-                                    }
-                                    histogram[i] = histogram[i] / num_values;
-                                    background_histogram[i] = background_histogram[i] / num_values;
-                                    background_histogram[i] *= backgroundScale;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_MAX:
-                                for (int i = 0; i < 1024; i++) {
-                                    histogram[i] = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
-                                        background_histogram[i] = StrictMath.max(background_histogram[i], back_temp[num_first_channel + i * num_values + j]);
-                                    }
 
-                                    background_histogram[i] *= backgroundScale;
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
+                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION, histogram);
                 } else {
-                    if (isCalibrated) {
-                        double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
-                        double sum_element;
-                        switch (compressGraph) {
-                            case Constants.COMPRESS_GRAPH_SUM:
-                                for (int i = 0; i < 1024; i++) {
-                                    sum_element = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
-                                    }
-                                    histogram[i] = sum_element;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_AVERAGE:
-                                for (int i = 0; i < 1024; i++) {
-                                    sum_element = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        sum_element += histogram_e_all[num_first_channel + i * num_values + j];
-                                    }
-                                    histogram[i] = sum_element / num_values;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_MAX:
-                                for (int i = 0; i < 1024; i++) {
-                                    sum_element = 0;
-                                    background_histogram[i] = 0;
-                                    if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
-                                        for (int j = 0; j < num_values; j++) {
-                                            sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
-                                        }
-                                        histogram[i] = sum_element;
-                                    }
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    } else {
-                        double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
-                        switch (compressGraph) {
-                            case Constants.COMPRESS_GRAPH_SUM:
-                                for (int i = 0; i < 1024; i++) {
-                                    histogram[i] = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                                    }
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_AVERAGE:
-                                for (int i = 0; i < 1024; i++) {
-                                    histogram[i] = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
-                                    }
-                                    histogram[i] = histogram[i] / num_values;
-                                }
-                                break;
-                            case Constants.COMPRESS_GRAPH_MAX:
-                                for (int i = 0; i < 1024; i++) {
-                                    histogram[i] = 0;
-                                    background_histogram[i] = 0;
-                                    for (int j = 0; j < num_values; j++) {
-                                        histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
-                                    }
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    if (background_show && (!BackgroundSpectrum.isEmpty())) {
-                        double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
+                    if (showSpectrumChange) {
+                        int delta_current_time = Math.min(histogram_all_queue.size() - 1, delta_time);
+                        int delta_current_back_time = histogram_all_queue.size() - 1;
+                        double backgroundScale = (double) delta_current_time / (double) delta_current_back_time;
                         if (isCalibrated) {
-                            double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_sp_change_fg, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                            double[] background_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_sp_change_bg, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
                             double sum_element;
+                            double back_sum_element;
                             switch (compressGraph) {
                                 case Constants.COMPRESS_GRAPH_SUM:
                                     for (int i = 0; i < 1024; i++) {
                                         sum_element = 0;
+                                        back_sum_element = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            sum_element += background_data_e_total[num_first_channel + i * num_values + j];
+                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                            back_sum_element += background_e_all[num_first_channel + i * num_values + j];
                                         }
-                                        background_histogram[i] = sum_element * backgroundScale;
+                                        histogram[i] = sum_element;
+                                        background_histogram[i] = back_sum_element * backgroundScale;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_AVERAGE:
                                     for (int i = 0; i < 1024; i++) {
                                         sum_element = 0;
+                                        back_sum_element = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            sum_element += background_data_e_total[num_first_channel + i * num_values + j];
+                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                            back_sum_element += background_e_all[num_first_channel + i * num_values + j];
                                         }
-                                        background_histogram[i] = sum_element * backgroundScale / num_values;
+                                        histogram[i] = sum_element / num_values;
+                                        background_histogram[i] = back_sum_element / num_values * backgroundScale;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_MAX:
                                     for (int i = 0; i < 1024; i++) {
                                         sum_element = 0;
-                                        for (int j = 0; j < num_values; j++) {
-                                            sum_element = StrictMath.max(sum_element, background_data_e_total[num_first_channel + i * num_values + j]);
+                                        back_sum_element = 0;
+                                        if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
+                                            for (int j = 0; j < num_values; j++) {
+                                                sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
+                                                back_sum_element = StrictMath.max(back_sum_element, background_e_all[num_first_channel + i * num_values + j]);
+                                            }
+                                            histogram[i] = sum_element;
+                                            background_histogram[i] = back_sum_element * backgroundScale;
                                         }
-                                        background_histogram[i] = sum_element * backgroundScale;
                                     }
                                     break;
                                 default:
                                     break;
                             }
                         } else {
-                            double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_sp_change_fg, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                            double[] back_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_sp_change_bg, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
                             switch (compressGraph) {
                                 case Constants.COMPRESS_GRAPH_SUM:
                                     for (int i = 0; i < 1024; i++) {
+                                        histogram[i] = 0;
+                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            background_histogram[i] += data[num_first_channel + i * num_values + j];
+                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                            background_histogram[i] += back_temp[num_first_channel + i * num_values + j];
                                         }
-                                        background_histogram[i] = background_histogram[i] * backgroundScale;
+                                        background_histogram[i] *= backgroundScale;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_AVERAGE:
                                     for (int i = 0; i < 1024; i++) {
+                                        histogram[i] = 0;
+                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            background_histogram[i] += data[num_first_channel + i * num_values + j];
+                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                            background_histogram[i] += back_temp[num_first_channel + i * num_values + j];
                                         }
-                                        background_histogram[i] = background_histogram[i] * backgroundScale / num_values;
+                                        histogram[i] = histogram[i] / num_values;
+                                        background_histogram[i] = background_histogram[i] / num_values;
+                                        background_histogram[i] *= backgroundScale;
                                     }
                                     break;
                                 case Constants.COMPRESS_GRAPH_MAX:
                                     for (int i = 0; i < 1024; i++) {
+                                        histogram[i] = 0;
+                                        background_histogram[i] = 0;
                                         for (int j = 0; j < num_values; j++) {
-                                            background_histogram[i] = StrictMath.max(background_histogram[i], data[num_first_channel + i * num_values + j]);
+                                            histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
+                                            background_histogram[i] = StrictMath.max(background_histogram[i], back_temp[num_first_channel + i * num_values + j]);
                                         }
-                                        background_histogram[i] = background_histogram[i] * backgroundScale;
+
+                                        background_histogram[i] *= backgroundScale;
                                     }
                                     break;
                                 default:
                                     break;
                             }
                         }
+                    } else {
+                        if (isCalibrated) {
+                            double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                            double sum_element;
+                            switch (compressGraph) {
+                                case Constants.COMPRESS_GRAPH_SUM:
+                                    for (int i = 0; i < 1024; i++) {
+                                        sum_element = 0;
+                                        background_histogram[i] = 0;
+                                        for (int j = 0; j < num_values; j++) {
+                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                        }
+                                        histogram[i] = sum_element;
+                                    }
+                                    break;
+                                case Constants.COMPRESS_GRAPH_AVERAGE:
+                                    for (int i = 0; i < 1024; i++) {
+                                        sum_element = 0;
+                                        background_histogram[i] = 0;
+                                        for (int j = 0; j < num_values; j++) {
+                                            sum_element += histogram_e_all[num_first_channel + i * num_values + j];
+                                        }
+                                        histogram[i] = sum_element / num_values;
+                                    }
+                                    break;
+                                case Constants.COMPRESS_GRAPH_MAX:
+                                    for (int i = 0; i < 1024; i++) {
+                                        sum_element = 0;
+                                        background_histogram[i] = 0;
+                                        if (compressGraph == Constants.COMPRESS_GRAPH_MAX) {
+                                            for (int j = 0; j < num_values; j++) {
+                                                sum_element = StrictMath.max(sum_element, histogram_e_all[num_first_channel + i * num_values + j]);
+                                            }
+                                            histogram[i] = sum_element;
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        } else {
+                            double[] histogram_temp = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                            switch (compressGraph) {
+                                case Constants.COMPRESS_GRAPH_SUM:
+                                    for (int i = 0; i < 1024; i++) {
+                                        histogram[i] = 0;
+                                        background_histogram[i] = 0;
+                                        for (int j = 0; j < num_values; j++) {
+                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                        }
+                                    }
+                                    break;
+                                case Constants.COMPRESS_GRAPH_AVERAGE:
+                                    for (int i = 0; i < 1024; i++) {
+                                        histogram[i] = 0;
+                                        background_histogram[i] = 0;
+                                        for (int j = 0; j < num_values; j++) {
+                                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                                        }
+                                        histogram[i] = histogram[i] / num_values;
+                                    }
+                                    break;
+                                case Constants.COMPRESS_GRAPH_MAX:
+                                    for (int i = 0; i < 1024; i++) {
+                                        histogram[i] = 0;
+                                        background_histogram[i] = 0;
+                                        for (int j = 0; j < num_values; j++) {
+                                            histogram[i] = StrictMath.max(histogram[i], histogram_temp[num_first_channel + i * num_values + j]);
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        if (background_show && (!BackgroundSpectrum.isEmpty())) {
+                            double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
+                            if (isCalibrated) {
+                                double[] background_data_e_total = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                                double sum_element;
+                                switch (compressGraph) {
+                                    case Constants.COMPRESS_GRAPH_SUM:
+                                        for (int i = 0; i < 1024; i++) {
+                                            sum_element = 0;
+                                            for (int j = 0; j < num_values; j++) {
+                                                sum_element += background_data_e_total[num_first_channel + i * num_values + j];
+                                            }
+                                            background_histogram[i] = sum_element * backgroundScale;
+                                        }
+                                        break;
+                                    case Constants.COMPRESS_GRAPH_AVERAGE:
+                                        for (int i = 0; i < 1024; i++) {
+                                            sum_element = 0;
+                                            for (int j = 0; j < num_values; j++) {
+                                                sum_element += background_data_e_total[num_first_channel + i * num_values + j];
+                                            }
+                                            background_histogram[i] = sum_element * backgroundScale / num_values;
+                                        }
+                                        break;
+                                    case Constants.COMPRESS_GRAPH_MAX:
+                                        for (int i = 0; i < 1024; i++) {
+                                            sum_element = 0;
+                                            for (int j = 0; j < num_values; j++) {
+                                                sum_element = StrictMath.max(sum_element, background_data_e_total[num_first_channel + i * num_values + j]);
+                                            }
+                                            background_histogram[i] = sum_element * backgroundScale;
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            } else {
+                                double[] data = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                                switch (compressGraph) {
+                                    case Constants.COMPRESS_GRAPH_SUM:
+                                        for (int i = 0; i < 1024; i++) {
+                                            for (int j = 0; j < num_values; j++) {
+                                                background_histogram[i] += data[num_first_channel + i * num_values + j];
+                                            }
+                                            background_histogram[i] = background_histogram[i] * backgroundScale;
+                                        }
+                                        break;
+                                    case Constants.COMPRESS_GRAPH_AVERAGE:
+                                        for (int i = 0; i < 1024; i++) {
+                                            for (int j = 0; j < num_values; j++) {
+                                                background_histogram[i] += data[num_first_channel + i * num_values + j];
+                                            }
+                                            background_histogram[i] = background_histogram[i] * backgroundScale / num_values;
+                                        }
+                                        break;
+                                    case Constants.COMPRESS_GRAPH_MAX:
+                                        for (int i = 0; i < 1024; i++) {
+                                            for (int j = 0; j < num_values; j++) {
+                                                background_histogram[i] = StrictMath.max(background_histogram[i], data[num_first_channel + i * num_values + j]);
+                                            }
+                                            background_histogram[i] = background_histogram[i] * backgroundScale;
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
                     }
-                }
 
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histogram);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
-                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
+                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS, histogram);
+                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
+                    mBundle.putBoolean(EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM, background_show && (!BackgroundSpectrum.isEmpty()));
+                } 
                 break;
 
             case 7:
@@ -2465,6 +2515,8 @@ public class AtomSpectraService extends Service {
                         background_histogram[2 * i] = 0;
                         background_histogram[2 * i + 1] = 0;
                     }
+
+                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_CALIBRATION_FUNCTION, histogram);
                 } else {
                     if (isCalibrated) {
                         double[] histogram_e_all = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
@@ -2495,59 +2547,33 @@ public class AtomSpectraService extends Service {
                             }
                         }
                     }
-                }
 
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histogram);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
-                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, background_show && (!BackgroundSpectrum.isEmpty()));
+                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS, histogram);
+                    mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
+                    mBundle.putBoolean(EXTRA_DATA_BOOL_SHOW_BG_SPECTRUM, background_show && (!BackgroundSpectrum.isEmpty()));
+                }
                 break;
 
             case Constants.SCALE_DOSE_MODE:
-                double[] histData = new double[SEARCH_WINDOW_SIZE];
-                LinkedList<Double> history;
-                switch (AtomSpectra.DisplayDose) {
-                    case Constants.DISPLAY_DOSE_COMPENSATED:
-                        history = doseCompensatedHistory;
-                        break;
-                    case Constants.DISPLAY_DOSE_NON_COMPENSATED:
-                        history = doseHistory;
-                        break;
-                    case Constants.DISPLAY_DOSE_INTERVAL:
-                        history = doseIntervalHistory;
-                        break;
-                    default:
-                        history = new LinkedList<>();
-                        break;
-                }
-                int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - history.size(), 0);
-                synchronized (doseHistory) {
-                    for (double v : history) {
-                        if (num_data >= SEARCH_WINDOW_SIZE)
-                            break;
-                        histData[num_data] = v / Constants.DOSE_SCALE;
-                        num_data++;
-                    }
-                }
-
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, histData);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, new double[1024]);
-                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY, searchHistoryToArray(doseCompensatedHistory));
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY, searchHistoryToArray(doseHistory));
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY, searchHistoryToArray(doseIntervalHistory));
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY, searchHistoryToArray(doseIntervalHighAlarmHistory));
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY, searchHistoryToArray(doseIntervalLowAlarmHistory));
                 break;
 
-            case Constants.SCALE_COUNT_MODE:
-                Arrays.fill(realTimeX, 0);
+            case Constants.SCALE_OSCILLOSCOPE_MODE:
+                Arrays.fill(realTimeAudioData, 0);
                 synchronized (inputSync) {
                     if (inputType == INPUT_AUDIO) {
-                        for (int i = 0; i < StrictMath.min(realTimeX.length, (AudioBytesRead / 2)); i++)
-                            realTimeX[i] = AudioData[i];
+                        for (int i = 0; i < StrictMath.min(realTimeAudioData.length, (AudioBytesRead / 2)); i++)
+                            realTimeAudioData[i] = AudioData[i];
                     }
                 }
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, realTimeX);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
-                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA, realTimeAudioData);
                 break;
 
-            case Constants.SCALE_IMPULSE_MODE:
+            case Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE:
                 synchronized (inputSync) {
                     if (inputType != INPUT_AUDIO) {
                         Arrays.fill(referenceDoublePulse, 0);
@@ -2557,9 +2583,7 @@ public class AtomSpectraService extends Service {
                         }
                     }
                 }
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_LONG_FG_COUNTS, referenceDoublePulse);
-                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_BG_COUNTS, background_histogram);
-                mBundle.putBoolean(EXTRA_DATA_SHOW_BACK_COUNTS, false);
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA, referenceDoublePulse);
                 break;
 
             default:
@@ -2573,7 +2597,20 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    ;
+    private Array<Double> searchHistoryToArray(LinkedList<Double> history) {
+        double[] histData = new double[SEARCH_WINDOW_SIZE];
+        int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - history.size(), 0);
+        synchronized (doseHistory) {
+            for (double v : history) {
+                if (num_data >= SEARCH_WINDOW_SIZE)
+                    break;
+                histData[num_data] = v / Constants.DOSE_SCALE;
+                num_data++;
+            }
+        }
+
+        return histData;
+    }
 
     public class LocalBinder extends Binder {
         AtomSpectraService getService() {
@@ -3247,8 +3284,8 @@ public class AtomSpectraService extends Service {
     }
 
     private static void resetSpectrumChangeWindow() {
-        Arrays.fill(histogram_all_delta, 0);
-        Arrays.fill(histogram_all_delta_back, 0);
+        Arrays.fill(histogram_all_sp_change_fg, 0);
+        Arrays.fill(histogram_all_sp_change_bg, 0);
         if (!histogram_all_queue.isEmpty()) {
             synchronized (histogram_all_queue) {
                 histogram_all_queue.clear();

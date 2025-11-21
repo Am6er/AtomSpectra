@@ -412,7 +412,7 @@ public class AtomSpectraShapeView extends View {
 					for (int i = 2; i < N; i++)
 						if (X[i - 1] >= margin_left)
 							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-				} else if (AtomSpectraService.showDelta && !dose_mode) {
+				} else if (AtomSpectraService.showSpectrumChange && !dose_mode) {
 					squareColor.setColor(DELTA_COLOR);
 					for (int i = 2; i < N; i++)
 						if (X[i - 1] >= margin_left)
@@ -464,7 +464,7 @@ public class AtomSpectraShapeView extends View {
 							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
 						}
 					squareColor.setShader(null);
-				} else if (AtomSpectraService.showDelta && !dose_mode) {
+				} else if (AtomSpectraService.showSpectrumChange && !dose_mode) {
 					squareColor.setStyle(Style.FILL);
 					int colorFrom = DELTA_COLOR;
 					int colorTo = DELTA_COLOR;
@@ -810,7 +810,7 @@ public class AtomSpectraShapeView extends View {
 		isCalibrated = calibrated;
 		frontCountsMin = front_min;
 		frontCountsMax = front_max;
-		calibrationScale = AtomSpectraService.showCalibrationFunction && xZoom_factor < Constants.SCALE_COUNT_MODE;
+		calibrationScale = AtomSpectraService.showCalibrationFunction && xZoom_factor < Constants.SCALE_OSCILLOSCOPE_MODE;
 		if (xZoom_factor == Constants.SCALE_DOSE_MODE) {
 			for (int i = 0; i < size; i++) {
 				yf[i] = y[i] * Constants.DOSE_SCALE;
@@ -828,7 +828,7 @@ public class AtomSpectraShapeView extends View {
 				System.arraycopy(back, 0, back_yf, 0, size);
 			}
 		}
-		if (xZoom_factor == Constants.SCALE_COUNT_MODE || xZoom_factor == Constants.SCALE_DOSE_MODE) {
+		if (xZoom_factor == Constants.SCALE_OSCILLOSCOPE_MODE || xZoom_factor == Constants.SCALE_DOSE_MODE) {
 			xSize = size;
 		}
 
@@ -843,7 +843,7 @@ public class AtomSpectraShapeView extends View {
 		else if (xZoom_factor == Constants.SCALE_MAX) xZoom = (1 << 6) / 2.0;
 		else xZoom = 1;
 
-		if (xZoom_factor == Constants.SCALE_IMPULSE_MODE) {
+		if (xZoom_factor == Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE) {
 			dose_mode = false;
 			circleMode = true;
 			max = 1;
@@ -885,7 +885,7 @@ public class AtomSpectraShapeView extends View {
 					for (int j = 0; j < step; j++) /*if ((i*step+j)>=0) if ((i*step+j)<1024) */
 						back_r += back_yf[i * step + j];
 				//if (r>max) max=r;
-				if (xZoom_factor >= Constants.SCALE_COUNT_MODE) r -= (Constants.NUM_HIST_POINTS / 2.0);
+				if (xZoom_factor >= Constants.SCALE_OSCILLOSCOPE_MODE) r -= (Constants.NUM_HIST_POINTS / 2.0);
 				if (logScale) {
 					if (r > minLogValue) tmp[xSize - 1 - i] = Math.log10(r);
 					else tmp[xSize - 1 - i] = Math.log10(minLogValue);
@@ -922,12 +922,12 @@ public class AtomSpectraShapeView extends View {
 					if (back_tmp[i] > max) max = back_tmp[i];  //use one scale for both histograms
 		}
 
-		if (xZoom_factor == Constants.SCALE_COUNT_MODE) {
+		if (xZoom_factor == Constants.SCALE_OSCILLOSCOPE_MODE) {
 			max = Constants.NUM_HIST_POINTS / 2.0 - 1;
 			min = -(Constants.NUM_HIST_POINTS / 2.0);
 		}
 
-		if (xZoom_factor == Constants.SCALE_IMPULSE_MODE) {
+		if (xZoom_factor == Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE) {
 			for (int i = 0; i < 256; i++) {
 				double rr = (tmp[i] - min) * zoom_factor / (max - min);
 				if (rr > 1) rr = 1;
@@ -948,7 +948,7 @@ public class AtomSpectraShapeView extends View {
 					back_Y[i] = margin_top + height - (int) ((height - 2) * rr) - 1;
 				}
 
-				if (xZoom_factor == Constants.SCALE_COUNT_MODE) {
+				if (xZoom_factor == Constants.SCALE_OSCILLOSCOPE_MODE) {
 					if (rr > 0.5) rr = 0.5;
 					Y[i] = margin_top + height / 2 - (int) ((height - 2) * rr) - 1;
 				}
