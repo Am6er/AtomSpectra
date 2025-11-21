@@ -72,7 +72,7 @@ public class Constants {
     public static final String DISPLAY_DOSE_COMPENSATED = "dose-compensated";
     public static final String DISPLAY_DOSE_NON_COMPENSATED = "dose-non-compensated";
     public static final String DISPLAY_DOSE_INTERVAL = "dose-interval";
-    public static final String DISPLAY_DOSE_DEFAULT = DISPLAY_DOSE_COMPENSATED;
+    public static final String DISPLAY_DOSE_DEFAULT = DISPLAY_DOSE_NON_COMPENSATED;
     public static final double ALARM_BASELINE_ERROR_PERCENT_THRESHOLD = 5;
     public static final int ALARM_BASELINE_MAX_DURATION = 30;
     public static final int ALARM_DETECTION_LEVEL_DEFAULT = 3;
