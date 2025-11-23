@@ -799,8 +799,8 @@ public class AtomSpectraShapeView extends View {
 
 	public void showSearch(
 			double[] search_values, // array to draw
-			double[] alarmLow,
-			double[] alarmHigh,
+			double[] alarm_high,
+			double[] alarm_low,
 			double[] baseline,
 			boolean is_interval_search,
 			boolean show_alarm_level,
@@ -822,11 +822,18 @@ public class AtomSpectraShapeView extends View {
 			y_zoom = y_zoom_factor;
 			y_max = Constants.DOSE_SCALE / Constants.DOSE_OVERHEAD;
 			y_min = 0;
-			double[] reversed = new double[size];
+			double[] search_values_reversed = getReversed(search_values);
+			double[] alarm_high_reversed = getReversed(alarm_high);
+			double[] alarm_low_reversed = getReversed(alarm_low);
+			double[] baseline_reversed = getReversed(baseline);
+
 			for (int i = 0; i < size; i++) {
-				reversed[i] = search_values[size - 1 - i];
-				if (reversed[i] > y_max) y_max = reversed[i];
-				if (reversed[i] < y_min) y_min = reversed[i];
+				if (search_values_reversed[i] > y_max) {
+					y_max = search_values_reversed[i];
+				}
+				if (show_alarm_level && alarm_high_reversed[i] > y_max) {
+					y_max = alarm_high_reversed[i];
+				}
 			}
 
 			y_max *= Constants.DOSE_OVERHEAD;
@@ -834,15 +841,26 @@ public class AtomSpectraShapeView extends View {
 				m_dose_mode = true;
 				y_max /= 1000;
 				for (int i = 0; i < size; i++) {
-					reversed[i] /= 1000.0;
+					search_values_reversed[i] /= 1000.0;
+					alarm_high_reversed[i] /= 1000.0;
+					alarm_low_reversed[i] /= 1000.0;
+					baseline_reversed[i] /= 1000.0;
 				}
 			} else {
 				m_dose_mode = false;
 			}
 
 			N_x_points = size;
-			Shape search_shape = getShape(reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);;
-			this.shapes = new Shape[] {search_shape};
+			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			if (show_alarm_level) {
+				Shape alarm_high_shape = getShape(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
+				Shape alarm_low_shape = getShape(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
+				Shape baseline_shape = getShape(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN);
+
+				this.shapes = new Shape[] {alarm_high_shape, alarm_low_shape, baseline_shape, search_shape};
+			} else {
+				this.shapes = new Shape[] {search_shape};
+			}
 		}
 		invalidate();
 	}
@@ -947,6 +965,17 @@ public class AtomSpectraShapeView extends View {
 			this.shapes = new Shape[] {pulse_shape};
 		}
 		invalidate();
+	}
+
+	private double[] getReversed(double[] values) {
+		int size = values.length;
+		double[] reversed = new double[size];
+		for (int i = 0; i < size; i++) {
+			reversed[i] = values[size - 1 - i];
+			if (reversed[i] > y_max) y_max = reversed[i];
+			if (reversed[i] < y_min) y_min = reversed[i];
+		}
+		return reversed;
 	}
 
 	private @NonNull Shape getShape(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to) {
