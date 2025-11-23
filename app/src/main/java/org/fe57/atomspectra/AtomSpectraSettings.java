@@ -760,52 +760,21 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                         if (realtime_audio_data == null) {
                             realtime_audio_data = new double[1024];
                         }
-                        mAtomSpectraSignalView.showShape(
+                        mAtomSpectraSignalView.showOscilloscope(
                                 realtime_audio_data,
-                                new double[1024],
-                                false,
-                                false,
-                                false,
-                                1024,
-                                128,
-                                false,
-                                false,
-                                0,
-                                1024,
-                                getString(R.string.graph_show_points),
-                                zoom_factor,
-                                AtomSpectraService.getScaleFactor(),
-                                true,
-                                -1,
-                                settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-                                settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+                                zoom_factor
+                        );
                     } else {
                         double[] reference_pulse_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA);
                         if (reference_pulse_data == null) {
                             reference_pulse_data = new double[1024];
                         }
-                        mAtomSpectraSignalView.showShape(
+                        mAtomSpectraSignalView.showReferencePulse(
                                 reference_pulse_data,
-                                new double[1024],
-                                false,
-                                false,
-                                false,
-                                1024,
-                                256,
-                                false,
-                                false,
-                                0,
-                                256,
-                                getString(R.string.graph_show_points),
-                                zoom_factor,
-                                AtomSpectraService.getScaleFactor(),
-                                true,
-                                -1,
                                 settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-                                settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+                                settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)
+                        );
                     }
-
-
                     //	Log.d(TAG, "data received from service  "+ String.valueOf(array_length));
                 }
             }

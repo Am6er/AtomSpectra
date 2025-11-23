@@ -1173,25 +1173,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						if (calibration_data == null) {
 							calibration_data = new double[1024];
 						}
-						mAtomSpectraShapeView.showShape(
-								calibration_data,
-								new double[1024],
-								false,
-								false,
-								false,
-								1024,
-								1024,
-								false,
-								false,
-								num_first_channel,
-								num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)),
-								getString(R.string.graph_show_channel),
-								zoom_factor,
-								num_scale_factor,
-								false,
-								-1,
-								sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-								sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+						mAtomSpectraShapeView.showCalibration(calibration_data);
 					} else {
 						if (num_scale_factor <= Constants.SCALE_MAX) {
 							double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS);
@@ -1206,13 +1188,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							// spectrum view
 							if (XCalibrated) {
 								// Toast.makeText(context, "spectrum kev", Toast.LENGTH_SHORT).show();
-								mAtomSpectraShapeView.showShape(
+								mAtomSpectraShapeView.showSpectrum(
 										histogram,
 										hist_back,
 										show_back || AtomSpectraService.showSpectrumChange,
 										background_subtract && !AtomSpectraService.showSpectrumChange,
 										true,
-										1024,
 										reducedTo,
 										logScale,
 										barMode,
@@ -1221,19 +1202,15 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 										getString(R.string.graph_show_kev),
 										zoom_factor,
 										num_scale_factor,
-										false,
-										(float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(cursor_x),
-										sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-										sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+										(float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(cursor_x));
 							} else {
 								// Toast.makeText(context, "spectrum ch", Toast.LENGTH_SHORT).show();
-								mAtomSpectraShapeView.showShape(
+								mAtomSpectraShapeView.showSpectrum(
 										histogram,
 										hist_back,
 										show_back || AtomSpectraService.showSpectrumChange,
 										background_subtract && !AtomSpectraService.showSpectrumChange,
 										false,
-										1024,
 										reducedTo,
 										logScale,
 										barMode,
@@ -1242,20 +1219,23 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 										getString(R.string.graph_show_channel),
 										zoom_factor,
 										num_scale_factor,
-										false,
-										(float) cursor_x,
-										sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-										sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+										(float) cursor_x);
 							}
 						} else if (num_scale_factor == Constants.SCALE_DOSE_MODE) {
 							// search view
 							// Toast.makeText(context, "search mode", Toast.LENGTH_SHORT).show();
 							double[] search_data = null;
 							double[] alarmLevelHigh = null;
+							double[] alarmLevelLow = null;
+							double[] alarmBaseline = null;
+							boolean isIntervalSearch = false;
 							switch (DisplayDose) {
 								case Constants.DISPLAY_DOSE_INTERVAL:
 									search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY);
 									alarmLevelHigh = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY);
+									alarmLevelLow = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY);
+									alarmBaseline = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY);
+									isIntervalSearch = true;
 									break;
 								case Constants.DISPLAY_DOSE_COMPENSATED:
 									search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY);
@@ -1268,30 +1248,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							if (search_data == null) {
 								search_data = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
 							}
-
 							if (alarmLevelHigh == null) {
 								alarmLevelHigh = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
 							}
+							if (alarmLevelLow == null) {
+								alarmLevelLow = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+							}
+							if (alarmBaseline == null) {
+								alarmBaseline = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+							}
 
-							mAtomSpectraShapeView.showShape(
+							mAtomSpectraShapeView.showSearch(
 									search_data,
 									alarmLevelHigh,
-									Constants.DISPLAY_DOSE_INTERVAL.equals(DisplayDose) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false),
-									false,
-									false,
-									AtomSpectraService.SEARCH_WINDOW_SIZE,
-									AtomSpectraService.SEARCH_WINDOW_SIZE,
-									false,
-									false,
-									0,
-									AtomSpectraService.SEARCH_WINDOW_SIZE,
-									getString(R.string.graph_show_points),
-									zoom_factor,
-									num_scale_factor,
-									false,
-									-1,
-									sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-									sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT));
+									alarmLevelLow,
+									alarmBaseline,
+									isIntervalSearch,
+									isIntervalSearch && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false),
+									zoom_factor
+							);
 						}
 					}
 				}

@@ -120,8 +120,8 @@ public class AtomSpectraService extends Service {
     public static long[] histogram_all_sp_change_fg = new long[Constants.NUM_HIST_POINTS];       //array to store delta
     public static long[] histogram_all_sp_change_bg = new long[Constants.NUM_HIST_POINTS];       //array to store delta
     public static final LinkedList<long[]> histogram_all_queue = new LinkedList<long[]>();      //array to store delta window
-    private static final long[] referencePulse = new long[1024];
-    private static final double[] referenceDoublePulse = new double[1024];
+    private static final long[] referencePulse = new long[256];
+    private static final double[] referenceDoublePulse = new double[256];
     private static final double[] realTimeAudioData = new double[1024];
 
     //data for background
@@ -314,6 +314,8 @@ public class AtomSpectraService extends Service {
     // interval cps low alarm history array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY";
+    public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY";
 
     // +++ spectra pro data +++
     public final static String EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS =
@@ -1763,6 +1765,7 @@ public class AtomSpectraService extends Service {
     private static final LinkedList<Double> doseIntervalHistory = new LinkedList<>();
     private static final LinkedList<Double> doseIntervalHighAlarmHistory = new LinkedList<>();
     private static final LinkedList<Double> doseIntervalLowAlarmHistory = new LinkedList<>();
+    private static final LinkedList<Double> doseIntervalBaselineHistory = new LinkedList<>();
 
     private static void resetCpsData() {
         Arrays.fill(cpsArray, 0);
@@ -1790,6 +1793,7 @@ public class AtomSpectraService extends Service {
             doseIntervalHistory.clear();
             doseIntervalHighAlarmHistory.clear();
             doseIntervalLowAlarmHistory.clear();
+            doseIntervalBaselineHistory.clear();
         }
 
         doseRateValue = new DoseRate();
@@ -1929,6 +1933,10 @@ public class AtomSpectraService extends Service {
             doseIntervalLowAlarmHistory.addLast(intervalSearchAlarmBaseline.getAlarmLevelLow());
             if (doseIntervalLowAlarmHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseIntervalLowAlarmHistory.removeFirst();
+            }
+            doseIntervalBaselineHistory.addLast(intervalSearchAlarmBaseline.getCps());
+            if (doseIntervalBaselineHistory.size() > SEARCH_WINDOW_SIZE) {
+                doseIntervalBaselineHistory.removeFirst();
             }
         }
 
@@ -2130,7 +2138,7 @@ public class AtomSpectraService extends Service {
                         binned_counts_from_audio[energy_bin_index] += 1;
 
                         if ((i > 128) && (i < (1024 - 128)) && (i < ((AudioBytesRead - 128) / 2)))
-                            for (int j = -128; j < 128; j++)
+                            for (int j = -128; j < 127; j++)
                                 referencePulse[j + 128] += AudioData[i + j];
                     }
                 }
@@ -2562,6 +2570,7 @@ public class AtomSpectraService extends Service {
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY, searchHistoryToArray(doseIntervalHistory));
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY, searchHistoryToArray(doseIntervalHighAlarmHistory));
                 mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY, searchHistoryToArray(doseIntervalLowAlarmHistory));
+                mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY, searchHistoryToArray(doseIntervalBaselineHistory));
                 break;
 
             case Constants.SCALE_OSCILLOSCOPE_MODE:
@@ -2580,7 +2589,7 @@ public class AtomSpectraService extends Service {
                     if (inputType != INPUT_AUDIO) {
                         Arrays.fill(referenceDoublePulse, 0);
                     } else {
-                        for (int i = 0; i < 1024; i++) {
+                        for (int i = 0; i < referencePulse.length; i++) {
                             referenceDoublePulse[i] = referencePulse[i];
                         }
                     }

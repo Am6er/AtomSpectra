@@ -1,7 +1,5 @@
 package org.fe57.atomspectra;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.Locale;
 
@@ -21,46 +19,45 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
 public class AtomSpectraShapeView extends View {
+	private final Integer renderSync = 1;
+	private final int RENDER_MODE_SPECTRUM = 0;
+	private final int RENDER_MODE_SEARCH = 1;
+	private final int RENDER_MODE_CALIBRATION = 2;
+	private final int RENDER_MODE_OSCILLOSCOPE = 3;
+	private final int RENDER_MODE_REFERENCE_PULSE = 4;
+
+	private int render_mode = RENDER_MODE_SPECTRUM;
+	private Shape[] shapes;
+
+	private static int margin_top;
+	private static int margin_bottom;
+	private static int margin_left;
+	private static int margin_right;
+	private static int width;
+	private static int height;
+
 	private final Paint squareColor = new Paint();
 	private final Paint textColor = new Paint();
 	private final Rect rect = new Rect();
 
-	private boolean circleMode = false;
-	private boolean barMode = false;
-	private boolean no_y_mode = false;
-	private boolean dose_mode = false;
 	private boolean m_dose_mode = false;
+	private boolean is_interval_search = false;
+
 	private boolean logScale = false;
-	private boolean isCalibrated = true;
-	private boolean calibrationScale = false;
 	private final double minLogValue = 0.9;
 
 	private static final float scaleText = 1.61803398875f * 1.1f;                                                                //scale text on graph
 
-	private static int margin_left = 0;
-	private static int margin_right = 0;
-	private static int margin_top = 0;
-	private static int margin_bottom = 0;
-	private static int height = 1;
-	private static int width = 1;
 	private int frontCountsMin = 4, frontCountsMax = 8;
 
-	private static final int[] X = new int[2048];
-	private static final int[] Y = new int[2048];
-	private static final double[] yf = new double[2048];
-	private static final double[] tmp = new double[2048];
-	private static final int[] back_Y = new int[2048];
-	private static final double[] back_yf = new double[2048];
-	private static final double[] back_tmp = new double[2048];
-	private static boolean background_show = false;
-	private static boolean background_delta = false;
+	private float y_zoom = 1.0f;
 
-	private String measureUnits = "";
-	private float zoom = 1.0f;
-	private int xScale = 1;
-
+	private String x_units = "";
+	private boolean x_is_calibrated = true;
 	private static float x_max_value = 1.0f;
 	private static float x_min_value = 0.0f;
 
@@ -68,14 +65,12 @@ public class AtomSpectraShapeView extends View {
 	public static int isotopeFound = -1;
 	private String isotopeLabel = null;
 
-	private double max, min;
+	private double y_max, y_min;
 
-	private int N = 0;
+	private int N_x_points = 0;
 	private static final double CURSOR_INEQUALITY = 0.03;
 	private static final double[] logLines = {StrictMath.log10(2), StrictMath.log10(3), StrictMath.log10(4),
 			StrictMath.log10(5), StrictMath.log10(6), StrictMath.log10(7), StrictMath.log10(8), StrictMath.log10(9)};
-
-	public static final int DELTA_COLOR = 0xFFFF00FF;
 
 	public AtomSpectraShapeView(Context context) {
 		super(context);
@@ -103,60 +98,53 @@ public class AtomSpectraShapeView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		Resources res = getResources();
-		canvas.drawColor(Color.BLACK);
+		synchronized (renderSync) {
+			canvas.drawColor(Color.BLACK);
 
-		int viewWidth = getWidth();
-		int viewHeight = getHeight();
-		margin_left = viewWidth / 7;
-		margin_right = viewWidth / 40;
+			int viewWidth = getWidth();
+			int viewHeight = getHeight();
 
-		int ht = 12;
-		//int wt=12;
-		float ht_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, ht, getResources().getDisplayMetrics());
-		//float wt_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, wt, getResources().getDisplayMetrics());
-		margin_top = margin_bottom = (int) (2 * ht_px);
+			int ht = 12;
+			float ht_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, ht, getResources().getDisplayMetrics());
+			margin_top = (int) (2 * ht_px);
+			margin_bottom = (int) (2 * ht_px);
+			margin_left = (int) (2 * ht_px);
+			margin_right = (int) (2 * ht_px);
+			width = viewWidth - margin_left - margin_right;
+			height = viewHeight - margin_top - margin_bottom;
+			int nx;
+			int ny;
 
-		// Typeface tf = Typeface.createFromAsset(  getContext().getAssets() , "courier.ttf");
-		//   textColor.setTypeface(tf);
-
-		//Typeface tf = Typeface.create("Courier",Typeface.BOLD);
-		//textColor.setTypeface(tf);
-		margin_left = margin_right = (int) (2 * ht_px);
-
-		width = viewWidth - margin_left - margin_right;
-		height = viewHeight - margin_top - margin_bottom;
-		int nx;
-		int ny;
-		if (no_y_mode) {
-			nx = 4;
-			ny = 4;
-		} else {
-			float dpSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, width > height ? viewWidth : viewHeight, getResources().getDisplayMetrics());
-			if (width > height) {
-				if (dpSize > 800)
-					nx = 12;
-				else if (dpSize > 400)
-					nx = 8;
-				else
-					nx = 4;
+			// grid lines count
+			if (this.render_mode == RENDER_MODE_OSCILLOSCOPE || this.render_mode == RENDER_MODE_REFERENCE_PULSE) {
+				nx = 4;
 				ny = 4;
 			} else {
-				nx = 4;
-				if (dpSize > 800)
-					ny = 12;
-				else if (dpSize > 400)
-					ny = 8;
-				else
+				float dpSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, width > height ? viewWidth : viewHeight, getResources().getDisplayMetrics());
+				if (width > height) {
+					if (dpSize > 800)
+						nx = 12;
+					else if (dpSize > 400)
+						nx = 8;
+					else
+						nx = 4;
 					ny = 4;
+				} else {
+					nx = 4;
+					if (dpSize > 800)
+						ny = 12;
+					else if (dpSize > 400)
+						ny = 8;
+					else
+						ny = 4;
+				}
 			}
-		}
 
-		float dwx = (float) width / nx;
-		float dwy = (float) height / ny;
-		long decValue;
-		int decPower = 0;
-		{
-			decValue = (long)(max / zoom);
+			float dwx = (float) width / nx;
+			float dwy = (float) height / ny;
+			long decValue;
+			int decPower = 0;
+			decValue = (long) (y_max / y_zoom);
 			while (decValue > 10) {
 				decValue /= 10;
 				decPower++;
@@ -167,172 +155,183 @@ public class AtomSpectraShapeView extends View {
 				decValue *= 10;
 				shift--;
 			}
-		}
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			squareColor.setColor(getResources().getColor(R.color.colorStrokes, null));
-		} else {
-			squareColor.setColor(getResources().getColor(R.color.colorStrokes));
-		}
-		squareColor.setStrokeWidth(2);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			textColor.setColor(getResources().getColor(R.color.colorStrokes2, null));
-		} else {
-			textColor.setColor(getResources().getColor(R.color.colorStrokes2));
-		}
-		textColor.setStrokeWidth(2);
-		if (!no_y_mode) {
-			for (int i = 0; i < nx + 1; i++)
-				canvas.drawLine(margin_left + i * dwx, margin_top,
-						margin_left + i * dwx, viewHeight - margin_bottom, squareColor);
-			canvas.drawLine(margin_left, margin_top,
-					margin_left + width, margin_top, squareColor);
-			canvas.drawLine(margin_left, margin_top + height,
-					margin_left + width, margin_top + height, squareColor);
-			if (logScale) {
-				float line_val = 0.0f;
-				while (line_val <= max / zoom) {
-					canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - ((line_val - min) / (max - min) * zoom))),
-							margin_left + width, (float) (margin_top + height * (1.0f - ((line_val - min) / (max - min) * zoom))), textColor);
-					for (double logLine : logLines)
-						if (line_val + logLine <= max / zoom)
-							canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - ((line_val - min + logLine) / (max - min)) * zoom)),
-									margin_left + width, (float) (margin_top + height * (1.0f - ((line_val - min + logLine) / (max - min)) * zoom)), squareColor);
-					line_val += 1.0f;
-				}
-			} else if (dose_mode) {
-				for (int i = 0; i < nx + 1; i++)
-					canvas.drawLine(margin_left + i * dwx, margin_top,
-							margin_left + i * dwx, viewHeight - margin_bottom, squareColor);
-				for (int i = 0; i < ny + 1; i++)
-					canvas.drawLine(margin_left, margin_top + i * dwy,
-							margin_left + width, margin_top + i * dwy, squareColor);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				squareColor.setColor(getResources().getColor(R.color.colorStrokes, null));
 			} else {
-				long line_val = 0;
-				long inc_line_val = decValue;
-				long small_line_val;
-				if ((max / zoom / decValue) <= 2 && (decValue >= 10)) {
-					small_line_val = 1;
-				} else if ((max / zoom / decValue) <= 4 && (decValue >= 10)) {
-					small_line_val = 2;
-				} else if ((max / zoom / decValue) <= 6 && (decValue >= 10)) {
-					small_line_val = 5;
-				} else if (decValue >= 10) {
-					small_line_val = 10;
-					inc_line_val = 2 * decValue;
-				} else if ((max / zoom ) > 6) {
-					small_line_val = 10;
-					inc_line_val = 2 * decValue;
-				} else {
-					small_line_val = 10;
-				}
-				while (line_val < max / zoom) {
-					canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - (min + line_val / (max - min) * zoom))),
-							margin_left + width, (float) (margin_top + height * (1.0f - (min + line_val / (max - min) * zoom))), textColor);
-					for (int i = 1; i * small_line_val / 10 < inc_line_val; i++) {
-						double show_line = line_val + decValue * i * small_line_val / 10.0;
-						if (show_line < max / zoom)
-							canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - (min + show_line / (max - min)) * zoom)),
-									margin_left + width, (float) (margin_top + height * (1.0f - (min + show_line / (max - min)) * zoom)), squareColor);
-					}
-					line_val += inc_line_val;
-				}
+				squareColor.setColor(getResources().getColor(R.color.colorStrokes));
 			}
-		} else {
-			for (int i = 0; i < nx + 1; i++)
-				canvas.drawLine(margin_left + i * dwx, margin_top,
-						margin_left + i * dwx, viewHeight - margin_bottom, squareColor);
-			for (int i = 0; i < ny + 1; i++)
-				canvas.drawLine(margin_left, margin_top + i * dwy,
-						margin_left + width, margin_top + i * dwy, squareColor);
-		}
+			squareColor.setStrokeWidth(2);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+				textColor.setColor(getResources().getColor(R.color.colorStrokes2, null));
+			} else {
+				textColor.setColor(getResources().getColor(R.color.colorStrokes2));
+			}
+			textColor.setStrokeWidth(2);
 
-		String sZoom;
-		if (no_y_mode) {
-			if (zoom < 0.9)
-				sZoom = String.format("%1.2f", zoom);
-			else
-				sZoom = String.format("%1.0f", zoom);
-			if (Math.abs(zoom - 1) > 0.01) sZoom = ", \u00D7" + sZoom;
-			else sZoom = "";
-		} else {
-			if (logScale) {
-				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
-			} else if (dose_mode) {
-				boolean is_interval = AtomSpectra.DisplayDose == Constants.DISPLAY_DOSE_INTERVAL;
+			// select units
+			String yUnits = "";
+			if (this.render_mode == RENDER_MODE_OSCILLOSCOPE || this.render_mode == RENDER_MODE_REFERENCE_PULSE) {
+				if (y_zoom < 0.9)
+					yUnits = String.format("%1.2f", y_zoom);
+				else
+					yUnits = String.format("%1.0f", y_zoom);
+				if (Math.abs(y_zoom - 1) > 0.01) yUnits = ", \u00D7" + yUnits;
+				else yUnits = "";
+			}
+			if (this.render_mode == RENDER_MODE_SPECTRUM) {
+				yUnits = ", " + res.getString(R.string.graph_show_cnt);
+			}
+			if (this.render_mode == RENDER_MODE_CALIBRATION) {
+				yUnits = ", " + res.getString(R.string.graph_show_kev);
+			}
+			if (this.render_mode == RENDER_MODE_SEARCH) {
 				String unit;
 				if (m_dose_mode) {
-					if (is_interval) {
+					if (is_interval_search) {
 						unit = res.getString(R.string.graph_show_kcps);
 					} else {
 						unit = res.getString(R.string.graph_show_mSv);
 					}
 				} else {
-					if (is_interval) {
+					if (is_interval_search) {
 						unit = res.getString(R.string.graph_show_cps);
 					} else {
 						unit = res.getString(R.string.graph_show_mkSv);
 					}
 				}
-				sZoom = ", " + unit;
-			} else {
-				sZoom = ", " + (AtomSpectraService.showCalibrationFunction ? res.getString(R.string.graph_show_kev) : res.getString(R.string.graph_show_cnt));
+				yUnits = ", " + unit;
 			}
-		}
 
-		if (!no_y_mode && !calibrationScale && !dose_mode && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
-			if (isCalibrated &&
-					AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) < x_max_value  &&
-					AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) > x_min_value) {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-					squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
-				} else {
-					squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
-				}
-				squareColor.setStyle(Style.FILL);
-				canvas.drawRect(margin_left + (float)StrictMath.max(0, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) - x_min_value)/(x_max_value - x_min_value) * width), margin_top, margin_left + (float)StrictMath.min(width, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) - x_min_value)/(x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
-			}
-			if (!isCalibrated &&
-					AtomSpectraService.leftChannelInterval < x_max_value  &&
-					AtomSpectraService.rightChannelInterval > x_min_value) {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-					squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
-				} else {
-					squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
-				}
-				squareColor.setStyle(Style.FILL);
-				canvas.drawRect(margin_left + StrictMath.max(0, (AtomSpectraService.leftChannelInterval - x_min_value)/(x_max_value - x_min_value) * width), margin_top, margin_left + StrictMath.min(width, (AtomSpectraService.rightChannelInterval - x_min_value)/(x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
-			}
-		}
+			// draw grid lines
+			// bounds(?)
+			canvas.drawLine(margin_left, margin_top,
+					margin_left + width, margin_top, squareColor);
+			canvas.drawLine(margin_left, margin_top + height,
+					margin_left + width, margin_top + height, squareColor);
 
-		textColor.setColor(Color.WHITE);
-		textColor.setTextSize(ht_px);
+			// vertical(?) lines for everything
+			for (int i = 0; i < nx + 1; i++)
+				canvas.drawLine(margin_left + i * dwx, margin_top,
+						margin_left + i * dwx, viewHeight - margin_bottom, squareColor);
 
-		if (N > 0) {
-			if (!no_y_mode) {
-				textColor.setTextAlign(Align.RIGHT);
-				canvas.save();
-				canvas.rotate(270);
+			// horizontal lines
+			if (this.render_mode == RENDER_MODE_SPECTRUM) {
+				// spectrum
 				if (logScale) {
 					float line_val = 0.0f;
-					float delta_val = 1.0f + (int)(max / zoom / 6.0f);
-					while (line_val <= max / zoom) {
-						canvas.drawText(String.format(Locale.getDefault(), "1·10%s%s", Constants.getPower(StrictMath.round(line_val)), (line_val + 1 < max / zoom) ? "" : (sZoom)), (float) (margin_top - height * (1.0f - ((line_val - min) / (max - min)) * zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
-//						if (line_val < 6.1)
-//							canvas.drawText(String.format(Locale.getDefault(), "%.0f%s", StrictMath.pow(10, line_val), (line_val + 1 < max / zoom) ? "" : (sZoom)), (float) (margin_top - height * (1.0f - (min + line_val / (max - min)) * zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
-//						else
-//							canvas.drawText(String.format(Locale.getDefault(), "%.0e%s", StrictMath.pow(10, line_val), (line_val + 1 < max / zoom) ? "" : (sZoom)), (float) (margin_top - height * (1.0f - (min + line_val / (max - min)) * zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
-						line_val += delta_val;
+					while (line_val <= y_max / y_zoom) {
+						canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - ((line_val - y_min) / (y_max - y_min) * y_zoom))),
+								margin_left + width, (float) (margin_top + height * (1.0f - ((line_val - y_min) / (y_max - y_min) * y_zoom))), textColor);
+						for (double logLine : logLines)
+							if (line_val + logLine <= y_max / y_zoom)
+								canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - ((line_val - y_min + logLine) / (y_max - y_min)) * y_zoom)),
+										margin_left + width, (float) (margin_top + height * (1.0f - ((line_val - y_min + logLine) / (y_max - y_min)) * y_zoom)), squareColor);
+						line_val += 1.0f;
 					}
-				} else if (dose_mode) {
+				} else {
+					long line_val = 0;
+					long inc_line_val = decValue;
+					long small_line_val;
+					if ((y_max / y_zoom / decValue) <= 2 && (decValue >= 10)) {
+						small_line_val = 1;
+					} else if ((y_max / y_zoom / decValue) <= 4 && (decValue >= 10)) {
+						small_line_val = 2;
+					} else if ((y_max / y_zoom / decValue) <= 6 && (decValue >= 10)) {
+						small_line_val = 5;
+					} else if (decValue >= 10) {
+						small_line_val = 10;
+						inc_line_val = 2 * decValue;
+					} else if ((y_max / y_zoom) > 6) {
+						small_line_val = 10;
+						inc_line_val = 2 * decValue;
+					} else {
+						small_line_val = 10;
+					}
+					while (line_val < y_max / y_zoom) {
+						canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - (y_min + line_val / (y_max - y_min) * y_zoom))),
+								margin_left + width, (float) (margin_top + height * (1.0f - (y_min + line_val / (y_max - y_min) * y_zoom))), textColor);
+						for (int i = 1; i * small_line_val / 10 < inc_line_val; i++) {
+							double show_line = line_val + decValue * i * small_line_val / 10.0;
+							if (show_line < y_max / y_zoom)
+								canvas.drawLine(margin_left, (float) (margin_top + height * (1.0f - (y_min + show_line / (y_max - y_min)) * y_zoom)),
+										margin_left + width, (float) (margin_top + height * (1.0f - (y_min + show_line / (y_max - y_min)) * y_zoom)), squareColor);
+						}
+						line_val += inc_line_val;
+					}
+				}
+			} else {
+				// everything except spectrum
+				for (int i = 0; i < ny + 1; i++)
+					canvas.drawLine(margin_left, margin_top + i * dwy,
+							margin_left + width, margin_top + i * dwy, squareColor);
+			}
+
+			// render selected interval
+			if (this.render_mode == RENDER_MODE_SPECTRUM && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
+				if (x_is_calibrated &&
+						AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) < x_max_value &&
+						AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) > x_min_value) {
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
+					} else {
+						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
+					}
+					squareColor.setStyle(Style.FILL);
+					canvas.drawRect(margin_left + (float) StrictMath.max(0, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + (float) StrictMath.min(width, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
+				}
+				if (!x_is_calibrated &&
+						AtomSpectraService.leftChannelInterval < x_max_value &&
+						AtomSpectraService.rightChannelInterval > x_min_value) {
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
+					} else {
+						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
+					}
+					squareColor.setStyle(Style.FILL);
+					canvas.drawRect(margin_left + StrictMath.max(0, (AtomSpectraService.leftChannelInterval - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + StrictMath.min(width, (AtomSpectraService.rightChannelInterval - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
+				}
+			}
+
+			textColor.setColor(Color.WHITE);
+			textColor.setTextSize(ht_px);
+
+			if (N_x_points > 0) {
+				canvas.save();
+				canvas.rotate(270);
+				// y axis labels for spectrum
+				if (this.render_mode == RENDER_MODE_SPECTRUM) {
+					textColor.setTextAlign(Align.RIGHT);
+					if (logScale) {
+						float line_val = 0.0f;
+						float delta_val = 1.0f + (int) (y_max / y_zoom / 6.0f);
+						while (line_val <= y_max / y_zoom) {
+							canvas.drawText(String.format(Locale.getDefault(), "1·10%s%s", Constants.getPower(StrictMath.round(line_val)), (line_val + 1 < y_max / y_zoom) ? "" : (yUnits)), (float) (margin_top - height * (1.0f - ((line_val - y_min) / (y_max - y_min)) * y_zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
+							line_val += delta_val;
+						}
+					} else {
+						long line_val = 0;
+						boolean big_ones = (y_max / y_zoom / decValue) > 6;
+						if (big_ones) {
+							decValue *= 2;
+						}
+						while (line_val <= y_max / y_zoom) {
+							canvas.drawText(String.format(Locale.getDefault(), "%s%s", Constants.numberToPower(line_val), (line_val + decValue < y_max / y_zoom) ? "" : (yUnits)), (float) (margin_top - height * (1.0f - (y_min + line_val / (y_max - y_min)) * y_zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
+							line_val += decValue;
+						}
+					}
+				}
+
+				// search and calibration y axis labels
+				if (this.render_mode == RENDER_MODE_SEARCH || this.render_mode == RENDER_MODE_CALIBRATION) {
 					for (int i = 0; i <= ny; i += 2) {
 						if (i == 0) {
-							if (min == 0) continue;
+							if (y_min == 0) continue;
 							textColor.setTextAlign(Align.LEFT);
 						} else {
 							textColor.setTextAlign(Align.RIGHT);
 						}
-						double value = (min + (max - min) * i / ny) / zoom;
+						double value = (y_min + (y_max - y_min) * i / ny) / y_zoom;
 						String format;
 						if (value < 10) {
 							format = "%1.3f%s";
@@ -343,671 +342,646 @@ public class AtomSpectraShapeView extends View {
 						} else {
 							format = "%1.0f%s";
 						}
-						canvas.drawText(String.format(Locale.getDefault(), format, value, (i < ny) ? "" : (sZoom)), margin_top - height + i * dwy - 6 * ht_px / 2, margin_top - ht_px / 2, textColor);
-					}
-				} else {
-					long line_val = 0;
-					boolean big_ones = (max / zoom / decValue) > 6;
-					if (big_ones) {
-						decValue *= 2;
-					}
-					while (line_val <= max / zoom) {
-						canvas.drawText(String.format(Locale.getDefault(), "%s%s", Constants.numberToPower(line_val), (line_val + decValue < max / zoom) ? "" : (sZoom)), (float) (margin_top - height * (1.0f - (min + line_val / (max - min)) * zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
-//						if (line_val < 1e6)
-//							canvas.drawText(String.format(Locale.getDefault(), "%.0f%s", (float)line_val, (line_val + decValue < max / zoom) ? "" : (sZoom)), (float) (margin_top - height * (1.0f - (min + line_val / (max - min)) * zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
-//						else
-//							canvas.drawText(String.format(Locale.getDefault(), "%.0e%s", (float)line_val, (line_val + decValue < max / zoom) ? "" : (sZoom)), (float) (margin_top - height * (1.0f - (min + line_val / (max - min)) * zoom) - 6 * ht_px / 2), margin_top - ht_px / 2, textColor);
-						line_val += decValue;
+						canvas.drawText(String.format(Locale.getDefault(), format, value, (i < ny) ? "" : (yUnits)), margin_top - height + i * dwy - 6 * ht_px / 2, margin_top - ht_px / 2, textColor);
 					}
 				}
+
 				canvas.restore();
-			}
-			textColor.setTextAlign(Align.CENTER);
-			for (int i = 0; i < nx + 1; i += 2) {
-				if (i == nx) textColor.setTextAlign(Align.RIGHT);
-				canvas.drawText(String.format(Locale.getDefault(), "%d%s", (int) ((x_max_value - x_min_value) * i / nx + x_min_value), (i < nx) ? "" : (measureUnits)), margin_left + i * dwx + (i == nx ? margin_right : 0), viewHeight - ht_px / 4, textColor);
-			}
 
-			if (!no_y_mode && !dose_mode && !calibrationScale) { //draw isotope lines on main window
-				float x_pos;
-				for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
-					if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
-						if (isCalibrated) {
-							x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
-						} else { //in "ch."
-							x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
-						}
-						if ((x_pos >= x_min_value) && (x_pos <= x_max_value )) {
-							squareColor.setColor(AtomSpectraIsotopes.isotopeLineArray.get(i).getColor());
-							canvas.drawLine(margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
-									margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top + height, squareColor);
-						}
-					}
+				// x axis labels
+				textColor.setTextAlign(Align.CENTER);
+				for (int i = 0; i < nx + 1; i += 2) {
+					if (i == nx) textColor.setTextAlign(Align.RIGHT);
+					canvas.drawText(String.format(Locale.getDefault(), "%d%s", (int) ((x_max_value - x_min_value) * i / nx + x_min_value), (i < nx) ? "" : (x_units)), margin_left + i * dwx + (i == nx ? margin_right : 0), viewHeight - ht_px / 4, textColor);
 				}
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-					squareColor.setColor(getResources().getColor(R.color.colorFound, null));
-				} else {
-					squareColor.setColor(getResources().getColor(R.color.colorFound));
-				}
-				if (AtomSpectraIsotopes.showFoundIsotopes) {
-					for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
-						if (isCalibrated) {
-							x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
-						} else { //in "ch."
-							x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
-						}
-						if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
-							//squareColor.setColor(Color.WHITE);
-							canvas.drawLine(margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
-									margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top + height, squareColor);
-						}
-					}
-				}
-			} // end of isotope lines
 
-
-			if (!barMode) {
-				if (calibrationScale) {
-					squareColor.setColor(Color.WHITE);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left)
-							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-				} else if (AtomSpectraService.showSpectrumChange && !dose_mode) {
-					squareColor.setColor(DELTA_COLOR);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left)
-							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-
-					// TODO: duplicated code
-					if (background_show) {
-						squareColor.setColor(Color.GREEN);
-						for (int i = 2; i < N; i++)
-							if (X[i - 1] >= margin_left)
-								canvas.drawLine(X[i - 1], back_Y[i - 1], X[i], back_Y[i], squareColor);
-					}
-				} else if (background_delta && background_show) {
-					squareColor.setColor(Color.CYAN);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left)
-							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-				} else {
-					squareColor.setColor(Color.WHITE);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left)
-							canvas.drawLine(X[i - 1], Y[i - 1], X[i], Y[i], squareColor);
-					if (background_show) {
-						if (dose_mode) {
-							squareColor.setColor(Color.GRAY);
-						} else {
-							squareColor.setColor(Color.GREEN);
-						}
-						for (int i = 2; i < N; i++)
-							if (X[i - 1] >= margin_left)
-								canvas.drawLine(X[i - 1], back_Y[i - 1], X[i], back_Y[i], squareColor);
-					}
-				}
-			} else {
-				if (calibrationScale) {
-					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						colorFrom = getResources().getColor(R.color.colorGradientMainFrom, null);
-					} else {
-						colorFrom = getResources().getColor(R.color.colorGradientMainFrom);
-					}
-					int colorTo = 0;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						colorTo = getResources().getColor(R.color.colorGradientMainTo, null);
-					} else {
-						colorTo = getResources().getColor(R.color.colorGradientMainTo);
-					}
-					LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
-					squareColor.setShader(linearGradientShader);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left) {
-							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
-						}
-					squareColor.setShader(null);
-				} else if (AtomSpectraService.showSpectrumChange && !dose_mode) {
-					squareColor.setStyle(Style.FILL);
-					int colorFrom = DELTA_COLOR;
-					int colorTo = DELTA_COLOR;
-					LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
-					squareColor.setShader(linearGradientShader);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left) {
-							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
-						}
-					squareColor.setShader(null);
-
-					// TODO: duplicated code
-					if (background_show) {
-						squareColor.setStyle(Style.FILL);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-							colorFrom = getResources().getColor(R.color.colorGradientBackFrom, null);
-						} else {
-							colorFrom = getResources().getColor(R.color.colorGradientBackFrom);
-						}
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-							colorTo = getResources().getColor(R.color.colorGradientBackTo, null);
-						} else {
-							colorTo = getResources().getColor(R.color.colorGradientBackTo);
-						}
-						linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
-						squareColor.setShader(linearGradientShader);
-						for (int i = 2; i < N; i++)
-							if (X[i - 1] >= margin_left) {
-								canvas.drawRect(X[i], back_Y[i - 1], X[i - 1], margin_top + height, squareColor);
+				// draw isotope lines on main window
+				if (this.render_mode == RENDER_MODE_SPECTRUM) {
+					float x_pos;
+					for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
+						if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
+							if (x_is_calibrated) {
+								x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
+							} else { //in "ch."
+								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
 							}
-						squareColor.setShader(null);
-					}
-				} else if (background_delta && background_show) {
-					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						colorFrom = getResources().getColor(R.color.colorGradientDeltaFrom, null);
-					} else {
-						colorFrom = getResources().getColor(R.color.colorGradientDeltaFrom);
-					}
-					int colorTo = 0;
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						colorTo = getResources().getColor(R.color.colorGradientDeltaTo, null);
-					} else {
-						colorTo = getResources().getColor(R.color.colorGradientDeltaTo);
-					}
-					LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
-					squareColor.setShader(linearGradientShader);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left) {
-							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
+							if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
+								squareColor.setColor(AtomSpectraIsotopes.isotopeLineArray.get(i).getColor());
+								canvas.drawLine(margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
+										margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top + height, squareColor);
+							}
 						}
-					squareColor.setShader(null);
-				} else {
-					squareColor.setStyle(Style.FILL);
-					int colorFrom = 0;
-					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-						colorFrom = getResources().getColor(R.color.colorGradientMainFrom, null);
-					} else {
-						colorFrom = getResources().getColor(R.color.colorGradientMainFrom);
 					}
-					int colorTo = 0;
-					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-						colorTo = getResources().getColor(R.color.colorGradientMainTo, null);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+						squareColor.setColor(getResources().getColor(R.color.colorFound, null));
 					} else {
-						colorTo = getResources().getColor(R.color.colorGradientMainTo);
+						squareColor.setColor(getResources().getColor(R.color.colorFound));
 					}
-					LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
-					squareColor.setShader(linearGradientShader);
-					for (int i = 2; i < N; i++)
-						if (X[i - 1] >= margin_left) {
-							canvas.drawRect(X[i], Y[i - 1], X[i - 1], margin_top + height, squareColor);
+					if (AtomSpectraIsotopes.showFoundIsotopes) {
+						for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
+							if (x_is_calibrated) {
+								x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
+							} else { //in "ch."
+								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
+							}
+							if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
+								canvas.drawLine(margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
+										margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top + height, squareColor);
+							}
 						}
-					squareColor.setShader(null);
-					if (background_show) {
+					}
+				} // end of isotope lines
+
+				// render shapes
+				for (Shape shape : shapes) {
+					if (shape.style == Shape.STYLE_LINE || shape.style == Shape.STYLE_DASH) {
+						squareColor.setColor(shape.colorFrom);
+
+						for (int i = 2; i < N_x_points; i++)
+							if (shape.X[i - 1] >= margin_left)
+								canvas.drawLine(shape.X[i - 1], shape.Y[i - 1], shape.X[i], shape.Y[i], squareColor);
+
+					}
+
+					if (shape.style == Shape.STYLE_BAR) {
 						squareColor.setStyle(Style.FILL);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-							colorFrom = getResources().getColor(R.color.colorGradientBackFrom, null);
-						} else {
-							colorFrom = getResources().getColor(R.color.colorGradientBackFrom);
-						}
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-							colorTo = getResources().getColor(R.color.colorGradientBackTo, null);
-						} else {
-							colorTo = getResources().getColor(R.color.colorGradientBackTo);
-						}
-						linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
+						int colorFrom = shape.colorFrom;
+						int colorTo = shape.colorTo;
+						LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
 						squareColor.setShader(linearGradientShader);
-						for (int i = 2; i < N; i++)
-							if (X[i - 1] >= margin_left) {
-								canvas.drawRect(X[i], back_Y[i - 1], X[i - 1], margin_top + height, squareColor);
+						for (int i = 2; i < N_x_points; i++)
+							if (shape.X[i - 1] >= margin_left) {
+								canvas.drawRect(shape.X[i], shape.Y[i - 1], shape.X[i - 1], margin_top + height, squareColor);
 							}
 						squareColor.setShader(null);
 					}
 				}
-			}
 
-			LinkedList<Float> lastX = new LinkedList<>();
-			LinkedList<Float> lastXEnd = new LinkedList<>();
-			LinkedList<Float> lastY = new LinkedList<>();
-			LinkedList<Float> lastYEnd = new LinkedList<>();
-			textColor.setTextSize(scaleText * ht_px);
-			textColor.getTextBounds(sZoom, 0, sZoom.length(), rect);
-			textColor.setTextSize(ht_px);
-//			if (AtomSpectra.showScaleLabel && !calibrationScale) {
-//				lastX.add(margin_left + 1.0f);
-//				lastXEnd.add(margin_left + rect.width() + ht_px + 1);
-//				lastY.add(margin_top + 1 + ht_px * 2);
-//				lastYEnd.add(margin_top + 2 * rect.height() + 1 + ht_px * 2);
-//			} else {
+				LinkedList<Float> lastX = new LinkedList<>();
+				LinkedList<Float> lastXEnd = new LinkedList<>();
+				LinkedList<Float> lastY = new LinkedList<>();
+				LinkedList<Float> lastYEnd = new LinkedList<>();
+				textColor.setTextSize(scaleText * ht_px);
+				textColor.getTextBounds(yUnits, 0, yUnits.length(), rect);
+				textColor.setTextSize(ht_px);
 				lastX.add(-1.0f);
 				lastXEnd.add(-1.0f);
 				lastY.add(-1.0f);
 				lastYEnd.add(-1.0f);
-//			}
-			float posYMax = margin_top;
-			textColor.getTextBounds("Cg-888", 0, 6, rect);
-			float rectHeight = rect.height() + 2;
-			if (!no_y_mode && !dose_mode && !calibrationScale) { //draw isotope labels on main window
-				float x_pos;
-				String isotopeLabel;
-				textColor.setTextAlign(Align.LEFT);
-				for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
-					if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
-						if (isCalibrated) {
-							x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
-							isotopeLabel = String.format("%.2f", x_pos);
-						} else { //in "ch."
-							x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
-							isotopeLabel = AtomSpectraIsotopes.isotopeLineArray.get(i).getName();
-						}
-						textColor.setColor(AtomSpectraIsotopes.isotopeLineArray.get(i).getColor());
-						textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
-						float rectWidth = rect.width() + 2;
-						if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
-							float posX = margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width;
-							float posY = margin_top;
-							if (x_pos > ((x_max_value + x_min_value) / 2)) {
-								posX = posX - rectWidth;
+
+				float posYMax = margin_top;
+				textColor.getTextBounds("Cg-888", 0, 6, rect);
+				float rectHeight = rect.height() + 2;
+
+				// draw isotope labels on main window
+				if (this.render_mode == RENDER_MODE_SPECTRUM) {
+					float x_pos;
+					String isotopeLabel;
+					textColor.setTextAlign(Align.LEFT);
+					for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
+						if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
+							if (x_is_calibrated) {
+								x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
+								isotopeLabel = String.format("%.2f", x_pos);
+							} else { //in "ch."
+								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
+								isotopeLabel = AtomSpectraIsotopes.isotopeLineArray.get(i).getName();
 							}
-							for (int posI = 0; posI < lastX.size(); posI++) {
-								float tempX = lastX.get(posI);
-								float tempXEnd = lastXEnd.get(posI);
-								float tempY = lastY.get(posI);
-								float tempYEnd = lastYEnd.get(posI);
-								if (tempXEnd < posX)
-									continue;
-								if (tempX > (posX + rectWidth))
-									continue;
-								if (((tempY <= posY && tempYEnd >= posY) || (tempY <= (posY + rectHeight) && tempYEnd >= (posY + rectHeight))) &&
-										((tempX <= posX && tempXEnd >= posX) || (tempX <= (posX + rectWidth) && tempXEnd >= (posX + rectWidth)) ||
-												(tempX >= posX && tempXEnd <= (posX + rectWidth)))) {
-									posY = posY + rectHeight + 1;
-									if (posYMax <= (posY + rectHeight)) posYMax = posY + rectHeight + 1;
-									posI = -1;
+							textColor.setColor(AtomSpectraIsotopes.isotopeLineArray.get(i).getColor());
+							textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
+							float rectWidth = rect.width() + 2;
+							if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
+								float posX = margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width;
+								float posY = margin_top;
+								if (x_pos > ((x_max_value + x_min_value) / 2)) {
+									posX = posX - rectWidth;
 								}
-								if (posY > (viewHeight / 2.0))
-									break;
+								for (int posI = 0; posI < lastX.size(); posI++) {
+									float tempX = lastX.get(posI);
+									float tempXEnd = lastXEnd.get(posI);
+									float tempY = lastY.get(posI);
+									float tempYEnd = lastYEnd.get(posI);
+									if (tempXEnd < posX)
+										continue;
+									if (tempX > (posX + rectWidth))
+										continue;
+									if (((tempY <= posY && tempYEnd >= posY) || (tempY <= (posY + rectHeight) && tempYEnd >= (posY + rectHeight))) &&
+											((tempX <= posX && tempXEnd >= posX) || (tempX <= (posX + rectWidth) && tempXEnd >= (posX + rectWidth)) ||
+													(tempX >= posX && tempXEnd <= (posX + rectWidth)))) {
+										posY = posY + rectHeight + 1;
+										if (posYMax <= (posY + rectHeight))
+											posYMax = posY + rectHeight + 1;
+										posI = -1;
+									}
+									if (posY > (viewHeight / 2.0))
+										break;
+								}
+								if (posYMax <= (posY + rectHeight)) posYMax = posY + rectHeight + 1;
+								lastX.add(posX);
+								lastXEnd.add(posX + rectWidth);
+								lastY.add(posY);
+								lastYEnd.add(posY + rectHeight);
+								AtomSpectraIsotopes.isotopeLineArray.get(i).setCoord(posX, posY, posX + rectWidth, posY + rectHeight);
+								squareColor.setColor(Color.BLACK);
+								squareColor.setStyle(Style.FILL);
+								canvas.drawRect(posX, posY,
+										posX + rectWidth, posY + rectHeight, squareColor);
+								squareColor.setColor(Color.GRAY);
+								squareColor.setStyle(Style.STROKE);
+								canvas.drawRect(posX, posY,
+										posX + rectWidth, posY + rectHeight, squareColor);
+								canvas.drawText(isotopeLabel, posX + 1, posY + (int) (ht_px / 1.4) + 3, textColor);
+							} else {
+								AtomSpectraIsotopes.isotopeLineArray.get(i).setCoord(null);
 							}
-							if (posYMax <= (posY + rectHeight)) posYMax = posY + rectHeight + 1;
-							lastX.add(posX);
-							lastXEnd.add(posX + rectWidth);
-							lastY.add(posY);
-							lastYEnd.add(posY + rectHeight);
-							AtomSpectraIsotopes.isotopeLineArray.get(i).setCoord(posX, posY, posX + rectWidth, posY + rectHeight);
-							squareColor.setColor(Color.BLACK);
-							squareColor.setStyle(Style.FILL);
-							canvas.drawRect(posX, posY,
-									posX + rectWidth, posY + rectHeight, squareColor);
-							squareColor.setColor(Color.GRAY);
-							squareColor.setStyle(Style.STROKE);
-							canvas.drawRect(posX, posY,
-									posX + rectWidth, posY + rectHeight, squareColor);
-							canvas.drawText(isotopeLabel, posX + 1, posY + (int) (ht_px / 1.4) + 3, textColor);
 						} else {
 							AtomSpectraIsotopes.isotopeLineArray.get(i).setCoord(null);
 						}
-					} else {
-						AtomSpectraIsotopes.isotopeLineArray.get(i).setCoord(null);
+					}
+					if (AtomSpectraIsotopes.showFoundIsotopes) {
+						textColor.setColor(Isotope.getColorForFound());
+						for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
+							if (x_is_calibrated) {
+								x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
+								isotopeLabel = String.format("%.2f", x_pos);
+							} else { //in "ch."
+								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
+								isotopeLabel = AtomSpectraIsotopes.foundList.get(i).getName();
+							}
+							textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
+							float rectWidth = rect.width() + 2;
+							if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
+								float posX = margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width;
+								float posY = margin_top;
+								if (x_pos > ((x_max_value + x_min_value) / 2)) {
+									posX = posX - rectWidth;
+								}
+								for (int posI = 0; posI < lastX.size(); posI++) {
+									float tempX = lastX.get(posI);
+									float tempXEnd = lastXEnd.get(posI);
+									float tempY = lastY.get(posI);
+									float tempYEnd = lastYEnd.get(posI);
+									if (tempXEnd < posX)
+										continue;
+									if (tempX > (posX + rectWidth))
+										continue;
+									if (((tempY <= posY && tempYEnd >= posY) || (tempY <= (posY + rectHeight) && tempYEnd >= (posY + rectHeight))) &&
+											((tempX <= posX && tempXEnd >= posX) || (tempX <= (posX + rectWidth) && tempXEnd >= (posX + rectWidth)) ||
+													(tempX >= posX && tempXEnd <= (posX + rectWidth)))) {
+										posY = posY + rectHeight + 1;
+										if (posYMax <= (posY + rectHeight))
+											posYMax = posY + rectHeight + 1;
+										posI = -1;
+									}
+									if (posY > (viewHeight / 2.0))
+										break;
+								}
+								if (posYMax <= (posY + rectHeight)) posYMax = posY + rectHeight + 1;
+								lastX.add(posX);
+								lastXEnd.add(posX + rectWidth);
+								lastY.add(posY);
+								lastYEnd.add(posY + rectHeight);
+								AtomSpectraIsotopes.foundList.get(i).setCoord(posX, posY, posX + rectWidth, posY + rectHeight);
+								squareColor.setColor(Color.BLACK);
+								squareColor.setStyle(Style.FILL);
+								canvas.drawRect(posX, posY,
+										posX + rectWidth, posY + rectHeight, squareColor);
+								squareColor.setColor(Color.GRAY);
+								squareColor.setStyle(Style.STROKE);
+								canvas.drawRect(posX, posY,
+										posX + rectWidth, posY + rectHeight, squareColor);
+								canvas.drawText(isotopeLabel, posX + 1, posY + (int) (ht_px / 1.4) + 3, textColor);
+							} else {
+								AtomSpectraIsotopes.foundList.get(i).setCoord(null);
+							}
+						}
+					}
+				} else {
+					for (Isotope isotope : AtomSpectraIsotopes.isotopeLineArray) {
+						isotope.setCoord(null);
+					}
+					for (Isotope isotope : AtomSpectraIsotopes.foundList) {
+						isotope.setCoord(null);
 					}
 				}
-				if (AtomSpectraIsotopes.showFoundIsotopes) {
-					textColor.setColor(Isotope.getColorForFound());
-					for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
-						if (isCalibrated) {
-							x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
-							isotopeLabel = String.format("%.2f", x_pos);
-						} else { //in "ch."
-							x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
-							isotopeLabel = AtomSpectraIsotopes.foundList.get(i).getName();
-						}
+				//end of isotope labels
+
+				// cursor on spectrum view
+				squareColor.setColor(Color.GREEN);
+				if (this.render_mode == RENDER_MODE_SPECTRUM && (cursor_X < x_max_value) && (cursor_X > x_min_value)) {
+					canvas.drawLine(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
+							margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, margin_top + height, squareColor);
+					if (isotopeFound >= 0) {
 						textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
-						float rectWidth = rect.width() + 2;
-						if ((x_pos >= x_min_value) && (x_pos <= x_max_value) && !calibrationScale) {
-							float posX = margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width;
-							float posY = margin_top;
-							if (x_pos > ((x_max_value + x_min_value) / 2)) {
-								posX = posX - rectWidth;
-							}
-							for (int posI = 0; posI < lastX.size(); posI++) {
-								float tempX = lastX.get(posI);
-								float tempXEnd = lastXEnd.get(posI);
-								float tempY = lastY.get(posI);
-								float tempYEnd = lastYEnd.get(posI);
-								if (tempXEnd < posX)
-									continue;
-								if (tempX > (posX + rectWidth))
-									continue;
-								if (((tempY <= posY && tempYEnd >= posY) || (tempY <= (posY + rectHeight) && tempYEnd >= (posY + rectHeight))) &&
-										((tempX <= posX && tempXEnd >= posX) || (tempX <= (posX + rectWidth) && tempXEnd >= (posX + rectWidth)) ||
-												(tempX >= posX && tempXEnd <= (posX + rectWidth)))) {
-									posY = posY + rectHeight + 1;
-									if (posYMax <= (posY + rectHeight)) posYMax = posY + rectHeight + 1;
-									posI = -1;
-								}
-								if (posY > (viewHeight / 2.0))
-									break;
-							}
-							if (posYMax <= (posY + rectHeight)) posYMax = posY + rectHeight + 1;
-							lastX.add(posX);
-							lastXEnd.add(posX + rectWidth);
-							lastY.add(posY);
-							lastYEnd.add(posY + rectHeight);
-							AtomSpectraIsotopes.foundList.get(i).setCoord(posX, posY, posX + rectWidth, posY + rectHeight);
+						textColor.setColor(Color.GREEN);
+						textColor.setTextAlign(Align.LEFT);
+						if ((posYMax >= lastY.get(0) && posYMax <= lastYEnd.get(0)) || ((posYMax + rectHeight) >= lastY.get(0) && (posYMax + rectHeight) <= lastYEnd.get(0))) {
+							posYMax = lastYEnd.get(0) + 1;
+						}
+						if (cursor_X > ((x_max_value + x_min_value) / 2)) {
 							squareColor.setColor(Color.BLACK);
 							squareColor.setStyle(Style.FILL);
-							canvas.drawRect(posX, posY,
-									posX + rectWidth, posY + rectHeight, squareColor);
-							squareColor.setColor(Color.GRAY);
+							canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width - rect.width() - 2, posYMax,
+									margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax + rectHeight, squareColor);
+							squareColor.setColor(Color.GREEN);
 							squareColor.setStyle(Style.STROKE);
-							canvas.drawRect(posX, posY,
-									posX + rectWidth, posY + rectHeight, squareColor);
-							canvas.drawText(isotopeLabel, posX + 1, posY + (int) (ht_px / 1.4) + 3, textColor);
+							canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width - rect.width() - 2, posYMax,
+									margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax + rectHeight, squareColor);
+							canvas.drawText(isotopeLabel, margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width - rect.width() - 1, posYMax + (int) (ht_px / 1.4) + 3, textColor);
 						} else {
-							AtomSpectraIsotopes.foundList.get(i).setCoord(null);
+							squareColor.setColor(Color.BLACK);
+							squareColor.setStyle(Style.FILL);
+							canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax,
+									margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width + rect.width() + 2, posYMax + rectHeight, squareColor);
+							squareColor.setColor(Color.GREEN);
+							squareColor.setStyle(Style.STROKE);
+							canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax,
+									margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width + rect.width() + 2, posYMax + rectHeight, squareColor);
+							canvas.drawText(isotopeLabel, margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width + 1, posYMax + (int) (ht_px / 1.4) + 3, textColor);
 						}
 					}
 				}
-			} else {
-				for (Isotope isotope: AtomSpectraIsotopes.isotopeLineArray) {
-					isotope.setCoord(null);
-				}
-				for (Isotope isotope: AtomSpectraIsotopes.foundList) {
-					isotope.setCoord(null);
-				}
-			}
-			//end of isotope labels
 
-			squareColor.setColor(Color.GREEN);
-			if ((cursor_X < x_max_value) && (cursor_X > x_min_value)) {
-				canvas.drawLine(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
-						margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, margin_top + height, squareColor);
-				if (isotopeFound >= 0) {
-					textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
-					textColor.setColor(Color.GREEN);
-					textColor.setTextAlign(Align.LEFT);
-					if ((posYMax >= lastY.get(0) && posYMax <= lastYEnd.get(0)) || ((posYMax + rectHeight) >= lastY.get(0) && (posYMax + rectHeight) <= lastYEnd.get(0))) {
-						posYMax = lastYEnd.get(0) + 1;
-					}
-					if (cursor_X > ((x_max_value + x_min_value) / 2)) {
-						squareColor.setColor(Color.BLACK);
-						squareColor.setStyle(Style.FILL);
-						canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width - rect.width() - 2, posYMax,
-								margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax + rectHeight, squareColor);
-						squareColor.setColor(Color.GREEN);
-						squareColor.setStyle(Style.STROKE);
-						canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width - rect.width() - 2, posYMax,
-								margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax + rectHeight, squareColor);
-						canvas.drawText(isotopeLabel, margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width - rect.width() - 1, posYMax + (int) (ht_px / 1.4) + 3, textColor);
-					} else {
-						squareColor.setColor(Color.BLACK);
-						squareColor.setStyle(Style.FILL);
-						canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax,
-								margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width + rect.width() + 2, posYMax + rectHeight, squareColor);
-						squareColor.setColor(Color.GREEN);
-						squareColor.setStyle(Style.STROKE);
-						canvas.drawRect(margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width, posYMax,
-								margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width + rect.width() + 2, posYMax + rectHeight, squareColor);
-						canvas.drawText(isotopeLabel, margin_left + ((cursor_X - x_min_value) / (x_max_value - x_min_value)) * width + 1, posYMax + (int) (ht_px / 1.4) + 3, textColor);
+				// calibration circle points
+				if (this.render_mode == RENDER_MODE_CALIBRATION) {
+					squareColor.setColor(Color.GREEN);
+					squareColor.setStyle(Style.FILL);
+					float radius = (float) StrictMath.min(width, height) / 75.0f;
+					for (int i = 0; i < AtomSpectraService.newCalibration.getLines(); i++) {
+						float y = (float) (margin_top + (1 - StrictMath.min(1, (AtomSpectraService.newCalibration.getEnergy(i) - y_min) / (y_max - y_min) * y_zoom)) * height);
+						float x = margin_left + ((AtomSpectraService.newCalibration.getChannel(i) - x_min_value) / (x_max_value - x_min_value)) * width;
+						if (x >= margin_left && x <= (margin_left + width) && y >= margin_top && y <= (margin_top + height))
+							canvas.drawCircle(x, y, radius, squareColor);
 					}
 				}
-			}
 
-			if (calibrationScale) {
-				squareColor.setColor(Color.GREEN);
-				squareColor.setStyle(Style.FILL);
-				float radius = (float)StrictMath.min(width, height) / 75.0f;
-				for (int i = 0; i < AtomSpectraService.newCalibration.getLines(); i++) {
-					float y = (float) (margin_top + (1 - StrictMath.min(1, (AtomSpectraService.newCalibration.getEnergy(i) - min) / (max - min) * zoom)) * height);
-					float x = margin_left + ((AtomSpectraService.newCalibration.getChannel(i) - x_min_value) / (x_max_value - x_min_value)) * width;
-					if (x >= margin_left && x <= (margin_left + width) && y >= margin_top && y <= (margin_top + height))
-						canvas.drawCircle(x, y, radius, squareColor);
-				}
-			}
-
-			if (circleMode) {
-				squareColor.setStyle(Style.FILL);
-				for (int i = 0; i < N; i++) {
-					squareColor.setColor(Color.RED);
-					if ((i > 127) && (i <= 127 + frontCountsMin)) {
-						squareColor.setColor(DELTA_COLOR);
-						canvas.drawCircle(X[i], Y[i], (float)width / 100, squareColor);
+				// reference pulse circles
+				if (this.render_mode == RENDER_MODE_REFERENCE_PULSE) {
+					Shape shape = this.shapes[0];
+					squareColor.setStyle(Style.FILL);
+					for (int i = 0; i < N_x_points; i++) {
+						squareColor.setColor(Color.RED);
+						if ((i > 127) && (i <= 127 + frontCountsMin)) {
+							squareColor.setColor(Color.YELLOW);
+							canvas.drawCircle(shape.X[i], shape.Y[i], (float) width / 100, squareColor);
+						}
+						if ((i > 127 + frontCountsMin) && (i <= 127 + frontCountsMax)) {
+							squareColor.setColor(Color.GREEN);
+							canvas.drawCircle(shape.X[i], shape.Y[i], (float) width / 100, squareColor);
+						}
 					}
-					if ((i > 127 + frontCountsMin) && (i <= 127 + frontCountsMax)) {
-						squareColor.setColor(Color.GREEN);
-						canvas.drawCircle(X[i], Y[i], (float)width / 100, squareColor);
-					}
-					//canvas.drawCircle(X[i], Y[i], height/100, squareColor);
 				}
 			}
 		}
 	}
 
-	public void showShape(
-			double[] y, // array to draw
-			double[] back,  //background drawing
-			boolean show_back, //show background
-			boolean subtract_back, //subtract background from main hist
-			boolean calibrated, //if show energies
-			int size, // size of the array to draw
-			int xSize, // number of abscissa point to be drawn
+	public void showSpectrum(
+			double[] fg, // foreground drawing
+			double[] back,  // background drawing
+			boolean show_back, // show background
+			boolean subtract_back, // subtract background from main hist
+			boolean calibrated, // if show energies
+			int x_size, // number of abscissa point to be drawn
 			boolean logarithmic, // Y-scale type, linear or logarithmic
 			boolean bar_mode, // how to draw, lines or bars
-			float xMin, // minimum value for X-scale
-			float xMax, // maximum value for X-scale
-			String units, // measurement units, "ch." or "keV", also probably "eV", "MeV"
-			float zoom_factor,
-			int xZoom_factor,
-			boolean no_y,
-			float cursor_positionX, // xMin..xMax, disabled when outside this interval
-			int front_min,
-			int front_max
+			float x_min, // minimum value for X-scale
+			float x_max, // maximum value for X-scale
+			String x_units, // measurement units, "ch." or "keV", also probably "eV", "MeV"
+			float y_zoom_factor,
+			int x_zoom_factor,
+			float cursor_position_x // xMin..xMax, disabled when outside this interval
 	) {
-		if (size <= 0) return;
-		cursor_X = cursor_positionX;
-		x_max_value = xMax;
-		x_min_value = xMin;
-		no_y_mode = no_y;
-		logScale = logarithmic;
-		barMode = bar_mode;
-		background_show = show_back;
-		background_delta = subtract_back;
-		isCalibrated = calibrated;
-		frontCountsMin = front_min;
-		frontCountsMax = front_max;
-		calibrationScale = AtomSpectraService.showCalibrationFunction && xZoom_factor < Constants.SCALE_OSCILLOSCOPE_MODE;
-		if (xZoom_factor == Constants.SCALE_DOSE_MODE) {
-			for (int i = 0; i < size; i++) {
-				yf[i] = y[i];
+		synchronized (renderSync) {
+			int size = fg.length;
+			if (size == 0) {
+				String message = "Empty array provided to render spectrum plot";
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
 			}
-		} else {
-			System.arraycopy(y, 0, yf, 0, size);
-		}
-		if (show_back) {
-			if (subtract_back) {   //remove background from main hist
-				for (int i = 0; i < size; i++) {
-					back_yf[i] = 0.0;
-					yf[i] = Math.max(0.0, yf[i] - back[i]);
+
+			int step = size / x_size;
+			if ((step * x_size) != size) {
+				String message = "Invalid size/x_size provided to render spectrum plot: " + size + "/" + x_size;
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
+
+			this.render_mode = RENDER_MODE_SPECTRUM;
+			cursor_X = cursor_position_x;
+			x_max_value = x_max;
+			x_min_value = x_min;
+			logScale = logarithmic;
+			x_is_calibrated = calibrated;
+			this.x_units = ", " + x_units;
+
+			double[] fg_yf = new double[size];
+			double[] back_yf = new double[size];
+			double[] fg_reduced_reversed = new double[x_size];
+			double[] bg_reduced_reversed = new double[x_size];
+			System.arraycopy(fg, 0, fg_yf, 0, size);
+			if (show_back) {
+				if (subtract_back) { // remove background from main hist
+					for (int i = 0; i < size; i++) {
+						back_yf[i] = 0.0;
+						fg_yf[i] = Math.max(0.0, fg_yf[i] - back[i]);
+					}
+				} else {
+					System.arraycopy(back, 0, back_yf, 0, size);
 				}
-			} else {
-				System.arraycopy(back, 0, back_yf, 0, size);
 			}
-		}
-		if (xZoom_factor == Constants.SCALE_OSCILLOSCOPE_MODE || xZoom_factor == Constants.SCALE_DOSE_MODE) {
-			xSize = size;
-		}
 
-		int step = size / xSize;
-		if ((step * xSize) != size) return;
-		measureUnits = ", " + units;
-		zoom = zoom_factor;
-		xScale = xZoom_factor;
+			y_zoom = y_zoom_factor;
+			double x_zoom;
+			if (x_zoom_factor < Constants.SCALE_MAX)
+				x_zoom = (1 << x_zoom_factor) / 2.0;
+			else if (x_zoom_factor == Constants.SCALE_MAX)
+				x_zoom = (1 << 6) / 2.0;
+			else
+				x_zoom = 1;
 
-		double xZoom;
-		if (xZoom_factor < Constants.SCALE_MAX) xZoom = (1 << xZoom_factor) / 2.0;
-		else if (xZoom_factor == Constants.SCALE_MAX) xZoom = (1 << 6) / 2.0;
-		else xZoom = 1;
-
-		if (xZoom_factor == Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE) {
-			dose_mode = false;
-			circleMode = true;
-			max = 1;
-			min = 0;//(long)(alarm_level*1.2);
-			//max=min=y[0]-32768;max++;
-			for (int i = 0; i < 256; i++) {
-				double r;
-				//for (int j=0; j<step;j++)  r += y[i*step+j];
-				r = yf[i];//-32768;
-				if (yf[i] > max) max = r;
-				if (yf[i] < min) min = r;
-				if (i > 0) tmp[256 - i] = r;
-
-			}
-			tmp[0] = tmp[1];
-		} else {
-			circleMode = false;
-			if (xZoom_factor == Constants.SCALE_DOSE_MODE) {
-				dose_mode = true;
-				max = Constants.DOSE_SCALE / Constants.DOSE_OVERHEAD;
-			} else {
-				dose_mode = false;
-				if (logScale)
-					max = 0;
-				else
-					max = 1;
-			}
-			min = logScale ? Math.log10(minLogValue) : 0;
-			for (int i = 0; i < xSize; i++) {
+			if (logScale)
+				y_max = 0;
+			else
+				y_max = 1;
+			y_min = logScale ? Math.log10(minLogValue) : 0;
+			for (int i = 0; i < x_size; i++) {
 				double r = 0;
 				double back_r = 0;
-				for (int j = 0; j < step; j++) /*if ((i*step+j)>=0) if ((i*step+j)<1024) */
-					r += yf[i * step + j];
-				if (dose_mode)
-					r /= step;
-				else if (step > 1 && xZoom_factor == Constants.SCALE_MAX)
+				for (int j = 0; j < step; j++)
+					r += fg_yf[i * step + j];
+				if (step > 1 && x_zoom_factor == Constants.SCALE_MAX)
 					r /= 2;
 				if (show_back)
-					for (int j = 0; j < step; j++) /*if ((i*step+j)>=0) if ((i*step+j)<1024) */
+					for (int j = 0; j < step; j++)
 						back_r += back_yf[i * step + j];
-				//if (r>max) max=r;
-				if (xZoom_factor >= Constants.SCALE_OSCILLOSCOPE_MODE) r -= (Constants.NUM_HIST_POINTS / 2.0);
 				if (logScale) {
-					if (r > minLogValue) tmp[xSize - 1 - i] = Math.log10(r);
-					else tmp[xSize - 1 - i] = Math.log10(minLogValue);
-				} else tmp[xSize - 1 - i] = r;
+					if (r > minLogValue) fg_reduced_reversed[x_size - 1 - i] = Math.log10(r);
+					else fg_reduced_reversed[x_size - 1 - i] = Math.log10(minLogValue);
+				} else fg_reduced_reversed[x_size - 1 - i] = r;
 				if (show_back) if (logScale) {
-					if (back_r > minLogValue) back_tmp[xSize - 1 - i] = Math.log10(back_r);
-					else back_tmp[xSize - 1 - i] = Math.log10(minLogValue);
-				} else back_tmp[xSize - 1 - i] = back_r;
+					if (back_r > minLogValue) bg_reduced_reversed[x_size - 1 - i] = Math.log10(back_r);
+					else bg_reduced_reversed[x_size - 1 - i] = Math.log10(minLogValue);
+				} else bg_reduced_reversed[x_size - 1 - i] = back_r;
 			}
-			for (int i = 0; i < xSize; i++) {
-				if (tmp[i] > max) max = tmp[i];
-				if (tmp[i] < min || (i ==0 && calibrationScale)) min = tmp[i];
-			}
-			if (calibrationScale) {
-				for (int i = 0; i < AtomSpectraService.newCalibration.getLines(); i++) {
-					min = StrictMath.min(min, AtomSpectraService.newCalibration.getEnergy(i));
-					max = StrictMath.max(max, AtomSpectraService.newCalibration.getEnergy(i));
-				}
-				max = StrictMath.max(max, min + 1);
-			}
-			if (dose_mode) {
-				max *= Constants.DOSE_OVERHEAD;
-				if (max > 1000) {
-					m_dose_mode = true;
-					max /= 1000;
-					for (int i = 0; i < xSize; i++) {
-						tmp[i] /= 1000.0;
-					}
-				} else
-					m_dose_mode = false;
+			for (int i = 0; i < x_size; i++) {
+				if (fg_reduced_reversed[i] > y_max) y_max = fg_reduced_reversed[i];
+				if (fg_reduced_reversed[i] < y_min) y_min = fg_reduced_reversed[i];
 			}
 			if (show_back)
-				for (int i = 0; i < xSize; i++)
-					if (back_tmp[i] > max) max = back_tmp[i];  //use one scale for both histograms
-		}
+				for (int i = 0; i < x_size; i++)
+					if (bg_reduced_reversed[i] > y_max)
+						y_max = bg_reduced_reversed[i];  // use one scale for both histograms
 
-		if (xZoom_factor == Constants.SCALE_OSCILLOSCOPE_MODE) {
-			max = Constants.NUM_HIST_POINTS / 2.0 - 1;
-			min = -(Constants.NUM_HIST_POINTS / 2.0);
-		}
-
-		if (xZoom_factor == Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE) {
-			for (int i = 0; i < 256; i++) {
-				double rr = (tmp[i] - min) * zoom_factor / (max - min);
-				if (rr > 1) rr = 1;
-				Y[i] = margin_top + height - (int) ((height - 2) * rr) - 1;
-				X[i] = (int) (margin_left + width - (4.0 * (width - 2) * (i) / (size)) - 1);
-			}
-			N = 256;
-		} else {
-			for (int i = 0; i < xSize; i++) {
-				double rr;
-				rr = (tmp[i] - min) * zoom_factor / (max - min);
-
-				if (rr > 1) rr = 1;
-				Y[i] = margin_top + height - (int) ((height - 2) * rr) - 1;
-				if (show_back) {
-					rr = (back_tmp[i] - min) * zoom_factor / (max - min);
-					if (rr > 1) rr = 1;
-					back_Y[i] = margin_top + height - (int) ((height - 2) * rr) - 1;
-				}
-
-				if (xZoom_factor == Constants.SCALE_OSCILLOSCOPE_MODE) {
-					if (rr > 0.5) rr = 0.5;
-					Y[i] = margin_top + height / 2 - (int) ((height - 2) * rr) - 1;
-				}
-
-				X[i] = margin_left + width - (int)((double)step * (width - 2) * (i) / (size)) - 1;
-			}
-			N = xSize;
-		}
-		isotopeFound = -1;
-		double cursor_X_Energy; //use energy to search the nearest isotope
-		if (isCalibrated)
-			cursor_X_Energy = cursor_X;
-		else
-			cursor_X_Energy = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy((int) cursor_X);
-		double deltaEnergy = cursor_X_Energy;
-//		int importance = 0;
-		for (int i = 0; i < AtomSpectraIsotopes.isotopeLineArray.size(); i++) {
-			if (AtomSpectraIsotopes.isotopeLibrary > 0 && !AtomSpectraIsotopes.IAEAList[AtomSpectraIsotopes.isotopeLibrary - 1].isInChain(AtomSpectraIsotopes.isotopeLineArray.get(i).getName()))
-				continue;
-			if (Math.abs(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0) - cursor_X_Energy) < (CURSOR_INEQUALITY * (5000.0 + (AtomSpectraIsotopes.isotopeLibrary > 1? 2000.0:0.0)) / xZoom) /*cursor_X_Energy*/) {
-//			if (Math.abs(AtomSpectraIsotopes.isotopeLineArray[i].getEnergy() - cursor_X_Energy) < CURSOR_INEQUALITY * cursor_X_Energy) {
-//				if (importance < AtomSpectraIsotopes.isotopeLineArray[i].getImportance()) {
-//					importance = AtomSpectraIsotopes.isotopeLineArray[i].getImportance();
-//					deltaEnergy = (float) Math.abs(AtomSpectraIsotopes.isotopeLineArray[i].getEnergy() - cursor_X_Energy);
-//					isotopeFound = i;
-//					isotopeLabel = AtomSpectraIsotopes.isotopeLineArray[i].getName();
-//				} else if (importance == AtomSpectraIsotopes.isotopeLineArray[i].getImportance()) {
+			isotopeFound = -1;
+			double cursor_X_Energy; //use energy to search the nearest isotope
+			if (x_is_calibrated)
+				cursor_X_Energy = cursor_X;
+			else
+				cursor_X_Energy = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy((int) cursor_X);
+			double deltaEnergy = cursor_X_Energy;
+			for (int i = 0; i < AtomSpectraIsotopes.isotopeLineArray.size(); i++) {
+				if (AtomSpectraIsotopes.isotopeLibrary > 0 && !AtomSpectraIsotopes.IAEAList[AtomSpectraIsotopes.isotopeLibrary - 1].isInChain(AtomSpectraIsotopes.isotopeLineArray.get(i).getName()))
+					continue;
+				if (Math.abs(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0) - cursor_X_Energy) < (CURSOR_INEQUALITY * (5000.0 + (AtomSpectraIsotopes.isotopeLibrary > 1 ? 2000.0 : 0.0)) / x_zoom) /*cursor_X_Energy*/) {
 					if (Math.abs(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0) - cursor_X_Energy) < deltaEnergy) {
-//						importance = AtomSpectraIsotopes.isotopeLineArray[i].getImportance();
 						deltaEnergy = (float) Math.abs(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0) - cursor_X_Energy);
 						isotopeFound = i;
 						isotopeLabel = AtomSpectraIsotopes.isotopeLineArray.get(i).getName();
 					}
-//				}
+				}
+			}
+
+			N_x_points = x_size;
+			int style = bar_mode ? Shape.STYLE_BAR : Shape.STYLE_LINE;
+			int fg_color_from = Color.WHITE;
+			int fg_color_to = Color.WHITE;
+			int bg_color_from = Color.GREEN;
+			int bg_color_to = Color.GREEN;
+			if (show_back) {
+				if (subtract_back) {
+					fg_color_from = Color.CYAN;
+					fg_color_to = Color.CYAN;
+					if (bar_mode) {
+						fg_color_from = 0xA0FF8888;
+						fg_color_to = 0xA0FFFF88;
+					}
+
+					Shape subtract_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
+					this.shapes = new Shape[] { subtract_shape };
+				} else {
+					if (bar_mode) {
+						fg_color_from = 0xA08888FF;
+						fg_color_to = 0xA08888FF;
+						bg_color_from = 0x8888FF88;
+						bg_color_to = 0x8888FFFF;
+					}
+
+					if (AtomSpectraService.showSpectrumChange) {
+						fg_color_from = 0xFFFF00FF;
+						fg_color_to = 0xFFFF00FF;
+					}
+
+					Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
+					Shape bg_shape = getShape(bg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, bg_color_from, bg_color_to);
+					this.shapes = new Shape[]{ fg_shape, bg_shape };
+				}
+			} else {
+				if (bar_mode) {
+					fg_color_from = 0xA08888FF;
+					fg_color_to = 0xA08888FF;
+				}
+				Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
+				this.shapes = new Shape[]{ fg_shape };
 			}
 		}
 		invalidate();
 	}
 
-	/**
-	 * Return date in specified format.
-	 *
-	 * @param milliSeconds Date in milliseconds
-	 * @param dateFormat   Date format
-	 * @return String representing date in specified format
-	 */
-	@SuppressLint("SimpleDateFormat")
-	public static String getDate(long milliSeconds, String dateFormat) {
-		// Create a DateFormatter object for displaying date in specified format.
-		SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
+	public void showSearch(
+			double[] search_values, // array to draw
+			double[] alarmLow,
+			double[] alarmHigh,
+			double[] baseline,
+			boolean is_interval_search,
+			boolean show_alarm_level,
+			float y_zoom_factor
+	) {
+		synchronized (renderSync) {
+			int size = search_values.length;
+			if (size == 0) {
+				String message = "Empty array provided to render search plot";
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
 
-		// Create a calendar object that will convert the date and time value in milliseconds to date.
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTimeInMillis(milliSeconds);
-		return formatter.format(calendar.getTime());
+			this.render_mode = RENDER_MODE_SEARCH;
+			this.is_interval_search = is_interval_search;
+			x_max_value = size;
+			x_min_value = 0;
+			x_units = ", " + getResources().getString(R.string.graph_show_points);
+			y_zoom = y_zoom_factor;
+			y_max = Constants.DOSE_SCALE / Constants.DOSE_OVERHEAD;
+			y_min = 0;
+			double[] reversed = new double[size];
+			for (int i = 0; i < size; i++) {
+				reversed[i] = search_values[size - 1 - i];
+				if (reversed[i] > y_max) y_max = reversed[i];
+				if (reversed[i] < y_min) y_min = reversed[i];
+			}
+
+			y_max *= Constants.DOSE_OVERHEAD;
+			if (y_max > 1000) {
+				m_dose_mode = true;
+				y_max /= 1000;
+				for (int i = 0; i < size; i++) {
+					reversed[i] /= 1000.0;
+				}
+			} else {
+				m_dose_mode = false;
+			}
+
+			N_x_points = size;
+			Shape search_shape = getShape(reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);;
+			this.shapes = new Shape[] {search_shape};
+		}
+		invalidate();
 	}
 
+	public void showCalibration(
+			double[] calibration_values // array to draw
+	) {
+		synchronized (renderSync) {
+			int size = calibration_values.length;
+			if (size == 0) {
+				String message = "Empty array provided to render calibration plot";
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
+
+			this.render_mode = RENDER_MODE_CALIBRATION;
+
+			cursor_X = -1;
+			x_max_value = size;
+			x_min_value = 0;
+			x_units = ", " + getResources().getString(R.string.graph_show_cnt);
+			y_max = 1;
+			y_min = 0;
+			for (int i = 0; i < AtomSpectraService.newCalibration.getLines(); i++) {
+				y_min = StrictMath.min(y_min, AtomSpectraService.newCalibration.getEnergy(i));
+				y_max = StrictMath.max(y_max, AtomSpectraService.newCalibration.getEnergy(i));
+			}
+			y_max = StrictMath.max(y_max, y_min + 1);
+
+			N_x_points = size;
+			Shape calibration_shape = getShape(calibration_values, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			this.shapes = new Shape[] {calibration_shape};
+		}
+		invalidate();
+	}
+
+	public void showOscilloscope(
+			double[] audio_data, // array to draw
+			float y_zoom_factor
+	) {
+		synchronized (renderSync) {
+			int size = audio_data.length;
+			if (size == 0) {
+				String message = "Empty array provided to render oscilloscope plot";
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
+
+			this.render_mode = RENDER_MODE_OSCILLOSCOPE;
+			x_max_value = size;
+			x_min_value = 0;
+			x_units = ", " + getResources().getString(R.string.graph_show_points);
+			y_zoom = y_zoom_factor;
+			y_max = Constants.NUM_HIST_POINTS / 2.0 - 1;
+			y_min = -(Constants.NUM_HIST_POINTS / 2.0);
+
+			double[] y_values = new double[size];
+			for (int i = 0; i < size; i++) {
+				y_values[i] = audio_data[i] - Constants.NUM_HIST_POINTS / 2.0;
+			}
+
+			N_x_points = size;
+			Shape audio_shape = getShape(y_values, y_zoom, 1, y_max, 0.5, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			this.shapes = new Shape[] {audio_shape};
+		}
+		invalidate();
+	}
+
+	public void showReferencePulse(
+			double[] pulse_data, // array to draw
+			int front_min,
+			int front_max
+	) {
+		synchronized (renderSync) {
+			int size = pulse_data.length;
+			if (size == 0) {
+				String message = "Empty array provided to render pulse shape plot";
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
+
+			this.render_mode = RENDER_MODE_REFERENCE_PULSE;
+
+			x_max_value = size;
+			x_min_value = 0;
+			frontCountsMin = front_min;
+			frontCountsMax = front_max;
+			y_zoom = 1;
+			y_max = 1;
+			y_min = 0;
+
+			double[] reversed = new double[size];
+			for (int i = 0; i < size; i++) {
+				double r = pulse_data[i];
+				if (reversed[i] > y_max) y_max = r;
+				if (reversed[i] < y_min) y_min = r;
+				reversed[(size - 1) - i] = r;
+			}
+
+			N_x_points = 256;
+			Shape pulse_shape = getShape(reversed, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			this.shapes = new Shape[] {pulse_shape};
+		}
+		invalidate();
+	}
+
+	private @NonNull Shape getShape(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to) {
+		int size = y_values.length;
+		int[] X = new int[size];
+		int[] Y = new int[size];
+		for (int i = 0; i < size; i++) {
+			double rr;
+			rr = (y_values[i] - y_min) * y_zoom / (y_max - y_min);
+
+			if (rr > rr_y_max) rr = rr_y_max;
+			Y[i] = margin_top + (int)(height * rr_y_max) - (int) ((height - 2) * rr) - 1;
+			X[i] = margin_left + width - (int) ((double) x_step * (width - 2) * (i) / (size * x_step)) - 1;
+		}
+
+		return new Shape(X, Y, style, color_from, color_to);
+	}
+
+	private class Shape {
+		public final static int STYLE_BAR = 0;
+		public final static int STYLE_LINE = 1;
+		public final static int STYLE_DASH = 2;
+
+		public final int[] X;
+		public final int[] Y;
+		public final int style;
+		public final int colorFrom;
+		public final int colorTo;
+
+		public Shape(int[] X, int[] Y, int style, int colorFrom, int colorTo) {
+			this.X = X;
+			this.Y = Y;
+			this.style = style;
+			this.colorFrom = colorFrom;
+			this.colorTo = colorTo;
+		}
+	}
 }

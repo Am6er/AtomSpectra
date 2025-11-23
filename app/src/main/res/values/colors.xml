@@ -18,12 +18,6 @@
         <color name="colorHighlight">#FFDFCB1E</color>
         <color name="colorStrokes">#FF6B7476</color>
         <color name="colorStrokes2">#FFDEAD7F</color>
-        <color name="colorGradientDeltaFrom">#A0FF8888</color>
-        <color name="colorGradientDeltaTo">#A0FFFF88</color>
-        <color name="colorGradientMainFrom">#A08888FF</color>
-        <color name="colorGradientMainTo">#A08888FF</color>
-        <color name="colorGradientBackFrom">#8888FF88</color>
-        <color name="colorGradientBackTo">#8888FFFF</color>
         <color name="colorBackground">#FF3DF048</color>
         <color name="colorIntervalBackground">#70505050</color> <!-- #88FFA000 --> <!-- #D0505050 -->
         <color name="colorCursorBackground">#ff333333</color>
