@@ -857,7 +857,7 @@ public class AtomSpectraShapeView extends View {
 				Shape alarm_low_shape = getShape(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
 				Shape baseline_shape = getShape(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN);
 
-				this.shapes = new Shape[] {alarm_high_shape, alarm_low_shape, baseline_shape, search_shape};
+				this.shapes = new Shape[] {search_shape, alarm_high_shape, alarm_low_shape, baseline_shape};
 			} else {
 				this.shapes = new Shape[] {search_shape};
 			}

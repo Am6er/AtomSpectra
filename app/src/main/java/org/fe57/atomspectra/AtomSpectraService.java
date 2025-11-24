@@ -80,14 +80,14 @@ public class AtomSpectraService extends Service {
 
     private static final Integer intervalSearchAlarmSync = 1;
     private static AudioTrack intervalSearchAlarmAudioTrack = null;
-    private static final double intervalSearchAlarmDuration = 0.1; // seconds
+    private static final double intervalSearchAlarmDuration = 0.25; // seconds
+    private static final int intervalSearchAlarmMaxSteps = 10;
     // TODO: introduce setting
     private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
     // TODO: introduce setting
     private static int intervalSearchAlarmDetectionLevel = Constants.ALARM_DETECTION_LEVEL_DEFAULT; // number of sigmas
-    private static final int intervalSearchLowFreq = 750;
-    private static final int intervalSearchHighFreqMin = 1500;
-    private static final int intervalSearchHighFreqMax = 3500;
+    private static final int intervalSearchLowFreq = 440;
+    private static final int intervalSearchHighFreq = 1000;
     private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
 
     public static int lastCalibrationChannel = Constants.NUM_HIST_POINTS;
@@ -913,43 +913,47 @@ public class AtomSpectraService extends Service {
                                     return;
                                 }
 
-                                int beepDuration = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
-                                // level low as default
-                                double beepStartFrequency = intervalSearchLowFreq;
-                                double beepEndFrequency = intervalSearchLowFreq;
+                                int beepsDuration = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
+                                double beepFrequency = intervalSearchLowFreq;
+                                int beepsCount = 1;
                                 // level high
                                 if (currentCps >= levelHigh) {
-                                    int steps = 20;
-                                    int freqRange = intervalSearchHighFreqMax - intervalSearchHighFreqMin;
-                                    int stepFreq = freqRange / steps;
-                                    int sweepStep = 100;
-                                    beepStartFrequency = intervalSearchHighFreqMin + (currentCps / baseCps) / steps * freqRange;
-                                    beepStartFrequency = Math.floor(beepStartFrequency / stepFreq) * stepFreq;
-                                    if (beepStartFrequency > intervalSearchHighFreqMax) {
-                                        beepStartFrequency = intervalSearchHighFreqMax;
+                                    beepsCount = (int)(currentCps / baseCps);
+                                    if (beepsCount > intervalSearchAlarmMaxSteps) {
+                                        beepsCount = intervalSearchAlarmMaxSteps;
                                     }
 
-                                    beepEndFrequency = beepStartFrequency + sweepStep;
+                                    beepFrequency = intervalSearchHighFreq;
                                 }
 
-                                float[] outputAudioBuffer = new float[beepDuration];
-                                for (int i = 0; i < beepDuration; i++) {
-                                    double beepFrequency = beepStartFrequency + (beepEndFrequency - beepStartFrequency) * i / beepDuration;
-                                    outputAudioBuffer[i] = (float) (0.25f * Math.sin(2.0 * Math.PI * beepFrequency * i / 44100.0));
-                                }
-                                int fadeInOutDuration = beepDuration / 2;
-                                for (int i = 0; i < fadeInOutDuration; i++) {
-                                    outputAudioBuffer[i] *= (float) i / fadeInOutDuration;
-                                }
-                                for (int i = beepDuration - 1; i >= beepDuration - fadeInOutDuration; i--) {
-                                    outputAudioBuffer[i] *= (float) (beepDuration - 1 - i) / fadeInOutDuration;
+                                float[] outputAudioBuffer = new float[beepsDuration];
+                                int beepDuration = beepsDuration / (beepsCount * 2 - 1);
+                                for (int i = 0; i < beepsCount * 2 - 1; i++) {
+                                    for (int j = 0; j < beepDuration; j++) {
+                                        int index = i * beepDuration + j;
+                                        outputAudioBuffer[index] = (float) (0.25f * Math.sin(2.0 * Math.PI * beepFrequency * index / 44100.0));
+                                        if (i % 2 == 0) {
+                                            // beep
+                                            outputAudioBuffer[index] *= 0.99f;
+                                            int fadeInOutDuration = beepDuration / 4;
+                                            if (j < fadeInOutDuration) {
+                                                outputAudioBuffer[index] *= (float)j / fadeInOutDuration;
+                                            }
+                                            if (beepDuration - j < fadeInOutDuration) {
+                                                outputAudioBuffer[index] *= (float)(beepDuration - j) / fadeInOutDuration;
+                                            }
+                                        } else {
+                                            // silence
+                                            outputAudioBuffer[index] *= 0.01f;
+                                        }
+                                    }
                                 }
 
                                 setAlarmAudioTrackDevice();
                                 intervalSearchAlarmAudioTrack.stop();
                                 intervalSearchAlarmAudioTrack.flush();
                                 intervalSearchAlarmAudioTrack.setVolume(intervalSearchAlarmVolume);
-                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, beepDuration, AudioTrack.WRITE_BLOCKING);
+                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, beepsDuration, AudioTrack.WRITE_BLOCKING);
                                 intervalSearchAlarmAudioTrack.play();
                             }
                         }
@@ -1911,7 +1915,7 @@ public class AtomSpectraService extends Service {
 
         double interval_cps = (total_interval_counts / total_interval_time);
         double interval_cps_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
-        intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
+        intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps_error, intervalSearchAlarmDetectionLevel);
 
         synchronized (doseHistory) {
             doseHistory.addLast(dose_rate);
@@ -3385,14 +3389,14 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        public void updateAlarmLevels(double cps, double cpsErrorPercent, int detectionLevel) {
+        public void updateAlarmLevels(double cpsErrorPercent, int detectionLevel) {
             if (this.totalTime <= 0) {
                 return;
             }
 
             double baseCps = this.getCps();
             double baseErrorValue = baseCps * (this.getError() / 100);
-            double cpsErrorValue = cps * (cpsErrorPercent / 100);
+            double cpsErrorValue = baseCps * (cpsErrorPercent / 100);
             double overallErrorValue = Math.sqrt(baseErrorValue * baseErrorValue + cpsErrorValue * cpsErrorValue);
             double delta = detectionLevel * overallErrorValue;
 
