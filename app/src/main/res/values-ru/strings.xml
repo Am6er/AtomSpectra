@@ -81,7 +81,9 @@
     <string name="interval_search_output_sound_enabled">Включить звуковой сигнал</string>
     <string name="interval_search_energy_range_full">Диапазон энергий: Полный</string>
     <string name="interval_search_energy_range_format">Диапазон энергий: %1$.2f - %2$.2f кэВ</string>
-    <string name="output_sound_device">Звуковое устройство вывода:</string>
+    <string name="interval_search_output_sound_device">Звуковое устройство вывода:</string>
+    <string name="interval_search_sound_volume">Громкость звука: %1$d%%</string>
+    <string name="interval_search_detection_level">Уровень обнаружения: %1$d сигм(ы)</string>
     <string name="use_raw_audio_source">Использовать необработанный звук</string>
     <string name="no_audio_available">Не могу использовать аудио-вход!</string>
     <string name="no_usb_available">Не могу использовать вход USB!</string>
@@ -193,6 +195,9 @@
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
+    <string name="cps_alarm_baseline">≈cps: <xliff:g id="cps">%1$.1f</xliff:g> ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="cps_alarm_baseline_timer">≈cps: [<xliff:g id="time">%1$d</xliff:g> s] <xliff:g id="cps">%2$.1f</xliff:g> ±<xliff:g id="cps_error">%3$d</xliff:g>%%</string>
+    <string name="cps_alarm_levels">♪cps: <xliff:g id="level_high">%1$.1f</xliff:g>/<xliff:g id="level_low">%2$.1f</xliff:g></string>
     <string name="compress_graph_format">Спектр: <xliff:g id="type">%1$s</xliff:g></string>
     <string name="settings_spg_delta_duration">Сохр. дельту кажд. <xliff:g id="duration">%1$d</xliff:g> с</string>
     <string-array name="compress_graph_array">

@@ -713,23 +713,6 @@
                 android:layout_marginBottom="5sp"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/intervalSearchEnergyRange"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="onSelectIntervalClick"
-                    android:text="@string/interval_search_energy_range_full"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="5sp"
-                android:layout_marginBottom="5sp"
-                android:orientation="horizontal">
-
                 <CheckBox
                     android:id="@+id/intervalSearchSoundEnabled"
                     android:layout_width="wrap_content"
@@ -750,7 +733,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:singleLine="true"
-                    android:text="@string/output_sound_device"
+                    android:text="@string/interval_search_output_sound_device"
                     android:textColor="#FFFFFF"
                     android:textSize="18sp" />
 
@@ -763,6 +746,91 @@
                     android:textColor="#FFFFFF"
                     android:textSize="18sp"
                     tools:ignore="HardcodedText" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="5sp"
+                android:layout_marginBottom="5sp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/intervalSearchEnergyRange"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onSelectIntervalClick"
+                    android:text="@string/interval_search_energy_range_full"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/decIntervalSearchAlarmVolumeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_intervalAlarmVolume_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/intervalSearchAlarmVolumeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:text="@string/interval_search_sound_volume"
+                    android:textColor="#FFFFFF"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/incIntervalSearchAlarmVolumeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_intervalAlarmVolume_plus"
+                    android:text="@string/plus" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/decIntervalSearchDetectionLevelButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_intervalDetectionLevel_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/intervalSearchDetectionLevelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:text="@string/interval_search_detection_level"
+                    android:textColor="#FFFFFF"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/incIntervalSearchDetectionLevelButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_intervalDetectionLevel_plus"
+                    android:text="@string/plus" />
             </LinearLayout>
 
 <!-- End Interval Search -->

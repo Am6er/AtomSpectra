@@ -49,8 +49,6 @@ import java.util.Locale;
 public class AtomSpectraSettings extends Activity  implements OnGestureListener, OnRequestPermissionsResultCallback {
 
     private final static String TAG = AtomSpectraSettings.class.getSimpleName();
-    //public static final String ATOMSPECTRA_PREFERENCES = "AtomSpectra Preferences";
-
     private final static int REQUEST_FINE_GPS = 501;
 
     public static boolean active = false;
@@ -58,7 +56,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     private AtomSpectraShapeView mAtomSpectraSignalView;
 
     private GestureDetector gestureDetector;
-    private TextView mTextField;
+    private TextView countsTextField;
     private EditText SensG, SensGCompensated, BackgroundCount, slowSens, mediumSens, fastSens;
     private SharedPreferences sp;
     private TextView doseRateFreqLabel;
@@ -105,13 +103,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         doseRateFreqLabel = findViewById(R.id.updateFreqLabel);
 
         mAtomSpectraSignalView = findViewById(R.id.signal_area);
-        mAtomSpectraSignalView.setOnClickListener((View view) -> {
-//      	if (AtomSpectraService.scale_factor<6) AtomSpectraService.scale_factor++;
-//      									  else AtomSpectraService.scale_factor=1;
-
-        });
         mAtomSpectraSignalView.setClickable(false);
-        mTextField = findViewById(R.id.countView);
+
+        countsTextField = findViewById(R.id.countView);
         SensG = findViewById(R.id.SensG);
         SensGCompensated = findViewById(R.id.SensGCompensated);
         BackgroundCount = findViewById(R.id.BckgCnt);
@@ -753,7 +747,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 if (mBundle != null) {
                     int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
                     int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
-                    mTextField.setText(getString(R.string.cps_show, cps, cps_interval));
+                    countsTextField.setText(getString(R.string.cps_show, cps, cps_interval));
                     SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
                     if (AtomSpectraService.getScaleFactor() == Constants.SCALE_OSCILLOSCOPE_MODE) {
                         double[] realtime_audio_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA);

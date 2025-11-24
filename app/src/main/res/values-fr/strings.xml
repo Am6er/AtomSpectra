@@ -81,7 +81,9 @@
     <string name="interval_search_output_sound_enabled">Activer l\'alarme sonore</string>
     <string name="interval_search_energy_range_full">Gamme énergétique: Pleine</string>
     <string name="interval_search_energy_range_format">Gamme énergétique: %1$.2f - %2$.2f keV</string>
-    <string name="output_sound_device">Périphérique de sortie audio:</string>
+    <string name="interval_search_output_sound_device">Périphérique de sortie audio:</string>
+    <string name="interval_search_sound_volume">Niveau sonore: %1$df%%</string>
+    <string name="interval_search_detection_level">Niveau de détection: %1$d sigma</string>
     <string name="use_raw_audio_source">Utiliser une source audio brut</string>
     <string name="no_audio_available">Impossible d\'utiliser l\'audio d\'entrée!</string>
     <string name="no_usb_available">Impossible d\'utiliser l\'entrée USB!</string>
@@ -193,6 +195,9 @@
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
+    <string name="cps_alarm_baseline">≈cps: <xliff:g id="cps">%1$.1f</xliff:g> ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="cps_alarm_baseline_timer">≈cps: [<xliff:g id="time">%1$d</xliff:g> s] <xliff:g id="cps">%2$.1f</xliff:g> ±<xliff:g id="cps_error">%3$d</xliff:g>%%</string>
+    <string name="cps_alarm_levels">♪cps: <xliff:g id="level_high">%1$.1f</xliff:g>/<xliff:g id="level_low">%2$.1f</xliff:g></string>
     <string name="compress_graph_format">Spectre: <xliff:g id="type">%1$s</xliff:g></string>
     <string name="settings_spg_delta_duration">Sauver le delta chaque <xliff:g id="duration">%1$d</xliff:g> s</string>
     <string-array name="compress_graph_array">
