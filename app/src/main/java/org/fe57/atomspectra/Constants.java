@@ -76,7 +76,7 @@ public class Constants {
     public static final double ALARM_BASELINE_ERROR_PERCENT_THRESHOLD = 5;
     public static final int ALARM_BASELINE_MAX_DURATION = 30;
     public static final int ALARM_DETECTION_LEVEL_DEFAULT = 4;
-    public static final float ALARM_VOLUME_DEFAULT = 0.5f;
+    public static final int ALARM_VOLUME_DEFAULT = 50; // %
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
@@ -318,5 +318,4 @@ public class Constants {
 
         return numbers.toString();
     }
-
 }

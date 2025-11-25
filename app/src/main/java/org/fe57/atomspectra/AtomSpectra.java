@@ -270,7 +270,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		}
 
 		fmsButton = findViewById(R.id.fmsButton);
-		cpsView = findViewById(R.id.reduceToChannelsText);
+		cpsView = findViewById(R.id.channelText);
 		cpsView.setOnLongClickListener(this);
 		mAtomSpectraShapeView = findViewById(R.id.shape_area);
 		int coeff = StrictMath.max(seekChannel.getWidth() / 200, 1);

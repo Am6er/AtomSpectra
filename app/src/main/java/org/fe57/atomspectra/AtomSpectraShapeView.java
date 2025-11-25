@@ -18,6 +18,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -820,7 +821,7 @@ public class AtomSpectraShapeView extends View {
 			x_min_value = 0;
 			x_units = ", " + getResources().getString(R.string.graph_show_points);
 			y_zoom = y_zoom_factor;
-			y_max = Constants.DOSE_SCALE / Constants.DOSE_OVERHEAD;
+			y_max = Constants.DOSE_SCALE * Constants.DOSE_OVERHEAD;
 			y_min = 0;
 			double[] search_values_reversed = getReversed(search_values);
 			double[] alarm_high_reversed = getReversed(alarm_high);
@@ -828,10 +829,13 @@ public class AtomSpectraShapeView extends View {
 			double[] baseline_reversed = getReversed(baseline);
 
 			for (int i = 0; i < size; i++) {
+				// main plot range
 				if (search_values_reversed[i] > y_max) {
 					y_max = search_values_reversed[i];
 				}
-				if (show_alarm_level && alarm_high_reversed[i] > y_max) {
+
+				// alarm range
+				if (show_alarm_level && (alarm_high_reversed[i] > y_max)) {
 					y_max = alarm_high_reversed[i];
 				}
 			}
@@ -972,8 +976,6 @@ public class AtomSpectraShapeView extends View {
 		double[] reversed = new double[size];
 		for (int i = 0; i < size; i++) {
 			reversed[i] = values[size - 1 - i];
-			if (reversed[i] > y_max) y_max = reversed[i];
-			if (reversed[i] < y_min) y_min = reversed[i];
 		}
 		return reversed;
 	}
@@ -983,8 +985,7 @@ public class AtomSpectraShapeView extends View {
 		int[] X = new int[size];
 		int[] Y = new int[size];
 		for (int i = 0; i < size; i++) {
-			double rr;
-			rr = (y_values[i] - y_min) * y_zoom / (y_max - y_min);
+			double rr = (y_values[i] - y_min) * y_zoom / (y_max - y_min);
 
 			if (rr > rr_y_max) rr = rr_y_max;
 			Y[i] = margin_top + (int)(height * rr_y_max) - (int) ((height - 2) * rr) - 1;

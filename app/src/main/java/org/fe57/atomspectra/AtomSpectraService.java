@@ -81,11 +81,10 @@ public class AtomSpectraService extends Service {
     private static final Integer intervalSearchAlarmSync = 1;
     private static AudioTrack intervalSearchAlarmAudioTrack = null;
     private static final int intervalSearchAlarmAudioTrackSampleRate = 44100;
-    private static final double intervalSearchAlarmDurationSamples = 11264; // ~0.25 seconds
-    private static final int intervalSearchAlarmMaxSteps = 10;
+    private static final double intervalSearchAlarmDuration = 0.25;
     private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
     private static int intervalSearchAlarmDetectionLevel = Constants.ALARM_DETECTION_LEVEL_DEFAULT; // number of sigmas
-    private static final int intervalSearchLowFreq = 440;
+    private static final int intervalSearchLowFreq = 500;
     private static final int intervalSearchHighFreq = 1000;
     private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
 
@@ -693,14 +692,14 @@ public class AtomSpectraService extends Service {
         intervalSearchAlarmEnabled = sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         outputSoundID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
         outputSoundName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
-        intervalSearchAlarmVolume = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
+        intervalSearchAlarmVolume = sp.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT) / 100.0f;
         intervalSearchAlarmDetectionLevel = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
         // --- end interval search
 
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
-        
+
         boolean inputS = sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         int inputSID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
         String inputSN = sp.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
@@ -746,8 +745,8 @@ public class AtomSpectraService extends Service {
         setAlarmAudioTrackDevice();
         if (!freeze_update_data && intervalSearchAlarmEnabled != intervalSearchAlarmEnabledPrev) {
             stopIntervalSearchAlarmTimer();
-            if (intervalSearchAlarmEnabled) {   
-               startIntervalSearchAlarmTimer();
+            if (intervalSearchAlarmEnabled) {
+                startIntervalSearchAlarmTimer();
             }
         }
     }
@@ -926,21 +925,28 @@ public class AtomSpectraService extends Service {
                                     return;
                                 }
 
-                                int beepsDuration = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
-                                double beepFrequency = intervalSearchLowFreq;
+                                int totalDurationFrames = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
+                                int beepFrequency = intervalSearchLowFreq;
                                 int beepsCount = 1;
-                                // level high
                                 if (currentCps >= levelHigh) {
-                                    beepsCount = (int)(currentCps / baseCps);
-                                    if (beepsCount > intervalSearchAlarmMaxSteps) {
-                                        beepsCount = intervalSearchAlarmMaxSteps;
-                                    }
-
                                     beepFrequency = intervalSearchHighFreq;
+                                    int ratio = (int) (currentCps / baseCps);
+                                    beepsCount = ratio;
+                                    if (ratio > 10) {
+                                        beepsCount = 10;
+                                        beepFrequency += (ratio / 10) * 100;
+                                        if (ratio > 100) {
+                                            beepFrequency = intervalSearchHighFreq * 2;
+                                            beepFrequency += (ratio / 100) * 100;
+                                            if (ratio > 1000) {
+                                                beepFrequency = intervalSearchHighFreq * 3;
+                                            }
+                                        }
+                                    }
                                 }
 
-                                float[] outputAudioBuffer = new float[beepsDuration];
-                                int beepDuration = beepsDuration / (beepsCount * 2 - 1);
+                                float[] outputAudioBuffer = new float[totalDurationFrames];
+                                int beepDuration = totalDurationFrames / (beepsCount * 2 - 1);
                                 for (int i = 0; i < beepsCount * 2 - 1; i++) {
                                     for (int j = 0; j < beepDuration; j++) {
                                         int index = i * beepDuration + j;
@@ -950,10 +956,10 @@ public class AtomSpectraService extends Service {
                                             outputAudioBuffer[index] *= 0.99f;
                                             int fadeInOutDuration = beepDuration / 4;
                                             if (j < fadeInOutDuration) {
-                                                outputAudioBuffer[index] *= (float)j / fadeInOutDuration;
+                                                outputAudioBuffer[index] *= (float) j / fadeInOutDuration;
                                             }
                                             if (beepDuration - j < fadeInOutDuration) {
-                                                outputAudioBuffer[index] *= (float)(beepDuration - j) / fadeInOutDuration;
+                                                outputAudioBuffer[index] *= (float) (beepDuration - j) / fadeInOutDuration;
                                             }
                                         } else {
                                             // silence
@@ -966,7 +972,7 @@ public class AtomSpectraService extends Service {
                                 intervalSearchAlarmAudioTrack.stop();
                                 intervalSearchAlarmAudioTrack.flush();
                                 intervalSearchAlarmAudioTrack.setVolume(intervalSearchAlarmVolume);
-                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, beepsDuration, AudioTrack.WRITE_BLOCKING);
+                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, totalDurationFrames, AudioTrack.WRITE_NON_BLOCKING);
                                 intervalSearchAlarmAudioTrack.play();
                             }
                         }
@@ -1092,7 +1098,9 @@ public class AtomSpectraService extends Service {
         synchronized (intervalSearchAlarmSync) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 try {
-                    int sampleRate = intervalSearchAlarmAudioTrackSampleRate;
+                    int durationSamples = (int) (intervalSearchAlarmAudioTrackSampleRate * intervalSearchAlarmDuration);
+                    int minBufferSizeSamples = AudioTrack.getMinBufferSize(intervalSearchAlarmAudioTrackSampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT) / 4;
+                    durationSamples = (durationSamples / minBufferSizeSamples + 1) * minBufferSizeSamples;
                     intervalSearchAlarmAudioTrack = new AudioTrack.Builder().
                             setAudioAttributes(new AudioAttributes.Builder()
                                     .setUsage(AudioAttributes.USAGE_ALARM)
@@ -1100,15 +1108,16 @@ public class AtomSpectraService extends Service {
                                     .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
                                     .build())
                             .setAudioFormat(new AudioFormat.Builder()
-                                    .setSampleRate(sampleRate)
+                                    .setSampleRate(intervalSearchAlarmAudioTrackSampleRate)
                                     .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
                                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                                     .build())
                             .setTransferMode(AudioTrack.MODE_STREAM)
-                            .setBufferSizeInBytes(intervalSearchAlarmDurationSamples * 4)
+                            .setBufferSizeInBytes(durationSamples * 4)
                             .build();
                 } catch (Exception ignored) {
                     intervalSearchAlarmAudioTrack = null;
+                    AtomSpectraLog.addMessage(service_context, "Unable to configure output audio: " + ignored.getMessage());
                 }
                 if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
                     intervalSearchAlarmAudioTrack.release();
