@@ -175,7 +175,7 @@
     <string name="load_channels_format">Load channels: <xliff:g id="load_channels">%1$d</xliff:g></string>
     <string name="max_factor_format">Maximum factor: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Smoothness: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
-    <string name="delta_spectrum_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
+    <string name="spectrum_change_delta_duration_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
     <string name="delta_time_format">time: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>

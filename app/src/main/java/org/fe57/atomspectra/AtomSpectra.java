@@ -270,7 +270,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		}
 
 		fmsButton = findViewById(R.id.fmsButton);
-		cpsView = findViewById(R.id.channelText);
+		cpsView = findViewById(R.id.reduceToChannelsText);
 		cpsView.setOnLongClickListener(this);
 		mAtomSpectraShapeView = findViewById(R.id.shape_area);
 		int coeff = StrictMath.max(seekChannel.getWidth() / 200, 1);
@@ -1138,13 +1138,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							break;
 						case SHOW_BASE:
 							AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
-							error95Percent = Math.round(2 * baseline.getError());
+							error95Percent = Math.round(2 * baseline.getBaselineError());
 							if (baseline.isStable()) {
 								// show baseline
-								cpsView.setText(getString(R.string.cps_alarm_baseline, baseline.getCps(), error95Percent));
+								cpsView.setText(getString(R.string.cps_alarm_baseline, baseline.getBaseline(), error95Percent));
 							} else {
 								// show timer
-								cpsView.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getCps(), error95Percent));
+								cpsView.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
 							}
 
 							doseRateText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));

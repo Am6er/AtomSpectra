@@ -175,7 +175,7 @@
     <string name="load_channels_format">Загр. каналов: <xliff:g id="load_channels">%1$d</xliff:g></string>
     <string name="max_factor_format">Макс. степень: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Сглаживание: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
-    <string name="delta_spectrum_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
+    <string name="spectrum_change_delta_duration_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
     <string name="channel_compression_format">Сжатие каналов: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
     <string name="delta_time_format">время: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> с</string>

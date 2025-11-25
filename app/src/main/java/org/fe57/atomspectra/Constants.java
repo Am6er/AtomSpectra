@@ -59,8 +59,8 @@ public class Constants {
     public static String[] LOCALES = {"Default", "Russian", "English", "French", "Deutsch"};
     public static String[] LOCALES_ID = {"", "ru", "en", "fr", "de"};
     public static final int USB_DEVICE_MINIMAL_VERSION = 11;                                                             //minimal firmware version for AtomSpectra Pro to operate correctly
-    public static final int AUTOSAVE_DELTA = 5;                                                                          //minimal delta between auto saves
-    public static final int AUTOSAVE_MAX_DELTA = 60;                                                                     //maximum delta between auto saves
+    public static final int SPG_DELTA_DURATION_MIN = 5;                                                                          //minimal delta between auto saves
+    public static final int SPG_DELTA_DURATION_MAX = 60;                                                                     //maximum delta between auto saves
     public static final int SPG_INTERVAL_DEFAULT = 0;
     public static final boolean SPG_MIDNIGHT_RESET_DEFAULT = false;
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
@@ -122,6 +122,8 @@ public class Constants {
         String CONF_OUTPUT_SOUND = "Sound output";
         String CONF_OUTPUT_SOUND_DEVICE_ID = "Sound device ID";
         String CONF_OUTPUT_SOUND_DEVICE_NAME = "Sound device name";
+        String CONF_SEARCH_ALARM_VOLUME = "Interval Search Alarm Volume";
+        String CONF_SEARCH_DETECTION_LEVEL = "Interval Search Detection Level";
         String CONF_INPUT_SOUND = "Input sound";
         String CONF_INPUT_SOUND_DEVICE_ID = "Input sound device ID";
         String CONF_INPUT_SOUND_DEVICE_NAME = "Input sound device name";
@@ -130,9 +132,9 @@ public class Constants {
         String CONF_MAX_POLI_FACTOR = "Polinom factor";
         String CONF_GOLAY_WINDOW = "Golay window";
         String CONF_AUTO_UPDATE_ISOTOPES = "Auto update isotopes";
-        String CONF_DELTA_TIME = "Delta time";
+        String CONF_SPECTRUM_CHANGE_DIFF_TIME = "Delta time";
         String CONF_LOCALE_ID = "Locale";
-        String CONF_SPG_INTERVAL = "File autosave";
+        String CONF_SPG_DELTA_DURATION = "File autosave";
         String CONF_SPG_MIDNIGHT_RESET = "Reset spectrogram at midnight";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";

@@ -175,7 +175,7 @@
     <string name="load_channels_format">Charger canals: <xliff:g id="load_channels">%1$d</xliff:g></string>
     <string name="max_factor_format">Degré maximum: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Douceur: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
-    <string name="delta_spectrum_format">Diff. de temps: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
+    <string name="spectrum_change_delta_duration_format">Diff. de temps: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Compression de canal: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">temps: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
     <string name="delta_time_format">temps: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
