@@ -918,10 +918,11 @@ public class AtomSpectraService extends Service {
                         if (intervalSearchAlarmEnabled && !freeze_update_data && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             if (intervalSearchAlarmAudioTrack != null) {
                                 double currentCps = doseRateValue.intervalCps;
+                                boolean isStable = intervalSearchAlarmBaseline.isStable();
                                 double baseCps = intervalSearchAlarmBaseline.getBaseline();
                                 double levelLow = intervalSearchAlarmBaseline.getAlarmLevelLow();
                                 double levelHigh = intervalSearchAlarmBaseline.getAlarmLevelHigh();
-                                if (baseCps == 0 || (currentCps > levelLow && currentCps < levelHigh)) {
+                                if (!isStable || baseCps == 0 || (currentCps > levelLow && currentCps < levelHigh)) {
                                     return;
                                 }
 
@@ -3420,7 +3421,7 @@ public class AtomSpectraService extends Service {
         }
 
         public void updateAlarmLevels(double cpsErrorPercent, int detectionLevel) {
-            if (this.totalTime <= 0) {
+            if (!this.isStable()) {
                 return;
             }
 
