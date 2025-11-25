@@ -882,7 +882,7 @@ public class AtomSpectraService extends Service {
 
             spgTimerIncrement = spgInterval; // save base spectrum on first timer trigger
             // delay to let pro device provide valid data
-            spgAutosaveTimer.scheduleAtFixedRate(spgAutosaveTask, USB_DATA_SKIP_SECONDS * 1000, 1000);
+            spgAutosaveTimer.schedule(spgAutosaveTask, USB_DATA_SKIP_SECONDS * 1000, 1000);
         }
     }
 
@@ -969,10 +969,13 @@ public class AtomSpectraService extends Service {
                                 }
 
                                 setAlarmAudioTrackDevice();
-                                intervalSearchAlarmAudioTrack.stop();
-                                intervalSearchAlarmAudioTrack.flush();
                                 intervalSearchAlarmAudioTrack.setVolume(intervalSearchAlarmVolume);
-                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, totalDurationFrames, AudioTrack.WRITE_NON_BLOCKING);
+                                int playState = intervalSearchAlarmAudioTrack.getPlayState();
+                                if (playState == AudioTrack.PLAYSTATE_PAUSED || playState == AudioTrack.PLAYSTATE_PLAYING) {
+                                    intervalSearchAlarmAudioTrack.stop();
+                                }
+                                intervalSearchAlarmAudioTrack.reloadStaticData();
+                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, totalDurationFrames, AudioTrack.WRITE_BLOCKING);
                                 intervalSearchAlarmAudioTrack.play();
                             }
                         }
@@ -980,7 +983,7 @@ public class AtomSpectraService extends Service {
                 }
             };
 
-            intervalSearchAlarmTimer.scheduleAtFixedRate(intervalSearchAlarmTask, 1000, 1000);
+            intervalSearchAlarmTimer.schedule(intervalSearchAlarmTask, 1000, 1000);
         }
     }
 
@@ -1112,14 +1115,15 @@ public class AtomSpectraService extends Service {
                                     .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
                                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                                     .build())
-                            .setTransferMode(AudioTrack.MODE_STREAM)
+                            .setTransferMode(AudioTrack.MODE_STATIC)
                             .setBufferSizeInBytes(durationSamples * 4)
                             .build();
                 } catch (Exception ignored) {
                     intervalSearchAlarmAudioTrack = null;
                     AtomSpectraLog.addMessage(service_context, "Unable to configure output audio: " + ignored.getMessage());
+                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
                 }
-                if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
+                if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_NO_STATIC_DATA) {
                     intervalSearchAlarmAudioTrack.release();
                     intervalSearchAlarmAudioTrack = null;
                     showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
@@ -1131,8 +1135,7 @@ public class AtomSpectraService extends Service {
     private static void releaseOutputAudioTrack() {
         synchronized (intervalSearchAlarmSync) {
             if (intervalSearchAlarmAudioTrack != null) {
-                intervalSearchAlarmAudioTrack.pause();
-                intervalSearchAlarmAudioTrack.flush();
+                intervalSearchAlarmAudioTrack.stop();
                 intervalSearchAlarmAudioTrack.release();
                 intervalSearchAlarmAudioTrack = null;
             }
@@ -2765,7 +2768,7 @@ public class AtomSpectraService extends Service {
                     sendDataFromAudioSourceTimerTask();
                 }
             };
-            sendDataFromAudioSourceTimer.scheduleAtFixedRate(sendDataTask, Constants.UPDATE_PERIOD, Constants.UPDATE_PERIOD);
+            sendDataFromAudioSourceTimer.schedule(sendDataTask, Constants.UPDATE_PERIOD, Constants.UPDATE_PERIOD);
 
             // audio capture settings
             BufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT) * 2; //read two buffers at a time to reduce time consumption
@@ -2782,7 +2785,7 @@ public class AtomSpectraService extends Service {
                     captureAudioTask();
                 }
             };
-            captureDataFromAudioSourceTimer.scheduleAtFixedRate(captureTask, 0, captureAudioTaskInterval);
+            captureDataFromAudioSourceTimer.schedule(captureTask, 0, captureAudioTaskInterval);
         }
     }
 

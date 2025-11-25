@@ -336,7 +336,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		Button outputSound = findViewById(R.id.nbrButton);
 		outputSound.setVisibility((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) ? Button.VISIBLE : Button.INVISIBLE);
 		initializeGestures();
-		buttonsTimer.scheduleAtFixedRate(buttonsTask, 0, 1000);
+		buttonsTimer.schedule(buttonsTask, 0, 1000);
 
 		hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
 		hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
