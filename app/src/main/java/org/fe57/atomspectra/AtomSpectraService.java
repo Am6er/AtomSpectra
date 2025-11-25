@@ -1136,7 +1136,10 @@ public class AtomSpectraService extends Service {
     private static void releaseOutputAudioTrack() {
         synchronized (intervalSearchAlarmSync) {
             if (intervalSearchAlarmAudioTrack != null) {
-                intervalSearchAlarmAudioTrack.stop();
+                int playState = intervalSearchAlarmAudioTrack.getPlayState();
+                if (playState == AudioTrack.PLAYSTATE_PAUSED || playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    intervalSearchAlarmAudioTrack.stop();
+                }
                 intervalSearchAlarmAudioTrack.release();
                 intervalSearchAlarmAudioTrack = null;
             }

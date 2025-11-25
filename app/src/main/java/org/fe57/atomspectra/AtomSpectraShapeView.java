@@ -1,5 +1,6 @@
 package org.fe57.atomspectra;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Locale;
 
@@ -32,7 +33,7 @@ public class AtomSpectraShapeView extends View {
 	private final int RENDER_MODE_REFERENCE_PULSE = 4;
 
 	private int render_mode = RENDER_MODE_SPECTRUM;
-	private Shape[] shapes;
+	private Shape[] shapes = new Shape[0];
 
 	private static int margin_top;
 	private static int margin_bottom;
@@ -68,7 +69,6 @@ public class AtomSpectraShapeView extends View {
 
 	private double y_max, y_min;
 
-	private int N_x_points = 0;
 	private static final double CURSOR_INEQUALITY = 0.03;
 	private static final double[] logLines = {StrictMath.log10(2), StrictMath.log10(3), StrictMath.log10(4),
 			StrictMath.log10(5), StrictMath.log10(6), StrictMath.log10(7), StrictMath.log10(8), StrictMath.log10(9)};
@@ -84,7 +84,6 @@ public class AtomSpectraShapeView extends View {
 	public AtomSpectraShapeView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 	}
-
 
 	public static double X2scale(double X)
 	{
@@ -297,7 +296,7 @@ public class AtomSpectraShapeView extends View {
 			textColor.setColor(Color.WHITE);
 			textColor.setTextSize(ht_px);
 
-			if (N_x_points > 0) {
+			if (this.shapes.length > 0) {
 				canvas.save();
 				canvas.rotate(270);
 				// y axis labels for spectrum
@@ -398,7 +397,7 @@ public class AtomSpectraShapeView extends View {
 					if (shape.style == Shape.STYLE_LINE || shape.style == Shape.STYLE_DASH) {
 						squareColor.setColor(shape.colorFrom);
 
-						for (int i = 2; i < N_x_points; i++)
+						for (int i = 1; i < shape.X.length; i++)
 							if (shape.X[i - 1] >= margin_left)
 								canvas.drawLine(shape.X[i - 1], shape.Y[i - 1], shape.X[i], shape.Y[i], squareColor);
 
@@ -410,7 +409,7 @@ public class AtomSpectraShapeView extends View {
 						int colorTo = shape.colorTo;
 						LinearGradient linearGradientShader = new LinearGradient(margin_left, margin_top, margin_left + width, margin_top, colorFrom, colorTo, TileMode.CLAMP);
 						squareColor.setShader(linearGradientShader);
-						for (int i = 2; i < N_x_points; i++)
+						for (int i = 1; i < shape.X.length; i++)
 							if (shape.X[i - 1] >= margin_left) {
 								canvas.drawRect(shape.X[i], shape.Y[i - 1], shape.X[i - 1], margin_top + height, squareColor);
 							}
@@ -620,7 +619,7 @@ public class AtomSpectraShapeView extends View {
 				if (this.render_mode == RENDER_MODE_REFERENCE_PULSE) {
 					Shape shape = this.shapes[0];
 					squareColor.setStyle(Style.FILL);
-					for (int i = 0; i < N_x_points; i++) {
+					for (int i = 0; i < shape.X.length; i++) {
 						squareColor.setColor(Color.RED);
 						if ((i > 127) && (i <= 127 + frontCountsMin)) {
 							squareColor.setColor(Color.YELLOW);
@@ -752,7 +751,6 @@ public class AtomSpectraShapeView extends View {
 				}
 			}
 
-			N_x_points = x_size;
 			int style = bar_mode ? Shape.STYLE_BAR : Shape.STYLE_LINE;
 			int fg_color_from = Color.WHITE;
 			int fg_color_to = Color.WHITE;
@@ -767,7 +765,7 @@ public class AtomSpectraShapeView extends View {
 						fg_color_to = 0xA0FFFF88;
 					}
 
-					Shape subtract_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
+					Shape subtract_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to, false);
 					this.shapes = new Shape[] { subtract_shape };
 				} else {
 					if (bar_mode) {
@@ -782,8 +780,8 @@ public class AtomSpectraShapeView extends View {
 						fg_color_to = 0xFFFF00FF;
 					}
 
-					Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
-					Shape bg_shape = getShape(bg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, bg_color_from, bg_color_to);
+					Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to, false);
+					Shape bg_shape = getShape(bg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, bg_color_from, bg_color_to, false);
 					this.shapes = new Shape[]{ fg_shape, bg_shape };
 				}
 			} else {
@@ -791,7 +789,7 @@ public class AtomSpectraShapeView extends View {
 					fg_color_from = 0xA08888FF;
 					fg_color_to = 0xA08888FF;
 				}
-				Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
+				Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to, false);
 				this.shapes = new Shape[]{ fg_shape };
 			}
 		}
@@ -854,12 +852,11 @@ public class AtomSpectraShapeView extends View {
 				m_dose_mode = false;
 			}
 
-			N_x_points = size;
-			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
 			if (show_alarm_level) {
-				Shape alarm_high_shape = getShape(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
-				Shape alarm_low_shape = getShape(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
-				Shape baseline_shape = getShape(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN);
+				Shape alarm_high_shape = getShape(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED, true);
+				Shape alarm_low_shape = getShape(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED, true);
+				Shape baseline_shape = getShape(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN, true);
 
 				this.shapes = new Shape[] {search_shape, alarm_high_shape, alarm_low_shape, baseline_shape};
 			} else {
@@ -894,8 +891,7 @@ public class AtomSpectraShapeView extends View {
 			}
 			y_max = StrictMath.max(y_max, y_min + 1);
 
-			N_x_points = size;
-			Shape calibration_shape = getShape(calibration_values, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			Shape calibration_shape = getShape(calibration_values, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
 			this.shapes = new Shape[] {calibration_shape};
 		}
 		invalidate();
@@ -926,8 +922,7 @@ public class AtomSpectraShapeView extends View {
 				y_values[i] = audio_data[i] - Constants.NUM_HIST_POINTS / 2.0;
 			}
 
-			N_x_points = size;
-			Shape audio_shape = getShape(y_values, y_zoom, 1, y_max, 0.5, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			Shape audio_shape = getShape(y_values, y_zoom, 1, y_max, 0.5, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
 			this.shapes = new Shape[] {audio_shape};
 		}
 		invalidate();
@@ -964,8 +959,7 @@ public class AtomSpectraShapeView extends View {
 				reversed[(size - 1) - i] = r;
 			}
 
-			N_x_points = 256;
-			Shape pulse_shape = getShape(reversed, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			Shape pulse_shape = getShape(reversed, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
 			this.shapes = new Shape[] {pulse_shape};
 		}
 		invalidate();
@@ -980,19 +974,31 @@ public class AtomSpectraShapeView extends View {
 		return reversed;
 	}
 
-	private @NonNull Shape getShape(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to) {
+	private @NonNull Shape getShape(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to, boolean no_zeros) {
 		int size = y_values.length;
-		int[] X = new int[size];
-		int[] Y = new int[size];
+		ArrayList<Integer> X_list = new ArrayList<>(size);
+		ArrayList<Integer> Y_list = new ArrayList<>(size);
 		for (int i = 0; i < size; i++) {
+			if (no_zeros && y_values[i] == 0) {
+				continue;
+			}
 			double rr = (y_values[i] - y_min) * y_zoom / (y_max - y_min);
 
 			if (rr > rr_y_max) rr = rr_y_max;
-			Y[i] = margin_top + (int)(height * rr_y_max) - (int) ((height - 2) * rr) - 1;
-			X[i] = margin_left + width - (int) ((double) x_step * (width - 2) * (i) / (size * x_step)) - 1;
+
+			int y_val = margin_top + (int)(height * rr_y_max) - (int) ((height - 2) * rr) - 1;
+			int x_val = margin_left + width - (int) ((double) x_step * (width - 2) * (i) / (size * x_step)) - 1;
+			Y_list.add(y_val);
+			X_list.add(x_val);
 		}
 
-		return new Shape(X, Y, style, color_from, color_to);
+		int[] X_array = new int[X_list.size()];
+		int[] Y_array = new int[Y_list.size()];
+		for (int i = 0; i < X_array.length; i++) {
+			X_array[i] = X_list.get(i);
+			Y_array[i] = Y_list.get(i);
+		}
+		return new Shape(X_array, Y_array, style, color_from, color_to);
 	}
 
 	private class Shape {
