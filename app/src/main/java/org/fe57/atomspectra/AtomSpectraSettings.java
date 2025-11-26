@@ -987,6 +987,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             String value = input.getText().toString();
             if ("-1".equals(value)) {
                 AtomSpectraService.resetInterval();
+                AtomSpectraService.getIntervalSearchAlarmBaseline().reset();
                 updateSearchEnergyRangeText();
             } else {
                 if (value.contains("-")) {
@@ -1000,6 +1001,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                         if (number1 < 0 || number1 >= number2 || number2 >= Constants.NUM_HIST_POINTS - 1)
                             return;
                         AtomSpectraService.setEnergyInterval(val1, val2);
+                        AtomSpectraService.getIntervalSearchAlarmBaseline().reset();
                         updateSearchEnergyRangeText();
                     } catch (Exception ignored) {
 
