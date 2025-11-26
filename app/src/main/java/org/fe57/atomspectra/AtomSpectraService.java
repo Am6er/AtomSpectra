@@ -84,7 +84,7 @@ public class AtomSpectraService extends Service {
     private static final double intervalSearchAlarmDuration = 0.25;
     private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
     private static int intervalSearchAlarmDetectionLevel = Constants.ALARM_DETECTION_LEVEL_DEFAULT; // number of sigmas
-    private static final int intervalSearchLowFreq = 500;
+    private static final int intervalSearchLowFreq = 440;
     private static final int intervalSearchHighFreq = 1000;
     private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
 
