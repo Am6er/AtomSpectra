@@ -84,7 +84,7 @@ public class AtomSpectraService extends Service {
     private static final double intervalSearchAlarmDuration = 0.25;
     private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
     private static int intervalSearchAlarmDetectionLevel = Constants.ALARM_DETECTION_LEVEL_DEFAULT; // number of sigmas
-    private static final int intervalSearchLowFreq = 440;
+    private static final int intervalSearchLowFreq = 400;
     private static final int intervalSearchHighFreq = 1000;
     private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
 
@@ -1103,8 +1103,6 @@ public class AtomSpectraService extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 try {
                     int durationSamples = (int) (intervalSearchAlarmAudioTrackSampleRate * intervalSearchAlarmDuration);
-                    int minBufferSizeSamples = AudioTrack.getMinBufferSize(intervalSearchAlarmAudioTrackSampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT) / 4;
-                    durationSamples = (durationSamples / minBufferSizeSamples + 1) * minBufferSizeSamples;
                     intervalSearchAlarmAudioTrack = new AudioTrack.Builder().
                             setAudioAttributes(new AudioAttributes.Builder()
                                     .setUsage(AudioAttributes.USAGE_ALARM)
