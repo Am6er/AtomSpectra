@@ -81,7 +81,7 @@ public class AtomSpectraService extends Service {
     private static final Integer intervalSearchAlarmSync = 1;
     private static AudioTrack intervalSearchAlarmAudioTrack = null;
     private static final int intervalSearchAlarmAudioTrackSampleRate = 44100;
-    private static final double intervalSearchAlarmDuration = 0.4; // seconds
+    private static final double intervalSearchAlarmDuration = 0.5; // seconds
     private static float intervalSearchAlarmVolume = Constants.ALARM_VOLUME_DEFAULT;
     private static int intervalSearchAlarmDetectionLevel = Constants.ALARM_DETECTION_LEVEL_DEFAULT; // number of sigmas
     private static final int intervalSearchLowFreq = 500;
@@ -928,9 +928,9 @@ public class AtomSpectraService extends Service {
                                 int totalDurationFrames = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
                                 int[] beeps;
                                 int[] beepStartFrames;
-                                if (currentCps >= levelHigh) {
-                                    int ratio = (int) (currentCps / baseCps);
-                                    int pow = 0;
+                                double ratio = currentCps / baseCps;
+                                int pow = 0;
+                                if (ratio >= 1) {
                                     if (ratio >= 2) pow = 1;
                                     if (ratio >= 4) pow = 2;
                                     if (ratio >= 8) pow = 3;
@@ -949,8 +949,8 @@ public class AtomSpectraService extends Service {
                                         };
                                         beepStartFrames = new int[]{
                                                 0,                                // beep
-                                                totalDurationFrames * 150 / 400,  // short beep
-                                                totalDurationFrames * 250 / 400,  // silence
+                                                totalDurationFrames * 150 / 500,  // short beep
+                                                totalDurationFrames * 250 / 500,  // silence
                                         };
                                     } else {
                                         beeps = new int[]{
@@ -959,18 +959,50 @@ public class AtomSpectraService extends Service {
                                         };
                                         beepStartFrames = new int[]{
                                                 0,                                // beep
-                                                totalDurationFrames * 150 / 400,  // long beep
+                                                totalDurationFrames * 150 / 500,  // long beep
                                         };
                                     }
                                 } else {
-                                    beeps = new int[] {
-                                            intervalSearchBaseFreq,
-                                            intervalSearchLowFreq,
-                                    };
-                                    beepStartFrames = new int[] {
-                                            0,                                // beep
-                                            totalDurationFrames * 150 / 400,  // long beep
-                                    };
+                                    if (ratio <= 1.0/2) pow = 1;
+                                    if (ratio <= 1.0/4) pow = 2;
+                                    if (ratio <= 1.0/8) pow = 3;
+                                    if (ratio <= 1.0/16) pow = 4;
+                                    if (ratio <= 1.0/32) pow = 5;
+                                    if (ratio <= 1.0/64) pow = 6;
+                                    if (ratio <= 1.0/128) pow = 7;
+                                    if (ratio <= 1.0/256) pow = 8;
+                                    if (ratio <= 1.0/512) pow = 9;
+                                    if (ratio <= 1.0/1024) pow = 10;
+                                    if (pow < 10) {
+                                        beeps = new int[]{
+                                                intervalSearchBaseFreq,
+                                                intervalSearchLowFreq - pow * 20,
+                                                0
+                                        };
+                                        beepStartFrames = new int[]{
+                                                0,                                // beep
+                                                totalDurationFrames * 150 / 400,  // longer beep
+                                                totalDurationFrames * 400 / 500,  // silence
+                                        };
+                                    } else {
+                                        beeps = new int[]{
+                                                intervalSearchBaseFreq,
+                                                intervalSearchHighFreq - 200,
+                                        };
+                                        beepStartFrames = new int[]{
+                                                0,                                // beep
+                                                totalDurationFrames * 150 / 500,  // long beep
+                                        };
+                                    }
+
+//                                    beeps = new int[] {
+//                                            intervalSearchBaseFreq,
+//                                            intervalSearchLowFreq,
+//                                    };
+//                                    beepStartFrames = new int[] {
+//                                            0,                                // beep
+//                                            totalDurationFrames * 150 / 400,  // long beep
+//                                    };
                                 }
 
                                 int beepIndex = 0;
