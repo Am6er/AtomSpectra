@@ -765,7 +765,7 @@ public class AtomSpectraShapeView extends View {
 						fg_color_to = 0xA0FFFF88;
 					}
 
-					Shape subtract_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to, false);
+					Shape subtract_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
 					this.shapes = new Shape[] { subtract_shape };
 				} else {
 					if (bar_mode) {
@@ -780,8 +780,8 @@ public class AtomSpectraShapeView extends View {
 						fg_color_to = 0xFFFF00FF;
 					}
 
-					Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to, false);
-					Shape bg_shape = getShape(bg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, bg_color_from, bg_color_to, false);
+					Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
+					Shape bg_shape = getShape(bg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, bg_color_from, bg_color_to);
 					this.shapes = new Shape[]{ fg_shape, bg_shape };
 				}
 			} else {
@@ -789,7 +789,7 @@ public class AtomSpectraShapeView extends View {
 					fg_color_from = 0xA08888FF;
 					fg_color_to = 0xA08888FF;
 				}
-				Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to, false);
+				Shape fg_shape = getShape(fg_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, style, fg_color_from, fg_color_to);
 				this.shapes = new Shape[]{ fg_shape };
 			}
 		}
@@ -852,13 +852,23 @@ public class AtomSpectraShapeView extends View {
 				m_dose_mode = false;
 			}
 
-			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
+			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
 			if (show_alarm_level) {
-				Shape alarm_high_shape = getShape(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED, true);
-				Shape alarm_low_shape = getShape(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED, true);
-				Shape baseline_shape = getShape(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN, true);
-
-				this.shapes = new Shape[] {search_shape, alarm_high_shape, alarm_low_shape, baseline_shape};
+				Shape[] alarm_high_shape = getNonZeroShapes(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
+				Shape[] alarm_low_shape = getNonZeroShapes(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
+				Shape[] baseline_shape = getNonZeroShapes(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN);
+        this.shapes = new Shape[alarm_high_shape.length + alarm_low_shape.length + baseline_shape.length + 1];
+        int index = 0;
+        this.shapes[index++] = search_shape;
+        for (Shape shape : alarm_high_shape) {
+          this.shapes[index++] = shape;
+        }
+        for (Shape shape : alarm_low_shape) {
+          this.shapes[index++] = shape;
+        }
+        for (Shape shape : baseline_shape) {
+          this.shapes[index++] = shape;
+        }
 			} else {
 				this.shapes = new Shape[] {search_shape};
 			}
@@ -891,7 +901,7 @@ public class AtomSpectraShapeView extends View {
 			}
 			y_max = StrictMath.max(y_max, y_min + 1);
 
-			Shape calibration_shape = getShape(calibration_values, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
+			Shape calibration_shape = getShape(calibration_values, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
 			this.shapes = new Shape[] {calibration_shape};
 		}
 		invalidate();
@@ -922,7 +932,7 @@ public class AtomSpectraShapeView extends View {
 				y_values[i] = audio_data[i] - Constants.NUM_HIST_POINTS / 2.0;
 			}
 
-			Shape audio_shape = getShape(y_values, y_zoom, 1, y_max, 0.5, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
+			Shape audio_shape = getShape(y_values, y_zoom, 1, y_max, 0.5, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
 			this.shapes = new Shape[] {audio_shape};
 		}
 		invalidate();
@@ -959,7 +969,7 @@ public class AtomSpectraShapeView extends View {
 				reversed[(size - 1) - i] = r;
 			}
 
-			Shape pulse_shape = getShape(reversed, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE, false);
+			Shape pulse_shape = getShape(reversed, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
 			this.shapes = new Shape[] {pulse_shape};
 		}
 		invalidate();
@@ -974,32 +984,63 @@ public class AtomSpectraShapeView extends View {
 		return reversed;
 	}
 
-	private @NonNull Shape getShape(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to, boolean no_zeros) {
+	private @NonNull Shape getShape(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to) {
 		int size = y_values.length;
+		int[] X_array = new int[size];
+		int[] Y_array = new int[size];
+		for (int i = 0; i < size; i++) {
+			Y_array[i] = getY(y_values[i], y_zoom, y_max, rr_y_max,  y_min);
+			X_array[i] = getX(i, size, x_step);
+		}
+
+		return new Shape(X_array, Y_array, style, color_from, color_to);
+	}
+
+  private @NonNull Shape[] getNonZeroShapes(double[] y_values, double y_zoom, int x_step, double y_max, double rr_y_max, double y_min, int style, int color_from, int color_to) {
+		int size = y_values.length;
+    ArrayList<Shape> shapes = new ArrayList<>();
 		ArrayList<Integer> X_list = new ArrayList<>(size);
 		ArrayList<Integer> Y_list = new ArrayList<>(size);
 		for (int i = 0; i < size; i++) {
-			if (no_zeros && y_values[i] == 0) {
+			if (y_values[i] == 0) {
+        if (X_list.size() > 0) {
+          int[] X_array = new int[X_list.size()];
+          int[] Y_array = new int[Y_list.size()];
+          for (int j = 0; j < X_array.length; j++) {
+            X_array[j] = X_list.get(j);
+            Y_array[j] = Y_list.get(j);
+          }
+          shapes.add(new Shape(X_array, Y_array, style, color_from, color_to));
+          X_list.clear();
+          Y_list.clear();
+        }
+
 				continue;
 			}
-			double rr = (y_values[i] - y_min) * y_zoom / (y_max - y_min);
-
-			if (rr > rr_y_max) rr = rr_y_max;
-
-			int y_val = margin_top + (int)(height * rr_y_max) - (int) ((height - 2) * rr) - 1;
-			int x_val = margin_left + width - (int) ((double) x_step * (width - 2) * (i) / (size * x_step)) - 1;
-			Y_list.add(y_val);
-			X_list.add(x_val);
+	
+			Y_list.add(getY(y_values[i], y_zoom, y_max, rr_y_max, y_min));
+			X_list.add(getX(i, size, x_step));
 		}
 
-		int[] X_array = new int[X_list.size()];
-		int[] Y_array = new int[Y_list.size()];
-		for (int i = 0; i < X_array.length; i++) {
-			X_array[i] = X_list.get(i);
-			Y_array[i] = Y_list.get(i);
+		Shape[] shapes_array = new Shape[shapes.size()];
+		for (int i = 0; i < shapes_array.length; i++) {
+			shapes_array[i] = shapes.get(i);
 		}
-		return new Shape(X_array, Y_array, style, color_from, color_to);
+
+		return shapes_array;
 	}
+
+  private int getX(int i, int size, int x_step) {
+    return margin_left + width - (int) ((double) x_step * (width - 2) * (i) / (size * x_step)) - 1;
+  }
+
+  private int getY(double y_value, double y_zoom, double y_max, double rr_y_max, double y_min) {
+    double rr = (y_value - y_min) * y_zoom / (y_max - y_min);
+
+    if (rr > rr_y_max) rr = rr_y_max;
+
+    return margin_top + (int)(height * rr_y_max) - (int) ((height - 2) * rr) - 1;
+  }
 
 	private class Shape {
 		public final static int STYLE_BAR = 0;
