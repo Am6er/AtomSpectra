@@ -1,6 +1,5 @@
 package org.fe57.atomspectra;
 
-import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,7 +14,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Date;
 import java.util.Locale;
-import java.util.function.Consumer;
 
 //This is the main class to load and store own Atom Spectra spectrum
 public class SpectrumFileAS extends SpectrumFile {
@@ -117,7 +115,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 //version 3
                 spectrum
                         .setSuffix(fr.readLine())
-                        .setDetectedIsotopes(fr.readLine());
+                        .setDeviceInfo(fr.readLine());
             }
             spectrum.setSpectrumTime((long) (Double.parseDouble(fr.readLine()) * 1000.0 / Constants.UPDATE_PERIOD)); //convert from seconds to counts
             int num_points = StrictMath.min(Integer.parseInt(fr.readLine()), Channels);
@@ -190,7 +188,7 @@ public class SpectrumFileAS extends SpectrumFile {
             fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));               //version 2
             fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));              //version 2
             fw.append(spectrum.getSuffix()).append("\n"); //version 3
-            fw.append(spectrum.getDetectedIsotopes()).append("\n");//version 3
+            fw.append(spectrum.getDeviceInfo()).append("\n");//version 3
             fw.append(String.format(Locale.US, "%f\n", time)); //convert from counts to seconds
             fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
             fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
