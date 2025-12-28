@@ -41,13 +41,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
+        String lang = Constants.getLocale(newBase);
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
@@ -85,9 +79,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             cbin = 2;
         } else {
-          cbin = 1;
+            cbin = 1;
         }
-        
+
         HashSet<String> allowedScale = new HashSet<>(Arrays.asList(AtomSpectraSpectrogramView.SCALE_SQRT, AtomSpectraSpectrogramView.SCALE_LOG, AtomSpectraSpectrogramView.SCALE_LIN));
         if (!allowedScale.contains(scale)) {
             scale = AtomSpectraSpectrogramView.SCALE_SQRT;
@@ -145,7 +139,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if(item.getItemId() == android.R.id.home){
+        if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
         }
@@ -155,14 +149,14 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private final BroadcastReceiver mDataUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-        final String action = intent.getAction();
-        if (Constants.ACTION.ACTION_CLOSE_SPECTROGRAM.equals(action)) {
-            finish();
-        }
+            final String action = intent.getAction();
+            if (Constants.ACTION.ACTION_CLOSE_SPECTROGRAM.equals(action)) {
+                finish();
+            }
 
-        if (Constants.ACTION.ACTION_SPECTROGRAM_UPDATED.equals(action)) {
-            updateSpectrogram(false);
-        }
+            if (Constants.ACTION.ACTION_SPECTROGRAM_UPDATED.equals(action)) {
+                updateSpectrogram(false);
+            }
         }
 
     };

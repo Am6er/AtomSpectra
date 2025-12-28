@@ -28,7 +28,7 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedListener {
-//    final static String LIST_ISOTOPE_CHANNELS = "Isotope channels";
+    //    final static String LIST_ISOTOPE_CHANNELS = "Isotope channels";
     private int compression = Constants.ADC_MAX;
     private int poli_order = 5;
     private int library = 0;
@@ -36,13 +36,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
+        String lang = Constants.getLocale(newBase);
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
@@ -219,10 +213,10 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 //        Matrix SavitzkyGolay = getSavitzkyGolayMatrix(poli_order, window);
         double[] coeffs = new double[2 * window + 1];
         int shift_window, old_window = 0;
-        int channel_0 = StrictMath.max (100, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(662.0));
+        int channel_0 = StrictMath.max(100, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(662.0));
         double[] peak_array = new double[num_lines];
         for (int i = 0; i < num_lines; i++) {
-            shift_window = StrictMath.max((int)((0.3 + 0.7 * StrictMath.sqrt(i / (double)channel_0)) * window), 4);
+            shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(i / (double) channel_0)) * window), 4);
             shift_window = StrictMath.min(shift_window, 200);
             if (old_window != shift_window) {
                 old_window = shift_window;
@@ -366,7 +360,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         AtomSpectraIsotopes.showFoundIsotopes = !AtomSpectraIsotopes.showFoundIsotopes;
         ((Button) findViewById(R.id.showIsotopes)).setText(AtomSpectraIsotopes.showFoundIsotopes ? getString(R.string.show_no_isotopes) : getString(R.string.show_isotopes));
         if (!AtomSpectraIsotopes.showFoundIsotopes) {
-            for (Isotope isotope: AtomSpectraIsotopes.foundList) {
+            for (Isotope isotope : AtomSpectraIsotopes.foundList) {
                 isotope.setCoord(null);
             }
         }
