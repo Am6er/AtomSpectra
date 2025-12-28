@@ -94,14 +94,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
     }
 
-    public void Destroy () {
+    public void Destroy() {
         if (Port != null && Port.isOpen()) {
             try {
                 Port.close();
-            }
-            catch (Exception ignore) {
+            } catch (Exception ignore) {
                 //nothing
-            }        }
+            }
+        }
         if (Manager != null)
             Manager.stop();
         context = null;
@@ -110,11 +110,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     //Test if device is working
-    public boolean isOpened () {
+    public boolean isOpened() {
         return (Port != null) && (Port.isOpen());
     }
 
-    public boolean isMyDevice (int vendor, int device) {
+    public boolean isMyDevice(int vendor, int device) {
         if (Device == null || Port == null || !Port.isOpen())
             return false;
 
@@ -122,7 +122,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     //Open the port
-    public boolean Open (@NonNull UsbDevice device) {
+    public boolean Open(@NonNull UsbDevice device) {
         Driver = UsbSerialProber.getDefaultProber().probeDevice(device);
         if (Driver == null) {
             return false;
@@ -142,8 +142,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 Close();
                 return false;
             }
-        }
-        catch (Exception ignored) {
+        } catch (Exception ignored) {
             Delete();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
@@ -159,8 +158,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             hasInputData = false;
             Manager = new SerialInputOutputManager(Port, this);
             Manager.start();
-        }
-        catch (Exception ignored) {
+        } catch (Exception ignored) {
             Delete();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
@@ -177,8 +175,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         if (Port != null) {
             try {
                 Port.close();
-            }
-            catch (Exception ignore) {
+            } catch (Exception ignore) {
                 //nothing
             }
         }
@@ -190,7 +187,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     //public method to remove data
-    public void Close () {
+    public void Close() {
         Delete();
     }
 
@@ -209,7 +206,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     //CRC-16 (MODBUS version)
-    public static int crc16 (int crc, byte data) {
+    public static int crc16(int crc, byte data) {
         crc = crc ^ (data & 0xFF);
         for (int i = 0; i < 8; ++i) {
             if ((crc & 0x0001) != 0)
@@ -220,21 +217,21 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return crc;
     }
 
-    public static long crc32 (byte[] data) {
+    public static long crc32(byte[] data) {
         CRC32 crc = new CRC32();
         crc.update(data);
         return crc.getValue();
     }
 
     //Test if byte is needed to be escaped
-    private static boolean isSpecialByte (byte b) {
-        return (b == (byte)PACKET_BEGIN) || (b == (byte)PACKET_START) || (b == (byte)PACKET_END) || (b == (byte)PACKET_ESC);
+    private static boolean isSpecialByte(byte b) {
+        return (b == (byte) PACKET_BEGIN) || (b == (byte) PACKET_START) || (b == (byte) PACKET_END) || (b == (byte) PACKET_ESC);
     }
 
-    private void addWithEscape (@NonNull ArrayList<Byte> array, byte b) {
+    private void addWithEscape(@NonNull ArrayList<Byte> array, byte b) {
         if (isSpecialByte(b)) {
-            array.add((byte)PACKET_ESC);
-            array.add((byte)~b);
+            array.add((byte) PACKET_ESC);
+            array.add((byte) ~b);
         } else {
             array.add(b);
         }
@@ -242,7 +239,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     //main method to search packets from input stream
     //returns packet with leading code operation and trailing crc16 two-byte code
-    private byte[] searchPacket () {
+    private byte[] searchPacket() {
         if (inputData == null || !hasInputData)
             return null;
         int arrayHead, arrayEnd;
@@ -282,7 +279,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         int numBytes = 0;
         int packetBegin = (curPos + 1) % MAX_BUFFER_SIZE;
         for (curPos = packetBegin; curPos != arrayEnd; curPos = (curPos + 1) % MAX_BUFFER_SIZE) {
-            if((inputData[curPos] & 0xFF) == PACKET_END) {
+            if ((inputData[curPos] & 0xFF) == PACKET_END) {
                 packetEnd = curPos;
                 break;
             }
@@ -445,7 +442,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         public final byte[] command;
         public final String id;
         public final byte code;
-//        public final long time;  //for timeout
+        //        public final long time;  //for timeout
         public final long Number;
         private static long NextNumber = 1;
         private static final Integer sync = 1;
@@ -482,7 +479,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private long AnswerNumber = 0;
     private final Integer syncCommand = 1;
 
-    private boolean sendPacket () {
+    private boolean sendPacket() {
         synchronized (syncCommand) {
             //nothing or nowhere to send
             if (Port == null || !Port.isOpen() || Commands.isEmpty())
@@ -519,6 +516,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 Port.write(command_data, TIMEOUT);
                 handler.postDelayed(new Runnable() {
                     final long Number = cmd.Number;
+
                     @Override
                     public void run() {
                         CommandCode code = null;
@@ -550,7 +548,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return true;
     }
 
-    public boolean sendCommand (byte cmd, @NonNull byte[] data, @NonNull String id) {
+    public boolean sendCommand(byte cmd, @NonNull byte[] data, @NonNull String id) {
         if (id.isEmpty())
             return false;
         synchronized (syncCommand) {
@@ -559,7 +557,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return sendPacket();
     }
 
-    public boolean sendTextCommand (@NonNull String command, @NonNull String id) {
+    public boolean sendTextCommand(@NonNull String command, @NonNull String id) {
         if (id.isEmpty())
             return false;
         synchronized (syncCommand) {

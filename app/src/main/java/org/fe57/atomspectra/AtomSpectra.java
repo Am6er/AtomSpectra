@@ -213,13 +213,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	@Override
 	protected void attachBaseContext(Context newBase) {
-		SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-		int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-		r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-		String lang = Locale.getDefault().getLanguage();
-		if (r > 0) {
-			lang = Constants.LOCALES_ID[r];
-		}
+		String lang = Constants.getLocale(newBase);
 		super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
 //		super.attachBaseContext(MyContextWrapper.wrap(newBase, "en"));
 	}

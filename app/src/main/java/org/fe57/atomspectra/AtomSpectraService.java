@@ -900,6 +900,7 @@ public class AtomSpectraService extends Service {
     }
 
     private Timer intervalSearchAlarmTimer;
+
     private void startIntervalSearchAlarmTimer() {
         synchronized (intervalSearchAlarmSync) {
             if (intervalSearchAlarmTimer != null) {
@@ -963,16 +964,16 @@ public class AtomSpectraService extends Service {
                                         };
                                     }
                                 } else {
-                                    if (ratio <= 1.0/2) pow = 1;
-                                    if (ratio <= 1.0/4) pow = 2;
-                                    if (ratio <= 1.0/8) pow = 3;
-                                    if (ratio <= 1.0/16) pow = 4;
-                                    if (ratio <= 1.0/32) pow = 5;
-                                    if (ratio <= 1.0/64) pow = 6;
-                                    if (ratio <= 1.0/128) pow = 7;
-                                    if (ratio <= 1.0/256) pow = 8;
-                                    if (ratio <= 1.0/512) pow = 9;
-                                    if (ratio <= 1.0/1024) pow = 10;
+                                    if (ratio <= 1.0 / 2) pow = 1;
+                                    if (ratio <= 1.0 / 4) pow = 2;
+                                    if (ratio <= 1.0 / 8) pow = 3;
+                                    if (ratio <= 1.0 / 16) pow = 4;
+                                    if (ratio <= 1.0 / 32) pow = 5;
+                                    if (ratio <= 1.0 / 64) pow = 6;
+                                    if (ratio <= 1.0 / 128) pow = 7;
+                                    if (ratio <= 1.0 / 256) pow = 8;
+                                    if (ratio <= 1.0 / 512) pow = 9;
+                                    if (ratio <= 1.0 / 1024) pow = 10;
                                     if (pow < 10) {
                                         beeps = new int[]{
                                                 intervalSearchBaseFreq,
@@ -1010,7 +1011,7 @@ public class AtomSpectraService extends Service {
                                 float[] outputAudioBuffer = new float[totalDurationFrames];
                                 for (int i = 0; i < totalDurationFrames; i++) {
                                     // silent noise
-                                    outputAudioBuffer[i] =  ((float)Math.random() - 0.5f) * 0.0001f;
+                                    outputAudioBuffer[i] = ((float) Math.random() - 0.5f) * 0.0001f;
 
                                     int j = i - previousBeepsDuration; // beep timeline
                                     int beepDuration;
@@ -1023,7 +1024,7 @@ public class AtomSpectraService extends Service {
 
                                     if (j < beepDuration && beepFrequency > 0) {
                                         // beep
-                                        outputAudioBuffer[i] = (float)generateTriangleWave((double)i / intervalSearchAlarmAudioTrackSampleRate, beepFrequency, 0.05, 0);
+                                        outputAudioBuffer[i] = (float) generateTriangleWave((double) i / intervalSearchAlarmAudioTrackSampleRate, beepFrequency, 0.05, 0);
 
                                         int fadeInOutDuration = beepDuration / 20;
                                         if (j < fadeInOutDuration) {
@@ -1229,13 +1230,7 @@ public class AtomSpectraService extends Service {
     }
 
     private static void setLocaleFromPreferences(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
+        String lang = Constants.getLocale(context);
         Locale locale = new Locale(lang);
         Locale.setDefault(locale);
         Resources resources = context.getResources();

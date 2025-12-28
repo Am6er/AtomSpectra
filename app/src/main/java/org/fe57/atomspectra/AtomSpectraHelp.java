@@ -30,13 +30,7 @@ public class AtomSpectraHelp extends Activity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences sharedPreferences = newBase.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
+        String lang = Constants.getLocale(newBase);
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 
@@ -67,7 +61,7 @@ public class AtomSpectraHelp extends Activity {
 
         try {
             VersionInfo versionInfo = getVersionInfo(this);
-            ((TextView)findViewById(R.id.helpTextVersion)).setText(getString(R.string.help_version, versionInfo.version, versionInfo.verCode));
+            ((TextView) findViewById(R.id.helpTextVersion)).setText(getString(R.string.help_version, versionInfo.version, versionInfo.verCode));
         } catch (Exception e) {
             Toast.makeText(this, "Help rendering error for version section: " + e.getMessage(), Toast.LENGTH_LONG).show();
             // throw e;
@@ -126,7 +120,7 @@ public class AtomSpectraHelp extends Activity {
         SpannableString spannableString = new SpannableString(text);
 
 // iterate through all the annotation spans
-        for (Annotation annotation: annotations) {
+        for (Annotation annotation : annotations) {
             // look for the span with the key foreground
             if (annotation.getKey().equals("foreground")) {
                 String fontColor = annotation.getValue();
@@ -183,7 +177,7 @@ public class AtomSpectraHelp extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if(item.getItemId() == android.R.id.home){
+        if (item.getItemId() == android.R.id.home) {
 //            onBackPressed();
             finish();
             return true;

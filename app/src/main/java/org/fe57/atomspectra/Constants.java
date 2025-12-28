@@ -1,6 +1,10 @@
 package org.fe57.atomspectra;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 /**
  * Created by ENDulov on 20.02.17.
@@ -56,8 +60,8 @@ public class Constants {
     public static final boolean OUTPUT_FILE_NAME_TIME_DEFAULT = true;                                                    //add date to output file name
     public static final int DEFAULT_DELTA_TIME = 1;                                                                      //default delta time in seconds between output
     public static final int UPDATE_PERIOD = 100; //in ms DO NOT CHANGE - a lot of code relies on exact 100 ms
-    public static String[] LOCALES = {"Default", "Russian", "English", "French", "Deutsch"};
-    public static String[] LOCALES_ID = {"", "ru", "en", "fr", "de"};
+    public static String[] LOCALES = {"Default", "Russian", "English"};
+    public static String[] LOCALES_ID = {"", "ru", "en"};
     public static final int USB_DEVICE_MINIMAL_VERSION = 11;                                                             //minimal firmware version for AtomSpectra Pro to operate correctly
     public static final int SPG_DELTA_DURATION_MIN = 5;                                                                          //minimal delta between auto saves
     public static final int SPG_DELTA_DURATION_MAX = 60;                                                                     //maximum delta between auto saves
@@ -317,5 +321,16 @@ public class Constants {
         numbers.append(res);
 
         return numbers.toString();
+    }
+
+    public static String getLocale(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
+        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
+        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
+        String lang = Locale.getDefault().getLanguage();
+        if (r > 0) {
+            lang = Constants.LOCALES_ID[r];
+        }
+        return lang;
     }
 }
