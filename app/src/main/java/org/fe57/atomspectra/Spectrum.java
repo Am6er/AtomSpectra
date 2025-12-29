@@ -20,7 +20,7 @@ public class Spectrum {
     private long GPSDate;                         //last GPS update time
     private double Latitude;
     private double Longitude;
-    private String DetectedIsotopes;              //plan to store detected isotopes
+    private String DeviceInfo;                    // device info
     private boolean Changed;                      // functions ...Only don't change this state
 
     public Spectrum () {
@@ -52,7 +52,7 @@ public class Spectrum {
         GPSDate = other.GPSDate;
         Latitude = other.Latitude;
         Longitude = other.Longitude;
-        DetectedIsotopes = other.DetectedIsotopes;
+        DeviceInfo = other.DeviceInfo;
         Changed = other.Changed;
     }
 
@@ -66,7 +66,7 @@ public class Spectrum {
         GPSDate = other.GPSDate;
         Latitude = other.Latitude;
         Longitude = other.Longitude;
-        DetectedIsotopes = other.DetectedIsotopes;
+        DeviceInfo = other.DeviceInfo;
         Changed = other.Changed;
         return this;
     }
@@ -339,27 +339,29 @@ public class Spectrum {
     public Spectrum updateComments() {
         long counts = getTotalCounts();
         double realTime = getRealSpectrumTime();
+        double cps = 0;
         if (SpectrumTime > 1) {
-            Comments = prepareCommentString(new Date(SpectrumDate), counts, counts / realTime, realTime, GPSDate, Latitude, Longitude);
-        } else {
-            Comments = prepareCommentString(new Date(SpectrumDate), counts, 0.0, realTime, GPSDate, Latitude, Longitude);
+            cps = counts / realTime;
+
         }
 
+        Comments = prepareCommentString(new Date(SpectrumDate), counts, cps, realTime, GPSDate, Latitude, Longitude, DeviceInfo);
+
         return this;
     }
 
-    public Spectrum setDetectedIsotopes(String id) {
-        DetectedIsotopes = id;
+    public Spectrum setDeviceInfo(String deviceInfo) {
+        DeviceInfo = deviceInfo;
         return this;
     }
 
-    public String getDetectedIsotopes() {
-        return DetectedIsotopes;
+    public String getDeviceInfo() {
+        return DeviceInfo;
     }
 
     private final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
 
-    private String prepareCommentString(Date date, long counts, double cps, double time, long gpsTime, double latitude, double longitude) {
+    private String prepareCommentString(Date date, long counts, double cps, double time, long gpsTime, double latitude, double longitude, String deviceInfo) {
         String res = "";
         if (date != null)
             res += dateZoneFormat.format(date) + " ";
@@ -369,6 +371,8 @@ public class Spectrum {
             res += String.format(Locale.US, "Counts: %d, ~cps: %.3f, Time: %.2f s, Coord: %s %s at %s", counts, cps, time, GPSLocator.getFormattedLatitude(latitude), GPSLocator.getFormattedLongitude(longitude), dateZoneFormat.format(new Date(gpsTime)));
         else
             res += String.format(Locale.US, "Counts: %d, ~cps: %.3f, Time: %.2f s", counts, cps, time);
+
+        res += String.format(Locale.US, ", Captured from %s", deviceInfo);
         return res;
     }
 
@@ -392,7 +396,7 @@ public class Spectrum {
         Latitude = 0;
         Longitude = 0;
         Suffix = "";
-        DetectedIsotopes = "";
+        DeviceInfo = "";
         Changed = false;
         return this;
     }
@@ -404,7 +408,7 @@ public class Spectrum {
         Latitude = 0;
         Longitude = 0;
         Suffix = "";
-        DetectedIsotopes = "";
+        DeviceInfo = "";
         return this;
     }
 }
