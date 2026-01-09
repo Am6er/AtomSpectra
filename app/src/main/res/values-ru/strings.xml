@@ -176,7 +176,7 @@
     <string name="sens_add_row_err_not_a_number">Строка не является числом</string>
     <string name="sens_add_row_err_row_exists">Строка уже существует</string>
     <string name="sens_delete_row_dialog_title">Подтверждение удаления</string>
-    <string name="sens_delete_row_dialog_message">Удалить строку %1$.0f?</string>
+    <string name="sens_delete_row_dialog_message">Удалить строку %1$d?</string>
     <string name="sens_delete_row_dialog_delete_btn">Удалить</string>
 
     <string name="reduced_to_format">Вывод: <xliff:g id="channel_number">%1$d</xliff:g> к.</string>

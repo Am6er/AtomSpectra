@@ -90,15 +90,16 @@ public class AtomSpectraSensitivity extends Activity {
     public void onOkButton(View v) {
         List<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
         Collections.sort(sortedEnergyList);
+        String sensInputText = "";
         for (int i = 0; i < sortedEnergyList.size(); i++) {
             try {
-                int sensInputId = Constants.GROUPS.GROUP_SENSE_TABLE + 2 * i + 1;
-                EditText sensInput = findViewById(sensInputId);
-                double sens = Double.parseDouble(sensInput.getText().toString().replaceAll(",", "."));
+                EditText sensInput = findViewById(getSensInputId(i));
+                sensInputText = sensInput.getText().toString();
+                double sens = Double.parseDouble(sensInputText.replaceAll(",", "."));
                 sensitivityTable.put(sortedEnergyList.get(i), sens);
             } catch (Exception e) {
-                String message = String.format("Wrong value at row %d", i + 1);
-                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                String message = String.format(Locale.getDefault(), "Wrong value (%s) at row %d", sensInputText, i + 1);
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -124,18 +125,36 @@ public class AtomSpectraSensitivity extends Activity {
     }
 
     public void onRemoveButton(View v) {
-        int rowIndexBase = v.getId() - Constants.GROUPS.GROUP_SENSE_TABLE;
-        int rowIndex = rowIndexBase / 3;
+        int rowIndex = getRowIndexById(v.getId());
 
         final AlertDialog.Builder alert = new AlertDialog.Builder(this)
                 .setTitle(R.string.sens_delete_row_dialog_title)
-                .setMessage(getString(R.string.sens_delete_row_dialog_message, rowIndex))
+                .setMessage(getString(R.string.sens_delete_row_dialog_message, rowIndex + 1))
                 .setPositiveButton(R.string.sens_delete_row_dialog_delete_btn, (dialog, whichButton) -> {
-                    sensitivityTable = PrefHelper.getDefaultSensitivityTable();
+                    ArrayList<Float> energies = new ArrayList<>(sensitivityTable.keySet());
+                    sensitivityTable.remove(energies.get(rowIndex));
                     renderSensitivityTable();
                 })
                 .setNegativeButton(android.R.string.cancel, (d ,b) -> {});
         alert.show();
+    }
+
+    public void onSensFocusChange(View v, Boolean hasFocus) {
+        int editRowIndex = getRowIndexById(v.getId());
+        ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
+        String sensInputText = "";
+        double sens = 0;
+        try {
+            EditText sensInput = (EditText)v;
+            sensInputText = sensInput.getText().toString();
+            sens = Double.parseDouble(sensInputText.replaceAll(",", "."));
+        } catch (Exception e) {
+            String message = String.format(Locale.getDefault(), "Wrong value (%s) at row %d", sensInputText, editRowIndex + 1);
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        sensitivityTable.put(sortedEnergyList.get(editRowIndex), sens);
     }
 
     public void onAddButton(View v) {
@@ -165,12 +184,12 @@ public class AtomSpectraSensitivity extends Activity {
             try {
                 energyValue = Float.parseFloat(valueStr);
             } catch (Exception ignored) {
-                Toast.makeText(this, R.string.sens_add_row_err_not_a_number, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.sens_add_row_err_not_a_number, Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (sensitivityTable.containsKey(energyValue)) {
-                Toast.makeText(this, R.string.sens_add_row_err_row_exists, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.sens_add_row_err_row_exists, Toast.LENGTH_SHORT).show();
             } else {
                 sensitivityTable.put(energyValue, 1.0);
                 renderSensitivityTable();
@@ -192,10 +211,6 @@ public class AtomSpectraSensitivity extends Activity {
         for (int i = 0; i < sortedEnergyList.size(); i++) {
             float currentEnergy = sortedEnergyList.get(i);
             double sens = sensitivityTable.get(currentEnergy);
-
-            if (currentEnergy == 0) {
-                continue;
-            }
 
             String rowNumberText = String.format(Locale.getDefault(),"%d", i + 1);
             String energyBinText = String.format(Locale.getDefault(), "%.0f - %.0f", prevEnergy, currentEnergy);
@@ -227,7 +242,7 @@ public class AtomSpectraSensitivity extends Activity {
         textEnergyBin.setLayoutParams(new TableRow.LayoutParams(dpToPx(150), TableRow.LayoutParams.WRAP_CONTENT));
         textEnergyBin.setGravity(Gravity.CENTER);
         textEnergyBin.setText(energyBinText);
-        textEnergyBin.setId(Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 0);
+        textEnergyBin.setId(getEnergyBinTextId(rowIndex));
         textEnergyBin.setTextSize(18);
 
         EditText editSensitivity = new EditText(this);
@@ -235,7 +250,7 @@ public class AtomSpectraSensitivity extends Activity {
         editSensitivity.setGravity(Gravity.CENTER);
         editSensitivity.setText(binSensText);
         editSensitivity.setTextSize(18);
-        editSensitivity.setId(Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 1);
+        editSensitivity.setId(getSensInputId(rowIndex));
         editSensitivity.setHint(R.string.hint_sens_show);
         editSensitivity.setImeOptions(EditorInfo.IME_ACTION_NEXT);
         editSensitivity.setEnabled(!isUpperBoundRow);
@@ -251,13 +266,14 @@ public class AtomSpectraSensitivity extends Activity {
                 return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
             }
         });
+        editSensitivity.setOnFocusChangeListener(this::onSensFocusChange);
 
         Button btnRemoveRow = new Button(this);
         btnRemoveRow.setLayoutParams(new TableRow.LayoutParams(dpToPx(100), TableRow.LayoutParams.WRAP_CONTENT));
         btnRemoveRow.setText(R.string.sensitivity_remove_row);
         btnRemoveRow.setTextSize(18);
-        btnRemoveRow.setId(Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 2);
-        btnRemoveRow.setEnabled(!isUpperBoundRow || sensitivityTable.size() < 2);
+        btnRemoveRow.setId(getDelRowBtnId(rowIndex));
+        btnRemoveRow.setEnabled(!isUpperBoundRow && sensitivityTable.size() > 1);
         btnRemoveRow.setOnClickListener(this::onRemoveButton);
 
         TableRow newRow = new TableRow(this);
@@ -267,6 +283,25 @@ public class AtomSpectraSensitivity extends Activity {
         newRow.addView(btnRemoveRow);
 
         return newRow;
+    }
+
+    private int getEnergyBinTextId(int rowIndex) {
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 0;
+    }
+
+    private int getSensInputId(int rowIndex) {
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 1;
+    }
+
+    private int getDelRowBtnId(int rowIndex) {
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 2;
+    }
+
+    private int getRowIndexById(int id) {
+        int rowIndexBase = id - Constants.GROUPS.GROUP_SENSE_TABLE;
+        int rowIndex = rowIndexBase / 3;
+
+        return rowIndex;
     }
 
     private int dpToPx(float dp) {

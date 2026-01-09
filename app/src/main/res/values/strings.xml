@@ -176,7 +176,7 @@
     <string name="sens_add_row_err_not_a_number">Not a valid number</string>
     <string name="sens_add_row_err_row_exists">Row already exists</string>
     <string name="sens_delete_row_dialog_title">Delete Row Confirmation</string>
-    <string name="sens_delete_row_dialog_message">Delete row %1$.0f?</string>
+    <string name="sens_delete_row_dialog_message">Delete row %1$d?</string>
     <string name="sens_delete_row_dialog_delete_btn">Delete</string>
 
     <string name="reduced_to_format">Show as: <xliff:g id="channel_number">%1$d</xliff:g> ch.</string>

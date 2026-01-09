@@ -146,12 +146,12 @@ public class AtomSpectraService extends Service {
             0,
             0,
             0,
-            40.0f,
-            50.0f,
-            60.0f,
-            80.0f,
+            0,
+            0,
+            0,
+            0,
+            0,
             100.0f,
-            150.0f,
             200.0f,
             300.0f,
             400.0f,
@@ -159,10 +159,10 @@ public class AtomSpectraService extends Service {
             600.0f,
             800.0f,
             1000.0f,
-            1500.0f,
-            2000.0f,
-            3000.0f,
-            10000.0f
+            1400.0f,
+            1800.0f,
+            2200.0f,
+            3000.0f
     }; // energy bins in keV
     private static float[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
     // for CsI 10x10x30 crystal
@@ -180,23 +180,23 @@ public class AtomSpectraService extends Service {
             0,
             0,
             0,
-            0.006948,  //    0 - 40
-            0.007279,  //   40 - 50
-            0.008652,  //   50 - 60
-            0.010768,  //   60 - 80
-            0.013892,  //   80 - 100
-            0.021404,  //  100 - 150
-            0.037771,  //  150 - 200
-            0.086689,  //  200 - 300
-            0.221151,  //  300 - 400
-            0.461398,  //  400 - 500
-            0.734284,  //  500 - 600
-            1.161767,  //  600 - 800
-            1.606269,  //  800 - 1000
-            2.028926,  // 1000 - 1500
-            2.647522,  // 1500 - 2000
-            3.757643,  // 2000 - 3000
-            6.416426,  // 3000 - 10000
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.017197, //    0 - 100
+            0.048018, //  100 - 200
+            0.143591, //  200 - 300
+            0.328291, //  300 - 400
+            0.590599, //  400 - 500
+            0.832094, //  500 - 600
+            1.214569, //  600 - 800
+            1.582268, //  800 - 1000
+            2.083848, // 1000 - 1400
+            2.518462, // 1400 - 1800
+            2.940044, // 1800 - 2200
+            3.904032, // 2200 - 3000
     }; // photon energy relative to Cs-137 energy (1.0 for 662 keV)
     private static double[] EnergySensitivity = Arrays.copyOf(EnergySensitivityDefault, EnergySensitivityDefault.length);
 
@@ -740,12 +740,16 @@ public class AtomSpectraService extends Service {
 
         // post read actions
         setAlarmAudioTrackDevice();
-        if (!freeze_update_data && intervalSearchAlarmEnabled != intervalSearchAlarmEnabledPrev) {
-            stopIntervalSearchAlarmTimer();
-            if (intervalSearchAlarmEnabled) {
-                startIntervalSearchAlarmTimer();
+        if (!freeze_update_data) {
+            resetSearchWindow();
+            if (intervalSearchAlarmEnabled != intervalSearchAlarmEnabledPrev) {
+                stopIntervalSearchAlarmTimer();
+                if (intervalSearchAlarmEnabled) {
+                    startIntervalSearchAlarmTimer();
+                }
             }
         }
+
     }
 
     public static int getScaleFactor() {
