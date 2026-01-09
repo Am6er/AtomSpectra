@@ -87,7 +87,9 @@
     <string name="use_raw_audio_source">Use raw audio source</string>
     <string name="no_audio_available">Can\'t use audio input!</string>
     <string name="no_usb_available">Can\'t use USB input!</string>
-    <string name="reset_data">Reset</string>
+    <string name="sensitivity_reset_data">Reset</string>
+    <string name="sensitivity_add_row">Add Row</string>
+    <string name="sensitivity_remove_row">DEL</string>
     <string name="update_data_error">Can\'t update device data</string>
     <string name="no_audio_output_available">Can\'t use audio output!</string>
     <string name="audio_44100">Input frequency is set to 44.1 kHz. If you want to try 48 kHz connect the spectrometer and restart the program.</string>
@@ -110,7 +112,7 @@
     <string name="cps">cps: 0</string>
 
     <string name="hint_keV_show">100.0</string>
-    <string name="hint_sens_show">1.00E+00</string>
+    <string name="hint_sens_show">1.0</string>
 
     <string name="cursortext">Cursor: 0 ch., 0 keV</string>
     <string name="mode_fast">Fast</string>
@@ -161,10 +163,21 @@
     <string name="calibration_add_nuclid2_text">Enter an energy (in keV) for channel %1$d (now %2$s, %3$.2f keV):</string>
 
     <string name="detector_sensitivity">Device Sensitivity</string>
-    <string name="sense_energy_kev">Energy, keV</string>
-    <string name="sense_sensitivity">Sensitivity</string>
-    <string name="sense_hint_energy">Energy</string>
-    <string name="sense_hint_sensitivity">Sensitivity</string>
+    <string name="sens_energy_kev">E, keV</string>
+    <string name="sens_sensitivity">Sensitivity</string>
+    <string name="sens_hint_energy">Energy</string>
+    <string name="sens_hint_sensitivity">Sensitivity</string>
+    <string name="sens_reset_dialog_title">Reset Confirmation</string>
+    <string name="sens_reset_dialog_message">Reset configuration to default? All current changes will be lost.</string>
+    <string name="sens_reset_dialog_reset_btn">Reset</string>
+    <string name="sens_add_row_dialog_title">Add Row</string>
+    <string name="sens_add_row_dialog_message">Enter energy value:</string>
+    <string name="sens_add_row_dialog_add_btn">Add</string>
+    <string name="sens_add_row_err_not_a_number">Not a valid number</string>
+    <string name="sens_add_row_err_row_exists">Row already exists</string>
+    <string name="sens_delete_row_dialog_title">Delete Row Confirmation</string>
+    <string name="sens_delete_row_dialog_message">Delete row %1$.0f?</string>
+    <string name="sens_delete_row_dialog_delete_btn">Delete</string>
 
     <string name="reduced_to_format">Show as: <xliff:g id="channel_number">%1$d</xliff:g> ch.</string>
     <string name="min_front_points_format">Min front points: <xliff:g id="min_points">%1$d</xliff:g></string>

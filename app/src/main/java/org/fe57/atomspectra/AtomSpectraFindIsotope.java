@@ -36,7 +36,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        String lang = Constants.getLocale(newBase);
+        String lang = PrefHelper.getLocale(newBase);
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 

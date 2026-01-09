@@ -87,7 +87,9 @@
     <string name="use_raw_audio_source">Использовать необработанный звук</string>
     <string name="no_audio_available">Не могу использовать аудио-вход!</string>
     <string name="no_usb_available">Не могу использовать вход USB!</string>
-    <string name="reset_data">Сброс</string>
+    <string name="sensitivity_reset_data">Сброс</string>
+    <string name="sensitivity_add_row">Добавить</string>
+    <string name="sensitivity_remove_row">DEL</string>
     <string name="update_data_error">Не могу обновить данные устройства</string>
     <string name="no_audio_output_available">Не могу вывести звук!</string>
     <string name="audio_44100">Входная частота установлена в 44,1 кГц. Если Вы хотите попробовать 48 кГц подключите спектрометр и перезапустите программу.</string>
@@ -110,7 +112,7 @@
     <string name="cps">cps: 0</string>
 
     <string name="hint_keV_show">100.0</string>
-    <string name="hint_sens_show">1.00E+00</string>
+    <string name="hint_sens_show">1.0</string>
 
     <string name="cursortext">Курсор: 0 к., 0 кэВ</string>
     <string name="mode_fast">Быстрый</string>
@@ -161,10 +163,21 @@
     <string name="calibration_add_nuclid2_text">Введите энергию (в кэВ) для канала %1$d (сейчас %2$s, %3$.2f кэВ):</string>
 
     <string name="detector_sensitivity">Чувствительность прибора</string>
-    <string name="sense_energy_kev">Энергия, кэВ</string>
-    <string name="sense_sensitivity">Чувствит.</string>
-    <string name="sense_hint_energy">Энергия</string>
-    <string name="sense_hint_sensitivity">Чувствительность</string>
+    <string name="sens_energy_kev">E, кэВ</string>
+    <string name="sens_sensitivity">Чувствит.</string>
+    <string name="sens_hint_energy">Энергия</string>
+    <string name="sens_hint_sensitivity">Чувствительность</string>
+    <string name="sens_reset_dialog_title">Подтверждение сброса</string>
+    <string name="sens_reset_dialog_message">Установить конфигурацию по умолчанию? Все текущие изменения будут утеряны.</string>
+    <string name="sens_reset_dialog_reset_btn">Сброс</string>
+    <string name="sens_add_row_dialog_title">Добавить строку</string>
+    <string name="sens_add_row_dialog_message">Введите значение энергии:</string>
+    <string name="sens_add_row_dialog_add_btn">Добавить</string>
+    <string name="sens_add_row_err_not_a_number">Строка не является числом</string>
+    <string name="sens_add_row_err_row_exists">Строка уже существует</string>
+    <string name="sens_delete_row_dialog_title">Подтверждение удаления</string>
+    <string name="sens_delete_row_dialog_message">Удалить строку %1$.0f?</string>
+    <string name="sens_delete_row_dialog_delete_btn">Удалить</string>
 
     <string name="reduced_to_format">Вывод: <xliff:g id="channel_number">%1$d</xliff:g> к.</string>
     <string name="min_front_points_format">Мин точек фронта: <xliff:g id="min_points">%1$d</xliff:g></string>
