@@ -140,21 +140,24 @@ public class AtomSpectraSensitivity extends Activity {
     }
 
     public void onSensFocusChange(View v, Boolean hasFocus) {
-        int editRowIndex = getRowIndexById(v.getId());
-        ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
-        String sensInputText = "";
-        double sens = 0;
-        try {
-            EditText sensInput = (EditText)v;
-            sensInputText = sensInput.getText().toString();
-            sens = Double.parseDouble(sensInputText.replaceAll(",", "."));
-        } catch (Exception e) {
-            String message = String.format(Locale.getDefault(), "Wrong value (%s) at row %d", sensInputText, editRowIndex + 1);
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (!hasFocus) {
+            int editRowIndex = getRowIndexById(v.getId());
+            ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
+            String sensInputText = "";
+            double sens = 0;
+            try {
+                EditText sensInput = (EditText)v;
+                sensInputText = sensInput.getText().toString();
+                sens = Double.parseDouble(sensInputText.replaceAll(",", "."));
+                sensInput.setText(formatSensitivityValue(sens));
+            } catch (Exception e) {
+                String message = String.format(Locale.getDefault(), "Wrong value (%s) at row %d", sensInputText, editRowIndex + 1);
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-        sensitivityTable.put(sortedEnergyList.get(editRowIndex), sens);
+            sensitivityTable.put(sortedEnergyList.get(editRowIndex), sens);
+        }
     }
 
     public void onAddButton(View v) {
@@ -214,7 +217,7 @@ public class AtomSpectraSensitivity extends Activity {
 
             String rowNumberText = String.format(Locale.getDefault(),"%d", i + 1);
             String energyBinText = String.format(Locale.getDefault(), "%.0f - %.0f", prevEnergy, currentEnergy);
-            binSensText = sens == 0 ? "0" : String.format(Locale.getDefault(), "%.6f", sens);
+            binSensText = formatSensitivityValue(sens);
 
             TableRow newRow = getTableRow(i, rowNumberText, energyBinText, binSensText, false);
             table.addView(newRow);
@@ -228,6 +231,10 @@ public class AtomSpectraSensitivity extends Activity {
 
         Button addButton = findViewById(R.id.buttonSensAdd);
         addButton.setEnabled(sortedEnergyList.size() < AtomSpectraService.EnergyBinsDefault.length);
+    }
+
+    private static @NonNull String formatSensitivityValue(double sens) {
+        return sens == 0 ? "0" : String.format(Locale.getDefault(), "%.6f", sens);
     }
 
     @NonNull
