@@ -84,7 +84,7 @@
 
             <TextView
                 android:id="@+id/textViewDelHeader"
-                android:layout_width="64dp"
+                android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:textColor="@color/colorHeader"
@@ -130,33 +130,36 @@
                         android:layout_width="150dp"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:hint="@string/sens_hint_energy"
-                        android:imeOptions="actionDone"
                         android:singleLine="true"
                         android:text="2000 - 3000"
                         android:textSize="18sp" />
 
-                    <EditText
+                    <TextView
                         android:id="@+id/editSensitivity0"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:digits="01234567890.,Ee"
                         android:gravity="center"
-                        android:hint="@string/sens_hint_sensitivity"
-                        android:imeOptions="actionDone"
-                        android:inputType="numberDecimal"
                         android:singleLine="true"
                         android:text="0.000000"
                         android:textSize="18sp" />
 
                     <Button
+                        android:id="@+id/buttonSensEdit"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:enabled="false"
+                        android:onClick="onEditButton"
+                        android:background="@drawable/menu_edit" />
+
+                    <Button
                         android:id="@+id/buttonSensDelete"
-                        android:layout_width="64dp"
-                        android:layout_height="wrap_content"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
                         android:enabled="false"
                         android:onClick="onRemoveButton"
-                        android:text="@string/sensitivity_remove_row" />
+                        android:background="@drawable/menu_clear_spectrum" />
 
                 </TableRow>
 

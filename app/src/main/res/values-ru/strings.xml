@@ -173,11 +173,13 @@
     <string name="sens_add_row_dialog_title">Добавить строку</string>
     <string name="sens_add_row_dialog_message">Введите значение энергии:</string>
     <string name="sens_add_row_dialog_add_btn">Добавить</string>
-    <string name="sens_add_row_err_not_a_number">Строка не является числом</string>
+    <string name="sens_row_err_not_a_number">Строка не является числом: %1$s</string>
     <string name="sens_add_row_err_row_exists">Строка уже существует</string>
     <string name="sens_delete_row_dialog_title">Подтверждение удаления</string>
     <string name="sens_delete_row_dialog_message">Удалить строку %1$d?</string>
     <string name="sens_delete_row_dialog_delete_btn">Удалить</string>
+    <string name="sens_edit_row_dialog_title">Редактировать строку</string>
+    <string name="sens_edit_row_dialog_message">Веедите значение чувствительности для строки %1$d:</string>
 
     <string name="reduced_to_format">Вывод: <xliff:g id="channel_number">%1$d</xliff:g> к.</string>
     <string name="min_front_points_format">Мин точек фронта: <xliff:g id="min_points">%1$d</xliff:g></string>
