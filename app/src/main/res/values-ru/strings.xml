@@ -90,6 +90,7 @@
     <string name="sensitivity_reset_data">Сброс</string>
     <string name="sensitivity_add_row">Добавить</string>
     <string name="sensitivity_remove_row">DEL</string>
+    <string name="sensitivity_edit_row">EDIT</string>
     <string name="update_data_error">Не могу обновить данные устройства</string>
     <string name="no_audio_output_available">Не могу вывести звук!</string>
     <string name="audio_44100">Входная частота установлена в 44,1 кГц. Если Вы хотите попробовать 48 кГц подключите спектрометр и перезапустите программу.</string>

@@ -21,6 +21,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -89,22 +90,6 @@ public class AtomSpectraSensitivity extends Activity {
     };
 
     public void onOkButton(View v) {
-        List<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
-        Collections.sort(sortedEnergyList);
-        String sensInputText = "";
-        for (int i = 0; i < sortedEnergyList.size(); i++) {
-            try {
-                EditText sensInput = findViewById(getSensInputId(i));
-                sensInputText = sensInput.getText().toString();
-                double sens = Double.parseDouble(sensInputText.replaceAll(",", "."));
-                sensitivityTable.put(sortedEnergyList.get(i), sens);
-            } catch (Exception e) {
-                String message = String.format(Locale.getDefault(), "Wrong value (%s) at row %d", sensInputText, i + 1);
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
         PrefHelper.setSensitivityTable(this, sensitivityTable);
         finish();
     }
@@ -265,38 +250,42 @@ public class AtomSpectraSensitivity extends Activity {
     private TableRow getTableRow(int rowIndex, String rowNumberText, String energyBinText, String binSensText, Boolean isUpperBoundRow) {
         TextView textNumber = new TextView(this);
         textNumber.setText(rowNumberText);
-        textNumber.setLayoutParams(new TableRow.LayoutParams(dpToPx(40), TableRow.LayoutParams.WRAP_CONTENT));
+        textNumber.setLayoutParams(new TableRow.LayoutParams(dpToPx(40), TableRow.LayoutParams.MATCH_PARENT));
         textNumber.setTextSize(18);
         textNumber.setGravity(Gravity.CENTER);
 
         TextView textEnergyBin = new TextView(this);
-        textEnergyBin.setLayoutParams(new TableRow.LayoutParams(dpToPx(150), TableRow.LayoutParams.WRAP_CONTENT));
+        textEnergyBin.setLayoutParams(new TableRow.LayoutParams(dpToPx(150), TableRow.LayoutParams.MATCH_PARENT));
         textEnergyBin.setGravity(Gravity.CENTER);
         textEnergyBin.setText(energyBinText);
         textEnergyBin.setId(getEnergyBinTextId(rowIndex));
         textEnergyBin.setTextSize(18);
 
         TextView textSensitivity = new TextView(this);
-        textSensitivity.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT, 1.0f));
+        textSensitivity.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 1.0f));
         textSensitivity.setGravity(Gravity.CENTER);
         textSensitivity.setText(binSensText);
-        textSensitivity.setTextSize(18);
         textSensitivity.setId(getSensInputId(rowIndex));
+        textSensitivity.setTextSize(18);
 
         Button btnEditRow = new Button(this);
-        btnEditRow.setLayoutParams(new TableRow.LayoutParams(dpToPx(36), dpToPx(36)));
-        btnEditRow.setBackground(AppCompatResources.getDrawable(this, R.drawable.menu_edit));
-        btnEditRow.setTextSize(18);
+        TableRow.LayoutParams btnEditlayoutParams = new TableRow.LayoutParams(dpToPx(64), dpToPx(40));
+        btnEditlayoutParams.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+        btnEditRow.setLayoutParams(btnEditlayoutParams);
+        btnEditRow.setText(R.string.sensitivity_edit_row);
         btnEditRow.setId(getDelRowBtnId(rowIndex));
         btnEditRow.setEnabled(!isUpperBoundRow);
+        btnEditRow.setTextSize(16);
         btnEditRow.setOnClickListener(this::onEditButton);
 
         Button btnRemoveRow = new Button(this);
-        btnRemoveRow.setLayoutParams(new TableRow.LayoutParams(dpToPx(36), dpToPx(36)));
-        btnEditRow.setBackground(AppCompatResources.getDrawable(this, R.drawable.menu_clear_spectrum));
-        btnRemoveRow.setTextSize(18);
-        btnRemoveRow.setId(getDelRowBtnId(rowIndex));
+        TableRow.LayoutParams btnRemovelayoutParams = new TableRow.LayoutParams(dpToPx(64), dpToPx(40));
+        btnRemovelayoutParams.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+        btnRemoveRow.setLayoutParams(btnRemovelayoutParams);
+        btnRemoveRow.setText(R.string.sensitivity_remove_row);
+        btnRemoveRow.setId(getEditRowBtnId(rowIndex));
         btnRemoveRow.setEnabled(!isUpperBoundRow && sensitivityTable.size() > 1);
+        btnRemoveRow.setTextSize(16);
         btnRemoveRow.setOnClickListener(this::onRemoveButton);
 
         TableRow newRow = new TableRow(this);
@@ -310,20 +299,24 @@ public class AtomSpectraSensitivity extends Activity {
     }
 
     private int getEnergyBinTextId(int rowIndex) {
-        return Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 0;
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 4 * rowIndex + 0;
     }
 
     private int getSensInputId(int rowIndex) {
-        return Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 1;
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 4 * rowIndex + 1;
+    }
+
+    private int getEditRowBtnId(int rowIndex) {
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 4 * rowIndex + 2;
     }
 
     private int getDelRowBtnId(int rowIndex) {
-        return Constants.GROUPS.GROUP_SENSE_TABLE + 3 * rowIndex + 2;
+        return Constants.GROUPS.GROUP_SENSE_TABLE + 4 * rowIndex + 3;
     }
 
     private int getRowIndexById(int id) {
         int rowIndexBase = id - Constants.GROUPS.GROUP_SENSE_TABLE;
-        int rowIndex = rowIndexBase / 3;
+        int rowIndex = rowIndexBase / 4;
 
         return rowIndex;
     }

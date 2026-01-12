@@ -90,6 +90,7 @@
     <string name="sensitivity_reset_data">Reset</string>
     <string name="sensitivity_add_row">Add Row</string>
     <string name="sensitivity_remove_row">DEL</string>
+    <string name="sensitivity_edit_row">EDIT</string>
     <string name="update_data_error">Can\'t update device data</string>
     <string name="no_audio_output_available">Can\'t use audio output!</string>
     <string name="audio_44100">Input frequency is set to 44.1 kHz. If you want to try 48 kHz connect the spectrometer and restart the program.</string>
