@@ -2022,30 +2022,29 @@ public class AtomSpectraService extends Service {
         }
 
         double comp_dose_rate = 0;
-        double comp_dose_rate_error_acc = 0;
+        ArrayList<Double> bin_dose_rate_values = new ArrayList<Double>(EnergyBins.length);
         for (int bin = 0; bin < EnergyBins.length; bin++) {
+            if (EnergySensitivity[bin] == 0 || SensGCompensated == 0) {
+                continue;
+            }
+
             int bin_counts = total_binned_counts[bin];
             double bin_cps = bin_counts / total_time;
             double bin_sens = EnergySensitivity[bin];
-            double bin_dose_rate = 0;
-            if (SensGCompensated > 0) {
-                bin_dose_rate = bin_cps * bin_sens / SensGCompensated;
-            }
+            double bin_dose_rate = bin_cps * bin_sens / SensGCompensated;
+            bin_dose_rate_values.add(bin_dose_rate);
             comp_dose_rate += bin_dose_rate;
-            if (bin_counts > 0) {
-                double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
-                comp_dose_rate_error_acc += bin_dose_rate_error * bin_dose_rate_error;
-            } else {
-                // experiment, if zero counts in bin we assume that bin has no more than single count
-                // so the error is no more than dose rate for single count in interval
-                double single_count_cps = 1.0 / total_time;
-                double upper_dose_rate_bound = single_count_cps * bin_sens / SensGCompensated;
-                comp_dose_rate_error_acc += upper_dose_rate_bound * upper_dose_rate_bound;
-            }
         }
         double comp_dose_rate_error = 0;
         if (comp_dose_rate > 0) {
-            comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_acc) / comp_dose_rate * 100.0;
+            double bin_dose_rate_mean = comp_dose_rate / bin_dose_rate_values.size();
+            double square_deviation_sum = 0;
+            for (int i = 0; i < bin_dose_rate_values.size(); i++) {
+                double bin_value = bin_dose_rate_values.get(i);
+                square_deviation_sum += (bin_value - bin_dose_rate_mean) * (bin_value - bin_dose_rate_mean);
+            }
+            double std_deviation = Math.sqrt(square_deviation_sum / bin_dose_rate_values.size());
+            comp_dose_rate_error = std_deviation / comp_dose_rate * 100.0;
         }
 
         double dose_rate = 0;
