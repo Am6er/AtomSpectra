@@ -165,7 +165,6 @@ public class AtomSpectraService extends Service {
             3000f
     }; // energy bins in keV
     private static float[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
-    // for CsI 10x10x30 crystal
     public static final double[] EnergySensitivityDefault = new double[]{
             0,
             0,
@@ -187,16 +186,16 @@ public class AtomSpectraService extends Service {
             0,
             0,
             0,
-            0.017197, //    0 - 100
-            0.048018, //  100 - 200
-            0.143591, //  200 - 300
-            0.328291, //  300 - 400
-            0.752094, //  400 - 600
-            1.174569, //  600 - 800
-            1.719324, //  800 - 1200
-            2.305422, // 1200 - 1800
-            2.970182, // 1800 - 2400
-            3.904032  // 2400 - 3000
+            0.145, //    0 - 100
+            0.169, //  100 - 200
+            0.258, //  200 - 300
+            0.392, //  300 - 400
+            0.683, //  400 - 600
+            1.000, //  600 - 800
+            1.610, //  800 - 1200
+            2.465, // 1200 - 1800
+            3.271, // 1800 - 2400
+            3.930  // 2400 - 3000
     }; // photon energy relative to Cs-137 energy (1.0 for 662 keV)
     private static double[] EnergySensitivity = Arrays.copyOf(EnergySensitivityDefault, EnergySensitivityDefault.length);
 
