@@ -133,70 +133,70 @@ public class AtomSpectraService extends Service {
     // dose rate
     private static DoseRate doseRateValue = new DoseRate();
     public static final float[] EnergyBinsDefault = new float[]{
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             100f,
             200f,
             300f,
             400f,
-            500f,
             600f,
-            700f,
             800f,
-            900f,
-            1000f,
-            1100f,
             1200f,
-            1300f,
-            1400f,
-            1500f,
-            1600f,
-            1700f,
             1800f,
-            1900f,
-            2000f,
-            2100f,
-            2200f,
-            2300f,
             2400f,
-            2500f,
-            2600f,
-            2700f,
-            2800f,
-            2900f,
             3000f
     }; // energy bins in keV
     private static float[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
     // for CsI 10x10x30 crystal
     public static final double[] EnergySensitivityDefault = new double[]{
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             0.017197, //    0 - 100
             0.048018, //  100 - 200
             0.143591, //  200 - 300
             0.328291, //  300 - 400
-            0.590599, //  400 - 500
-            0.892094, //  500 - 600
-            1.174569, //  600 - 700
-            1.411520, //  700 - 800
-            1.582268, //  800 - 900
-            1.719324, //  900 - 1000
-            1.830092, // 1000 - 1100
-            1.959896, // 1100 - 1200
-            2.083848, // 1200 - 1300
-            2.196503, // 1300 - 1400
-            2.305422, // 1400 - 1500
-            2.412208, // 1500 - 1600
-            2.518462, // 1600 - 1700
-            2.625785, // 1700 - 1800
-            2.735778, // 1800 - 1900
-            2.850044, // 1900 - 2000
-            2.970182, // 2000 - 2100
-            3.097796, // 2100 - 2200
-            3.234485, // 2200 - 2300
-            3.381852, // 2300 - 2400
-            3.541498, // 2400 - 2500
-            3.715024, // 2500 - 2600
-            3.904032, // 2600 - 2700
-            4.110123, // 2700 - 2800
-            4.317476, // 2800 - 2900
-            4.579959, // 2900 - 3000
+            0.752094, //  400 - 600
+            1.174569, //  600 - 800
+            1.719324, //  800 - 1200
+            2.305422, // 1200 - 1800
+            2.970182, // 1800 - 2400
+            3.904032  // 2400 - 3000
     }; // photon energy relative to Cs-137 energy (1.0 for 662 keV)
     private static double[] EnergySensitivity = Arrays.copyOf(EnergySensitivityDefault, EnergySensitivityDefault.length);
 
