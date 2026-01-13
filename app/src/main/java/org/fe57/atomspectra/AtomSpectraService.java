@@ -2035,6 +2035,12 @@ public class AtomSpectraService extends Service {
             if (bin_counts > 0) {
                 double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
                 comp_dose_rate_error_sum_of_squares += bin_dose_rate_error * bin_dose_rate_error;
+            } else {
+                // experiment, if zero counts in bin we assume that bin has no more than single count
+                // so the error is no more than dose rate for single count in interval
+                double single_count_cps = 1.0 / total_time;
+                double upper_dose_rate_bound = single_count_cps * bin_sens / SensGCompensated;
+                comp_dose_rate_error_sum_of_squares += upper_dose_rate_bound * upper_dose_rate_bound;
             }
         }
         double comp_dose_rate_error = 0;
