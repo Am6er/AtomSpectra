@@ -49,6 +49,7 @@ import androidx.core.util.Pair;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -57,6 +58,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 
 public class AtomSpectraService extends Service {
     private final static String TAG = AtomSpectraService.class.getSimpleName();
@@ -130,71 +132,70 @@ public class AtomSpectraService extends Service {
 
     // dose rate
     private static DoseRate doseRateValue = new DoseRate();
-    public static final double[] EnergyBinsDefault = new double[]{
-            0.0,
-            100.0,
-            200.0,
-            300.0,
-            400.0,
-            500.0,
-            600.0,
-            700.0,
-            800.0,
-            900.0,
-            1000.0,
-            1100.0,
-            1200.0,
-            1300.0,
-            1400.0,
-            1500.0,
-            1600.0,
-            1700.0,
-            1800.0,
-            1900.0,
-            2000.0,
-            2100.0,
-            2200.0,
-            2300.0,
-            2400.0,
-            2500.0,
-            2600.0,
-            2700.0,
-            2800.0,
-            2900.0
+    public static final float[] EnergyBinsDefault = new float[]{
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            100f,
+            200f,
+            300f,
+            400f,
+            600f,
+            800f,
+            1200f,
+            1800f,
+            2400f,
+            3000f
     }; // energy bins in keV
-    private static double[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
-    // for CsI 10x10x30 crystal
+    private static float[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
     public static final double[] EnergySensitivityDefault = new double[]{
-            0.0,
-            0.0171979600731997,
-            0.0480184835146140,
-            0.1435917027218390,
-            0.3282911602228690,
-            0.5905998429192040,
-            0.8920944634987190,
-            1.1745696899418600,
-            1.4115205995972900,
-            1.5822683732872000,
-            1.7193245130080400,
-            1.8300925688571300,
-            1.9598962219392600,
-            2.1527699267401500,
-            2.3779144044044100,
-            2.5751926000784900,
-            2.6687959009367600,
-            2.6614382236336400,
-            2.6501896868633800,
-            2.7655103687783900,
-            2.9332404784454300,
-            3.1635329688032900,
-            3.2657941250968600,
-            3.3349624711773100,
-            3.0682650024761000,
-            2.8705814847550800,
-            2.9826045411205400,
-            3.5934184594279600,
-            4.2014869361989400,
-            5.2692760307823300
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.145, //    0 - 100
+            0.169, //  100 - 200
+            0.258, //  200 - 300
+            0.392, //  300 - 400
+            0.683, //  400 - 600
+            1.000, //  600 - 800
+            1.610, //  800 - 1200
+            2.465, // 1200 - 1800
+            3.271, // 1800 - 2400
+            3.930  // 2400 - 3000
     }; // photon energy relative to Cs-137 energy (1.0 for 662 keV)
     private static double[] EnergySensitivity = Arrays.copyOf(EnergySensitivityDefault, EnergySensitivityDefault.length);
 
@@ -721,39 +722,33 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        int newEnergySensitivityCount = sp.getInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, EnergySensitivityDefault.length);
-        if (newEnergySensitivityCount == EnergyBins.length) {
-            try {
-                EnergyBins = new double[EnergyBins.length];
-                EnergySensitivity = new double[EnergyBins.length];
-                for (int i = 0; i < EnergyBins.length; i++) {
-                    EnergySensitivity[i] = Double.longBitsToDouble(sp.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(EnergySensitivityDefault[i])));
-                    EnergyBins[i] = sp.getFloat(Constants.configCalibrationEnergy(i), (float) EnergyBinsDefault[i]);
-                }
-            } catch (Exception e) {
-                showToastInMainLooper(R.string.log_wrong_sens_curve_pref, Toast.LENGTH_LONG);
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putInt(Constants.CONFIG.CONF_CALIBRATION_SIZE, AtomSpectraService.EnergyBinsDefault.length);
-                EnergyBins = new double[EnergyBinsDefault.length];
-                EnergySensitivity = new double[EnergyBinsDefault.length];
-                for (int i = 0; i < EnergyBinsDefault.length; i++) {
-                    EnergySensitivity[i] = EnergySensitivityDefault[i];
-                    EnergyBins[i] = EnergyBinsDefault[i];
-                    editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(EnergySensitivityDefault[i]));
-                    editor.putFloat(Constants.configCalibrationEnergy(i), (float) EnergyBinsDefault[i]);
-                }
-                editor.apply();
-            }
+        TreeMap<Float, Double> sensitivityTable = PrefHelper.getSensitivityTableOrDefault(service_context);
+        ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
+        Arrays.fill(EnergyBins, 0);
+        Arrays.fill(EnergySensitivity, 0);
+        int baseBin = EnergyBins.length - sortedEnergyList.size();
+        if (baseBin < 0) {
+            baseBin = 0;
+        }
+        for (int i = 0; i < sortedEnergyList.size(); i++) {
+            float energy = sortedEnergyList.get(i);
+            double sens = sensitivityTable.get(energy);
+            EnergyBins[i + baseBin] = energy;
+            EnergySensitivity[i + baseBin] = sens;
         }
 
         // post read actions
         setAlarmAudioTrackDevice();
-        if (!freeze_update_data && intervalSearchAlarmEnabled != intervalSearchAlarmEnabledPrev) {
-            stopIntervalSearchAlarmTimer();
-            if (intervalSearchAlarmEnabled) {
-                startIntervalSearchAlarmTimer();
+        if (!freeze_update_data) {
+            resetSearchWindow();
+            if (intervalSearchAlarmEnabled != intervalSearchAlarmEnabledPrev) {
+                stopIntervalSearchAlarmTimer();
+                if (intervalSearchAlarmEnabled) {
+                    startIntervalSearchAlarmTimer();
+                }
             }
         }
+
     }
 
     public static int getScaleFactor() {
@@ -1235,7 +1230,7 @@ public class AtomSpectraService extends Service {
     }
 
     private static void setLocaleFromPreferences(Context context) {
-        String lang = Constants.getLocale(context);
+        String lang = PrefHelper.getLocale(context);
         Locale locale = new Locale(lang);
         Locale.setDefault(locale);
         Resources resources = context.getResources();
@@ -1568,7 +1563,9 @@ public class AtomSpectraService extends Service {
                                 }
 
                                 int bin_index = getEnergyBinIndex(ForegroundSpectrum.getSpectrumCalibration().toEnergy(i));
-                                binned_counts[bin_index] += value;
+                                if (bin_index != -1) {
+                                    binned_counts[bin_index] += value;
+                                }
                             }
 
                             if (skip_next_cps_int_usb_calc > 0) {
@@ -2024,7 +2021,7 @@ public class AtomSpectraService extends Service {
         }
 
         double comp_dose_rate = 0;
-        double comp_dose_rate_error_acc = 0;
+        double comp_dose_rate_error_sum_of_squares = 0;
         for (int bin = 0; bin < EnergyBins.length; bin++) {
             int bin_counts = total_binned_counts[bin];
             double bin_cps = bin_counts / total_time;
@@ -2036,18 +2033,18 @@ public class AtomSpectraService extends Service {
             comp_dose_rate += bin_dose_rate;
             if (bin_counts > 0) {
                 double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
-                comp_dose_rate_error_acc += bin_dose_rate_error * bin_dose_rate_error;
+                comp_dose_rate_error_sum_of_squares += bin_dose_rate_error * bin_dose_rate_error;
             } else {
                 // experiment, if zero counts in bin we assume that bin has no more than single count
                 // so the error is no more than dose rate for single count in interval
                 double single_count_cps = 1.0 / total_time;
                 double upper_dose_rate_bound = single_count_cps * bin_sens / SensGCompensated;
-                comp_dose_rate_error_acc += upper_dose_rate_bound * upper_dose_rate_bound;
+                comp_dose_rate_error_sum_of_squares += upper_dose_rate_bound * upper_dose_rate_bound;
             }
         }
         double comp_dose_rate_error = 0;
         if (comp_dose_rate > 0) {
-            comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_acc) / comp_dose_rate * 100.0;
+            comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_sum_of_squares) / comp_dose_rate * 100.0;
         }
 
         double dose_rate = 0;
@@ -2093,12 +2090,12 @@ public class AtomSpectraService extends Service {
     }
 
     private static int getEnergyBinIndex(double energy) {
-        if (energy >= EnergyBins[EnergyBins.length - 1]) {
-            return EnergyBins.length - 1;
-        }
-
         if (energy <= EnergyBins[0]) {
             return 0;
+        }
+
+        if (energy >= EnergyBins[EnergyBins.length - 1]) {
+            return EnergyBins.length - 1;
         }
 
         int energy_bin = 1;
@@ -2290,7 +2287,9 @@ public class AtomSpectraService extends Service {
                             interval_counts_from_audio++;
                         }
                         int energy_bin_index = getEnergyBinIndex(ForegroundSpectrum.getSpectrumCalibration().toEnergy(channel));
-                        binned_counts_from_audio[energy_bin_index] += 1;
+                        if (energy_bin_index != -1) {
+                            binned_counts_from_audio[energy_bin_index] += 1;
+                        }
 
                         if ((i > 128) && (i < (1024 - 128)) && (i < ((AudioBytesRead - 128) / 2)))
                             for (int j = -128; j < 127; j++)

@@ -4,7 +4,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.TreeMap;
 
 /**
  * Created by ENDulov on 20.02.17.
@@ -95,7 +98,10 @@ public class Constants {
         String CONF_PILE_UP = "PileUp correction:";
         String CONF_SCALE_FACTOR = "ScaleFactor:";
         String CONF_LOG_SCALE = "LogScale";
-        String CONF_POLI_SIZE = "Poli size:";
+        String CONF_CAL_POLI_SIZE = "Poli size:";
+        String CONF_CAL_POLI_COEFFICIENT = "CalCoeff";
+        String CONF_CAL_CHANNEL = "Cal";
+        String CONF_CAL_ENERGY = "CalE";
         String CONF_FIRST_CHANNEL = "FirstChannel:";
         String CONF_CHECK_POWER = "CheckPower:";
         String CONF_CHECK_AUDIO = "Check audio:";
@@ -110,19 +116,15 @@ public class Constants {
         String CONF_SEARCH_SLOW = "search_slow";
         String CONF_SEARCH_MEDIUM = "search_medium";
         String CONF_DOSE_UPDATE = "doserate_update_freq";
-        String CONF_CHANNEL = "Cal";
-        String CONF_ENERGY = "CalE";
-        String CONF_COEFFICIENT = "CalCoeff";
-        String CONF_CALIBRATION_SIZE = "CalSize";
-        String CONF_CALIBRATION_SENSE = "CalSense";
-        String CONF_CALIBRATION_ENERGY = "CalCEnergy";
+        String CONF_SENS_TABLE_SIZE = "CalSize";
+        String CONF_SENS_TABLE_VALUE = "CalSense";
+        String CONF_SENS_TABLE_ENERGY = "CalCEnergy";
         String CONF_AUDIO_SOURCE = "Audio source:";
         String CONF_DIRECTORY_SELECTED = "Directory selected";
         String CONF_OUTPUT_FILE_NAME_PREFIX = "File name prefix";
         String CONF_OUTPUT_FILE_NAME_DATE = "File name date";
         String CONF_OUTPUT_FILE_NAME_TIME = "File name time";
         String CONF_ADD_GPS_TO_FILES = "Add GPS coord";
-        String CONF_E_TO_MSV_COUNT = "E to mSv count"; // be careful with this setting, code will work ONLY with the default value
         String CONF_OUTPUT_SOUND = "Sound output";
         String CONF_OUTPUT_SOUND_DEVICE_ID = "Sound device ID";
         String CONF_OUTPUT_SOUND_DEVICE_NAME = "Sound device name";
@@ -226,26 +228,6 @@ public class Constants {
     public static final String FREEZE_STATE = "Freeze state";
     public static final String SCALE_FACTOR = "Scale factor";
 
-    public static String configChannel(int i) {
-        return CONFIG.CONF_CHANNEL + i + ":";
-    }
-
-    public static String configEnergy(int i) {
-        return CONFIG.CONF_ENERGY + i + ":";
-    }
-
-    public static String configCoefficient(int i) {
-        return CONFIG.CONF_COEFFICIENT + i + ":";
-    }
-
-    public static String configCalibration(int i) {
-        return CONFIG.CONF_CALIBRATION_SENSE + i + ":";
-    }
-
-    public static String configCalibrationEnergy(int i) {
-        return CONFIG.CONF_CALIBRATION_ENERGY + i + ":";
-    }
-
     public static int MinMax(int val, int min, int max) {
         return val >= max ? max : (Math.max(val, min));
     }
@@ -321,16 +303,5 @@ public class Constants {
         numbers.append(res);
 
         return numbers.toString();
-    }
-
-    public static String getLocale(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
-        int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
-        r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
-        String lang = Locale.getDefault().getLanguage();
-        if (r > 0) {
-            lang = Constants.LOCALES_ID[r];
-        }
-        return lang;
     }
 }

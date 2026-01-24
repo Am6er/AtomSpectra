@@ -52,8 +52,8 @@
             android:layout_height="match_parent">
 
             <TextView
-                android:id="@+id/textView13"
-                android:layout_width="40sp"
+                android:id="@+id/textViewNHeader"
+                android:layout_width="40dp"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="N"
@@ -62,23 +62,31 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView14"
-                android:layout_width="56dp"
+                android:id="@+id/textViewEHeader"
+                android:layout_width="150dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:gravity="center"
-                android:text="@string/sense_energy_kev"
+                android:text="@string/sens_energy_kev"
                 android:textColor="@color/colorHeader"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView15"
+                android:id="@+id/textViewSensHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.85"
+                android:layout_weight="1"
                 android:gravity="center"
-                android:text="@string/sense_sensitivity"
+                android:text="@string/sens_sensitivity"
+                android:textColor="@color/colorHeader"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textViewDelHeader"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
                 android:textColor="@color/colorHeader"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -101,7 +109,7 @@
             android:orientation="vertical">
 
             <TableLayout
-                android:id="@+id/tableIDs"
+                android:id="@+id/tableSensitivity"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
@@ -111,41 +119,47 @@
 
                     <TextView
                         android:id="@+id/textN0"
-                        android:layout_width="40sp"
+                        android:layout_width="40dp"
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="1"
                         android:textSize="18sp" />
 
-                    <EditText
+                    <TextView
                         android:id="@+id/editEnergy0"
-                        android:layout_width="match_parent"
+                        android:layout_width="150dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:digits="01234567890.,Ee"
-                        android:ems="10"
                         android:gravity="center"
-                        android:hint="@string/sense_hint_energy"
-                        android:imeOptions="actionDone"
-                        android:inputType="numberDecimal"
                         android:singleLine="true"
-                        android:text="0"
+                        android:text="2000 - 3000"
                         android:textSize="18sp" />
 
-                    <EditText
-                        android:id="@+id/editSensivity0"
+                    <TextView
+                        android:id="@+id/editSensitivity0"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:digits="01234567890.,Ee"
-                        android:ems="10"
                         android:gravity="center"
-                        android:hint="@string/sense_hint_sensitivity"
-                        android:imeOptions="actionDone"
-                        android:inputType="numberDecimal"
                         android:singleLine="true"
-                        android:text="0,00E+00"
+                        android:text="0.000000"
                         android:textSize="18sp" />
+
+                    <Button
+                        android:id="@+id/buttonSensEdit"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:enabled="false"
+                        android:onClick="onEditButton"
+                        android:background="@drawable/menu_edit" />
+
+                    <Button
+                        android:id="@+id/buttonSensDelete"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:enabled="false"
+                        android:onClick="onRemoveButton"
+                        android:background="@drawable/menu_clear_spectrum" />
 
                 </TableRow>
 
@@ -163,13 +177,14 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <Button
-            android:id="@+id/buttonSensCancel"
+            android:id="@+id/buttonSensAdd"
             style="@android:style/ButtonBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:onClick="onCancelButton"
-            android:text="@android:string/cancel" />
+            android:onClick="onAddButton"
+            android:enabled="false"
+            android:text="@string/sensitivity_add_row" />
 
         <Button
             android:id="@+id/buttonSensReset"
@@ -178,7 +193,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onResetButton"
-            android:text="@string/reset_data" />
+            android:text="@string/sensitivity_reset_data" />
+
+        <Button
+            android:id="@+id/buttonSensCancel"
+            style="@android:style/ButtonBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="onCancelButton"
+            android:text="@android:string/cancel" />
 
         <Button
             android:id="@+id/buttonSensOk"

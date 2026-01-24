@@ -626,7 +626,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        String lang = Constants.getLocale(newBase);
+        String lang = PrefHelper.getLocale(newBase);
         super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
     }
 

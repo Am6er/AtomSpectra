@@ -65,10 +65,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 
 public class AtomSpectra extends Activity implements OnGestureListener, OnRequestPermissionsResultCallback, OnLongClickListener {
 
@@ -213,7 +215,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	@Override
 	protected void attachBaseContext(Context newBase) {
-		String lang = Constants.getLocale(newBase);
+		String lang = PrefHelper.getLocale(newBase);
 		super.attachBaseContext(LocaleContextWrapper.wrap(newBase, lang));
 //		super.attachBaseContext(MyContextWrapper.wrap(newBase, "en"));
 	}
@@ -1625,7 +1627,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	}
 
 	private void getCalibrationSettingsFromMemory() {
-		int poliSize = sharedPreferences.getInt(Constants.CONFIG.CONF_POLI_SIZE, -1);
+		int poliSize = sharedPreferences.getInt(Constants.CONFIG.CONF_CAL_POLI_SIZE, -1);
 		Calibration newHistCalibration = new Calibration();
 		if (poliSize == -1) {
 			//old calibration is found or nothing, use old style loading
@@ -1637,27 +1639,27 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			newHistCalibration.addLine(RightCal, RightCalE);
 			newHistCalibration.Calculate();
 		} else {
-			double x = sharedPreferences.getFloat(Constants.configCoefficient(0), -1000);
-			int Cal = sharedPreferences.getInt(Constants.configChannel(1), -1);
+			double x = sharedPreferences.getFloat(PrefHelper.configCalibrationCoefficient(0), -1000);
+			int Cal = sharedPreferences.getInt(PrefHelper.configCalibrationChannel(1), -1);
 			if (x != -1000 || Cal == -1) {
 				double[] coeffs = new double[poliSize + 1];
 				for (int i = 0; i <= poliSize; i++)
-					coeffs[i] = sharedPreferences.getFloat(Constants.configCoefficient(i), 1);
+					coeffs[i] = sharedPreferences.getFloat(PrefHelper.configCalibrationCoefficient(i), 1);
 				newHistCalibration.Calculate(coeffs);
 			} else {
 				double CalE;
 				for (int i = 1; i <= poliSize + 1; i++) {
-					Cal = sharedPreferences.getInt(Constants.configChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
-					CalE = sharedPreferences.getFloat(Constants.configEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
+					Cal = sharedPreferences.getInt(PrefHelper.configCalibrationChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
+					CalE = sharedPreferences.getFloat(PrefHelper.configCalibrationEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
 					newHistCalibration.addLine(Cal, CalE);
 				}
 				newHistCalibration.Calculate();
 				double[] coeffs = newHistCalibration.getCoeffArray();
 				SharedPreferences.Editor editor = sharedPreferences.edit();
 				for (int i = 0; i <= newHistCalibration.getFactor(); i++) {
-					editor.putFloat(Constants.configCoefficient(i), (float) coeffs[i]);
-					editor.remove(Constants.configChannel(i + 1));
-					editor.remove(Constants.configEnergy(i));
+					editor.putFloat(PrefHelper.configCalibrationCoefficient(i), (float) coeffs[i]);
+					editor.remove(PrefHelper.configCalibrationChannel(i + 1));
+					editor.remove(PrefHelper.configCalibrationEnergy(i));
 				}
 				editor.apply();
 			}
@@ -1709,10 +1711,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	private void setCalibrationSettingsToMemory() {
 		SharedPreferences.Editor prefEditor = sharedPreferences.edit();
 		int poliSize = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getFactor();
-		prefEditor.putInt(Constants.CONFIG.CONF_POLI_SIZE, poliSize);
+		prefEditor.putInt(Constants.CONFIG.CONF_CAL_POLI_SIZE, poliSize);
 		double[] coeffs = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getCoeffArray(5);
 		for (int i = 0; i <= poliSize; i++)
-			prefEditor.putFloat(Constants.configCoefficient(i), (float) coeffs[i]);
+			prefEditor.putFloat(PrefHelper.configCalibrationCoefficient(i), (float) coeffs[i]);
 		prefEditor.putInt(Constants.CONFIG.CONF_LAST_CHANNEL, AtomSpectraService.lastCalibrationChannel);
 		prefEditor.commit();
 	}
@@ -4045,12 +4047,18 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
 			fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
 			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT)));                               //order size
-			fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length)));      //Calibration array size
-			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
-				fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.configCalibrationEnergy(i), i * 100.0f)));
+
+            TreeMap<Float, Double> sensitivityTable = PrefHelper.getSensitivityTableOrDefault(this);
+			fw.append(String.format(Locale.US, "%d\n", sensitivityTable.size()));
+            ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
+			for (int i = 0; i < sortedEnergyList.size(); i++) {
+                float energy = sortedEnergyList.get(i);
+				fw.append(String.format(Locale.US, "%f\n", energy));
 			}
-			for (int i = 0; i < sharedPreferences.getInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, AtomSpectraService.EnergySensitivityDefault.length); i++) {
-				fw.append(String.format(Locale.US, "%.14e\n", Double.longBitsToDouble(sharedPreferences.getLong(Constants.configCalibration(i), Double.doubleToRawLongBits(AtomSpectraService.EnergySensitivityDefault[i])))));
+			for (int i = 0; i < sortedEnergyList.size(); i++) {
+                float energy = sortedEnergyList.get(i);
+                double sens = sensitivityTable.get(energy);
+				fw.append(String.format(Locale.US, "%.6f\n", sens));
 			}
 			fw.close();
 			Log.d(TAG, deviceFileName + " saved successfully");
@@ -4107,38 +4115,20 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			float tempTolerance = Float.parseFloat(fr.readLine());
 			tempTolerance = (float) Math.rint(Constants.MinMax(tempTolerance * 100, 1, 5000)) / 100.0f;                     //tolerance
 			int tempOrder = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, Constants.ORDER_MAX);
-			int tempSize = Integer.parseInt(fr.readLine());
-			double[] tempArray;
-			float[] tempEArray;
-			if (tempSize == AtomSpectraService.EnergySensitivityDefault.length) {
-				tempArray = new double[tempSize];
-				tempEArray = new float[tempSize];
-				for (int i = 0; i < tempSize; i++) {
-					tempEArray[i] = Float.parseFloat(fr.readLine());
-					if (tempEArray[i] < 0 || tempEArray[i] > 5000) {
-						Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
-						return;
-					}
-					if ((i == 0) && (tempEArray[i] != 0.0)) {
-						Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
-						return;
-					}
-				}
-				for (int i = 0; i < tempSize; i++) {
-					tempArray[i] = Double.parseDouble(fr.readLine());
-					if (tempArray[i] < 0 || tempArray[i] > 100) {
-						Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
-						return;
-					}
-					if ((i == 0) && (tempArray[i] != 0.0)) {
-						Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
-						return;
-					}
-				}
-			} else {
-				Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
-				return;
-			}
+			int tempSensTableSize = Integer.parseInt(fr.readLine());
+			float[] tempEArray = new float[tempSensTableSize];
+            for (int i = 0; i < tempSensTableSize; i++) {
+                tempEArray[i] = Float.parseFloat(fr.readLine());
+                if (tempEArray[i] < 0) {
+                    Toast.makeText(this, "Negative energy in sensitivity table", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+            TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
+            for (int i = 0; i < tempSensTableSize; i++) {
+                double sens = Double.parseDouble(fr.readLine());
+                sensitivityTable.put(tempEArray[i], sens);
+            }
 			SharedPreferences.Editor editor = sharedPreferences.edit();
 			editor.putInt(Constants.CONFIG.CONF_SENSG, tempSensG);                        //Sensitivity
 			if (isV2) {                                                                      //Sensitivity for compensated DR
@@ -4159,13 +4149,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			editor.putFloat(Constants.SEARCH.PREF_THRESHOLD, tempThreshold);              //threshold
 			editor.putFloat(Constants.SEARCH.PREF_TOLERANCE, tempTolerance);              //tolerance
 			editor.putInt(Constants.SEARCH.PREF_ORDER, tempOrder);                        //order size
-			editor.putInt(Constants.CONFIG.CONF_E_TO_MSV_COUNT, tempSize);
-			sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
-			for (int i = 0; i < tempSize; i++) {
-				editor.putFloat(Constants.configCalibrationEnergy(i), tempEArray[i]);
-				editor.putLong(Constants.configCalibration(i), Double.doubleToRawLongBits(tempArray[i]));
-			}
 			editor.commit();
+            PrefHelper.setSensitivityTable(this, sensitivityTable);
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 			Toast.makeText(this, getString(R.string.device_load_success), Toast.LENGTH_SHORT).show();
 		} catch (Exception e) {
 			Toast.makeText(this, getString(R.string.device_load_error), Toast.LENGTH_LONG).show();
