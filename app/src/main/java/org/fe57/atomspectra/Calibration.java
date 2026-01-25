@@ -5,14 +5,14 @@ import java.util.Arrays;
 import java.util.Locale;
 
 class Calibration {
-    private final ArrayList<Integer> ChannelList;  //list of calibration channels
-    private final ArrayList<Double> EnergyList;   //list of calibration energies in keV
+    private final ArrayList<Integer> PointChannelList;  //list of calibration channels
+    private final ArrayList<Double> PointEnergyList;   //list of calibration energies in keV
     private final double[] ApproximationList;     //list of channel approximation energies
     private double[] coeffArray;            //polynomial coefficients array in f(x)=a+bx+cx^2+dx^3+...
     private final int num_hist_points;
 
     public static Calibration defaultCalibration(int channelCount) {
-        Calibration calibration = new Calibration(channelCount).addLine(0, 0).addLine(channelCount + 1, 3000);
+        Calibration calibration = new Calibration(channelCount).addPoint(0, 0).addPoint(channelCount + 1, 3000);
         // TODO: implement lazy calculation, each time ne spectrum instance is created it consumes a lot of time
         calibration.Calculate();
         return calibration;
@@ -21,8 +21,8 @@ class Calibration {
     //default constructor
     public Calibration() {
         num_hist_points = Constants.NUM_HIST_POINTS;
-        ChannelList = new ArrayList<>();
-        EnergyList = new ArrayList<>();
+        PointChannelList = new ArrayList<>();
+        PointEnergyList = new ArrayList<>();
         ApproximationList = new double[num_hist_points + 1];
         coeffArray = null;
         Arrays.fill(ApproximationList, 0.0);
@@ -30,8 +30,8 @@ class Calibration {
 
     public Calibration(int channelCount) {
         num_hist_points = channelCount;
-        ChannelList = new ArrayList<>();
-        EnergyList = new ArrayList<>();
+        PointChannelList = new ArrayList<>();
+        PointEnergyList = new ArrayList<>();
         ApproximationList = new double[channelCount + 1];
         coeffArray = null;
         Arrays.fill(ApproximationList, 0.0);
@@ -40,10 +40,10 @@ class Calibration {
     //copy constructor
     public Calibration(Calibration other) {
         num_hist_points = other.num_hist_points;
-        ChannelList = new ArrayList<>();
-        ChannelList.addAll(other.ChannelList);
-        EnergyList = new ArrayList<>();
-        EnergyList.addAll(other.EnergyList);
+        PointChannelList = new ArrayList<>();
+        PointChannelList.addAll(other.PointChannelList);
+        PointEnergyList = new ArrayList<>();
+        PointEnergyList.addAll(other.PointEnergyList);
         ApproximationList = new double[other.ApproximationList.length];
         System.arraycopy(other.ApproximationList, 0, ApproximationList, 0, other.ApproximationList.length);
         if (other.coeffArray == null)
@@ -56,33 +56,33 @@ class Calibration {
 
     //clear all data from the instance
     public void clear() {
-        ChannelList.clear();
-        EnergyList.clear();
+        PointChannelList.clear();
+        PointEnergyList.clear();
         coeffArray = null;
         Arrays.fill(ApproximationList, 0.0);
     }
 
     //add a new calibration line to the list, sort, and invalidate the calibration
-    public Calibration addLine(int channel, double energy) {
-        int pos = ChannelList.size();
-        for (int i = 0; i < ChannelList.size(); i++) {
-            if (channel < ChannelList.get(i)) {
+    public Calibration addPoint(int channel, double energy) {
+        int pos = PointChannelList.size();
+        for (int i = 0; i < PointChannelList.size(); i++) {
+            if (channel < PointChannelList.get(i)) {
                 pos = i;
                 break;
             }
         }
 
-        ChannelList.add(pos, channel);
-        EnergyList.add(pos, energy);
+        PointChannelList.add(pos, channel);
+        PointEnergyList.add(pos, energy);
         coeffArray = null;
         return this;
     }
 
     //delete a new calibration line from the list, sort, and invalidate the calibration
-    public Calibration removeLine(int number) {
-        if (number >= 0 && number < ChannelList.size()) {
-            ChannelList.remove(number);
-            EnergyList.remove(number);
+    public Calibration removePoint(int pointIndex) {
+        if (pointIndex >= 0 && pointIndex < PointChannelList.size()) {
+            PointChannelList.remove(pointIndex);
+            PointEnergyList.remove(pointIndex);
             coeffArray = null;
         }
         return this;
@@ -91,7 +91,7 @@ class Calibration {
     //computes polynomial coefficients and creates an approximation array
     public void Calculate() {
         if (isCorrectInternal()) {
-            final int factor = ChannelList.size();
+            final int factor = PointChannelList.size();
             coeffArray = new double[factor];
             double[][] matrix = new double[factor][factor + 1];
             //solve the polynomial coefficients using linear algebra:
@@ -115,9 +115,9 @@ class Calibration {
                 x = 1.0;
                 for (int j = 0; j < factor; j++) {
                     matrix[i][j] = x;
-                    x = x*ChannelList.get(i);
+                    x = x* PointChannelList.get(i);
                 }
-                matrix[i][factor] = EnergyList.get(i);
+                matrix[i][factor] = PointEnergyList.get(i);
             }
 
             //makes a calculation
@@ -192,7 +192,7 @@ class Calibration {
 
     //calculate using least squares method
     public void Calculate (int maxFactor) {
-        if (maxFactor >= ChannelList.size() - 1) {
+        if (maxFactor >= PointChannelList.size() - 1) {
             Calculate();
             return;
         }
@@ -203,18 +203,18 @@ class Calibration {
                 ApproximationList[i] = 0.0;
             return;
         }
-        Matrix X_Vals = new Matrix(ChannelList.size(), maxFactor + 1);
+        Matrix X_Vals = new Matrix(PointChannelList.size(), maxFactor + 1);
         double x;
-        for (int i = 0; i < ChannelList.size(); i++) {
+        for (int i = 0; i < PointChannelList.size(); i++) {
             x = 1;
             for (int j = 0; j <= maxFactor; j++) {
                 X_Vals.array[i][j] = x;
-                x *= ChannelList.get(i);
+                x *= PointChannelList.get(i);
             }
         }
-        Matrix Y_Vals = new Matrix(ChannelList.size(), 1);
-        for (int i = 0; i < EnergyList.size(); i++) {
-            Y_Vals.array[i][0] = EnergyList.get(i);
+        Matrix Y_Vals = new Matrix(PointChannelList.size(), 1);
+        for (int i = 0; i < PointEnergyList.size(); i++) {
+            Y_Vals.array[i][0] = PointEnergyList.get(i);
         }
         Matrix b = X_Vals.Transpose().Times(X_Vals).Inverse().Times(X_Vals.Transpose()).Times(Y_Vals);
         double[] temp = new double[maxFactor + 1];
@@ -228,29 +228,29 @@ class Calibration {
     }
 
     //factor of polynomial
-    public int getLines(){
-        return ChannelList.size();
+    public int getPointsCount(){
+        return PointChannelList.size();
     }
 
     //get channel of the calibration line
-    public int getChannel(int i) {
-        if (i >=0 && i < ChannelList.size())
-            return (ChannelList.get(i));
+    public int getPointChannel(int i) {
+        if (i >=0 && i < PointChannelList.size())
+            return (PointChannelList.get(i));
         else
             return 0;
     }
 
     //get energy of the calibration line
-    public double getEnergy(int i) {
-        if (i >=0 && i < EnergyList.size())
-            return EnergyList.get(i);
+    public double getPointEnergy(int i) {
+        if (i >=0 && i < PointEnergyList.size())
+            return PointEnergyList.get(i);
         else
             return 0.0;
     }
 
     //check if the line is already exists
-    public boolean containsChannel(int channel) {
-        for (Integer val : ChannelList) {
+    public boolean containsPointChannel(int channel) {
+        for (Integer val : PointChannelList) {
             if (val == channel)
                 return true;
         }
@@ -312,14 +312,14 @@ class Calibration {
     //check if the data is correct for calculation
     private boolean isCorrectInternal(){
         boolean ret_value = false;
-        if (ChannelList.size() > 1) {
+        if (PointChannelList.size() > 1) {
             ret_value = true;
-            for (int i = 1; i < ChannelList.size(); i++) {
-                if (ChannelList.get(i - 1) >= ChannelList.get(i))
+            for (int i = 1; i < PointChannelList.size(); i++) {
+                if (PointChannelList.get(i - 1) >= PointChannelList.get(i))
                     ret_value = false;
             }
-            for (int i = 1; i < EnergyList.size(); i++) {
-                if (EnergyList.get(i - 1) >= EnergyList.get(i))
+            for (int i = 1; i < PointEnergyList.size(); i++) {
+                if (PointEnergyList.get(i - 1) >= PointEnergyList.get(i))
                     ret_value = false;
             }
         }

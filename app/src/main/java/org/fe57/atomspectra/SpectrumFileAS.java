@@ -60,9 +60,9 @@ public class SpectrumFileAS extends SpectrumFile {
             for (int i = 0; i <= poli_save; i++) {
                 cal = Double.parseDouble(fr.readLine()) / hist_compress;
                 cal_E = Double.parseDouble(fr.readLine());
-                if (save_calibration.containsChannel((int) cal))
+                if (save_calibration.containsPointChannel((int) cal))
                     throw new Exception("Poli data read error");
-                save_calibration.addLine((int) cal, cal_E);
+                save_calibration.addPoint((int) cal, cal_E);
             }
             save_calibration.Calculate();
             if (!save_calibration.isCorrect())
@@ -140,9 +140,9 @@ public class SpectrumFileAS extends SpectrumFile {
                 for (int i = 0; i <= poli_save; i++) {
                     cal = Double.parseDouble(fr.readLine()) / compactness;
                     cal_E = Double.parseDouble(fr.readLine());
-                    if (save_calibration.containsChannel((int) cal))
+                    if (save_calibration.containsPointChannel((int) cal))
                         throw new IOException("Poli data read error");
-                    save_calibration.addLine((int) cal, cal_E);
+                    save_calibration.addPoint((int) cal, cal_E);
                 }
                 save_calibration.Calculate();
             }

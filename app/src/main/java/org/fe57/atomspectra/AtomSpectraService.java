@@ -2412,12 +2412,12 @@ public class AtomSpectraService extends Service {
             case 5:
             case 6:
                 if (showCalibrationFunction) {
-                    double[] histogram_temp = newCalibration.getApproximationList();
+                    double[] calibration_temp = newCalibration.getApproximationList();
                     for (int i = 0; i < 1024; i++) {
                         histogram[i] = 0;
                         background_histogram[i] = 0;
                         for (int j = 0; j < num_values; j++) {
-                            histogram[i] += histogram_temp[num_first_channel + i * num_values + j];
+                            histogram[i] += calibration_temp[num_first_channel + i * num_values + j];
                         }
                         histogram[i] = histogram[i] / num_values;
                     }

@@ -19,7 +19,6 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -606,9 +605,9 @@ public class AtomSpectraShapeView extends View {
 					squareColor.setColor(Color.GREEN);
 					squareColor.setStyle(Style.FILL);
 					float radius = (float) StrictMath.min(width, height) / 75.0f;
-					for (int i = 0; i < AtomSpectraService.newCalibration.getLines(); i++) {
-						float y = (float) (margin_top + (1 - StrictMath.min(1, (AtomSpectraService.newCalibration.getEnergy(i) - y_min) / (y_max - y_min) * y_zoom)) * height);
-						float x = margin_left + ((AtomSpectraService.newCalibration.getChannel(i) - x_min_value) / (x_max_value - x_min_value)) * width;
+					for (int i = 0; i < AtomSpectraService.newCalibration.getPointsCount(); i++) {
+						float y = (float) (margin_top + (1 - StrictMath.min(1, (AtomSpectraService.newCalibration.getPointEnergy(i) - y_min) / (y_max - y_min) * y_zoom)) * height);
+						float x = margin_left + ((AtomSpectraService.newCalibration.getPointChannel(i) - x_min_value) / (x_max_value - x_min_value)) * width;
 						if (x >= margin_left && x <= (margin_left + width) && y >= margin_top && y <= (margin_top + height))
 							canvas.drawCircle(x, y, radius, squareColor);
 					}
@@ -690,14 +689,6 @@ public class AtomSpectraShapeView extends View {
 			}
 
 			y_zoom = y_zoom_factor;
-			double x_zoom;
-			if (x_zoom_factor < Constants.SCALE_MAX)
-				x_zoom = (1 << x_zoom_factor) / 2.0;
-			else if (x_zoom_factor == Constants.SCALE_MAX)
-				x_zoom = (1 << 6) / 2.0;
-			else
-				x_zoom = 1;
-
 			if (logScale)
 				y_max = 0;
 			else
@@ -732,6 +723,13 @@ public class AtomSpectraShapeView extends View {
 					if (bg_reduced_reversed[i] > y_max)
 						y_max = bg_reduced_reversed[i];  // use one scale for both histograms
 
+			double x_zoom;
+			if (x_zoom_factor < Constants.SCALE_MAX)
+				x_zoom = (1 << x_zoom_factor) / 2.0;
+			else if (x_zoom_factor == Constants.SCALE_MAX)
+				x_zoom = (1 << 6) / 2.0;
+			else
+				x_zoom = 1;
 			isotopeFound = -1;
 			double cursor_X_Energy; //use energy to search the nearest isotope
 			if (x_is_calibrated)
@@ -877,7 +875,12 @@ public class AtomSpectraShapeView extends View {
 	}
 
 	public void showCalibration(
-			double[] calibration_values // array to draw
+			double[] calibration_values, // array to draw
+			int x_size, // number of abscissa point to be drawn
+			float x_min, // minimum value for X-scale
+			float x_max, // maximum value for X-scale
+			float y_zoom_factor,
+			int x_zoom_factor
 	) {
 		synchronized (renderSync) {
 			int size = calibration_values.length;
@@ -887,21 +890,44 @@ public class AtomSpectraShapeView extends View {
 				return;
 			}
 
+			int step = size / x_size;
+			if ((step * x_size) != size) {
+				String message = "Invalid size/x_size provided to render calibration plot: " + size + "/" + x_size;
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
+
 			this.render_mode = RENDER_MODE_CALIBRATION;
 
-			cursor_X = -1;
-			x_max_value = size;
-			x_min_value = 0;
-			x_units = ", " + getResources().getString(R.string.graph_show_cnt);
+			x_max_value = x_max;
+			x_min_value = x_min;
+			x_units = ", " + getResources().getString(R.string.graph_show_channel);
+
+			double[] cal_yf = new double[size];
+			double[] cal_reduced_reversed = new double[x_size];
+			System.arraycopy(calibration_values, 0, cal_yf, 0, size);
+
+			y_zoom = y_zoom_factor;
 			y_max = 1;
 			y_min = 0;
-			for (int i = 0; i < AtomSpectraService.newCalibration.getLines(); i++) {
-				y_min = StrictMath.min(y_min, AtomSpectraService.newCalibration.getEnergy(i));
-				y_max = StrictMath.max(y_max, AtomSpectraService.newCalibration.getEnergy(i));
+			for (int i = 0; i < x_size; i++) {
+				double r = 0;
+				for (int j = 0; j < step; j++)
+					r += cal_yf[i * step + j];
+				r /= step;
+				cal_reduced_reversed[x_size - 1 - i] = r;
+			}
+			for (int i = 0; i < x_size; i++) {
+				if (cal_reduced_reversed[i] > y_max) y_max = cal_reduced_reversed[i];
+				if (cal_reduced_reversed[i] < y_min) y_min = cal_reduced_reversed[i];
+			}
+			for (int i = 0; i < AtomSpectraService.newCalibration.getPointsCount(); i++) {
+				y_min = StrictMath.min(y_min, AtomSpectraService.newCalibration.getPointEnergy(i));
+				y_max = StrictMath.max(y_max, AtomSpectraService.newCalibration.getPointEnergy(i));
 			}
 			y_max = StrictMath.max(y_max, y_min + 1);
 
-			Shape calibration_shape = getShape(calibration_values, 1.0, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			Shape calibration_shape = getShape(cal_reduced_reversed, y_zoom, step, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
 			this.shapes = new Shape[]{calibration_shape};
 		}
 		invalidate();

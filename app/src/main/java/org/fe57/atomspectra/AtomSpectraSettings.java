@@ -625,7 +625,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     private void saveFactor(int val) {
         saveIntPref(val, Constants.CONFIG.CONF_MAX_POLI_FACTOR);
         updateCalibrationFactorText();
-        if (AtomSpectraService.newCalibration.getLines() > 1)
+        if (AtomSpectraService.newCalibration.getPointsCount() > 1)
             AtomSpectraService.newCalibration.Calculate(val);
     }
 

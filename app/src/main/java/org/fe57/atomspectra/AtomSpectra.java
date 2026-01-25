@@ -911,50 +911,50 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			app_menu.findItem(R.id.action_cal_point_5).setTitle(String.format(Locale.getDefault(), "c4: %.12g", coeffs[4]));
 
 			Button button = findViewById(R.id.addPointButton);
-			if (AtomSpectraService.newCalibration.getLines() >= Constants.MAX_CALIBRATION_POINTS) {
+			if (AtomSpectraService.newCalibration.getPointsCount() >= Constants.MAX_CALIBRATION_POINTS) {
 				button.setText("-");
 				button.setEnabled(false);
 				app_menu.findItem(R.id.action_cal_add_point).setEnabled(false);
 			} else {
-				button.setText(String.format(Locale.US, "%d", AtomSpectraService.newCalibration.getLines() + 1));
+				button.setText(String.format(Locale.US, "%d", AtomSpectraService.newCalibration.getPointsCount() + 1));
 				app_menu.findItem(R.id.action_cal_add_point).setEnabled(true);
 			}
-			app_menu.findItem(R.id.action_cal_calc).setEnabled(AtomSpectraService.newCalibration.getLines() > 1);
-			findViewById(R.id.calibrateButton).setEnabled(AtomSpectraService.newCalibration.getLines() > 1);
-			if (AtomSpectraService.newCalibration.getLines() < 2) {
+			app_menu.findItem(R.id.action_cal_calc).setEnabled(AtomSpectraService.newCalibration.getPointsCount() > 1);
+			findViewById(R.id.calibrateButton).setEnabled(AtomSpectraService.newCalibration.getPointsCount() > 1);
+			if (AtomSpectraService.newCalibration.getPointsCount() < 2) {
 				app_menu.findItem(R.id.action_cal_draw_function).setChecked(false).setEnabled(false);
 				AtomSpectraService.showCalibrationFunction = false;
 			}
 			app_menu.findItem(R.id.action_cal_new_point1).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(0), AtomSpectraService.newCalibration.getEnergy(0))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 0);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(0), AtomSpectraService.newCalibration.getPointEnergy(0))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 0);
 			app_menu.findItem(R.id.action_cal_new_point2).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(1), AtomSpectraService.newCalibration.getEnergy(1))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 1);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(1), AtomSpectraService.newCalibration.getPointEnergy(1))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 1);
 			app_menu.findItem(R.id.action_cal_new_point3).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(2), AtomSpectraService.newCalibration.getEnergy(2))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 2);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(2), AtomSpectraService.newCalibration.getPointEnergy(2))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 2);
 			app_menu.findItem(R.id.action_cal_new_point4).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(3), AtomSpectraService.newCalibration.getEnergy(3))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 3);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(3), AtomSpectraService.newCalibration.getPointEnergy(3))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 3);
 			app_menu.findItem(R.id.action_cal_new_point5).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(4), AtomSpectraService.newCalibration.getEnergy(4))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 4);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(4), AtomSpectraService.newCalibration.getPointEnergy(4))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 4);
 			app_menu.findItem(R.id.action_cal_new_point6).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(5), AtomSpectraService.newCalibration.getEnergy(5))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 5);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(5), AtomSpectraService.newCalibration.getPointEnergy(5))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 5);
 			app_menu.findItem(R.id.action_cal_new_point7).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(6), AtomSpectraService.newCalibration.getEnergy(6))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 6);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(6), AtomSpectraService.newCalibration.getPointEnergy(6))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 6);
 			app_menu.findItem(R.id.action_cal_new_point8).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(7), AtomSpectraService.newCalibration.getEnergy(7))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 7);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(7), AtomSpectraService.newCalibration.getPointEnergy(7))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 7);
 			app_menu.findItem(R.id.action_cal_new_point9).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(8), AtomSpectraService.newCalibration.getEnergy(8))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 8);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(8), AtomSpectraService.newCalibration.getPointEnergy(8))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 8);
 			app_menu.findItem(R.id.action_cal_new_point10).
-					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getChannel(9), AtomSpectraService.newCalibration.getEnergy(9))).
-					setVisible(AtomSpectraService.newCalibration.getLines() > 9);
+					setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(9), AtomSpectraService.newCalibration.getPointEnergy(9))).
+					setVisible(AtomSpectraService.newCalibration.getPointsCount() > 9);
 
 			boolean isUSB = AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL;
 			boolean isFreeze = AtomSpectraService.getFreeze();
@@ -983,7 +983,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		menu.findItem(R.id.action_background_clear).setEnabled(enable_back);
 		menu.findItem(R.id.action_background_save).setEnabled(enable_back);
 		menu.findItem(R.id.action_cal_draw_function).setChecked(AtomSpectraService.showCalibrationFunction);
-		menu.findItem(R.id.action_cal_draw_function).setEnabled(AtomSpectraService.newCalibration != null && AtomSpectraService.newCalibration.getLines() > 1);
+		menu.findItem(R.id.action_cal_draw_function).setEnabled(AtomSpectraService.newCalibration != null && AtomSpectraService.newCalibration.getPointsCount() > 1);
 
 		menu.findItem(R.id.action_hist_smooth).setTitle(AtomSpectraService.setSmooth ? getString(R.string.hist_unsmooth) : getString(R.string.hist_smooth));
 		updateCalibrationMenu();
@@ -1169,7 +1169,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 						if (calibration_data == null) {
 							calibration_data = new double[1024];
 						}
-						mAtomSpectraShapeView.showCalibration(calibration_data);
+						mAtomSpectraShapeView.showCalibration(
+								calibration_data,
+								reducedTo,
+								num_first_channel,
+								num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)),
+								zoom_factor,
+								num_scale_factor);
 					} else {
 						if (num_scale_factor <= Constants.SCALE_MAX) {
 							double[] histogram = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_FG_COUNTS);
@@ -1635,8 +1641,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			double RightCalE = 3000.0;
 			int LeftCal = 0;
 			double LeftCalE = (float) 0.0;
-			newHistCalibration.addLine(LeftCal, LeftCalE);
-			newHistCalibration.addLine(RightCal, RightCalE);
+			newHistCalibration.addPoint(LeftCal, LeftCalE);
+			newHistCalibration.addPoint(RightCal, RightCalE);
 			newHistCalibration.Calculate();
 		} else {
 			double x = sharedPreferences.getFloat(PrefHelper.configCalibrationCoefficient(0), -1000);
@@ -1651,7 +1657,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				for (int i = 1; i <= poliSize + 1; i++) {
 					Cal = sharedPreferences.getInt(PrefHelper.configCalibrationChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
 					CalE = sharedPreferences.getFloat(PrefHelper.configCalibrationEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
-					newHistCalibration.addLine(Cal, CalE);
+					newHistCalibration.addPoint(Cal, CalE);
 				}
 				newHistCalibration.Calculate();
 				double[] coeffs = newHistCalibration.getCoeffArray();
@@ -1836,7 +1842,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					seekChannel.setVisibility(SeekBar.INVISIBLE);
 					showPlusMinusButtons = false;
 				} else {
-					if ((AtomSpectraService.newCalibration.getLines() < Constants.MAX_CALIBRATION_POINTS)) {
+					if ((AtomSpectraService.newCalibration.getPointsCount() < Constants.MAX_CALIBRATION_POINTS)) {
 						for (Isotope i : AtomSpectraIsotopes.foundList) {
 							if (i.getCoord().contains(e1.getX(), e1.getY())) {
 								getInside = true;
@@ -1868,8 +1874,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 												Toast.makeText(AtomSpectra.this, getString(R.string.cal_error_number), Toast.LENGTH_SHORT).show();
 												return;
 											}
-											AtomSpectraService.newCalibration.addLine(channel_x, fValue);
-											if (AtomSpectraService.newCalibration.getLines() > 1) {
+											AtomSpectraService.newCalibration.addPoint(channel_x, fValue);
+											if (AtomSpectraService.newCalibration.getPointsCount() > 1) {
 												app_menu.findItem(R.id.action_cal_draw_function).setEnabled(true);
 												AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
 												if (!AtomSpectraService.newCalibration.isCorrect()) {
@@ -1885,7 +1891,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 							}
 						}
 					}
-					if ((AtomSpectraService.newCalibration.getLines() < Constants.MAX_CALIBRATION_POINTS) && (cursor_x != -1)) {
+					if ((AtomSpectraService.newCalibration.getPointsCount() < Constants.MAX_CALIBRATION_POINTS) && (cursor_x != -1)) {
 						for (Isotope i : AtomSpectraIsotopes.isotopeLineArray) {
 							if (i.getCoord().contains(e1.getX(), e1.getY())) {
 								getInside = true;
@@ -1894,8 +1900,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 										.setTitle(getString(R.string.calibration_add_nuclid_title))
 										.setMessage(getString(R.string.calibration_add_nuclid_text, cursor_x, i.getName(), i.getEnergy(0)))
 										.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-											AtomSpectraService.newCalibration.addLine(cursor_x, i.getEnergy(0));
-											if (AtomSpectraService.newCalibration.getLines() > 1) {
+											AtomSpectraService.newCalibration.addPoint(cursor_x, i.getEnergy(0));
+											if (AtomSpectraService.newCalibration.getPointsCount() > 1) {
 												AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
 												app_menu.findItem(R.id.action_cal_draw_function).setEnabled(true);
 												if (!AtomSpectraService.newCalibration.isCorrect()) {
@@ -2958,12 +2964,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			int finalNumber = number;
 			final AlertDialog.Builder alert = new AlertDialog.Builder(this)
 					.setTitle(getString(R.string.ask_delete_calibration_line_title))
-					.setMessage(getString(R.string.ask_delete_calibration_line_text, AtomSpectraService.newCalibration.getChannel(finalNumber), AtomSpectraService.newCalibration.getEnergy(finalNumber)))
+					.setMessage(getString(R.string.ask_delete_calibration_line_text, AtomSpectraService.newCalibration.getPointChannel(finalNumber), AtomSpectraService.newCalibration.getPointEnergy(finalNumber)))
 					.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-						int channel_x = AtomSpectraService.newCalibration.getChannel(finalNumber);
-						double fValue = AtomSpectraService.newCalibration.getEnergy(finalNumber);
-						AtomSpectraService.newCalibration.removeLine(finalNumber);
-						if (AtomSpectraService.newCalibration.getLines() > 1) {
+						int channel_x = AtomSpectraService.newCalibration.getPointChannel(finalNumber);
+						double fValue = AtomSpectraService.newCalibration.getPointEnergy(finalNumber);
+						AtomSpectraService.newCalibration.removePoint(finalNumber);
+						if (AtomSpectraService.newCalibration.getPointsCount() > 1) {
 							AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
 							if (!AtomSpectraService.newCalibration.isCorrect()) {
 								Toast.makeText(AtomSpectra.this, getString(R.string.cal_maybe_wrong, channel_x, fValue), Toast.LENGTH_LONG).show();
@@ -2998,7 +3004,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				//..
 			}
 		} else if (item.getItemId() == R.id.action_cal_draw_function) {
-			if (AtomSpectraService.newCalibration.getLines() > 1) {
+			if (AtomSpectraService.newCalibration.getPointsCount() > 1) {
 				item.setChecked(!AtomSpectraService.showCalibrationFunction);
 				AtomSpectraService.showCalibrationFunction = !AtomSpectraService.showCalibrationFunction;
 			} else {
@@ -4160,11 +4166,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	public void onAddCalibrationPoint(View view) {
 //		final Button button = (Button) view;
-		if (AtomSpectraService.newCalibration.getLines() >= Constants.MAX_CALIBRATION_POINTS) {
+		if (AtomSpectraService.newCalibration.getPointsCount() >= Constants.MAX_CALIBRATION_POINTS) {
 			Toast.makeText(this, getString(R.string.cal_no_more), Toast.LENGTH_SHORT).show();
 			return;
 		}
-		if (AtomSpectraService.newCalibration.containsChannel(cursor_x)) {
+		if (AtomSpectraService.newCalibration.containsPointChannel(cursor_x)) {
 			Toast.makeText(this, getString(R.string.cal_have_channel), Toast.LENGTH_SHORT).show();
 			return;
 		}
@@ -4197,8 +4203,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 					Toast.makeText(context, getString(R.string.cal_error_number), Toast.LENGTH_SHORT).show();
 					return;
 				}
-				AtomSpectraService.newCalibration.addLine(cursor_x, fValue);
-				if (AtomSpectraService.newCalibration.getLines() > 1) {
+				AtomSpectraService.newCalibration.addPoint(cursor_x, fValue);
+				if (AtomSpectraService.newCalibration.getPointsCount() > 1) {
 					AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
 					app_menu.findItem(R.id.action_cal_draw_function).setEnabled(true);
 					if (!AtomSpectraService.newCalibration.isCorrect()) {
@@ -4216,7 +4222,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	}
 
 	public void onCalibrateButton(View view) {
-		if (AtomSpectraService.newCalibration.getLines() < 2) {
+		if (AtomSpectraService.newCalibration.getPointsCount() < 2) {
 			Toast.makeText(this, getString(R.string.cal_no_enough_data), Toast.LENGTH_LONG).show();
 			return;
 		}
@@ -4226,7 +4232,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			app_menu.findItem(R.id.action_cal_draw_function).setChecked(false);
 			app_menu.findItem(R.id.action_cal_draw_function).setEnabled(false);
 			AtomSpectraService.ForegroundSpectrum.setSpectrumCalibration(AtomSpectraService.newCalibration);
-			AtomSpectraService.newCalibration.clear();
+			AtomSpectraService.newCalibration = new Calibration();
 			updateCalibrationMenu();
 			Button button = findViewById(R.id.addPointButton);
 			button.setText("1");
