@@ -36,7 +36,8 @@
             android:layout_height="45dp"
             android:onClick="onAddCalibrationPoint"
             android:text="1"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
 
         <Button
             android:id="@+id/calibrateButton"
@@ -46,7 +47,8 @@
             android:enabled="false"
             android:onClick="onCalibrateButton"
             android:text="@string/leftwards"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
 
         <Button
             android:id="@+id/removeCalibrationButton"
@@ -56,7 +58,8 @@
             android:layout_marginRight="5dp"
             android:onClick="onClearCalibrationButton"
             android:text="@string/rightwards"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
 
         <ImageButton
             android:id="@+id/clearSpectrumButton"
@@ -83,7 +86,7 @@
         android:enabled="false"
         android:focusable="false"
         android:textColor="#FFFFFFFF"
-        android:textSize="8sp" />
+        android:textSize="8dp" />
 
     <Button
         android:id="@+id/channelButton"
@@ -95,7 +98,7 @@
         android:onClick="onClick_xAxisScale"
         android:text="@string/mode_axis_kev_button"
         android:textColor="#FFFFFFFF"
-        android:textSize="12sp" />
+        android:textSize="12dp" />
 
     <Button
         android:id="@+id/fmsButton"
@@ -107,7 +110,7 @@
         android:onClick="onClick_fms"
         android:text="F"
         android:textColor="#FFFFFFFF"
-        android:textSize="14sp" />
+        android:textSize="14dp" />
 
     <Button
         android:id="@+id/doseButton"
@@ -119,7 +122,7 @@
         android:onClick="onClick_Dose"
         android:text="N"
         android:textColor="#FFFFFFFF"
-        android:textSize="14sp" />
+        android:textSize="14dp" />
 
     <Button
         android:id="@+id/searchBaselineButton"
@@ -132,7 +135,7 @@
         android:onClick="onClick_Sound"
         android:text="≈"
         android:textColor="#FFFFFFFF"
-        android:textSize="14sp" />
+        android:textSize="14dp" />
 
     <Button
         android:id="@+id/displayModeButton"
@@ -147,7 +150,7 @@
         android:rotationY="0"
         android:text="Spectrum"
         android:textColor="#FFFFFFFF"
-        android:textSize="14sp" />
+        android:textSize="14dp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -179,7 +182,8 @@
         android:gravity="center"
         android:onClick="onClick_Channel"
         android:text="@string/cursortext"
-        android:textColor="@color/colorCursorText" />
+        android:textColor="@color/colorCursorText"
+        android:textSize="14dp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -198,7 +202,7 @@
             android:onClick="onClick_Coord"
             android:text="@string/cps"
             android:textColor="@android:color/white"
-            android:textSize="16sp" />
+            android:textSize="16dp" />
 
         <TextView
             android:id="@+id/doserateText"
@@ -211,7 +215,7 @@
             android:onClick="onClick_Coord"
             android:text="12 uSv"
             android:textColor="@android:color/white"
-            android:textSize="16sp" />
+            android:textSize="16dp" />
 
     </LinearLayout>
 
@@ -231,7 +235,8 @@
             android:layout_gravity="right"
             android:background="@color/colorCursorBackground"
             android:gravity="right"
-            android:textColor="@color/colorButtonText" />
+            android:textColor="@color/colorButtonText"
+            android:textSize="14dp" />
 
         <TextView
             android:id="@+id/backgroundSuffixView"
@@ -240,7 +245,8 @@
             android:layout_gravity="right"
             android:background="@color/colorCursorBackground"
             android:gravity="right"
-            android:textColor="@color/colorBackground" />
+            android:textColor="@color/colorBackground"
+            android:textSize="14dp" />
     </LinearLayout>
 
 </FrameLayout>
