@@ -108,7 +108,6 @@
 
     <string name="leftwards">\u221a</string>
     <string name="rightwards">\u00d7</string>
-    <string name="updown">\u2195</string>
 
     <string name="cps">cps: 0</string>
 
@@ -125,6 +124,10 @@
     <string name="mode_compensated_button">C</string>
     <string name="mode_uncompensated_button">N</string>
     <string name="mode_interval_button">I</string>
+    <string name="mode_spectrum_button">Spectrum</string>
+    <string name="mode_search_button">Search</string>
+    <string name="mode_axis_kev_button">keV</string>
+    <string name="mode_axis_ch_button">ch.</string>
     <string name="sensg_text">Sens:</string>
     <string name="sensg_compensated_text">Sens(сompensated):</string>
     <string name="background_cps_text">BckgCps:</string>
@@ -521,10 +524,11 @@
         \t- Use a single tap to point a green cursor. Use a slider to smoothly shift the cursor. Tap to the left of spectrum to switch off a cursor. Tap on cursor text to set the cursor channel directly.\n
         \t- Use a double tap to select linear or log10 scale.\n
         \t- Use a long tap to switch between bar and line view modes.\n
-        \t- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the spectrum to switch between channel and keV modes in spectrum view.\n
-        \t- Use \'<annotation foreground="parameter">\u2195</annotation>\' button to the right of the dose rate output to switch between kinds of dose rate (compensated, non-compensated, count rate within interval).\n
-        \t- Use \'<annotation foreground="parameter">CNI</annotation>\' button to the right of the screen to switch between spectrum and dose rate output modes.\n
-        \t- Use a short press on \'<annotation foreground="parameter">cps</annotation>\' or dose rate output to show all time average cps (\'<i>~cps</i>\') and a total time in seconds (\'<i>time</i>\'). Use a short press on \'<annotation foreground="parameter">~cps</annotation>\' or \'<annotation foreground="parameter">time</annotation>\' to show reference (\'<annotation foreground="parameter">≈cps</annotation>\') level for interval search and threshold (\'<annotation foreground="parameter">♪cps</annotation>\') levels for interval search alarm. Use a short press on \'<annotation foreground="parameter">≈cps</annotation>\' or \'<annotation foreground="parameter">♪cps</annotation>\' to show coordinates. The coordinates shows current values during spectrum update. They show last position before the record stopped. They shows position from last read file. Use a long press on coordinates to jump to a map program. Use a short press again to return back.\n
+        \t- Use \'<annotation foreground="parameter">kev/ch.</annotation>\' button to switch between channel and keV modes in spectrum view.\n
+        \t- Use \'<annotation foreground="parameter">CNI</annotation>\' button to switch between kinds of dose rate (compensated, non-compensated, count rate within interval).\n
+        \t- Use \'<annotation foreground="parameter">FMS</annotation>\' button to switch between search constant (fast, medium, slow).\n
+        \t- Use \'<annotation foreground="parameter">Spectrum/Search</annotation>\' button to switch between spectrum and search modes.\n
+        \t- Use a short press on \'<annotation foreground="parameter">cps</annotation>\' or \'<annotation foreground="parameter">dose rate</annotation>\' to show all time average cps (\'<i>~cps</i>\') and a total time in seconds (\'<i>time</i>\'). Use a short press on \'<annotation foreground="parameter">~cps</annotation>\' or \'<annotation foreground="parameter">time</annotation>\' to show reference (\'<annotation foreground="parameter">≈cps</annotation>\') level for interval search and threshold (\'<annotation foreground="parameter">♪cps</annotation>\') levels for interval search alarm. Use a short press on \'<annotation foreground="parameter">≈cps</annotation>\' or \'<annotation foreground="parameter">♪cps</annotation>\' to show coordinates. The coordinates shows current values during spectrum update. They show last position before the record stopped. They shows position from last read file. Use a long press on coordinates to jump to a map program. Use a short press again to return back.\n
         \n
         \tSpectrogram display mode:\n
         \t- Use a horizontal pinch to scale the spectrogram horizontally (channel/energy). Take the fingers off the screen to apply a pinch.\n
@@ -569,9 +573,9 @@
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. A dose rate/energy range count rate calculation and output:</annotation></big>\n
         The program calculates three values - non-compensated dose rate, compensated dose rate, count rate in a given range (interval) of energies. Non-compensated - linear conversion of the overall count rate into dose rate using a coefficient. Compensated - calculation of dose rate taking into account the energy of the registered photons, the detector sensitivity curve and the coefficient.\n
-        \t- The \'<annotation foreground="parameter">FMS</annotation>\' button to the right of the spectrum selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
-        \t- To display the graph showing the change in dose rate (or count rate in the energy interval), press the \'<annotation foreground="parameter">CNI</annotation>\' button. \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">N</annotation>\' means \'non-compensated dose rate history\'. \'<annotation foreground="parameter">I</annotation>\' means \'interval count rate history\'.\n
-        \t- To switch between value types, press the \'<annotation foreground="parameter">\u2195</annotation>\' button in the dose rate graph display mode.\n
+        \t- The \'<annotation foreground="parameter">FMS</annotation>\' button selects the dose rate averaging. \'<annotation foreground="parameter">F</annotation>\' means \'fast\', \'<annotation foreground="parameter">M</annotation>\' means \'medium\', \'<annotation foreground="parameter">S</annotation>\' means \'slow\'. The count values for averaging for each type can be set in the \'<annotation foreground="parameter">Settings</annotation>\'. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
+        \t- To display the graph showing the change in dose rate (or count rate in the energy interval), press the \'<annotation foreground="parameter">Spectrum/Search</annotation>\' button.\n
+        \t- To switch between value types, press the \'<annotation foreground="parameter">CNI</annotation>\' button.  \'<annotation foreground="parameter">C</annotation>\' means \'compensated dose rate history\'. \'<annotation foreground="parameter">N</annotation>\' means \'non-compensated dose rate history\'. \'<annotation foreground="parameter">I</annotation>\' means \'interval count rate history\'.\n
         \n
         Non-compensated dose rate (mode \'<annotation foreground="parameter">N</annotation>\'):\n
         \t- In this mode, the count rate across the entire spectrum is converted into dose rate using a coefficient specified in the settings. The conversion is linear, without taking into account the energy of the detected photons or dead time.\n
@@ -603,7 +607,7 @@
         \t\t 1000/300 Hz at a level lower than 1/1024 of the reference level\n
         \t- The reference level is displayed on the graph in green.\n
         \t- The upper and lower thresholds are displayed on the graph in red.\n
-        \t- To recalculate the reference level, you need to press the \'<annotation foreground="parameter">≈</annotation>\' button.\n
+        \t- To recalculate the reference level, you need to press the \'<annotation foreground="parameter">≈</annotation>\' button. Button is enabled only when audio alarm is enabled.\n
         \n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Isotope output:</annotation></big>\n

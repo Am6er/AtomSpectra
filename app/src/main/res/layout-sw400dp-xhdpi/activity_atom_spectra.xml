@@ -102,10 +102,10 @@
         android:layout_height="50dp"
         android:layout_gravity="bottom|right"
         android:layout_marginRight="50dp"
-        android:onClick="onClick_UpDown"
-        android:text="@string/updown"
+        android:onClick="onClick_xAxisScale"
+        android:text="@string/mode_axis_kev_button"
         android:textColor="#FFFFFFFF"
-        android:textSize="18sp" />
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/fmsButton"
@@ -127,21 +127,34 @@
         android:layout_gravity="bottom|right"
         android:layout_marginRight="150dp"
         android:onClick="onClick_Dose"
-        android:text="D"
+        android:text="N"
         android:textColor="#FFFFFFFF"
         android:textSize="18sp" />
 
     <Button
-        android:id="@+id/nbrButton"
+        android:id="@+id/searchBaselineButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="bottom|right"
         android:layout_marginRight="200dp"
+        android:enabled="false"
         android:onClick="onClick_Sound"
         android:text="≈"
         android:textColor="#FFFFFFFF"
         android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/displayModeButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="250dp"
+        android:onClick="onClick_renderMode"
+        android:text="@string/mode_spectrum_button"
+        android:textColor="#FFFFFFFF"
+        android:textSize="16sp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -167,8 +180,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
-        android:layout_marginLeft="36dp"
-        android:layout_marginTop="70dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="75dp"
+        android:layout_marginRight="0dp"
         android:background="@color/colorCursorBackground"
         android:gravity="center"
         android:onClick="onClick_Channel"

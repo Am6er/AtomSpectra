@@ -47,7 +47,6 @@ public class Constants {
     public static final double DOSE_SCALE = 0.001;                                                                       //scale input data to draw
     public static final double DOSE_OVERHEAD = 1.05;                                                                     //maximum to be shown
     public static final int CURSOR_TIMEOUT = 7000;                                                                       //timeout of buttons in ms
-    public static final int LABEL_TIMEOUT = 3000;                                                                        //timeout of labels in ms
     public static final int WINDOW_SEARCH_DEFAULT = 60;                                                                  //window search size
     public static final float TOLERANCE_DEFAULT = 5.0f;                                                                  //tolerance default
     public static final float THRESHOLD_DEFAULT = 0.5f;                                                                  //threshold default

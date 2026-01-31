@@ -74,10 +74,10 @@
     <Button
         android:id="@+id/inputTypeButton"
         style="?android:attr/buttonStyleSmall"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="30sp"
+        android:layout_marginBottom="30dp"
         android:background="@drawable/input_none"
         android:clickable="false"
         android:enabled="false"
@@ -88,46 +88,66 @@
     <Button
         android:id="@+id/channelButton"
         style="?android:attr/buttonStyleSmall"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="70sp"
-        android:onClick="onClick_UpDown"
-        android:text="@string/updown"
-        android:textColor="#FFFFFFFF" />
+        android:layout_marginBottom="75dp"
+        android:onClick="onClick_xAxisScale"
+        android:text="@string/mode_axis_kev_button"
+        android:textColor="#FFFFFFFF"
+        android:textSize="12sp" />
 
     <Button
         android:id="@+id/fmsButton"
         style="?android:attr/buttonStyleSmall"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="110sp"
+        android:layout_marginBottom="120dp"
         android:onClick="onClick_fms"
         android:text="F"
-        android:textColor="#FFFFFFFF" />
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/doseButton"
         style="?android:attr/buttonStyleSmall"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="150sp"
+        android:layout_marginBottom="165dp"
         android:onClick="onClick_Dose"
-        android:text="D"
-        android:textColor="#FFFFFFFF" />
+        android:text="N"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp" />
 
     <Button
-        android:id="@+id/nbrButton"
+        android:id="@+id/searchBaselineButton"
         style="?android:attr/buttonStyleSmall"
-        android:layout_width="40sp"
-        android:layout_height="40sp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_gravity="bottom|right"
-        android:layout_marginBottom="190sp"
+        android:layout_marginBottom="210dp"
+        android:enabled="false"
         android:onClick="onClick_Sound"
         android:text="≈"
-        android:textColor="#FFFFFFFF" />
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/displayModeButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="95dp"
+        android:layout_height="45dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="-25dp"
+        android:layout_marginBottom="280dp"
+        android:onClick="onClick_renderMode"
+        android:rotation="-90"
+        android:rotationY="0"
+        android:text="Spectrum"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -154,7 +174,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:layout_marginLeft="36dp"
-        android:layout_marginTop="70dp"
+        android:layout_marginTop="50dp"
         android:background="@color/colorCursorBackground"
         android:gravity="center"
         android:onClick="onClick_Channel"
@@ -200,8 +220,8 @@
         android:id="@+id/suffixLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:layout_marginTop="200dp"
+        android:layout_gravity="bottom|right"
+        android:layout_marginBottom="355dp"
         android:orientation="vertical">
 
         <TextView

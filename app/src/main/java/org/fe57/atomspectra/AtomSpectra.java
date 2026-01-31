@@ -173,8 +173,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	private TextView cpsView, doseRateText;
 	private Button fmsButton;
-	private final int[] modes = {1, 2, 0};
-	private final String[] modeNames = {"F", "M", "S"};
+	private final int[] searchFMSNextMode = {1, 2, 0};
+	private final String[] searchFMSNames = {"F", "M", "S"};
 	private int show_average_cps = SHOW_CPS;
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 	private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH-mm-ss", Locale.US);
@@ -261,8 +261,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				getCalibrationSettingsFromMemory();
 			AtomSpectraService.setScaleFactor(sharedPreferences.getInt(Constants.CONFIG.CONF_SCALE_FACTOR, Constants.SCALE_DEFAULT));
 			logScale = sharedPreferences.getBoolean(Constants.CONFIG.CONF_LOG_SCALE, Constants.LOG_SCALE_DEFAULT);
-			dateScaleChanged = new Date().getTime();
-			showScaleLabel = true;
 		}
 
 		fmsButton = findViewById(R.id.fmsButton);
@@ -329,8 +327,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		doseRateText = findViewById(R.id.doserateText);
 		doseRateText.setOnLongClickListener(this);
 
-		Button outputSound = findViewById(R.id.nbrButton);
-		outputSound.setVisibility((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) ? Button.VISIBLE : Button.INVISIBLE);
+		Button searchBaselineButton = findViewById(R.id.searchBaselineButton);
+		searchBaselineButton.setEnabled((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
 		initializeGestures();
 		buttonsTimer.schedule(buttonsTask, 0, 1000);
 
@@ -381,9 +379,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		saveChannels = Constants.MinMax(sharedPreferences.getInt(Constants.CONFIG.CONF_SAVE_CHANNELS, Constants.EXPORT_CHANNELS_DEFAULT), 1024, Constants.NUM_HIST_POINTS);
 		loadChannels = Constants.MinMax(sharedPreferences.getInt(Constants.CONFIG.CONF_LOAD_CHANNELS, Constants.LOAD_CHANNELS_DEFAULT), 1024, Constants.NUM_HIST_POINTS);
 		channelCompression = sharedPreferences.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
-		modeNames[0] = getString(R.string.mode_fast_button);
-		modeNames[1] = getString(R.string.mode_medium_button);
-		modeNames[2] = getString(R.string.mode_slow_button);
+		searchFMSNames[0] = getString(R.string.mode_fast_button);
+		searchFMSNames[1] = getString(R.string.mode_medium_button);
+		searchFMSNames[2] = getString(R.string.mode_slow_button);
+        fmsButton.setText(searchFMSNames[sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0)]);
 
 		AtomSpectraService.setFirstChannel(sharedPreferences.getInt(Constants.CONFIG.CONF_FIRST_CHANNEL, 0));
 		boolean doPowerCheck = sharedPreferences.getBoolean(Constants.CONFIG.CONF_CHECK_POWER, true);
@@ -402,8 +401,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 		barMode = sharedPreferences.getBoolean(Constants.CONFIG.CONF_BAR_MODE, true);
 
-		XCalibrated = sharedPreferences.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true);
+		setXCalibrated(sharedPreferences.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true));
 		setDisplayDose(sharedPreferences.getString(Constants.CONFIG.CONF_DISPLAY_DOSE, Constants.DISPLAY_DOSE_DEFAULT));
+        updateDisplayModeButton();
 
 		showCursorInfo(false);
 		Intent intent = getIntent();
@@ -480,9 +480,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 			}
 		}
 
-		fmsButton.setText(modeNames[sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0)]);
-
-		updateSelectedInputIndicator();
+        updateSelectedInputIndicator();
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			registerReceiver(mDataUpdateReceiver, makeAtomSpectraUpdateIntentFilter(), Context.RECEIVER_NOT_EXPORTED);
@@ -1386,8 +1384,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				updateCalibrationMenu();
 				updateSpectrogramMenu();
 
-				Button outputSound = findViewById(R.id.nbrButton);
-				outputSound.setVisibility((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false) ? Button.VISIBLE : Button.INVISIBLE);
+				Button searchBaselineButton = findViewById(R.id.searchBaselineButton);
+				searchBaselineButton.setEnabled((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
 				TextView view;
 				view = findViewById(R.id.suffixView);
 				if (view != null) {
@@ -1414,14 +1412,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		super.onResume();
 		// Toast.makeText(this, "On resume", Toast.LENGTH_SHORT).show();
 
+        reducedTo = sharedPreferences.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
+        if (mAtomSpectraService != null) {
+            if (AtomSpectraService.getScaleFactor() > Constants.SCALE_DOSE_MODE) {
+                AtomSpectraService.restoreScaleFactor();
+            }
+        }
+
+        updateDisplayModeButton();
 		checkSpectrogramIsLoading();
 		checkRecordingSuspended();
-		reducedTo = sharedPreferences.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
-		if (mAtomSpectraService != null) {
-			if (AtomSpectraService.getScaleFactor() > Constants.SCALE_DOSE_MODE) {
-				AtomSpectraService.restoreScaleFactor();
-			}
-		}
 
 		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 	}
@@ -1497,63 +1497,67 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 		alert.show();
 	}
 
-	@SuppressLint("ApplySharedPref")
-	public void onClick_UpDown(View v) {
-		if (AtomSpectraService.getScaleFactor() == Constants.SCALE_DOSE_MODE) {
-			String newDisplayDose;
-			switch (DisplayDose) {
-				case Constants.DISPLAY_DOSE_COMPENSATED:
-					newDisplayDose = Constants.DISPLAY_DOSE_NON_COMPENSATED;
-					break;
-				case Constants.DISPLAY_DOSE_NON_COMPENSATED:
-					newDisplayDose = Constants.DISPLAY_DOSE_INTERVAL;
-					break;
-				case Constants.DISPLAY_DOSE_INTERVAL:
-					newDisplayDose = Constants.DISPLAY_DOSE_COMPENSATED;
-					break;
-				default:
-					newDisplayDose = Constants.DISPLAY_DOSE_DEFAULT;
-					break;
-			}
-			setDisplayDose(newDisplayDose);
-			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-			prefEditor.putString(Constants.CONFIG.CONF_DISPLAY_DOSE, newDisplayDose);
-			prefEditor.commit();
-		} else {
-			XCalibrated = !XCalibrated;
-			SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-			prefEditor.putBoolean(Constants.CONFIG.CONF_CALIBRATED, XCalibrated);
-			prefEditor.commit();
-		}
+    @SuppressLint("ApplySharedPref")
+    public void onClick_renderMode(View v) {
+        if (AtomSpectraService.getScaleFactor() <= Constants.SCALE_MAX) {
+            if (!AtomSpectraService.showCalibrationFunction) {
+                AtomSpectraService.saveScaleFactor();
+                AtomSpectraService.setScaleFactor(Constants.SCALE_DOSE_MODE);
+                cursor_x = -1;
+                showCursorInfo(false);
+            }
+        } else {
+            AtomSpectraService.restoreScaleFactor();
+        }
 
-		dateScaleChanged = new Date().getTime();
-		showScaleLabel = true;
+        updateDisplayModeButton();
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+    }
+
+	@SuppressLint("ApplySharedPref")
+	public void onClick_xAxisScale(View v) {
+        setXCalibrated(!XCalibrated);
+        SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+        prefEditor.putBoolean(Constants.CONFIG.CONF_CALIBRATED, XCalibrated);
+        prefEditor.commit();
+
 		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 	}
 
 	@SuppressLint("ApplySharedPref")
 	public void onClick_fms(View v) {
-		int mode = modes[sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0)];
+		int nextMode = searchFMSNextMode[sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0)];
 		SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-		prefEditor.putInt(Constants.CONFIG.CONF_SEARCH_MODE, mode);
+		prefEditor.putInt(Constants.CONFIG.CONF_SEARCH_MODE, nextMode);
 		prefEditor.commit();
-		fmsButton.setText(modeNames[mode]);
+		fmsButton.setText(searchFMSNames[nextMode]);
 		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 	}
 
+    @SuppressLint("ApplySharedPref")
 	public void onClick_Dose(View v) {
-		if (AtomSpectraService.getScaleFactor() <= Constants.SCALE_MAX) {
-			if (!AtomSpectraService.showCalibrationFunction) {
-				AtomSpectraService.saveScaleFactor();
-				AtomSpectraService.setScaleFactor(Constants.SCALE_DOSE_MODE);
-				cursor_x = -1;
-				showCursorInfo(false);
-			}
-		} else {
-			AtomSpectraService.restoreScaleFactor();
-		}
+        String newDisplayDose;
+        switch (DisplayDose) {
+            case Constants.DISPLAY_DOSE_COMPENSATED:
+                newDisplayDose = Constants.DISPLAY_DOSE_NON_COMPENSATED;
+                break;
+            case Constants.DISPLAY_DOSE_NON_COMPENSATED:
+                newDisplayDose = Constants.DISPLAY_DOSE_INTERVAL;
+                break;
+            case Constants.DISPLAY_DOSE_INTERVAL:
+                newDisplayDose = Constants.DISPLAY_DOSE_COMPENSATED;
+                break;
+            default:
+                newDisplayDose = Constants.DISPLAY_DOSE_DEFAULT;
+                break;
+        }
+        setDisplayDose(newDisplayDose);
+        SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+        prefEditor.putString(Constants.CONFIG.CONF_DISPLAY_DOSE, newDisplayDose);
+        prefEditor.commit();
 
-		sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+        // TODO: update button text
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 	}
 
 	public void onClick_Sound(View v) {
@@ -1811,8 +1815,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				if (AtomSpectraService.getScaleFactor() == Constants.SCALE_DOSE_MODE)
 					return true;
 				logScale = !logScale;
-				dateScaleChanged = new Date().getTime();
-				showScaleLabel = true;
 				sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 				SharedPreferences.Editor prefEditor = sharedPreferences.edit();
 				prefEditor.putBoolean(Constants.CONFIG.CONF_LOG_SCALE, logScale);
@@ -2063,8 +2065,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
 	private final Timer buttonsTimer = new Timer();
 	private boolean showPlusMinusButtons = false;
-	public static boolean showScaleLabel = true;
-	public static long dateScaleChanged = 0;
 	private long dateChannelChanged = 0;
 	private final TimerTask buttonsTask = new TimerTask() {
 		@Override
@@ -2073,9 +2073,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 				showPlusMinusButtons = false;
 				final SeekBar seekChannel = findViewById(R.id.seekChannel);
 				seekChannel.post(() -> seekChannel.setVisibility(SeekBar.INVISIBLE));
-			}
-			if (showScaleLabel && ((new Date().getTime() - dateScaleChanged) > Constants.LABEL_TIMEOUT)) {
-				showScaleLabel = false;
 			}
 		}
 	};
@@ -4343,16 +4340,34 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 	}
 
 	private void updateRecordStatusMenu() {
-		if (app_menu != null) {
-			if (AtomSpectraService.getFreeze()) {
-				app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
-				app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
-			} else {
-				app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.menu_block);
-				app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
-			}
-		}
-	}
+        if (app_menu != null) {
+            if (AtomSpectraService.getFreeze()) {
+                app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
+                app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
+            } else {
+                app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.menu_block);
+                app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
+            }
+        }
+    }
+
+    private void updateDisplayModeButton() {
+        Button modeButton = findViewById(R.id.displayModeButton);
+        if (AtomSpectraService.getScaleFactor() <= Constants.SCALE_MAX) {
+            modeButton.setText(R.string.mode_spectrum_button);
+        } else {
+            modeButton.setText(R.string.mode_search_button);
+        }
+    }
+
+    private void setXCalibrated(Boolean newXCalibrated) {
+        XCalibrated = newXCalibrated;
+        Button channelButton = findViewById(R.id.channelButton);
+        CharSequence text = XCalibrated
+                ? getText(R.string.mode_axis_kev_button)
+                : getText(R.string.mode_axis_ch_button);
+        channelButton.setText(text);
+    }
 
 	private void setDisplayDose(String mode) {
 		DisplayDose = mode;
