@@ -34,7 +34,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private int inputDataHead;
     private int inputDataEnd;
     private boolean hasInputData;
-    private final Integer updateArray = 0;
+    private final Object updateArraySync = new Object();
     Handler handler;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
@@ -243,7 +243,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         if (inputData == null || !hasInputData)
             return null;
         int arrayHead, arrayEnd;
-        synchronized (updateArray) {
+        synchronized (updateArraySync) {
             arrayHead = inputDataHead;
             arrayEnd = inputDataEnd;
         }
@@ -251,7 +251,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         while ((inputData[arrayHead] & 0xFF) != PACKET_BEGIN) {
             arrayHead = (arrayHead + 1) % MAX_BUFFER_SIZE;
             if (arrayHead == arrayEnd) {
-                synchronized (updateArray) {
+                synchronized (updateArraySync) {
                     inputDataHead = arrayHead;
                     hasInputData = (inputDataHead != inputDataEnd);
                 }
@@ -260,13 +260,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         int curPos = (arrayHead + 1) % MAX_BUFFER_SIZE;
         if (curPos == arrayEnd) {
-            synchronized (updateArray) {
+            synchronized (updateArraySync) {
                 inputDataHead = arrayHead;
             }
             return null;
         }
         if ((inputData[curPos] & 0xFF) != PACKET_START) {
-            synchronized (updateArray) {
+            synchronized (updateArraySync) {
                 inputDataHead = curPos;
                 hasInputData = (inputDataHead != inputDataEnd);
             }
@@ -292,7 +292,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             return null;
         //Last byte must not be PACKET_ESC. Drop packet begin marker and try again
         if (((byteBefore & 0xFF) == PACKET_ESC) || (numBytes < 3)) {
-            synchronized (updateArray) {
+            synchronized (updateArraySync) {
                 inputDataHead = (inputDataHead + 1) % MAX_BUFFER_SIZE;
                 hasInputData = (inputDataHead != inputDataEnd);
             }
@@ -322,7 +322,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 }
             }
         }
-        synchronized (updateArray) {
+        synchronized (updateArraySync) {
             inputDataHead = (packetEnd + 1) % MAX_BUFFER_SIZE;
             hasInputData = (inputDataHead != inputDataEnd);
         }
@@ -445,7 +445,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         //        public final long time;  //for timeout
         public final long Number;
         private static long NextNumber = 1;
-        private static final Integer sync = 1;
+        private static final Object sync = new Object();
 
         CommandCode(String cmd, String id) {
             command = cmd.getBytes(Charset.defaultCharset());
@@ -477,7 +477,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     private final LinkedList<CommandCode> Commands = new LinkedList<>();
     private long AnswerNumber = 0;
-    private final Integer syncCommand = 1;
+    private final Object syncCommand = new Object();
 
     private boolean sendPacket() {
         synchronized (syncCommand) {
@@ -614,7 +614,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     @Override
     public void onNewData(byte[] data) {
-        synchronized (updateArray) {
+        synchronized (updateArraySync) {
             for (byte datum : data) {
                 if (inputDataEnd == inputDataHead && hasInputData)
                     break;

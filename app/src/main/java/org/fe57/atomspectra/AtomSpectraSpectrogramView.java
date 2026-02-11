@@ -216,7 +216,7 @@ public class AtomSpectraSpectrogramView extends View {
 	private boolean lockHorizontalMove;
 	private boolean lockVerticalMove;
 
-	private final Integer spectrogramBitmapSync = 1;
+	private final Object spectrogramBitmapSync = new Object();
 	private volatile Bitmap spectrogramBitmap = null;
 	private boolean autoScroll = true;
 

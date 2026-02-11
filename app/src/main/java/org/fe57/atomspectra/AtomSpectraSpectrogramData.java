@@ -8,7 +8,7 @@ public class AtomSpectraSpectrogramData {
     public static final int CHANNEL_COUNT = 512; // must be 2^n and less then 8192
     public static final int MAX_ROWS = 25000;
 
-    private final Integer spectrogramSync = 1;
+    private final Object spectrogramSync = new Object();
     private final ArrayList<double[]> spectrogram = new ArrayList<>();
     private final ArrayList<Long> timestamps = new ArrayList<>();
     private final ArrayList<Double> durations = new ArrayList<>();

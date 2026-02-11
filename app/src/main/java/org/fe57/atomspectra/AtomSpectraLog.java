@@ -33,7 +33,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class AtomSpectraLog extends Activity {
-    private static final Integer logSync = 1;
+    private static final Object logSync = new Object();
     private static final LinkedList<String> log = new LinkedList<>();
     private static final int MAX_MESSAGES = 1000;
     private static boolean active = false;

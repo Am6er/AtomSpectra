@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
 
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
 public class AtomSpectraShapeView extends View {
-	private final Integer renderSync = 1;
+	private final Object renderSync = new Object();
 	private final int RENDER_MODE_SPECTRUM = 0;
 	private final int RENDER_MODE_SEARCH = 1;
 	private final int RENDER_MODE_CALIBRATION = 2;

@@ -80,7 +80,7 @@ public class AtomSpectraService extends Service {
     private static int inputSoundID = -1;
     private static String inputSoundName = null;
 
-    private static final Integer intervalSearchAlarmSync = 1;
+    private static final Object intervalSearchAlarmSync = new Object();
     private static AudioTrack intervalSearchAlarmAudioTrack = null;
     private static final int intervalSearchAlarmAudioTrackSampleRate = 44100;
     private static final double intervalSearchAlarmDuration = 0.5; // seconds
@@ -219,7 +219,7 @@ public class AtomSpectraService extends Service {
 
     private static int scale_factor = Constants.SCALE_DEFAULT;
     private static int main_scale_factor = Constants.SCALE_DEFAULT;
-    private static final Integer sync_factor = 1;
+    private static final Object sync_factor = new Object();
     private final int mutabilityFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
 
     // sent by AtomSpectraService with all the calculated values
@@ -344,12 +344,12 @@ public class AtomSpectraService extends Service {
     public final static String CHANNEL_ID = "AtomSpectraService";
 
     private static final int USB_WAIT_DEVICE = 600;
-    private static final Integer data_from_usb_sync = 1;
+    private static final Object data_from_usb_sync = new Object();
 
     // RECORDING VARIABLES  
     private static AudioRecord AR = null;
-    private static final Integer ARLock = 1;        //Locker for AudioRecord
-    private static final Integer audioCaptureSync = 1; // lock for managing audio capturing timer
+    private static final Object ARLock = new Object();        //Locker for AudioRecord
+    private static final Object audioCaptureSync = new Object(); // lock for managing audio capturing timer
     private static boolean ARShowAbsentMessage = true;
     private static int BufferSize;                    // Length of the chunks read from the hardware audio buffer
     //    private static Thread Record_Thread = null;      // The thread filling up the audio buffer (queue)
@@ -383,9 +383,9 @@ public class AtomSpectraService extends Service {
     public static int inputType = INPUT_NONE;           // current input type
     public static String inputDeviceInfo = "";          // current device info
     // TODO: verify it actually requires sync
-    private static final Integer inputSync = 1;
+    private static final Object inputSync = new Object();
 
-    private static final Integer recordingSuspendedSync = 1;
+    private static final Object recordingSuspendedSync = new Object();
     public static Date recordingSuspendedAt = null;
     public static Date recordingResumedAt = null;
     public static int recordingSuspendInputType = INPUT_NONE;
