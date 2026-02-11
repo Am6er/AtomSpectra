@@ -35,7 +35,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private int inputDataHead;
     private int inputDataEnd;
     private boolean hasInputData;
-    private final Object updateArraySync = new Object();
+    private final Object circularBufferSync = new Object();
     Handler handler;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
@@ -86,7 +86,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         Connection = null;
         Port = null;
         inputData = null;
-        inputDataHead = CIRCULAR_BUFFER_SIZE - 1;
+        inputDataHead = 0;
         inputDataEnd = 0;
         hasInputData = false;
         synchronized (syncCommand) {
@@ -149,7 +149,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             Port.open(Connection);
             Port.setParameters(600000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
             inputData = new byte[CIRCULAR_BUFFER_SIZE];
-            inputDataHead = CIRCULAR_BUFFER_SIZE - 1;
+            inputDataHead = 0;
             inputDataEnd = 0;
             hasInputData = false;
             Manager = new SerialInputOutputManager(Port, this);
@@ -240,94 +240,97 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private byte[] searchPacket() {
         if (inputData == null || !hasInputData)
             return null;
-        int arrayHead, arrayEnd;
-        synchronized (updateArraySync) {
-            arrayHead = inputDataHead;
-            arrayEnd = inputDataEnd;
-        }
-        //Remove data before first start byte
-        while ((inputData[arrayHead] & 0xFF) != PACKET_BEGIN) {
-            arrayHead = (arrayHead + 1) % CIRCULAR_BUFFER_SIZE;
-            if (arrayHead == arrayEnd) {
-                synchronized (updateArraySync) {
-                    inputDataHead = arrayHead;
-                    hasInputData = (inputDataHead != inputDataEnd);
-                }
+   
+        // Remove data before first PACKET_BEGIN byte
+        while ((inputData[inputDataHead] & 0xFF) != PACKET_BEGIN) {
+            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+            if (inputDataHead == inputDataEnd) {
+                hasInputData = false;
                 return null;
             }
         }
-        int curPos = (arrayHead + 1) % CIRCULAR_BUFFER_SIZE;
-        if (curPos == arrayEnd) {
-            synchronized (updateArraySync) {
-                inputDataHead = arrayHead;
-            }
+        int curPos = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE; // first byte after PACKET_BEGIN
+        if (curPos == inputDataEnd) { // no bytes after PACKET_BEGIN, wait for more data
             return null;
         }
-        if ((inputData[curPos] & 0xFF) != PACKET_START) {
-            synchronized (updateArraySync) {
-                inputDataHead = curPos;
-                hasInputData = (inputDataHead != inputDataEnd);
-            }
+        if ((inputData[curPos] & 0xFF) != PACKET_START) { // first byte after PACKET_BEGIN is not PACKET_START, search for the next PACKET_BEGIN
+            inputDataHead = curPos;
+            hasInputData = (inputDataHead != inputDataEnd);
+
             return searchPacket();
         }
-        //We have 0xFF, 0xFE as two first bytes
-        //Search for packet end
+        // We have 0xFF, 0xFE as two first bytes
+        // Search for packet end
         int packetEnd = -1;
-        byte byteBefore = -1;
-        int numBytes = 0;
-        int packetBegin = (curPos + 1) % CIRCULAR_BUFFER_SIZE;
-        for (curPos = packetBegin; curPos != arrayEnd; curPos = (curPos + 1) % CIRCULAR_BUFFER_SIZE) {
+        byte lastCheckedByte = -1;
+        int numBytes = 0; // number of bytes in packet
+        int packetBegin = (curPos + 1) % CIRCULAR_BUFFER_SIZE; // first byte of packet
+        for (curPos = packetBegin; curPos != inputDataEnd; curPos = (curPos + 1) % CIRCULAR_BUFFER_SIZE) {
             if ((inputData[curPos] & 0xFF) == PACKET_END) {
                 packetEnd = curPos;
                 break;
             }
-            byteBefore = inputData[curPos];
-            if ((byteBefore & 0xFF) != PACKET_ESC)
+
+            lastCheckedByte = inputData[curPos];
+            if ((lastCheckedByte & 0xFF) != PACKET_ESC) {
                 numBytes++;
-        }
-        //Packet has begin and no end. Wait for more data
-        if (packetEnd == -1)
-            return null;
-        //Last byte must not be PACKET_ESC. Drop packet begin marker and try again
-        if (((byteBefore & 0xFF) == PACKET_ESC) || (numBytes < 3)) {
-            synchronized (updateArraySync) {
-                inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
-                hasInputData = (inputDataHead != inputDataEnd);
             }
+        }
+        if (packetEnd == -1) { // Packet has begin and no end. Wait for more data
+            return null;
+        }
+        
+        if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
+            AtomSpectraLog.addMessage(context, "Serial Error: Last byte before PACKET_END is PACKET_ESC");
+            // searching for the next packet
+            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+            hasInputData = (inputDataHead != inputDataEnd);
+
             return searchPacket();
         }
-        //Have full packet. Get it and test it
+
+        if (numBytes < 3) {
+            AtomSpectraLog.addMessage(context, "Serial Error: Packet has less than 3 bytes (length " + numBytes + ")");
+            // searching for the next packet
+            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+            hasInputData = (inputDataHead != inputDataEnd);
+
+            return searchPacket();
+        }
+
+        // Have full packet. Get it and test it
         byte d;
-        byte[] res = new byte[numBytes];  //with crc16
+        byte[] res = new byte[numBytes];  // with crc16
         int bytesSaved = 0;
-        boolean isSpecialChar = false;
+        boolean isEscapedByte = false;
         int crc = 0xFFFF;
         for (int i = packetBegin; i != packetEnd; i = (i + 1) % CIRCULAR_BUFFER_SIZE) {
             d = inputData[i];
-            if (isSpecialChar) {
+            if (isEscapedByte) {
                 d = (byte) (~d);
                 res[bytesSaved] = d;
                 bytesSaved++;
-                isSpecialChar = false;
+                isEscapedByte = false;
                 crc = crc16(crc, d);
             } else {
-                if ((d & 0xFF) != PACKET_ESC) {
+                if ((d & 0xFF) == PACKET_ESC) {
+                    isEscapedByte = true;
+                } else {
                     res[bytesSaved] = d;
                     bytesSaved++;
                     crc = crc16(crc, d);
-                } else {
-                    isSpecialChar = true;
                 }
             }
         }
-        synchronized (updateArraySync) {
-            inputDataHead = (packetEnd + 1) % CIRCULAR_BUFFER_SIZE;
-            hasInputData = (inputDataHead != inputDataEnd);
-        }
+        
+        inputDataHead = (packetEnd + 1) % CIRCULAR_BUFFER_SIZE;
+        hasInputData = (inputDataHead != inputDataEnd);
+
         if (crc != 0) {
-            AtomSpectraLog.addMessage(context, "Serial packet CRC check failed, discarding corrupted packet");
+            AtomSpectraLog.addMessage(context, "Serial packet CRC check failed, discarding corrupted packet (length " + numBytes + ")");
             return searchPacket();
         }
+
         return res;
     }
 
@@ -618,7 +621,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public void onNewData(byte[] data) {
         // tmp log
         // AtomSpectraLog.addMessage(context, "Data from USB: " + data.length + " bytes");
-        synchronized (updateArraySync) {
+        synchronized (circularBufferSync) {
             for (int i = 0; i < data.length; i++) {
                 if (inputDataEnd == inputDataHead && hasInputData) {
                     int bytesLost = data.length - i;
@@ -629,8 +632,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 inputDataEnd = (inputDataEnd + 1) % CIRCULAR_BUFFER_SIZE;
                 hasInputData = true;
             }
-        }
-        findPackets();
+
+            findPackets();
+        }        
     }
 
     @Override
