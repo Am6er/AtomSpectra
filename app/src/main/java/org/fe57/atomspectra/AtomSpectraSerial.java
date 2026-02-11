@@ -617,7 +617,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     @Override
     public void onNewData(byte[] data) {
         // tmp log
-        AtomSpectraLog.addMessage(context, "Data from USB: " + data.length + " bytes");
+        // AtomSpectraLog.addMessage(context, "Data from USB: " + data.length + " bytes");
         synchronized (updateArraySync) {
             for (int i = 0; i < data.length; i++) {
                 if (inputDataEnd == inputDataHead && hasInputData) {
