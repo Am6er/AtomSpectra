@@ -22,7 +22,7 @@ import java.util.zip.CRC32;
 
 public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private static final int CIRCULAR_BUFFER_SIZE = 640 * 1024;
-    private static final int SERIAL_READ_BUFFER_SIZE = 36 * 1024;
+    private static final int SERIAL_READ_BUFFER_SIZE = 4 * 1024;
     private static final int TIMEOUT = 1000;
 
     private UsbDevice Device;
@@ -154,6 +154,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             hasInputData = false;
             Manager = new SerialInputOutputManager(Port, this);
             Manager.setReadBufferSize(SERIAL_READ_BUFFER_SIZE);
+            Manager.setReadQueue(2);
             Manager.start();
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB port setup failed: " + e.getMessage());
