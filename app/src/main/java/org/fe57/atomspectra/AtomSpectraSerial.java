@@ -46,6 +46,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long lost_impulses = 0;
     public long total_impulse_length = 0;
 
+    private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+    private int serialPacketErrorCrc = 0;
+    private int serialPacketErrorEscaping = 0;
+    private int serialPacketErrorMinLength = 0;
+    private long serialPacketErrorLastReportTime = 0;
+
     private static final short PACKET_BEGIN = 0xFF;
     private static final short PACKET_START = 0xFE;
     private static final short PACKET_ESC = 0xFD;
@@ -90,6 +96,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         inputDataHead = 0;
         inputDataEnd = 0;
         hasInputData = false;
+        serialPacketErrorCrc = 0;
+        serialPacketErrorEscaping = 0;
+        serialPacketErrorMinLength = 0;
+        serialPacketErrorLastReportTime = 0;
         synchronized (syncCommand) {
             AnswerNumber = 0;
             Commands.clear();
@@ -169,9 +179,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     //delete all data except context
     private void Delete() {
-        if (Manager != null)
+        if (Manager != null) {
             Manager.stop();
+        }
         Manager = null;
+
         if (Port != null) {
             try {
                 Port.close();
@@ -179,10 +191,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 //nothing
             }
         }
+
         synchronized (syncCommand) {
             Commands.clear();
             AnswerNumber = 0;
         }
+
         Init();
     }
 
@@ -193,10 +207,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     //clear histogram
     public void ClearHistogram() {
-        if (Port == null || !Port.isOpen())
+        if (Port == null || !Port.isOpen()) {
             return;
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++)
+        }
+
+        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
             histogram[i] = 0;
+        }
+
         cps = 0;
         total_time = 0;
         cpu_load = 0;
@@ -234,6 +252,41 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             array.add((byte) ~b);
         } else {
             array.add(b);
+        }
+    }
+
+    private void reportSerialPacketErrors() {
+        long now = System.currentTimeMillis();
+        if (serialPacketErrorLastReportTime == 0) {
+            serialPacketErrorLastReportTime = now;
+            return;
+        }
+
+        if (now - serialPacketErrorLastReportTime >= SERIAL_ERROR_REPORT_INTERVAL_MS) {
+            if (serialPacketErrorCrc > 0 || serialPacketErrorEscaping > 0 || serialPacketErrorMinLength > 0) {
+                StringBuilder sb = new StringBuilder("Serial Errors for the last ");
+                sb.append(SERIAL_ERROR_REPORT_INTERVAL_MS / 60000).append(" min: ");
+                boolean needComma = false;
+                if (serialPacketErrorCrc > 0) {
+                    sb.append(serialPacketErrorCrc).append(" packet CRC");
+                    needComma = true;
+                }
+                if (serialPacketErrorEscaping > 0) {
+                    if (needComma) sb.append(", ");
+                    sb.append(serialPacketErrorEscaping).append(" packet end escaping");
+                    needComma = true;
+                }
+                if (serialPacketErrorMinLength > 0) {
+                    if (needComma) sb.append(", ");
+                    sb.append(serialPacketErrorMinLength).append(" packet min length");
+                }
+                AtomSpectraLog.addMessage(context, sb.toString());
+            }
+
+            serialPacketErrorCrc = 0;
+            serialPacketErrorEscaping = 0;
+            serialPacketErrorMinLength = 0;
+            serialPacketErrorLastReportTime = now;
         }
     }
 
@@ -283,7 +336,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         
         if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
-            AtomSpectraLog.addMessage(context, "Serial Error: Last byte before PACKET_END is PACKET_ESC");
+            serialPacketErrorEscaping++;
             // searching for the next packet
             inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
             hasInputData = (inputDataHead != inputDataEnd);
@@ -292,7 +345,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
 
         if (numBytes < 3) {
-            AtomSpectraLog.addMessage(context, "Serial Error: Packet has less than 3 bytes (length " + numBytes + ")");
+            serialPacketErrorMinLength++;
             // searching for the next packet
             inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
             hasInputData = (inputDataHead != inputDataEnd);
@@ -329,7 +382,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         hasInputData = (inputDataHead != inputDataEnd);
 
         if (crc != 0) {
-            AtomSpectraLog.addMessage(context, "Serial packet CRC check failed, discarding corrupted packet (length " + numBytes + ")");
+            serialPacketErrorCrc++;
             return searchPacket();
         }
 
@@ -340,6 +393,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         byte[] newPacket;
         while (true) {
             newPacket = searchPacket();
+            reportSerialPacketErrors();
             if (newPacket == null || newPacket.length == 0) {
                 return;
             }
