@@ -413,6 +413,7 @@
     <string name="log_spg_no_perm_to_save">Нет разрешения сохранить файл спектрограммы</string>
     <string name="log_spg_midnight_restart">Перезапуск спектрограммы в полночь</string>
     <string name="log_spg_autosave_start">Запись спектрограммы включена</string>
+    <string name="log_spg_autosave_completed">Запись спектрограммы завершена</string>
     <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы</string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>

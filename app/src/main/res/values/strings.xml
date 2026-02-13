@@ -413,6 +413,7 @@
     <string name="log_spg_no_perm_to_save">No permission to save spectrogram file</string>
     <string name="log_spg_midnight_restart">Restarting spectrogram at midnight</string>
     <string name="log_spg_autosave_start">Spectrogram recording is started</string>
+    <string name="log_spg_autosave_completed">Spectrogram recording is completed</string>
     <string name="log_spg_autosave_start_error">ERROR: Unable to start spectrogram recording</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
