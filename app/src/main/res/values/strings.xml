@@ -5,7 +5,7 @@
     <string name="app_bar_audio_action">Reading data from audio</string>
     <string name="app_bar_usb_action">Reading data from USB</string>
     <string name="app_bar_spectrum_update">(updating spectrum)</string>
-    <string name="app_bar_pause">Data reading is stopped</string>
+    <string name="app_bar_pause">Data reading stopped</string>
     <string name="app_channel">Atom Spectra Service</string>
 
     <string name="settings">Atom Spectra Settings</string>
@@ -29,8 +29,8 @@
     <string name="action_save_options">Save options</string>
     <string name="action_buy_spectrometer">Buy a spectrometer</string>
     <string name="action_exit">Exit completely</string>
-    <string name="action_usb_attached">USB is attached</string>
-    <string name="action_usb_detached">USB is detached</string>
+    <string name="action_usb_attached">USB attached</string>
+    <string name="action_usb_detached">USB detached</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
 
     <string name="histogram_menu">Spectrum</string>
@@ -46,7 +46,7 @@
     <string name="hist_share_export">Share</string>
     <string name="hist_freeze_update">Pause recording</string>
     <string name="hist_continue_update">Continue recording</string>
-    <string name="hist_stop_record">Recording is stopped due to input change!</string>
+    <string name="hist_stop_record">Recording stopped due to input change!</string>
     <string name="hist_ask_delete_title">Clear spectrum</string>
     <string name="hist_ask_delete_text">Are you sure to clear spectrum data?</string>
     <string name="hist_smooth">Smooth</string>
@@ -260,15 +260,15 @@
     <string name="graph_show_mSv">mSv/h</string>
     <string name="graph_log_info">Logarithmic Y-scale</string>
     <string name="graph_linear_info">Linear Y-scale</string>
-    <string name="graph_max_gain">Maximum gain is reached</string>
-    <string name="graph_min_gain">Minimum gain is reached</string>
-    <string name="graph_max_zoom">Maximum zoom is reached</string>
-    <string name="graph_min_zoom">Minimum zoom is reached</string>
+    <string name="graph_max_gain">Maximum gain reached</string>
+    <string name="graph_min_gain">Minimum gain reached</string>
+    <string name="graph_max_zoom">Maximum zoom reached</string>
+    <string name="graph_min_zoom">Minimum zoom reached</string>
 
     <string name="perm_ask_audio_title">AUDIO permission acquisition</string>
-    <string name="perm_ask_audio_text">This application needs RECORD_AUDIO permission to capture signal from spectrometer. Without this permission the program can shows previous spectra only.</string>
+    <string name="perm_ask_audio_text">This application needs RECORD_AUDIO permission to capture signal from spectrometer. Without this permission the program can show previous spectra only.</string>
     <string name="perm_ask_power_title">Power saving</string>
-    <string name="perm_ask_power_text">Please go to a battery exclusion list and add AtomSpectra in order to work properly in a background.</string>
+    <string name="perm_ask_power_text">Please go to a battery exclusion list and add AtomSpectra in order to work properly in the background.</string>
     <string name="perm_ask_write_title">WRITE permission acquisition</string>
     <string name="perm_ask_write_text">This permission is needed to write a file on external storage</string>
     <string name="perm_ask_read_title">READ permission acquisition</string>
@@ -330,7 +330,7 @@
     <string name="cal_point_title">Calibration of the channel <xliff:g id="cal_channel">%1$d</xliff:g></string>
     <string name="cal_no_more">No more place for calibration line</string>
     <string name="cal_have_channel">Already have this channel</string>
-    <string name="cal_no_enough_data">No enough data to calibrate</string>
+    <string name="cal_no_enough_data">Not enough data to calibrate</string>
     <string name="cal_show_line">Ch: <xliff:g id="channel">%1$d</xliff:g>, E: <xliff:g id="energy">%2$.2f</xliff:g> keV</string>
     <string name="cal_show_function">Show a function</string>
     <string name="cal_draw_function">Draw new</string>
@@ -343,39 +343,39 @@
     <string name="cal_maybe_wrong">ATTENTION!\n\nYour point %1$d - %2$.2f keV makes calibration wrong!</string>
     <string name="put_cursor_first">Put a cursor first</string>
     <string name="strange_file_name">A strange file name</string>
-    <string name="hist_load_success">A spectrum is loaded successfully</string>
-    <string name="hist_load_error">A spectrum loading is FAILED!</string>
-    <string name="device_load_success">A device data is loaded successfully</string>
-    <string name="device_load_error">A device data loading is FAILED!</string>
-    <string name="cal_load_success">Calibration is loaded successfully</string>
-    <string name="cal_load_error">Calibration loading is FAILED!</string>
-    <string name="cal_applied">Calibration is applied</string>
+    <string name="hist_load_success">Spectrum loaded successfully</string>
+    <string name="hist_load_error">Spectrum loading failed!</string>
+    <string name="device_load_success">Device data loaded successfully</string>
+    <string name="device_load_error">Device data loading failed!</string>
+    <string name="cal_load_success">Calibration loaded successfully</string>
+    <string name="cal_load_error">Calibration loading failed!</string>
+    <string name="cal_applied">Calibration applied</string>
     <string name="storage_required">Storage is required</string>
-    <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> is saved successfully</string>
-    <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving is FAILED!</string>
-    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> is saved successfully</string>
-    <string name="device_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving is FAILED!</string>
-    <string name="background_load_success">Background is loaded successfully</string>
-    <string name="background_load_error">Background loading is FAILED!</string>
+    <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> saved successfully</string>
+    <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving failed!</string>
+    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> saved successfully</string>
+    <string name="device_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving failed!</string>
+    <string name="background_load_success">Background loaded successfully</string>
+    <string name="background_load_error">Background loading failed!</string>
     <string name="background_delete_error">Can\'t delete a background file</string>
     <string name="background_no_data">No background data</string>
-    <string name="background_save_success">Background is saved successfully</string>
-    <string name="background_save_error">Background saving is FAILED!</string>
-    <string name="export_save_success"><xliff:g id="file_save">%1$s</xliff:g> is exported successfully</string>
-    <string name="export_save_error"><xliff:g id="file_save">%1$s</xliff:g> export is FAILED!</string>
+    <string name="background_save_success">Background saved successfully</string>
+    <string name="background_save_error">Background saving failed!</string>
+    <string name="export_save_success"><xliff:g id="file_save">%1$s</xliff:g> exported successfully</string>
+    <string name="export_save_error"><xliff:g id="file_save">%1$s</xliff:g> export failed!</string>
     <string name="something_wrong">Something goes wrong!</string>
     <string name="unknown_code">Got unknown code from the device: <xliff:g id="code">%1$d</xliff:g></string>
     <string name="cal_store_usb_wait">Wait for calibration to store into USB device</string>
-    <string name="cal_apply_usb">Calibration is applied from a USB device</string>
+    <string name="cal_apply_usb">Calibration applied from USB device</string>
     <string name="cal_wrong_usb">Wrong calibration from a USB device</string>
     <string name="cal_wrong_checksum">A bad calibration checksum from a USB device</string>
     <string name="cal_timeout">Timeout from a USB device</string>
-    <string name="cal_store_usb">Calibration is stored to a USB device</string>
+    <string name="cal_store_usb">Calibration stored to USB device</string>
     <string name="cal_wrong_store_usb">Can\'t store calibration to a USB device</string>
     <string name="cal_load_anyway">Load calibration anyway?</string>
     <string name="usb_below_minimal_version">Update device firmware to <xliff:g id="version">%1$d</xliff:g> or higher</string>
     <string name="usb_version_read_error">Device firmware version read error</string>
-    <string name="usb_version_unknown">Device firmware version in unknown</string>
+    <string name="usb_version_unknown">Device firmware version is unknown</string>
     <string name="usb_attached_while_recording_audio">USB device ignored: reading data from microphone.\nStop reading data and reconnect USB device.</string>
 
     <string name="recording_suspended_dialog_title">Data reading suspended!</string>
@@ -402,7 +402,7 @@
     <string name="log_usb_command_failed">%1$s USB command failed</string>
     <string name="log_usb_command_timeout">%1$s USB command timeout</string>
     <string name="log_usb_device_version_error">USB device version read error</string>
-    <string name="log_usb_device_version_unknown">USB device version in unknown</string>
+    <string name="log_usb_device_version_unknown">USB device version is unknown</string>
     <string name="log_usb_watchdog_no_data_triggered">USB data watchdog: no data from USB for %1$d seconds. Trying to reconnect and execute -sta command</string>
     <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
     <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>
@@ -412,8 +412,8 @@
     <string name="log_no_perm_to_save_spectrum">No permission to save spectrum file (%1$s)</string>
     <string name="log_spg_no_perm_to_save">No permission to save spectrogram file</string>
     <string name="log_spg_midnight_restart">Restarting spectrogram at midnight</string>
-    <string name="log_spg_autosave_start">Spectrogram recording is started</string>
-    <string name="log_spg_autosave_completed">Spectrogram recording is completed</string>
+    <string name="log_spg_autosave_start">Spectrogram recording started</string>
+    <string name="log_spg_autosave_completed">Spectrogram recording completed</string>
     <string name="log_spg_autosave_start_error">ERROR: Unable to start spectrogram recording</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
@@ -512,7 +512,7 @@
     <string name="help_text_overview"><big><annotation foreground="caption">Overview.</annotation></big>\n
         This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), or from an USB spectrometer <u>AtomSpectra Pro</u>. If none of them is connected to a phone the program works in a demo mode reading an internal microphone and creating a spectrum.\n
         \n
-        NOTE: Please add the program to the power exclusion list for a proper work in a background or when the screen is switched off. For the program to function correctly, it is also necessary to grant permission to access the microphone and permission to work with the file system (see below for setting the working directory), and on Android 14 and later, permission to access the location.\n
+        NOTE: Please add the program to the power exclusion list for proper operation in the background or when the screen is switched off. For the program to function correctly, it is also necessary to grant permission to access the microphone and permission to work with the file system (see below for setting the working directory), and on Android 14 and later, permission to access the location.\n
         To fully stop the program please use \'<annotation foreground="parameter">Exit completely</annotation>\' menu item.\n
         \n
     </string>
