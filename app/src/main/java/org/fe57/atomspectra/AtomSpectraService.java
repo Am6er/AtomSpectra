@@ -3083,8 +3083,9 @@ public class AtomSpectraService extends Service {
             synchronized (spgAutosaveSync) {
                 if (spgAutosaveSpectrum == null) {
                     updateIsRequired = true;
-                } else if (foregroundSpectrumCopy.getRealSpectrumTime() - spgAutosaveSpectrum.getRealSpectrumTime() >= spgInterval) {
-                    updateIsRequired = true;
+                } else {
+                    double elapsedTime = foregroundSpectrumCopy.getRealSpectrumTime() - spgAutosaveSpectrum.getRealSpectrumTime();
+                    updateIsRequired = elapsedTime >= spgInterval;
                 }
             }
             
@@ -3150,14 +3151,15 @@ public class AtomSpectraService extends Service {
             }
 
             // spectrogram recording is ongoing
-            if (foregroundSpectrumCopy.getRealSpectrumTime() - spgAutosaveSpectrum.getRealSpectrumTime() >= spgInterval) {
+            double elapsedTime = foregroundSpectrumCopy.getRealSpectrumTime() - spgAutosaveSpectrum.getRealSpectrumTime();
+            if (elapsedTime >= spgInterval) {
                 appendDeltaToSpectrogram(foregroundSpectrumCopy);
             }
         }
     }
 
     private void appendDeltaToSpectrogram(Spectrum foregroundSpectrumCopy) {
-        Spectrum deltaSpectrum = foregroundSpectrumCopy.getDeltaSpectrum(spgAutosaveSpectrum);
+        Spectrum deltaSpectrum = new Spectrum(foregroundSpectrumCopy).convertToDeltaSpectrum(spgAutosaveSpectrum);
 
         if (deltaSpectrum == null) {
             // TODO: localize
