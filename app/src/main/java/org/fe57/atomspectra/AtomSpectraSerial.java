@@ -262,23 +262,27 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             return;
         }
 
-        if (now - serialPacketErrorLastReportTime >= SERIAL_ERROR_REPORT_INTERVAL_MS) {
+        long elapsedTime = now - serialPacketErrorLastReportTime;
+        if (elapsedTime >= SERIAL_ERROR_REPORT_INTERVAL_MS) {
             if (serialPacketErrorCrc > 0 || serialPacketErrorEscaping > 0 || serialPacketErrorMinLength > 0) {
-                StringBuilder sb = new StringBuilder("Serial Errors for the last ");
-                sb.append(SERIAL_ERROR_REPORT_INTERVAL_MS / 60000).append(" min: ");
+                StringBuilder sb = new StringBuilder("Serial errors (last ");
+                long elapsedMinutes = elapsedTime / 60000;
+                long elapsedSeconds = (elapsedTime % 60000) / 1000;
+                if (elapsedMinutes > 0) sb.append(elapsedMinutes).append("m ");
+                sb.append(elapsedSeconds).append("s): ");
                 boolean needComma = false;
                 if (serialPacketErrorCrc > 0) {
-                    sb.append(serialPacketErrorCrc).append(" packet CRC");
+                    sb.append(serialPacketErrorCrc).append(" CRC");
                     needComma = true;
                 }
                 if (serialPacketErrorEscaping > 0) {
                     if (needComma) sb.append(", ");
-                    sb.append(serialPacketErrorEscaping).append(" packet end escaping");
+                    sb.append(serialPacketErrorEscaping).append(" escaping");
                     needComma = true;
                 }
                 if (serialPacketErrorMinLength > 0) {
                     if (needComma) sb.append(", ");
-                    sb.append(serialPacketErrorMinLength).append(" packet min length");
+                    sb.append(serialPacketErrorMinLength).append(" minimum length");
                 }
                 AtomSpectraLog.addMessage(context, sb.toString());
             }
