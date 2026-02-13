@@ -763,7 +763,12 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     // save delta every n sec
     private void updateSpgDeltaDurationText() {
         TextView spgDeltaDurationText = findViewById(R.id.spgDeltaDurationText);
-        spgDeltaDurationText.setText(getString(R.string.settings_spg_delta_duration, sp.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0)));
+        int value = sp.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
+        if (value > 0) {
+            spgDeltaDurationText.setText(getString(R.string.settings_spg_delta_duration, value));
+        } else {
+            spgDeltaDurationText.setText(getString(R.string.settings_spg_save_delta_off));
+        }
     }
 
     public void onClick_spgDeltaDuration_minus(View v) {

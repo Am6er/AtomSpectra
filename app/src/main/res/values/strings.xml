@@ -219,6 +219,7 @@
     <string name="cps_alarm_levels">♪cps: <xliff:g id="level_high">%1$.1f</xliff:g>/<xliff:g id="level_low">%2$.1f</xliff:g></string>
     <string name="compress_graph_format">Spectrum: <xliff:g id="type">%1$s</xliff:g></string>
     <string name="settings_spg_delta_duration">Save delta every <xliff:g id="duration">%1$d</xliff:g> s</string>
+    <string name="settings_spg_save_delta_off">Save delta - off</string>
     <string-array name="compress_graph_array">
         <item>Sum</item>
         <item>Average</item>
@@ -684,7 +685,7 @@
         \n
         \tSpectrogram:\n
         \t- <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> - with the spectrogram recording enabled, a new spectrogram file will be created every day at midnight.\n
-        \t- <annotation foreground="parameter">Save delta every N s</annotation> - enables spectrogram recording while collecting spectrum data, value defines spectrum delta duration in seconds. 0 - spectrogram recording disabled.\n
+        \t- <annotation foreground="parameter">Save delta every N s</annotation> - enables spectrogram recording while collecting spectrum data, value defines spectrum delta duration in seconds.\n
         \n
         \tDose rate:\n
         \t- <annotation foreground="parameter">Sens</annotation> - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n

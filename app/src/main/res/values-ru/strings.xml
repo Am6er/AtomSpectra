@@ -219,6 +219,7 @@
     <string name="cps_alarm_levels">♪cps: <xliff:g id="level_high">%1$.1f</xliff:g>/<xliff:g id="level_low">%2$.1f</xliff:g></string>
     <string name="compress_graph_format">Спектр: <xliff:g id="type">%1$s</xliff:g></string>
     <string name="settings_spg_delta_duration">Сохр. дельту кажд. <xliff:g id="duration">%1$d</xliff:g> с</string>
+    <string name="settings_spg_save_delta_off">Сохр. дельту - выкл.</string>
     <string-array name="compress_graph_array">
         <item>Сумма</item>
         <item>Среднее</item>
@@ -690,7 +691,7 @@
         \n
         \tСпектрограмма:\n
         \t- <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation> - при включенной записи спектрограммы каждый день в полночь будет создаваться новый файл спектрограммы.\n
-        \t- <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation> - включает запись спектрограммы во время набора спектра, значение определяет длительность дельты спектра в секундах. 0 - нет записи.\n
+        \t- <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation> - включает запись спектрограммы во время набора спектра, значение определяет длительность дельты спектра в секундах.\n
         \n
         \tМощность дозы:\n
         \t- <annotation foreground="parameter">Чувств</annotation> - калибровочный коэффициент для расчёта мощности дозы. Значение подбирается самостоятельно для получения правильной мощности дозы.\n
