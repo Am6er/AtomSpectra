@@ -22,9 +22,9 @@ import java.util.zip.CRC32;
 
 public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private static final int CIRCULAR_BUFFER_SIZE = 640 * 1024;
-    private static final int SERIAL_READ_BUFFER_SIZE = 4 * 1024;
-    private static final int SERIAL_READ_QUEUE_SIZE = 4;
-    private static final int TIMEOUT = 1000;
+    private static final int SERIAL_MANAGER_READ_BUFFER_SIZE = 4 * 1024;
+    private static final int SERIAL_MANAGER_READ_QUEUE_SIZE = 4;
+    private static final int SERIAL_MANAGER_WRITE_TIMEOUT = 1000;
 
     private UsbDevice Device;
     private UsbSerialDriver Driver;
@@ -164,8 +164,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             inputDataEnd = 0;
             hasInputData = false;
             Manager = new SerialInputOutputManager(Port, this);
-            Manager.setReadBufferSize(SERIAL_READ_BUFFER_SIZE);
-            Manager.setReadQueue(SERIAL_READ_QUEUE_SIZE);
+            Manager.setReadBufferSize(SERIAL_MANAGER_READ_BUFFER_SIZE);
+            Manager.setReadQueue(SERIAL_MANAGER_READ_QUEUE_SIZE);
             Manager.start();
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB port setup failed: " + e.getMessage());
@@ -576,7 +576,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             }
             try {
                 AnswerNumber = cmd.Number;
-                Port.write(command_data, TIMEOUT);
+                Port.write(command_data, SERIAL_MANAGER_WRITE_TIMEOUT);
                 handler.postDelayed(new Runnable() {
                     final long Number = cmd.Number;
 
