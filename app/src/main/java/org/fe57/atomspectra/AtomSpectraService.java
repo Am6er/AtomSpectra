@@ -1782,6 +1782,13 @@ public class AtomSpectraService extends Service {
         if (freeze) {
             resetSearchWindow();
             resetSpectrumChangeWindow();
+            synchronized (recordingSuspendedSync) {
+                // dismiss of recording suspended dialog after USB device disconnected
+                // switch to microphone input
+                if (isRecordingSuspended && recordingSuspendInputType == INPUT_SERIAL) {
+                    onUSBDetached();
+                }
+            }
             resetRecordingSuspendedStatus(false);
             stopIntervalSearchAlarmTimer();
             closeSpectrogramFile();
