@@ -132,18 +132,18 @@ public class Spectrum {
         return this;
     }
 
-    public Spectrum getDeltaSpectrum(Spectrum spectrum) {
-        if (DataArray.length != spectrum.DataArray.length)
+    public Spectrum convertToDeltaSpectrum(Spectrum baseSpectrum) {
+        if (DataArray.length != baseSpectrum.DataArray.length)
             return null;
 
         for (int i = 0; i < DataArray.length; i++) {
-            DataArray[i] -= spectrum.DataArray[i];
+            DataArray[i] -= baseSpectrum.DataArray[i];
             if (DataArray[i] < 0) {
                 DataArray[i] = 0;
             }
         }
 
-        SpectrumTime -= spectrum.SpectrumTime;
+        SpectrumTime -= baseSpectrum.SpectrumTime;
         if (SpectrumTime < 0) {
             SpectrumTime = 0;
         }

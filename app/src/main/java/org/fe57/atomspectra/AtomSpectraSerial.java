@@ -21,8 +21,10 @@ import java.util.LinkedList;
 import java.util.zip.CRC32;
 
 public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
-    private static final int MAX_BUFFER_SIZE = 655360;
-    private static final int TIMEOUT = 1000;
+    private static final int CIRCULAR_BUFFER_SIZE = 640 * 1024;
+    private static final int SERIAL_MANAGER_READ_BUFFER_SIZE = 4 * 1024;
+    private static final int SERIAL_MANAGER_READ_QUEUE_SIZE = 4;
+    private static final int SERIAL_MANAGER_WRITE_TIMEOUT = 1000;
 
     private UsbDevice Device;
     private UsbSerialDriver Driver;
@@ -34,7 +36,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private int inputDataHead;
     private int inputDataEnd;
     private boolean hasInputData;
-    private final Integer updateArray = 0;
+    private final Object circularBufferSync = new Object();
     Handler handler;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
@@ -43,6 +45,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public int cpu_load = 0;
     public long lost_impulses = 0;
     public long total_impulse_length = 0;
+
+    private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+    private int serialPacketErrorCrc = 0;
+    private int serialPacketErrorEscaping = 0;
+    private int serialPacketErrorMinLength = 0;
+    private long serialPacketErrorLastReportTime = 0;
 
     private static final short PACKET_BEGIN = 0xFF;
     private static final short PACKET_START = 0xFE;
@@ -85,9 +93,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         Connection = null;
         Port = null;
         inputData = null;
-        inputDataHead = MAX_BUFFER_SIZE - 1;
+        inputDataHead = 0;
         inputDataEnd = 0;
         hasInputData = false;
+        serialPacketErrorCrc = 0;
+        serialPacketErrorEscaping = 0;
+        serialPacketErrorMinLength = 0;
+        serialPacketErrorLastReportTime = 0;
         synchronized (syncCommand) {
             AnswerNumber = 0;
             Commands.clear();
@@ -114,13 +126,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return (Port != null) && (Port.isOpen());
     }
 
-    public boolean isMyDevice(int vendor, int device) {
-        if (Device == null || Port == null || !Port.isOpen())
-            return false;
-
-        return Device.getVendorId() == vendor && Device.getDeviceId() == device;
-    }
-
     //Open the port
     public boolean Open(@NonNull UsbDevice device) {
         Driver = UsbSerialProber.getDefaultProber().probeDevice(device);
@@ -130,6 +135,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         Device = device;
         UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         if (manager == null) {
+            AtomSpectraLog.addMessage(context, "USB connection failed: UsbManager is not available");
             Delete();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
@@ -138,11 +144,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         try {
             Connection = manager.openDevice(Driver.getDevice());
             if (Connection == null) {
-                //Toast.makeText(context, "No connection", Toast.LENGTH_LONG).show();
+                AtomSpectraLog.addMessage(context, "USB connection failed: could not open device");
                 Close();
                 return false;
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(context, "USB connection failed: " + e.getMessage());
             Delete();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
@@ -152,13 +159,16 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         try {
             Port.open(Connection);
             Port.setParameters(600000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
-            inputData = new byte[MAX_BUFFER_SIZE];
-            inputDataHead = MAX_BUFFER_SIZE - 1;
+            inputData = new byte[CIRCULAR_BUFFER_SIZE];
+            inputDataHead = 0;
             inputDataEnd = 0;
             hasInputData = false;
             Manager = new SerialInputOutputManager(Port, this);
+            Manager.setReadBufferSize(SERIAL_MANAGER_READ_BUFFER_SIZE);
+            Manager.setReadQueue(SERIAL_MANAGER_READ_QUEUE_SIZE);
             Manager.start();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(context, "USB port setup failed: " + e.getMessage());
             Delete();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
@@ -169,9 +179,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     //delete all data except context
     private void Delete() {
-        if (Manager != null)
+        if (Manager != null) {
             Manager.stop();
+        }
         Manager = null;
+
         if (Port != null) {
             try {
                 Port.close();
@@ -179,10 +191,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 //nothing
             }
         }
+
         synchronized (syncCommand) {
             Commands.clear();
             AnswerNumber = 0;
         }
+
         Init();
     }
 
@@ -193,10 +207,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     //clear histogram
     public void ClearHistogram() {
-        if (Port == null || !Port.isOpen())
+        if (Port == null || !Port.isOpen()) {
             return;
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++)
+        }
+
+        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
             histogram[i] = 0;
+        }
+
         cps = 0;
         total_time = 0;
         cpu_load = 0;
@@ -237,97 +255,141 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
     }
 
+    private void reportSerialPacketErrors() {
+        long now = System.currentTimeMillis();
+        if (serialPacketErrorLastReportTime == 0) {
+            serialPacketErrorLastReportTime = now;
+            return;
+        }
+
+        long elapsedTime = now - serialPacketErrorLastReportTime;
+        if (elapsedTime >= SERIAL_ERROR_REPORT_INTERVAL_MS) {
+            if (serialPacketErrorCrc > 0 || serialPacketErrorEscaping > 0 || serialPacketErrorMinLength > 0) {
+                StringBuilder sb = new StringBuilder("Serial errors (last ");
+                long elapsedMinutes = elapsedTime / 60000;
+                long elapsedSeconds = (elapsedTime % 60000) / 1000;
+                if (elapsedMinutes > 0) sb.append(elapsedMinutes).append("m ");
+                sb.append(elapsedSeconds).append("s): ");
+                boolean needComma = false;
+                if (serialPacketErrorCrc > 0) {
+                    sb.append(serialPacketErrorCrc).append(" CRC");
+                    needComma = true;
+                }
+                if (serialPacketErrorEscaping > 0) {
+                    if (needComma) sb.append(", ");
+                    sb.append(serialPacketErrorEscaping).append(" escaping");
+                    needComma = true;
+                }
+                if (serialPacketErrorMinLength > 0) {
+                    if (needComma) sb.append(", ");
+                    sb.append(serialPacketErrorMinLength).append(" minimum length");
+                }
+                AtomSpectraLog.addMessage(context, sb.toString());
+            }
+
+            serialPacketErrorCrc = 0;
+            serialPacketErrorEscaping = 0;
+            serialPacketErrorMinLength = 0;
+            serialPacketErrorLastReportTime = now;
+        }
+    }
+
     //main method to search packets from input stream
     //returns packet with leading code operation and trailing crc16 two-byte code
     private byte[] searchPacket() {
         if (inputData == null || !hasInputData)
             return null;
-        int arrayHead, arrayEnd;
-        synchronized (updateArray) {
-            arrayHead = inputDataHead;
-            arrayEnd = inputDataEnd;
-        }
-        //Remove data before first start byte
-        while ((inputData[arrayHead] & 0xFF) != PACKET_BEGIN) {
-            arrayHead = (arrayHead + 1) % MAX_BUFFER_SIZE;
-            if (arrayHead == arrayEnd) {
-                synchronized (updateArray) {
-                    inputDataHead = arrayHead;
-                    hasInputData = (inputDataHead != inputDataEnd);
-                }
+   
+        // Remove data before first PACKET_BEGIN byte
+        while ((inputData[inputDataHead] & 0xFF) != PACKET_BEGIN) {
+            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+            if (inputDataHead == inputDataEnd) {
+                hasInputData = false;
                 return null;
             }
         }
-        int curPos = (arrayHead + 1) % MAX_BUFFER_SIZE;
-        if (curPos == arrayEnd) {
-            synchronized (updateArray) {
-                inputDataHead = arrayHead;
-            }
+        int curPos = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE; // first byte after PACKET_BEGIN
+        if (curPos == inputDataEnd) { // no bytes after PACKET_BEGIN, wait for more data
             return null;
         }
-        if ((inputData[curPos] & 0xFF) != PACKET_START) {
-            synchronized (updateArray) {
-                inputDataHead = curPos;
-                hasInputData = (inputDataHead != inputDataEnd);
-            }
+        if ((inputData[curPos] & 0xFF) != PACKET_START) { // first byte after PACKET_BEGIN is not PACKET_START, search for the next PACKET_BEGIN
+            inputDataHead = curPos;
+            hasInputData = (inputDataHead != inputDataEnd);
+
             return searchPacket();
         }
-        //We have 0xFF, 0xFE as two first bytes
-        //Search for packet end
+        // We have 0xFF, 0xFE as two first bytes
+        // Search for packet end
         int packetEnd = -1;
-        byte byteBefore = -1;
-        int numBytes = 0;
-        int packetBegin = (curPos + 1) % MAX_BUFFER_SIZE;
-        for (curPos = packetBegin; curPos != arrayEnd; curPos = (curPos + 1) % MAX_BUFFER_SIZE) {
+        byte lastCheckedByte = -1;
+        int numBytes = 0; // number of bytes in packet
+        int packetBegin = (curPos + 1) % CIRCULAR_BUFFER_SIZE; // first byte of packet
+        for (curPos = packetBegin; curPos != inputDataEnd; curPos = (curPos + 1) % CIRCULAR_BUFFER_SIZE) {
             if ((inputData[curPos] & 0xFF) == PACKET_END) {
                 packetEnd = curPos;
                 break;
             }
-            byteBefore = inputData[curPos];
-            if ((byteBefore & 0xFF) != PACKET_ESC)
+
+            lastCheckedByte = inputData[curPos];
+            if ((lastCheckedByte & 0xFF) != PACKET_ESC) {
                 numBytes++;
-        }
-        //Packet has begin and no end. Wait for more data
-        if (packetEnd == -1)
-            return null;
-        //Last byte must not be PACKET_ESC. Drop packet begin marker and try again
-        if (((byteBefore & 0xFF) == PACKET_ESC) || (numBytes < 3)) {
-            synchronized (updateArray) {
-                inputDataHead = (inputDataHead + 1) % MAX_BUFFER_SIZE;
-                hasInputData = (inputDataHead != inputDataEnd);
             }
+        }
+        if (packetEnd == -1) { // Packet has begin and no end. Wait for more data
+            return null;
+        }
+        
+        if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
+            serialPacketErrorEscaping++;
+            // searching for the next packet
+            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+            hasInputData = (inputDataHead != inputDataEnd);
+
             return searchPacket();
         }
-        //Have full packet. Get it and test it
+
+        if (numBytes < 3) {
+            serialPacketErrorMinLength++;
+            // searching for the next packet
+            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+            hasInputData = (inputDataHead != inputDataEnd);
+
+            return searchPacket();
+        }
+
+        // Have full packet. Get it and test it
         byte d;
-        byte[] res = new byte[numBytes];  //with crc16
+        byte[] res = new byte[numBytes];  // with crc16
         int bytesSaved = 0;
-        boolean isSpecialChar = false;
+        boolean isEscapedByte = false;
         int crc = 0xFFFF;
-        for (int i = packetBegin; i != packetEnd; i = (i + 1) % MAX_BUFFER_SIZE) {
+        for (int i = packetBegin; i != packetEnd; i = (i + 1) % CIRCULAR_BUFFER_SIZE) {
             d = inputData[i];
-            if (isSpecialChar) {
+            if (isEscapedByte) {
                 d = (byte) (~d);
                 res[bytesSaved] = d;
                 bytesSaved++;
-                isSpecialChar = false;
+                isEscapedByte = false;
                 crc = crc16(crc, d);
             } else {
-                if ((d & 0xFF) != PACKET_ESC) {
+                if ((d & 0xFF) == PACKET_ESC) {
+                    isEscapedByte = true;
+                } else {
                     res[bytesSaved] = d;
                     bytesSaved++;
                     crc = crc16(crc, d);
-                } else {
-                    isSpecialChar = true;
                 }
             }
         }
-        synchronized (updateArray) {
-            inputDataHead = (packetEnd + 1) % MAX_BUFFER_SIZE;
-            hasInputData = (inputDataHead != inputDataEnd);
-        }
-        if (crc != 0)
+        
+        inputDataHead = (packetEnd + 1) % CIRCULAR_BUFFER_SIZE;
+        hasInputData = (inputDataHead != inputDataEnd);
+
+        if (crc != 0) {
+            serialPacketErrorCrc++;
             return searchPacket();
+        }
+
         return res;
     }
 
@@ -335,6 +397,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         byte[] newPacket;
         while (true) {
             newPacket = searchPacket();
+            reportSerialPacketErrors();
             if (newPacket == null || newPacket.length == 0) {
                 return;
             }
@@ -445,7 +508,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         //        public final long time;  //for timeout
         public final long Number;
         private static long NextNumber = 1;
-        private static final Integer sync = 1;
+        private static final Object sync = new Object();
 
         CommandCode(String cmd, String id) {
             command = cmd.getBytes(Charset.defaultCharset());
@@ -477,7 +540,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     private final LinkedList<CommandCode> Commands = new LinkedList<>();
     private long AnswerNumber = 0;
-    private final Integer syncCommand = 1;
+    private final Object syncCommand = new Object();
 
     private boolean sendPacket() {
         synchronized (syncCommand) {
@@ -513,7 +576,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             }
             try {
                 AnswerNumber = cmd.Number;
-                Port.write(command_data, TIMEOUT);
+                Port.write(command_data, SERIAL_MANAGER_WRITE_TIMEOUT);
                 handler.postDelayed(new Runnable() {
                     final long Number = cmd.Number;
 
@@ -528,6 +591,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             }
                         }
                         if (code != null) {
+                            AtomSpectraLog.addMessage(context, "Serial command timed out: " + new String(code.command));
                             Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                             intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_TIMEOUT);
                             intentText.putExtra(EXTRA_NUMBER, code.Number);
@@ -538,7 +602,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         sendPacket(); //try to send next packet
                     }
                 }, CommandCode.DROP_TIMEOUT + 500);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                AtomSpectraLog.addMessage(context, "USB write failed: " + e.getMessage());
                 Close();
                 Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
                 context.sendBroadcast(intent);
@@ -614,21 +679,27 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     @Override
     public void onNewData(byte[] data) {
-        synchronized (updateArray) {
-            for (byte datum : data) {
-                if (inputDataEnd == inputDataHead && hasInputData)
+        // tmp log
+        // AtomSpectraLog.addMessage(context, "Data from USB: " + data.length + " bytes");
+        synchronized (circularBufferSync) {
+            for (int i = 0; i < data.length; i++) {
+                if (inputDataEnd == inputDataHead && hasInputData) {
+                    int bytesLost = data.length - i;
+                    AtomSpectraLog.addMessage(context, "Circular buffer overflow: " + bytesLost + " bytes lost");
                     break;
-                inputData[inputDataEnd] = datum;
-                inputDataEnd = (inputDataEnd + 1) % MAX_BUFFER_SIZE;
+                }
+                inputData[inputDataEnd] = data[i];
+                inputDataEnd = (inputDataEnd + 1) % CIRCULAR_BUFFER_SIZE;
                 hasInputData = true;
             }
-        }
-        findPackets();
+
+            findPackets();
+        }        
     }
 
     @Override
     public void onRunError(Exception e) {
-        //nothing
+        AtomSpectraLog.addMessage(context, "USB serial error: " + e.getMessage());
     }
 
     public static UsbDevice scanForSpectraProDevice(UsbManager manager) {
