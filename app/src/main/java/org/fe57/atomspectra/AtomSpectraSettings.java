@@ -237,7 +237,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         CheckBox rawAudio = findViewById(R.id.CheckRawAudio);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             AudioManager manager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) == null) {
+            if (manager == null || manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) == null) {
                 rawAudio.setEnabled(false);
                 rawAudio.setChecked(false);
                 rawAudio.setVisibility(CheckBox.INVISIBLE);
@@ -245,7 +245,8 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             } else {
                 rawAudio.setEnabled(true);
                 rawAudio.setVisibility(CheckBox.VISIBLE);
-                rawAudio.setChecked(sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, AtomSpectraService.SET_AUDIO_VOICE) == AtomSpectraService.SET_AUDIO_RAW);
+                int currentValue = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, AtomSpectraService.SET_AUDIO_VOICE);
+                rawAudio.setChecked(currentValue == AtomSpectraService.SET_AUDIO_RAW);
             }
         } else {
             rawAudio.setEnabled(false);
@@ -253,13 +254,14 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             rawAudio.setVisibility(CheckBox.INVISIBLE);
             saveIntPref(AtomSpectraService.SET_AUDIO_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
         }
-    }
 
-    public void onSelectRawAudioCheckboxClick(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        AtomSpectraService.SetAudioSource = ((CheckBox) v).isChecked() ? AtomSpectraService.SET_AUDIO_RAW : AtomSpectraService.SET_AUDIO_VOICE;
-        int newValue = ((CheckBox) v).isChecked() ? AtomSpectraService.SET_AUDIO_RAW : AtomSpectraService.SET_AUDIO_VOICE;
-        saveIntPref(newValue, Constants.CONFIG.CONF_AUDIO_SOURCE);
+        rawAudio.setOnClickListener(v -> {
+            int newValue = rawAudio.isChecked()
+                    ? AtomSpectraService.SET_AUDIO_RAW
+                    : AtomSpectraService.SET_AUDIO_VOICE;
+            saveIntPref(newValue, Constants.CONFIG.CONF_AUDIO_SOURCE);
+            stopRecording();
+        });
     }
 
     // invert input

@@ -1095,17 +1095,6 @@ public class AtomSpectraService extends Service {
                     makeAtomSpectraServiceIntentFilter());
         }
 
-        try {
-            //Some devices says they have this ability by it doesn't work. Switched off for a delay
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-                if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null)
-                    AudioSource = ((sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, SET_AUDIO_RAW)) == SET_AUDIO_RAW) ? AUDIO_SOURCE_RAW : AUDIO_SOURCE_VOICE;
-            }
-        } catch (IllegalArgumentException e) {
-            showToastInMainLooper(R.string.no_audio_available, Toast.LENGTH_LONG);
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (manager != null)
@@ -2061,27 +2050,36 @@ public class AtomSpectraService extends Service {
         if (isRecordingSuspended) {
             return;
         }
+        if (service_context == null) {
+            return;
+        }
         if (SetAudioSource == SET_AUDIO_VOICE) {
             AudioSource = AUDIO_SOURCE_VOICE;
             releaseAR();
             SetAudioSource = SET_AUDIO_OK;
         }
-        if (SetAudioSource == SET_AUDIO_RAW && service_context != null) {
+        if (SetAudioSource == SET_AUDIO_RAW) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 AudioManager manager = (AudioManager) service_context.getSystemService(Context.AUDIO_SERVICE);
-                if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null)
+                if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null) {
                     AudioSource = AUDIO_SOURCE_RAW;
+                } else {
+                    AudioSource = AUDIO_SOURCE_VOICE;
+                }
+
                 SetAudioSource = SET_AUDIO_OK;
-                releaseAR();
             } else {
+                AudioSource = AUDIO_SOURCE_VOICE;
                 SetAudioSource = SET_AUDIO_ERROR;
             }
+
+            releaseAR();
         }
         synchronized (ARLock) {
             if (canOpenAudio && (AR == null)) {
                 AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (inputSound && service_context != null) {
+                    if (inputSound) {
                         AudioDeviceInfo device = getDeviceInput(service_context, inputSoundID, inputSoundName, true);
                         if (device != null) {
                             AR.setPreferredDevice(device);
@@ -2102,15 +2100,16 @@ public class AtomSpectraService extends Service {
                 } else {
                     try {
                         AR.startRecording();
+                        boolean useRawAudio = AudioSource == AUDIO_SOURCE_RAW;
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                             AudioDeviceInfo device = AR.getRoutedDevice();
                             if (device != null) {
                                 String deviceName = device.getProductName().toString();
-                                AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_fetching_data_from_audio, deviceName));
+                                AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_fetching_data_from_audio, deviceName, useRawAudio));
                                 inputDeviceInfo = getAudioDeviceInfoText(deviceName);
                             }
                         } else {
-                            AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_fetching_data_from_audio, ""));
+                            AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_fetching_data_from_audio, "", useRawAudio));
                             inputDeviceInfo = getAudioDeviceInfoText(null);
                         }
 
@@ -2824,7 +2823,20 @@ public class AtomSpectraService extends Service {
             BufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT) * 2; //read two buffers at a time to reduce time consumption
             AudioBytes = new byte[BufferSize]; //Array containing the audio data bytes
             AudioData = new int[BufferSize / 2]; //Array containing the audio samples
-            AudioSource = AUDIO_SOURCE_VOICE;
+
+            SetAudioSource = SET_AUDIO_VOICE;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                boolean useRawAudio = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, SET_AUDIO_VOICE) == SET_AUDIO_RAW;
+                if (useRawAudio) {
+                    AudioManager manager = (AudioManager) service_context.getSystemService(Context.AUDIO_SERVICE);
+                    if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null) {
+                        SetAudioSource = SET_AUDIO_RAW;
+                    } else {
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_warning_raw_audio_support_not_available), Toast.LENGTH_LONG);
+                    }
+                }
+            }
+
             captureAudioTaskInterval = 1000L * BufferSize / 2 / SAMPLE_RATE; // 46 ms with the default settings
             audioCaptureTimer = 0;
             audioCaptureOldTimer = 0;

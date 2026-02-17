@@ -397,7 +397,7 @@
     <string name="log_audio_input_added">Audio input device added: %1$s</string>
     <string name="log_audio_input_removed">Audio input device removed: %1$s</string>
     <string name="log_audio_zero_buffers_detected">Zero audio buffer received several times in a row (%1$d), restarting audio</string>
-    <string name="log_fetching_data_from_audio">Fetching data from audio source: %1$s</string>
+    <string name="log_fetching_data_from_audio">Fetching data from audio source: %1$s, use raw audio: %2$b</string>
     <string name="log_wrong_sens_curve_pref">Unable to load device sensitivity curve from preferences, resetting to default</string>
     <string name="log_usb_command_failed">%1$s USB command failed</string>
     <string name="log_usb_command_timeout">%1$s USB command timeout</string>
@@ -415,6 +415,7 @@
     <string name="log_spg_autosave_start">Spectrogram recording started</string>
     <string name="log_spg_autosave_completed">Spectrogram recording completed</string>
     <string name="log_spg_autosave_start_error">ERROR: Unable to start spectrogram recording</string>
+    <string name="log_warning_raw_audio_support_not_available">WARNING: Raw audio support not available</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
     <string name="isotopes_clear_selection">Clear selection</string>
