@@ -241,24 +241,24 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 rawAudio.setEnabled(false);
                 rawAudio.setChecked(false);
                 rawAudio.setVisibility(CheckBox.INVISIBLE);
-                saveIntPref(AtomSpectraService.SET_AUDIO_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
+                saveIntPref(Constants.AUDIO_SOURCE_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
             } else {
                 rawAudio.setEnabled(true);
                 rawAudio.setVisibility(CheckBox.VISIBLE);
-                int currentValue = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, AtomSpectraService.SET_AUDIO_VOICE);
-                rawAudio.setChecked(currentValue == AtomSpectraService.SET_AUDIO_RAW);
+                int currentValue = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, Constants.AUDIO_SOURCE_DEFAULT);
+                rawAudio.setChecked(currentValue == Constants.AUDIO_SOURCE_RAW);
             }
         } else {
             rawAudio.setEnabled(false);
             rawAudio.setChecked(false);
             rawAudio.setVisibility(CheckBox.INVISIBLE);
-            saveIntPref(AtomSpectraService.SET_AUDIO_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
+            saveIntPref(Constants.AUDIO_SOURCE_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
         }
 
         rawAudio.setOnClickListener(v -> {
             int newValue = rawAudio.isChecked()
-                    ? AtomSpectraService.SET_AUDIO_RAW
-                    : AtomSpectraService.SET_AUDIO_VOICE;
+                    ? Constants.AUDIO_SOURCE_RAW
+                    : Constants.AUDIO_SOURCE_VOICE;
             saveIntPref(newValue, Constants.CONFIG.CONF_AUDIO_SOURCE);
             stopRecording();
         });

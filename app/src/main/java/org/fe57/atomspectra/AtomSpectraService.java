@@ -1033,16 +1033,11 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    //Audio input data
-    public static final int SET_AUDIO_RAW = 2;
-    public static final int SET_AUDIO_VOICE = 1;
-    public static final int SET_AUDIO_OK = 0;
-    public static final int SET_AUDIO_ERROR = -1;
+    // Audio input data
     private byte[] AudioBytes = null; //Array containing the audio data bytes
     private int AudioBytesRead = 0;
     private int[] AudioData = null; //Array containing the audio samples
     private static int AudioSource = AUDIO_SOURCE_VOICE;
-    public static int SetAudioSource = SET_AUDIO_OK;
     private Context service_context = null;
     private static int smooth_basic_window = 7;
 
@@ -2053,28 +2048,6 @@ public class AtomSpectraService extends Service {
         if (service_context == null) {
             return;
         }
-        if (SetAudioSource == SET_AUDIO_VOICE) {
-            AudioSource = AUDIO_SOURCE_VOICE;
-            releaseAR();
-            SetAudioSource = SET_AUDIO_OK;
-        }
-        if (SetAudioSource == SET_AUDIO_RAW) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                AudioManager manager = (AudioManager) service_context.getSystemService(Context.AUDIO_SERVICE);
-                if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null) {
-                    AudioSource = AUDIO_SOURCE_RAW;
-                } else {
-                    AudioSource = AUDIO_SOURCE_VOICE;
-                }
-
-                SetAudioSource = SET_AUDIO_OK;
-            } else {
-                AudioSource = AUDIO_SOURCE_VOICE;
-                SetAudioSource = SET_AUDIO_ERROR;
-            }
-
-            releaseAR();
-        }
         synchronized (ARLock) {
             if (canOpenAudio && (AR == null)) {
                 AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
@@ -2824,13 +2797,13 @@ public class AtomSpectraService extends Service {
             AudioBytes = new byte[BufferSize]; //Array containing the audio data bytes
             AudioData = new int[BufferSize / 2]; //Array containing the audio samples
 
-            SetAudioSource = SET_AUDIO_VOICE;
+            AudioSource = AUDIO_SOURCE_VOICE;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                boolean useRawAudio = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, SET_AUDIO_VOICE) == SET_AUDIO_RAW;
+                boolean useRawAudio = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, Constants.AUDIO_SOURCE_DEFAULT) == Constants.AUDIO_SOURCE_RAW;
                 if (useRawAudio) {
                     AudioManager manager = (AudioManager) service_context.getSystemService(Context.AUDIO_SERVICE);
                     if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null) {
-                        SetAudioSource = SET_AUDIO_RAW;
+                        AudioSource = AUDIO_SOURCE_RAW;
                     } else {
                         showToastInMainLooper(getStringOrDefaultLocale(R.string.log_warning_raw_audio_support_not_available), Toast.LENGTH_LONG);
                     }
