@@ -83,6 +83,9 @@ public class Constants {
     public static final int ALARM_BASELINE_MAX_DURATION = 30;
     public static final int ALARM_DETECTION_LEVEL_DEFAULT = 4;
     public static final int ALARM_VOLUME_DEFAULT = 50; // %
+    public static final int AUDIO_SOURCE_RAW = 2;
+    public static final int AUDIO_SOURCE_VOICE = 1;
+    public static final int AUDIO_SOURCE_DEFAULT = AUDIO_SOURCE_VOICE;
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
