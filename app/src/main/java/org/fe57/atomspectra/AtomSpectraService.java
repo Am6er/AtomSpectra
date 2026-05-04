@@ -119,7 +119,9 @@ public class AtomSpectraService extends Service {
     private static final double[] calibration_function = new double[1024];
     private static final double[] histogram = new double[1024];
     public static long[] histogram_all_sp_change_fg = new long[Constants.NUM_HIST_POINTS];       //array to store delta
+    private static final double[] histogram_sp_change_fg = new double[1024];
     public static long[] histogram_all_sp_change_bg = new long[Constants.NUM_HIST_POINTS];       //array to store delta
+    private static final double[] histogram_sp_change_bg = new double[1024];
     public static final LinkedList<long[]> histogram_all_queue = new LinkedList<long[]>();      //array to store delta window
     private static final long[] referencePulse = new long[256];
     private static final double[] referenceDoublePulse = new double[256];
@@ -2313,11 +2315,11 @@ public class AtomSpectraService extends Service {
                 fgSource = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_sp_change_fg, ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
                 bgSource = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_sp_change_bg, ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
             }
-            compressToOutput(fgSource, histogram, num_first_channel, num_scale_factor, num_values, compressGraph, 1.0);
-            compressToOutput(bgSource, background_histogram, num_first_channel, num_scale_factor, num_values, compressGraph, spChngBackgroundScale);
+            compressToOutput(fgSource, histogram_sp_change_fg, num_first_channel, num_scale_factor, num_values, compressGraph, 1.0);
+            compressToOutput(bgSource, histogram_sp_change_bg, num_first_channel, num_scale_factor, num_values, compressGraph, spChngBackgroundScale);
 
-            mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SP_CHNG_FG, histogram);
-            mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SP_CHNG_BG, background_histogram);
+            mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SP_CHNG_FG, histogram_sp_change_fg);
+            mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SP_CHNG_BG, histogram_sp_change_bg);
         } else {
             mBundle.putLong(EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS, 0);
             mBundle.putLong(EXTRA_DATA_LONG_SP_CHNG_BG_TOTAL_COUNTS, 0);
