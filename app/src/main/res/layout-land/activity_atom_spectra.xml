@@ -14,7 +14,7 @@
         android:src="@drawable/background_land4" />
 
     <View
-        android:id="@+id/placeholderRight"
+        android:id="@+id/placeholderTop"
         android:layout_width="match_parent"
         android:layout_height="25dp"
         android:alpha="0.85"
