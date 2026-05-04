@@ -165,7 +165,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     public static int loadChannels;
     public static int channelCompression;
 
-    private TextView statusLineTopText, statusLineBottomText;
+    private TextView statusLineTopText, statusLineMiddleText, statusLineBottomText;
     private Button fmsButton;
     private final int[] searchFMSNextMode = {1, 2, 0};
     private final String[] searchFMSNames = {"F", "M", "S"};
@@ -257,6 +257,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
         fmsButton = findViewById(R.id.fmsButton);
         statusLineTopText = findViewById(R.id.statusLineTopText);
+        statusLineMiddleText = findViewById(R.id.statusLineMiddleText);
+        statusLineBottomText = findViewById(R.id.statusLineBottomText);
+
         mAtomSpectraShapeView = findViewById(R.id.shape_area);
         int coeff = StrictMath.max(seekChannel.getWidth() / 200, 1);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -315,7 +318,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             });
         }
 
-        statusLineBottomText = findViewById(R.id.statusLineBottomText);
+
         Button searchBaselineButton = findViewById(R.id.searchBaselineButton);
         searchBaselineButton.setEnabled((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
         initializeGestures();
@@ -1047,13 +1050,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 Bundle mBundle = intent.getExtras();
                 if (mBundle != null) {
                     int display_mode = AtomSpectraService.getDisplayMode();
+                    int cp1s = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
+                    int cp1s_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
 
                     switch (display_mode) {
                         case Constants.DISPLAY_MODE_SPECTRUM:
                             double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME);
                             long total_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_TOTAL_FG_COUNTS);
 
-                            statusLineTopText.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
+                            statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+                            statusLineMiddleText.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
                             statusLineBottomText.setText(getString(R.string.total_time_format, total_time));
                             break;
                         case Constants.DISPLAY_MODE_SPECTRUM_CHANGE:
@@ -1065,65 +1071,69 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             double delta_cps = delta_time > 0 ? delta_counts / (double) delta_time : 0.0;
                             double delta_back_cps = delta_back_time > 0 ? delta_back_counts / (double) delta_back_time : 0.0;
 
-                            statusLineTopText.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
+                            statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+                            statusLineMiddleText.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
                             statusLineBottomText.setText(getString(R.string.delta_time_format, delta_time, delta_back_time));
                             break;
                         case Constants.DISPLAY_MODE_SEARCH:
+                            statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+
                             long error95Percent = 0;
                             boolean isAlarmMode = AtomSpectraService.intervalSearchAlarmEnabled;
                             AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
-                            if (isAlarmMode && !baseline.isStable()) {
+                            if (isAlarmMode) {
                                 error95Percent = Math.round(2 * baseline.getBaselineError());
-                                statusLineTopText.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
-                                statusLineBottomText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
-                            } else {
-                                int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
-                                int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
-                                statusLineTopText.setText(getString(R.string.cps_show, cps, cps_interval));
-
-                                if (Constants.DISPLAY_DOSE_INTERVAL.equals(DisplayDose)) {
-                                    double search_int_cps = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS);
-                                    double search_int_cps_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR);
-                                    error95Percent = Math.round(search_int_cps_error * 2);
-
-                                    if (search_int_cps < 10) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_1cps_format, search_int_cps, error95Percent));
-                                    } else if (search_int_cps < 100) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_10cps_format, search_int_cps, error95Percent));
-                                    } else if (search_int_cps < 1000) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_100cps_format, search_int_cps, error95Percent));
-                                    } else if (search_int_cps < 10000) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_1kcps_format, search_int_cps / 1000.0, error95Percent));
-                                    } else if (search_int_cps < 100000) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_10kcps_format, search_int_cps / 1000.0, error95Percent));
-                                    } else { // > 100k cps
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_100kcps_format, search_int_cps / 1000.0, error95Percent));
-                                    }
+                                if (baseline.isStable()) {
+                                    statusLineBottomText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
                                 } else {
-                                    double dose_rate = 0;
-                                    double dose_rate_error = 0;
-                                    if (Constants.DISPLAY_DOSE_COMPENSATED.equals(DisplayDose)) {
-                                        dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
-                                        dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR);
-                                    } else {
-                                        dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N);
-                                        dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR);
-                                    }
-                                    error95Percent = Math.round(dose_rate_error * 2);
+                                    statusLineBottomText.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
+                                }
+                            } else {
+                                statusLineBottomText.setText("");
+                            }
 
-                                    if (dose_rate < 10) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
-                                    } else if (dose_rate < 100) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent));
-                                    } else if (dose_rate < 1000) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent));
-                                    } else if (dose_rate < 10000) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent));
-                                    } else if (dose_rate < 100000) {
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent));
-                                    } else { // > 100 mSv/h
-                                        statusLineBottomText.setText(getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent));
-                                    }
+                            if (Constants.DISPLAY_DOSE_INTERVAL.equals(DisplayDose)) {
+                                double search_int_cps = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS);
+                                double search_int_cps_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR);
+                                error95Percent = Math.round(search_int_cps_error * 2);
+
+                                if (search_int_cps < 10) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_1cps_format, search_int_cps, error95Percent));
+                                } else if (search_int_cps < 100) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_10cps_format, search_int_cps, error95Percent));
+                                } else if (search_int_cps < 1000) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_100cps_format, search_int_cps, error95Percent));
+                                } else if (search_int_cps < 10000) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_1kcps_format, search_int_cps / 1000.0, error95Percent));
+                                } else if (search_int_cps < 100000) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_10kcps_format, search_int_cps / 1000.0, error95Percent));
+                                } else { // > 100k cps
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_100kcps_format, search_int_cps / 1000.0, error95Percent));
+                                }
+                            } else {
+                                double dose_rate = 0;
+                                double dose_rate_error = 0;
+                                if (Constants.DISPLAY_DOSE_COMPENSATED.equals(DisplayDose)) {
+                                    dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
+                                    dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR);
+                                } else {
+                                    dose_rate = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N);
+                                    dose_rate_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR);
+                                }
+                                error95Percent = Math.round(dose_rate_error * 2);
+
+                                if (dose_rate < 10) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent));
+                                } else if (dose_rate < 100) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent));
+                                } else if (dose_rate < 1000) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent));
+                                } else if (dose_rate < 10000) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent));
+                                } else if (dose_rate < 100000) {
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent));
+                                } else { // > 100 mSv/h
+                                    statusLineMiddleText.setText(getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent));
                                 }
                             }
                             break;

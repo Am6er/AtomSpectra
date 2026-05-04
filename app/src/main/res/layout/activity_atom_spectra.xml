@@ -4,40 +4,27 @@
     android:layout_width="match_parent"
     android:layout_height="fill_parent"
     tools:context=".AtomSpectra">
-<!-- android:background="@drawable/background4" -->
-    <View
-        android:id="@+id/placeholderTop"
-        android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:background="@android:color/black" />
 
     <org.fe57.atomspectra.AtomSpectraShapeView
         android:id="@+id/shape_area"
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="70dp"
         android:layout_marginBottom="40dp"
         android:alpha="0.85"
         android:background="@drawable/background4"
         android:clickable="true"
         android:onClick="onClickShape" />
 
-    <View
-        android:id="@+id/placeholderBottom"
-        android:layout_gravity="bottom"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="@android:color/black" />
-
     <Button
         android:id="@+id/inputTypeButton"
         style="?android:attr/buttonStyleSmall"
 
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_gravity="top|left"
-        android:layout_marginTop="-3dp"
-        android:layout_marginLeft="0dp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_gravity="top|right"
+        android:layout_marginTop="45dp"
+        android:layout_marginRight="0dp"
         android:background="@drawable/input_none"
         android:clickable="false"
         android:enabled="false"
@@ -49,8 +36,8 @@
         android:id="@+id/keVOrChannelButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
-        android:layout_marginRight="185dp"
+        android:layout_marginTop="45dp"
+        android:layout_marginRight="95dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:onClick="onClick_xAxisScale"
@@ -62,8 +49,8 @@
         android:id="@+id/addCalibrationPointButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
-        android:layout_marginRight="140dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="95dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:onClick="onAddCalibrationPoint"
@@ -75,8 +62,8 @@
         android:id="@+id/searchBaselineButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
-        android:layout_marginRight="140dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="95dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:enabled="false"
@@ -89,8 +76,8 @@
         android:id="@+id/calibrateButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
-        android:layout_marginRight="95dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="50dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:enabled="false"
@@ -103,8 +90,8 @@
         android:id="@+id/fmsButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
-        android:layout_marginRight="95dp"
+        android:layout_marginTop="45dp"
+        android:layout_marginRight="50dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:onClick="onClick_fms"
@@ -116,7 +103,7 @@
         android:id="@+id/removeCalibrationButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="45dp"
         android:layout_marginRight="50dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
@@ -129,7 +116,7 @@
         android:id="@+id/doseButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="0dp"
         android:layout_marginRight="50dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
@@ -141,7 +128,7 @@
     <ImageButton
         android:id="@+id/clearSpectrumButton"
         android:layout_gravity="top|right"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="0dp"
         android:layout_marginRight="0dp"
         android:layout_width="45dp"
         android:layout_height="45dp"
@@ -172,7 +159,7 @@
             android:text="@string/nav_bar_spectrum"
             android:textAlignment="center"
             android:textColor="#FFFFFFFF"
-            android:textSize="14dp" />
+            android:textSize="15dp" />
 
         <TextView
             android:id="@+id/displayModeSpectrumChangeButton"
@@ -185,7 +172,7 @@
             android:onClick="onClick_renderModeSpectrumChange"
             android:text="@string/nav_bar_spectrum_change"
             android:textColor="#FFFFFFFF"
-            android:textSize="14dp" />
+            android:textSize="15dp" />
 
         <TextView
             android:id="@+id/displayModeSearchButton"
@@ -197,7 +184,7 @@
             android:onClick="onClick_renderModeSearch"
             android:text="@string/nav_bar_search"
             android:textColor="#FFFFFFFF"
-            android:textSize="14dp" />
+            android:textSize="15dp" />
 
         <!--        <TextView-->
         <!--            android:id="@+id/displayModeSpectrogramButton"-->
@@ -216,7 +203,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center|top"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="160dp"
         android:orientation="horizontal">
 
         <SeekBar
@@ -237,7 +224,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:layout_marginLeft="36dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="115dp"
         android:layout_marginRight="20dp"
         android:background="@color/colorCursorBackground"
         android:gravity="center"
@@ -246,19 +233,30 @@
         android:textColor="@color/colorCursorText"
         android:textSize="14dp" />
 
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="top"
-        android:orientation="horizontal">
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="12dp"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/statusLineTopText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="32dp"
             android:layout_weight="1"
-            android:text="@string/cps"
+            android:text="cps: 0 (0)"
+            android:textColor="@android:color/white"
+            android:textSize="16dp" />
+
+        <TextView
+            android:id="@+id/statusLineMiddleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="avg: 0.000"
             android:textColor="@android:color/white"
             android:textSize="16dp" />
 
@@ -267,21 +265,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginLeft="0dp"
-            android:clickable="true"
-            android:text="12 uSv"
+            android:text="time: 1s"
             android:textColor="@android:color/white"
             android:textSize="16dp" />
 
     </LinearLayout>
-
 
     <LinearLayout
         android:id="@+id/suffixLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|right"
-        android:layout_marginTop="200dp"
+        android:layout_marginTop="240dp"
         android:layout_marginRight="20dp"
         android:orientation="vertical">
 
