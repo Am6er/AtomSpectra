@@ -16,6 +16,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -1070,24 +1071,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                         case Constants.DISPLAY_MODE_SEARCH:
                             long error95Percent = 0;
                             boolean isAlarmMode = AtomSpectraService.intervalSearchAlarmEnabled;
-                            if (isAlarmMode) {
-                                AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
+                            AtomSpectraService.AlarmBaseline baseline = AtomSpectraService.getIntervalSearchAlarmBaseline();
+                            if (isAlarmMode && !baseline.isStable()) {
                                 error95Percent = Math.round(2 * baseline.getBaselineError());
-                                if (baseline.isStable()) {
-                                    // show baseline
-                                    statusLineTopText.setText(getString(R.string.cps_alarm_baseline, baseline.getBaseline(), error95Percent));
-                                } else {
-                                    // show timer
-                                    statusLineTopText.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
-                                }
-
+                                statusLineTopText.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
                                 statusLineBottomText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
                             } else {
                                 int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
                                 int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
                                 statusLineTopText.setText(getString(R.string.cps_show, cps, cps_interval));
 
-                                error95Percent = 0;
                                 if (Constants.DISPLAY_DOSE_INTERVAL.equals(DisplayDose)) {
                                     double search_int_cps = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS);
                                     double search_int_cps_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR);
@@ -1543,6 +1536,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     public void onClick_renderModeSearch(View v) {
         setDisplayMode(Constants.DISPLAY_MODE_SEARCH);
+        hideSeekChannel();
     }
 
     public void onClick_renderModeSpectrogram(View v) {
@@ -1865,9 +1859,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             public boolean onSingleTapConfirmed(@NotNull MotionEvent e1) {
                 if (AtomSpectraService.showCalibrationFunction) {
                     showCursorInfo(true);
-                    dateChannelChanged = 0;
-                    seekChannel.setVisibility(SeekBar.INVISIBLE);
-                    showPlusMinusButtons = false;
+                    hideSeekChannel();
                     return true;
                 }
 
@@ -1877,10 +1869,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
                 boolean getInside = false;
                 if (AtomSpectraShapeView.isOutOfFrame(e1.getX())) {
-                    cursor_x = -1;
-                    dateChannelChanged = 0;
-                    seekChannel.setVisibility(SeekBar.INVISIBLE);
-                    showPlusMinusButtons = false;
+                    hideSeekChannel();
                 } else {
                     if ((AtomSpectraService.newCalibration.getPointsCount() < Constants.MAX_CALIBRATION_POINTS)) {
                         for (Isotope i : AtomSpectraIsotopes.foundList) {
@@ -1990,6 +1979,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 Toast.makeText(getApplicationContext(), phrase, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void hideSeekChannel() {
+        cursor_x = -1;
+        dateChannelChanged = 0;
+        seekChannel.setVisibility(SeekBar.INVISIBLE);
+        showPlusMinusButtons = false;
     }
 
 
@@ -4442,7 +4438,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     }
 
     private void updateDisplayModeViews() {
-        // TODO: hide everything first, reset "navbar" selection
         Button keVOrChannelButton = findViewById(R.id.keVOrChannelButton);
         Button addCalPointButton = findViewById(R.id.addCalibrationPointButton);
         Button calibrateButton = findViewById(R.id.calibrateButton);
@@ -4453,31 +4448,30 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         TextView spectrumModeButton = findViewById(R.id.displayModeSpectrumButton);
         TextView spectrumChangeModeButton = findViewById(R.id.displayModeSpectrumChangeButton);
         TextView searchModeButton = findViewById(R.id.displayModeSearchButton);
-        TextView spectrogramModeButton = findViewById(R.id.displayModeSpectrogramButton);
+        // TextView spectrogramModeButton = findViewById(R.id.displayModeSpectrogramButton);
 
         hideViews(keVOrChannelButton, addCalPointButton, calibrateButton, removeCalibrationButton, searchBaselineButton, fmsButton, doseButton);
-        setNormalText(spectrumModeButton, spectrumChangeModeButton, searchModeButton, spectrogramModeButton);
+        removeTextHighlight(spectrumModeButton, spectrumChangeModeButton, searchModeButton/*, spectrogramModeButton*/);
 
         switch (AtomSpectraService.getDisplayMode()) {
             case Constants.DISPLAY_MODE_SPECTRUM:
                 showViews(keVOrChannelButton, addCalPointButton, calibrateButton, removeCalibrationButton);
-                setUnderlineText(spectrumModeButton);
+                setHighlightedText(spectrumModeButton);
                 break;
             case Constants.DISPLAY_MODE_SPECTRUM_CHANGE:
                 showViews(keVOrChannelButton, addCalPointButton, calibrateButton, removeCalibrationButton);
-                setUnderlineText(spectrumChangeModeButton);
+                setHighlightedText(spectrumChangeModeButton);
                 break;
             case Constants.DISPLAY_MODE_SEARCH:
                 showViews(searchBaselineButton, fmsButton, doseButton);
-                setUnderlineText(searchModeButton);
+                setHighlightedText(searchModeButton);
                 break;
             case Constants.DISPLAY_MODE_SPECTROGRAM:
-                setUnderlineText(spectrogramModeButton);
-                break;
+                // setUnderlineText(spectrogramModeButton);
+                // break;
             default:
                 AtomSpectraLog.addMessage(this, "ERROR: [AtomSpectraActivity] Unknown display mode: " + AtomSpectraService.getDisplayMode());
-                AtomSpectraService.setDisplayMode(Constants.DISPLAY_MODE_DEFAULT);
-                updateDisplayModeViews();
+                setDisplayMode(Constants.DISPLAY_MODE_DEFAULT);
                 break;
         }
     }
@@ -4493,23 +4487,25 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private void showViews(View ...views) {
         if (views != null) {
             for (View view : views) {
-                view.setVisibility(View.INVISIBLE);
+                view.setVisibility(View.VISIBLE);
             }
         }
     }
 
-    private void setNormalText(TextView ...views) {
+    private void removeTextHighlight(TextView ...views) {
         if (views != null) {
             for (TextView view : views) {
-                view.setPaintFlags(view.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
+                view.setPaintFlags(view.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG) & (~Paint.FAKE_BOLD_TEXT_FLAG));
+                view.setTextColor(Color.WHITE);
             }
         }
     }
 
-    private void setUnderlineText(TextView ...views) {
+    private void setHighlightedText(TextView ...views) {
         if (views != null) {
             for (TextView view : views) {
-                view.setPaintFlags(view.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+                view.setPaintFlags(view.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG | Paint.FAKE_BOLD_TEXT_FLAG);
+                view.setTextColor(Color.CYAN);
             }
         }
     }

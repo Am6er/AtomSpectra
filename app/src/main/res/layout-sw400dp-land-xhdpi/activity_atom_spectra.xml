@@ -3,22 +3,14 @@
     android:id="@+id/FrameLayout1"
     android:layout_width="match_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/background_land4"
     tools:context=".AtomSpectra" >
-
-    <ImageView
-        android:id="@+id/background"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/background_land4" />
+<!--  android:background="@drawable/background_land4"  -->
 
     <View
         android:id="@+id/placeholderTop"
         android:layout_width="match_parent"
-        android:layout_height="30dp"
+        android:layout_height="50dp"
         android:layout_gravity="top"
-        android:alpha="0.85"
         android:background="@android:color/black" />
 
     <View
@@ -26,7 +18,6 @@
         android:layout_width="50dp"
         android:layout_height="match_parent"
         android:layout_gravity="right"
-        android:alpha="0.85"
         android:background="@android:color/black" />
 
     <FrameLayout
@@ -174,7 +165,7 @@
             android:id="@+id/statusLineTopText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="40dp"
+            android:layout_marginLeft="35dp"
             android:layout_weight="1"
             android:clickable="true"
             android:longClickable="true"
@@ -186,7 +177,7 @@
             android:id="@+id/statusLineBottomText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="40dp"
+            android:layout_marginLeft="35dp"
             android:layout_weight="1"
             android:clickable="true"
             android:longClickable="true"
@@ -201,8 +192,8 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="top|left"
-        android:layout_marginLeft="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginLeft="-4dp"
+        android:layout_marginTop="-6dp"
         android:layout_marginRight="0dp"
         android:layout_marginBottom="165dp"
         android:background="@drawable/input_none"
@@ -218,7 +209,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:layout_marginTop="60dp"
-        android:layout_marginRight="80dp"
+        android:layout_marginRight="70dp"
         android:background="@color/colorCursorBackground"
         android:gravity="center"
         android:onClick="onClick_Channel"
@@ -239,6 +230,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:clickable="true"
+            android:drawableBottom="@drawable/divider"
             android:gravity="center"
             android:onClick="onClick_renderModeSpectrum"
             android:text="@string/nav_bar_spectrum_short"
@@ -252,6 +244,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:clickable="true"
+            android:drawableBottom="@drawable/divider"
             android:gravity="center"
             android:onClick="onClick_renderModeSpectrumChange"
             android:text="@string/nav_bar_spectrum_change_short"
@@ -270,31 +263,31 @@
             android:textColor="#FFFFFFFF"
             android:textSize="16dp" />
 
-    <TextView
-        android:id="@+id/displayModeSpectrogramButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:clickable="true"
-        android:gravity="center"
-        android:onClick="onClick_renderModeSpectrogram"
-        android:text="@string/nav_bar_spectrogram_short"
-        android:textColor="#FFFFFFFF"
-        android:textSize="16dp" />
+<!--    <TextView-->
+<!--        android:id="@+id/displayModeSpectrogramButton"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_weight="1"-->
+<!--        android:clickable="true"-->
+<!--        android:gravity="center"-->
+<!--        android:onClick="onClick_renderModeSpectrogram"-->
+<!--        android:text="@string/nav_bar_spectrogram_short"-->
+<!--        android:textColor="#FFFFFFFF"-->
+<!--        android:textSize="16dp" />-->
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/suffixLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="105dp"
-        android:layout_marginBottom="155dp"
+        android:layout_gravity="top|right"
+        android:layout_marginRight="70dp"
+        android:layout_marginTop="200dp"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/suffixView"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:background="@color/colorCursorBackground"

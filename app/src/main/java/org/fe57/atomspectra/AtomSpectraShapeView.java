@@ -107,7 +107,7 @@ public class AtomSpectraShapeView extends View {
 			margin_top = (int) (2 * ht_px);
 			margin_bottom = (int) (2 * ht_px);
 			margin_left = (int) (2 * ht_px);
-			margin_right = (int) (2 * ht_px);
+			margin_right = (int) (1 * ht_px);
 			width = viewWidth - margin_left - margin_right;
 			height = viewHeight - margin_top - margin_bottom;
 			int nx;
