@@ -3,6 +3,7 @@
     android:id="@+id/FrameLayout1"
     android:layout_width="match_parent"
     android:layout_height="fill_parent"
+    android:background="#000000"
     tools:context=".AtomSpectra" >
 
     <org.fe57.atomspectra.AtomSpectraShapeView
@@ -116,9 +117,9 @@
         android:src="@drawable/menu_clear_spectrum" />
 
     <LinearLayout
-        android:layout_width="240dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="8dp"
+        android:layout_marginLeft="20dp"
         android:orientation="vertical">
 
         <LinearLayout
@@ -131,7 +132,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
 
-                android:layout_weight="1"
+                android:layout_weight="1.5"
                 android:clickable="true"
                 android:longClickable="true"
                 android:text="cps: 0 (0)"

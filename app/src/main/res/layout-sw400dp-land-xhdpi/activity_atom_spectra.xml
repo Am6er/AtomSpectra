@@ -3,6 +3,7 @@
     android:id="@+id/FrameLayout1"
     android:layout_width="match_parent"
     android:layout_height="fill_parent"
+    android:background="#000000"
     tools:context=".AtomSpectra" >
 
     <Button
@@ -156,7 +157,7 @@
     <LinearLayout
         android:layout_width="400dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
+        android:layout_marginLeft="20dp"
         android:orientation="vertical">
 
         <LinearLayout
@@ -168,7 +169,7 @@
                 android:id="@+id/statusLineTopText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="1.25"
                 android:text="cps: 0 (0)"
                 android:textColor="#FFFFFFFF"
                 android:textSize="18dp" />
