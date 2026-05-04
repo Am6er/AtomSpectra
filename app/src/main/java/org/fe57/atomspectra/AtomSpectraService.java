@@ -747,7 +747,8 @@ public class AtomSpectraService extends Service {
         // post read actions
         setAlarmAudioTrackDevice();
         if (!freeze_update_data) {
-            resetSearchWindow();
+            // TODO: reset ONLY when relevant settings has been changed
+            // resetSearchWindow();
             if (intervalSearchAlarmEnabled != intervalSearchAlarmEnabledPrev) {
                 stopIntervalSearchAlarmTimer();
                 if (intervalSearchAlarmEnabled) {
