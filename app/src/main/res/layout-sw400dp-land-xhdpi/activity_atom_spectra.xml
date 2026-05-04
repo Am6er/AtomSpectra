@@ -157,7 +157,7 @@
     <LinearLayout
         android:layout_width="400dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
+        android:layout_marginLeft="24dp"
         android:orientation="vertical">
 
         <LinearLayout
