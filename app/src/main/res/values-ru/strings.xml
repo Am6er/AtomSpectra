@@ -33,6 +33,15 @@
     <string name="action_usb_detached">USB отключён</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
 
+    <string name="nav_bar_spectrum">Спектр</string>
+    <string name="nav_bar_spectrum_change">Изменение</string>
+    <string name="nav_bar_search">Поиск</string>
+    <string name="nav_bar_spectrogram">Спектрограмма</string>
+    <string name="nav_bar_spectrum_short">Спк</string>
+    <string name="nav_bar_spectrum_change_short">Изм</string>
+    <string name="nav_bar_search_short">Пск</string>
+    <string name="nav_bar_spectrogram_short">Спг</string>
+
     <string name="histogram_menu">Спектр</string>
     <string name="hist_save_file">Сохранить…</string>
     <string name="hist_load_file">Загрузить из…</string>

@@ -647,7 +647,8 @@ public class AtomSpectraShapeView extends View {
 			String x_units, // measurement units, "ch." or "keV", also probably "eV", "MeV"
 			float y_zoom_factor,
 			int x_zoom_factor,
-			float cursor_position_x // xMin..xMax, disabled when outside this interval
+			float cursor_position_x, // xMin..xMax, disabled when outside this interval
+            boolean is_spectrum_change
 	) {
 		synchronized (renderSync) {
 			int size = fg.length;
@@ -773,7 +774,7 @@ public class AtomSpectraShapeView extends View {
 						bg_color_to = 0x8888FFFF;
 					}
 
-					if (AtomSpectraService.showSpectrumChange) {
+					if (is_spectrum_change) {
 						fg_color_from = 0xFFFF00FF;
 						fg_color_to = 0xFFFF00FF;
 					}

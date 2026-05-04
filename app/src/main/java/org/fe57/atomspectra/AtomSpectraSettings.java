@@ -70,11 +70,11 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     private int inputDeviceID = -1;
     private String inputDeviceName = "(none)";
     private final int SELECT_DIR_CODE_SETTINGS = 100;
+    private boolean showPulseShape = false;
 
     private float zoom_factor = 1;
     private int usb_noise_value = 25;
     private boolean retrySend = true;
-    private boolean from_search_view = false;
 
     private static final String SETTINGS_GET_INF_ID = "Inf get";
     private static final String SETTINGS_SET_NOISE_ID = "Noise set";
@@ -172,12 +172,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initializeGestures();
-
-        if (AtomSpectraService.getScaleFactor() <= Constants.SCALE_MAX)
-            AtomSpectraService.saveScaleFactor();
-        else if (AtomSpectraService.getScaleFactor() == Constants.SCALE_DOSE_MODE)
-            from_search_view = true;
-        AtomSpectraService.setScaleFactor(Constants.SCALE_OSCILLOSCOPE_MODE);
 
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
         sendUsbInfoRequest();
@@ -375,15 +369,16 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     private void saveMinFrontPoints(int val) {
-        AtomSpectraService.setScaleFactor(Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE);
         saveIntPref(val, Constants.CONFIG.CONF_MIN_POINTS);
         updateMinFrontPointsText();
+        showPulseShape = true;
     }
 
     // max front points
     private void updateMaxFrontPointsText() {
         TextView maxFrontPointsTextField = findViewById(R.id.maxFrontText);
         maxFrontPointsTextField.setText(getString(R.string.max_front_points_format, sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)));
+        showPulseShape = true;
     }
 
     public void onClick_maxFront_plus(View v) {
@@ -414,7 +409,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     private void saveMaxFrontPoints(int val) {
-        AtomSpectraService.setScaleFactor(Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE);
         saveIntPref(val, Constants.CONFIG.CONF_MAX_POINTS);
         updateMaxFrontPointsText();
     }
@@ -1629,12 +1623,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     private void returnFromSettings() {
-        if (from_search_view) {
-            AtomSpectraService.setScaleFactor(Constants.SCALE_DOSE_MODE);
-        } else {
-            AtomSpectraService.restoreScaleFactor();
-        }
-
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
     }
 
@@ -1681,16 +1669,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                     int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
                     countsTextField.setText(getString(R.string.cps_show, cps, cps_interval));
                     SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-                    if (AtomSpectraService.getScaleFactor() == Constants.SCALE_OSCILLOSCOPE_MODE) {
-                        double[] realtime_audio_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA);
-                        if (realtime_audio_data == null) {
-                            realtime_audio_data = new double[1024];
-                        }
-                        mAtomSpectraSignalView.showOscilloscope(
-                                realtime_audio_data,
-                                zoom_factor
-                        );
-                    } else {
+                    if (showPulseShape) {
                         double[] reference_pulse_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA);
                         if (reference_pulse_data == null) {
                             reference_pulse_data = new double[1024];
@@ -1699,6 +1678,15 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                                 reference_pulse_data,
                                 settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
                                 settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)
+                        );
+                    } else {
+                        double[] realtime_audio_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA);
+                        if (realtime_audio_data == null) {
+                            realtime_audio_data = new double[1024];
+                        }
+                        mAtomSpectraSignalView.showOscilloscope(
+                                realtime_audio_data,
+                                zoom_factor
                         );
                     }
                     //	Log.d(TAG, "data received from service  "+ String.valueOf(array_length));
@@ -1778,7 +1766,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     protected void onResume() {
         super.onResume();
         active = true;
-        AtomSpectraService.setScaleFactor(Constants.SCALE_OSCILLOSCOPE_MODE);
+        showPulseShape = false;
         Log.d(TAG, "registerReceiver");
 
     }
@@ -1845,23 +1833,14 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 try {
                     if (detector.isSwipeLeft(e1, e2, velocityX)) {
                         //showToast("Left Swipe");
-                        if (AtomSpectraService.getScaleFactor() > Constants.SCALE_OSCILLOSCOPE_MODE)
-                            AtomSpectraService.setScaleFactor(Constants.SCALE_OSCILLOSCOPE_MODE);
-                        else {
-                            AtomSpectraService.setScaleFactor(Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE);
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-                        }
+                        showPulseShape =! showPulseShape;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
 
                     } else if (detector.isSwipeRight(e1, e2, velocityX)) {
                         //showToast("Right Swipe");
-                        if (AtomSpectraService.getScaleFactor() < Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE)
-                            AtomSpectraService.setScaleFactor(Constants.SCALE_AUDIO_REFERENCE_PULSE_MODE);
-                        else {
-                            AtomSpectraService.setScaleFactor(Constants.SCALE_OSCILLOSCOPE_MODE);
-                            sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-                        }
-
+                        showPulseShape =! showPulseShape;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
                     } else if (detector.isSwipeDown(e1, e2, velocityY)) {
                         if (zoom_factor > 1.1) zoom_factor /= 2;

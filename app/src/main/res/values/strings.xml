@@ -33,6 +33,15 @@
     <string name="action_usb_detached">USB detached</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
 
+    <string name="nav_bar_spectrum">Spectrum</string>
+    <string name="nav_bar_spectrum_change">Change</string>
+    <string name="nav_bar_search">Search</string>
+    <string name="nav_bar_spectrogram">Spectrogram</string>
+    <string name="nav_bar_spectrum_short">Spc</string>
+    <string name="nav_bar_spectrum_change_short">Chng</string>
+    <string name="nav_bar_search_short">Srch</string>
+    <string name="nav_bar_spectrogram_short">Spg</string>
+
     <string name="histogram_menu">Spectrum</string>
     <string name="hist_save_file">Save to…</string>
     <string name="hist_load_file">Load from…</string>

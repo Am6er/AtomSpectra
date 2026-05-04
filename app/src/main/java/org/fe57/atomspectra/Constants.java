@@ -35,12 +35,15 @@ public class Constants {
     public static final boolean INVERSE_DEFAULT = false;                                                                 //inverse signal
     public static final boolean PILE_UP_DEFAULT = false;                                                                  //detect pile-up
     public static final boolean LOG_SCALE_DEFAULT = false;
+    // !!! WARNING: all scale constants are fragile to change, code changes will be required
     public static final int SCALE_DEFAULT = 16 - ADC_MAX;                                                                //default scale: 8192 channels on graph
     public static final int SCALE_MIN = 16 - ADC_MAX;                                                                    //minimum scale factor
     public static final int SCALE_MAX = 16 - ADC_MIN + 1;                                                                //maximum scale factor
-    public static final int SCALE_DOSE_MODE = 10;                                                                        //dose scale factor
-    public static final int SCALE_OSCILLOSCOPE_MODE = 100;                                                                      //data from audio input
-    public static final int SCALE_AUDIO_REFERENCE_PULSE_MODE = 101;                                                                    //impulse show
+    public static final int DISPLAY_MODE_SPECTRUM = 0;
+    public static final int DISPLAY_MODE_SPECTRUM_CHANGE = 1;
+    public static final int DISPLAY_MODE_SEARCH = 2;
+    public static final int DISPLAY_MODE_SPECTROGRAM = 3;
+    public static final int DISPLAY_MODE_DEFAULT = DISPLAY_MODE_SPECTRUM;
     public static final int UPDATE_DOSE_DEFAULT = 1;                                                                     //dose rate update per second
     public static final int MAX_POLI_SIZE = 4;                                                                           //maximum polynom size of y=a+bx+cx^2+... To add higher size you need to add more menu items to menu and its checks
     public static final int MAX_CALIBRATION_POINTS = 10;                                                                 //maximum new calibration points

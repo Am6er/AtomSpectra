@@ -13,93 +13,157 @@
         android:scaleType="fitXY"
         android:src="@drawable/background_land4" />
 
+    <View
+        android:id="@+id/placeholderRight"
+        android:layout_width="match_parent"
+        android:layout_height="25dp"
+        android:alpha="0.85"
+        android:background="@android:color/black" />
+
+    <View
+        android:id="@+id/placeholderRight"
+        android:layout_height="match_parent"
+        android:layout_width="40dp"
+        android:layout_gravity="right"
+        android:alpha="0.85"
+        android:background="@android:color/black" />
+
     <org.fe57.atomspectra.AtomSpectraShapeView
         android:id="@+id/shape_area"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginRight="40dp"
         android:alpha="0.85"
         android:background="#00888888"
         android:clickable="true"
         android:onClick="onClickShape" />
 
+    <Button
+        android:id="@+id/keVOrChannelButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_gravity="right|top"
+        android:layout_marginRight="245dp"
+        android:onClick="onClick_xAxisScale"
+        android:text="@string/mode_axis_kev_button"
+        android:textColor="#FFFFFFFF"
+        android:textSize="12dp" />
+
+    <Button
+        android:id="@+id/addCalibrationPointButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="200dp"
+        android:layout_gravity="right|top"
+        android:onClick="onAddCalibrationPoint"
+        android:text="1"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/searchBaselineButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="200dp"
+        android:layout_gravity="right|top"
+        android:enabled="false"
+        android:onClick="onClick_Sound"
+        android:text="≈"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/calibrateButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="155dp"
+        android:layout_gravity="right|top"
+        android:enabled="false"
+        android:onClick="onCalibrateButton"
+        android:text="@string/leftwards"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/fmsButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="155dp"
+        android:layout_gravity="right|top"
+        android:onClick="onClick_fms"
+        android:text="F"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/removeCalibrationButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="110dp"
+        android:layout_gravity="right|top"
+        android:onClick="onClearCalibrationButton"
+        android:text="@string/rightwards"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/doseButton"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="110dp"
+        android:layout_gravity="right|top"
+        android:onClick="onClick_Dose"
+        android:text="N"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14dp" />
+
+    <ImageButton
+        android:id="@+id/clearSpectrumButton"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginRight="50dp"
+        android:layout_gravity="right|top"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/action_restart"
+        android:foregroundGravity="center"
+        android:onClick="onClickDeleteSpc"
+        android:scaleType="fitCenter"
+        android:src="@drawable/menu_clear_spectrum" />
+
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="240dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="right">
-
-        <Button
-            android:id="@+id/addPointButton"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:onClick="onAddCalibrationPoint"
-            android:text="1"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14dp" />
-
-        <Button
-            android:id="@+id/calibrateButton"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:enabled="false"
-            android:onClick="onCalibrateButton"
-            android:text="@string/leftwards"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14dp" />
-
-        <Button
-            android:id="@+id/removeCalibrationButton"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:layout_marginRight="16dp"
-            android:onClick="onClearCalibrationButton"
-            android:text="@string/rightwards"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14dp" />
-
-        <ImageButton
-            android:id="@+id/clearSpectrumButton"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:layout_marginRight="0dp"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/action_restart"
-            android:foregroundGravity="center"
-            android:onClick="onClickDeleteSpc"
-            android:scaleType="fitCenter"
-            android:src="@drawable/menu_clear_spectrum" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="330dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:weightSum="2">
 
         <TextView
-            android:id="@+id/channelText"
-            android:layout_width="0dp"
+            android:id="@+id/statusLineTopText"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="30sp"
+            android:layout_marginLeft="25dp"
             android:layout_weight="1"
             android:clickable="true"
             android:longClickable="true"
-            android:onClick="onClick_Coord"
             android:text="@string/cps"
             android:textColor="#FFFFFFFF"
             android:textSize="16dp" />
 
         <TextView
-            android:id="@+id/doserateText"
-            android:layout_width="0dp"
+            android:id="@+id/statusLineBottomText"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="30sp"
+            android:layout_marginLeft="25dp"
             android:layout_weight="1"
             android:clickable="true"
             android:longClickable="true"
-            android:onClick="onClick_Coord"
             android:text="12 uSv/h"
             android:textColor="#FFFFFFFF"
             android:textSize="16dp" />
@@ -115,7 +179,7 @@
         <SeekBar
             android:id="@+id/seekChannel"
             style="@style/Widget.AppCompat.SeekBar.Discrete"
-            android:layout_width="500dp"
+            android:layout_width="389dp"
             android:layout_height="60dp"
             android:layout_weight="1"
             android:max="50"
@@ -130,7 +194,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:layout_marginTop="50dp"
-        android:layout_marginRight="90dp"
+        android:layout_marginRight="70dp"
         android:background="@color/colorCursorBackground"
         android:gravity="center"
         android:onClick="onClick_Channel"
@@ -141,9 +205,11 @@
     <Button
         android:id="@+id/inputTypeButton"
         style="?android:attr/buttonStyleSmall"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom|right"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="top|left"
+        android:layout_marginLeft="-2dp"
+        android:layout_marginTop="8dp"
         android:layout_marginRight="0dp"
         android:layout_marginBottom="165dp"
         android:background="@drawable/input_none"
@@ -153,69 +219,66 @@
         android:textColor="#FFFFFFFF"
         android:textSize="8dp" />
 
-    <Button
-        android:id="@+id/channelButton"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginBottom="75dp"
-        android:onClick="onClick_xAxisScale"
-        android:text="@string/mode_axis_kev_button"
-        android:textColor="#FFFFFFFF"
-        android:textSize="12dp" />
+    <LinearLayout
+        android:layout_width="40dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:background="#333333"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/fmsButton"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginBottom="120dp"
-        android:onClick="onClick_fms"
-        android:text="F"
-        android:textColor="#FFFFFFFF"
-        android:textSize="14dp" />
+        <TextView
+            android:id="@+id/displayModeSpectrumButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:drawableBottom="@drawable/divider"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrum"
+            android:text="@string/nav_bar_spectrum_short"
+            android:textAlignment="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
 
-    <Button
-        android:id="@+id/doseButton"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="45dp"
-        android:layout_marginBottom="75dp"
-        android:onClick="onClick_Dose"
-        android:text="N"
-        android:textColor="#FFFFFFFF"
-        android:textSize="14dp" />
+        <TextView
+            android:id="@+id/displayModeSpectrumChangeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:drawableBottom="@drawable/divider"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrumChange"
+            android:text="@string/nav_bar_spectrum_change_short"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
 
-    <Button
-        android:id="@+id/searchBaselineButton"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="45dp"
-        android:layout_marginBottom="120dp"
-        android:enabled="false"
-        android:onClick="onClick_Sound"
-        android:text="≈"
-        android:textColor="#FFFFFFFF"
-        android:textSize="14dp" />
+        <TextView
+            android:id="@+id/displayModeSearchButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:drawableBottom="@drawable/divider"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSearch"
+            android:text="@string/nav_bar_search_short"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
 
-    <Button
-        android:id="@+id/displayModeButton"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="90dp"
-        android:layout_height="45dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="0dp"
-        android:layout_marginBottom="30dp"
-        android:onClick="onClick_renderMode"
-        android:text="@string/mode_spectrum_button"
-        android:textColor="#FFFFFFFF"
-        android:textSize="14dp" />
+        <TextView
+            android:id="@+id/displayModeSpectrogramButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrogram"
+            android:text="@string/nav_bar_spectrogram_short"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14dp" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/suffixLayout"
