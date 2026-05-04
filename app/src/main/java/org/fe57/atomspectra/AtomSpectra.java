@@ -1106,7 +1106,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 long error95PercentN = Math.round(dose_rate_n_error * 2);
 
                                 statusLineMiddleText.setText(getString(R.string.dose_rate_noncompensated_prefix) + formatDoseRateWithError(dose_rate_n, error95PercentN));
-                                statusLineMiddleText.setText(getString(R.string.dose_rate_compensated_prefix) + formatDoseRateWithError(dose_rate_c, error95PercentC));
+                                statusLineBottomText.setText(getString(R.string.dose_rate_compensated_prefix) + formatDoseRateWithError(dose_rate_c, error95PercentC));
                             }
                             break;
                         case Constants.DISPLAY_MODE_SPECTROGRAM:
