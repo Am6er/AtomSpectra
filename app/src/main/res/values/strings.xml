@@ -207,8 +207,9 @@
     <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
     <string name="delta_time_format">time: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
-    <string name="dose_rate_compensated_prefix">cdr: </string>
-    <string name="dose_rate_noncompensated_prefix">ndr: </string>
+    <string name="dose_rate_interval_prefix">int.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
+    <string name="dose_rate_compensated_prefix">dr(c): <xliff:g id="dose_rate">%1$s</xliff:g></string>
+    <string name="dose_rate_noncompensated_prefix">dr(n): <xliff:g id="dose_rate">%1$s</xliff:g></string>
     <string name="dose_rate_1uSv_format"><xliff:g id="dose_rate">%1$.3f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10uSv_format"><xliff:g id="dose_rate">%1$.2f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100uSv_format"><xliff:g id="dose_rate">%1$.1f</xliff:g> μSv/h ±<xliff:g id="dose_rate_error">%2$d</xliff:g>%%</string>
@@ -223,8 +224,8 @@
     <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
-    <string name="cps_average_show">avg: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
-    <string name="cps_delta_show">avg: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
+    <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="cps_delta_show">~cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
     <string name="cps_alarm_baseline">≈cps: <xliff:g id="cps">%1$.1f</xliff:g> ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cps_alarm_baseline_timer">≈cps: [<xliff:g id="time">%1$d</xliff:g> s] <xliff:g id="cps">%2$.1f</xliff:g> ±<xliff:g id="cps_error">%3$d</xliff:g>%%</string>
     <string name="cps_alarm_levels">♪cps: <xliff:g id="level_high">%1$.1f</xliff:g>/<xliff:g id="level_low">%2$.1f</xliff:g></string>
