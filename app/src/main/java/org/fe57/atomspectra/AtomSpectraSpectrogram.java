@@ -18,6 +18,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +37,15 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static int cbin = 1;
     private static String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
     private static String palette = AtomSpectraSpectrogramView.PALETTE_IRON;
+
+    // region selection state - kept static so it survives orientation changes / activity recreate
+    private static int bgStartRow = -1;
+    private static int bgEndRow = -1;
+    private static int srcStartRow = -1;
+    private static int srcEndRow = -1;
+    private static int lastRowCount = 0;
+    private static boolean previewVisible = true;
+
     private GestureDetector gestureDetector;
     private ScaleGestureDetector scaleGestureDetector;
 
@@ -102,6 +112,78 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             return false;
         });
+
+        // wire region handles + preview
+        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
+        if (spgView != null) {
+            spgView.setRegionRows(bgStartRow, bgEndRow, srcStartRow, srcEndRow);
+            spgView.setOnSpectrogramStateChangedListener(new AtomSpectraSpectrogramView.OnSpectrogramStateChangedListener() {
+                @Override
+                public void onRegionsChanged() {
+                    syncRegionsToPreview();
+                }
+
+                @Override
+                public void onVisibleChannelsChanged(int startChannel, int endChannel) {
+                    SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
+                    if (preview != null && previewVisible) {
+                        preview.setVisibleChannelRange(startChannel, endChannel);
+                    }
+                }
+            });
+        }
+
+        // preview visibility + toggle button
+        SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
+        if (preview != null) {
+            preview.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
+            preview.setScale(scale);
+        }
+        ImageButton toggleBtn = findViewById(R.id.buttonPreviewToggle);
+        if (toggleBtn != null) {
+            toggleBtn.setImageResource(previewVisible ? R.drawable.ic_preview_close : R.drawable.ic_preview_show);
+            toggleBtn.setOnClickListener(v -> {
+                previewVisible = !previewVisible;
+                SpectrogramPreviewView pv = findViewById(R.id.viewSpectrogramPreview);
+                if (pv != null) {
+                    pv.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
+                }
+                ((ImageButton) v).setImageResource(previewVisible ? R.drawable.ic_preview_close : R.drawable.ic_preview_show);
+                if (previewVisible) {
+                    updateSpectrogram(false);
+                }
+            });
+        }
+    }
+
+    private void syncRegionsToPreview() {
+        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
+        SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
+        if (spgView == null) {
+            return;
+        }
+        bgStartRow = spgView.getBgStartRow();
+        bgEndRow = spgView.getBgEndRow();
+        srcStartRow = spgView.getSrcStartRow();
+        srcEndRow = spgView.getSrcEndRow();
+        if (preview == null || !previewVisible) {
+            return;
+        }
+        double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgStartRow, bgEndRow);
+        double[] src = AtomSpectraSpectrogramData.instance.averageSpectrum(srcStartRow, srcEndRow);
+        double[] energies = computeEnergiesArray();
+        preview.setScale(scale);
+        preview.setSpectra(bg, src, energies);
+        preview.setVisibleChannelRange(spgView.getVisibleStartChannel(), spgView.getVisibleEndChannel());
+    }
+
+    private double[] computeEnergiesArray() {
+        int channelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
+        double[] energies = new double[channelCount];
+        for (int i = 0; i < channelCount; i++) {
+            energies[i] = AtomSpectraSpectrogramData.instance.channelToEnergy(i);
+        }
+        return energies;
     }
 
     @Override
@@ -185,16 +267,42 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
+            int newRowCount = AtomSpectraSpectrogramData.instance.rowCount();
+
+            // shift handle indices when oldest rows have been dropped (MAX_ROWS truncation)
+            if (newRowCount == 0) {
+                bgStartRow = bgEndRow = srcStartRow = srcEndRow = -1;
+            } else if (lastRowCount > 0 && newRowCount < lastRowCount) {
+                int dropped = lastRowCount - newRowCount;
+                bgStartRow = shiftRowIndex(bgStartRow, dropped);
+                bgEndRow = shiftRowIndex(bgEndRow, dropped);
+                srcStartRow = shiftRowIndex(srcStartRow, dropped);
+                srcEndRow = shiftRowIndex(srcEndRow, dropped);
+            }
+            lastRowCount = newRowCount;
+
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
+                spgView.setRegionRows(bgStartRow, bgEndRow, srcStartRow, srcEndRow);
                 spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom);
+                bgStartRow = spgView.getBgStartRow();
+                bgEndRow = spgView.getBgEndRow();
+                srcStartRow = spgView.getSrcStartRow();
+                srcEndRow = spgView.getSrcEndRow();
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
             if (rowCount != null) {
-                rowCount.setText(getString(R.string.spectrogram_row_count, AtomSpectraSpectrogramData.instance.rowCount()));
+                rowCount.setText(getString(R.string.spectrogram_row_count, newRowCount));
             }
+
+            syncRegionsToPreview();
         }
+    }
+
+    private static int shiftRowIndex(int row, int dropped) {
+        if (row < 0) return row;
+        return Math.max(0, row - dropped);
     }
 
     @SuppressLint("DefaultLocale")

@@ -84,6 +84,47 @@ public class AtomSpectraSpectrogramData {
        return new ArrayList<>(this.durations);
    }
 
+    /**
+     * Returns a duration-weighted average CPS spectrum for rows in [startRow, endRow] (inclusive).
+     * Each row is already in CPS, but rows can have different dwell times - so we weight by duration
+     * to combine them correctly. Returns null if the range is empty or the spectrogram has no data.
+     */
+    public double[] averageSpectrum(int startRow, int endRow) {
+        synchronized (spectrogramSync) {
+            int rowCount = this.spectrogram.size();
+            if (rowCount == 0) {
+                return null;
+            }
+
+            int from = Math.max(0, Math.min(startRow, endRow));
+            int to = Math.min(rowCount - 1, Math.max(startRow, endRow));
+            if (from > to) {
+                return null;
+            }
+
+            double[] result = new double[CHANNEL_COUNT];
+            double totalDuration = 0;
+            for (int i = from; i <= to; i++) {
+                double duration = this.durations.get(i);
+                double[] row = this.spectrogram.get(i);
+                totalDuration += duration;
+                for (int k = 0; k < CHANNEL_COUNT; k++) {
+                    result[k] += row[k] * duration;
+                }
+            }
+
+            if (totalDuration <= 0) {
+                return null;
+            }
+
+            for (int k = 0; k < CHANNEL_COUNT; k++) {
+                result[k] /= totalDuration;
+            }
+
+            return result;
+        }
+    }
+
     public double channelToEnergy(int channel) {
         if (this.baseSpectrum == null) {
             return 0;

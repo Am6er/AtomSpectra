@@ -70,18 +70,18 @@
             android:id="@+id/spectrogramSplit"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <org.fe57.atomspectra.SpectrogramPreviewView
-                android:id="@+id/viewSpectrogramPreview"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+            android:orientation="horizontal">
 
             <org.fe57.atomspectra.AtomSpectraSpectrogramView
                 android:id="@+id/viewSpectrogram"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <org.fe57.atomspectra.SpectrogramPreviewView
+                android:id="@+id/viewSpectrogramPreview"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1" />
         </LinearLayout>
 

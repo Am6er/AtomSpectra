@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -185,6 +186,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private float TIMESTAMP_TICK_WIDTH_DP = 8f;
 	private float ENERGY_TICK_HEIGHT_DP = 8f;
 	private float CHANNEL_AXIS_HEIGHT_DP = 40f;
+	private float HANDLE_SIZE_DP = 14f;
+	private float HANDLE_TOUCH_RADIUS_DP = 28f;
 
 	private int POINT_SIZE_PX = (int)POINT_SIZE_DP;
 	private int TIME_AXIS_WIDTH_PX = (int)TIME_AXIS_WIDTH_DP;
@@ -193,8 +196,21 @@ public class AtomSpectraSpectrogramView extends View {
 	private int TIMESTAMP_TICK_WIDTH_PX = (int)TIMESTAMP_TICK_WIDTH_DP;
 	private int ENERGY_TICK_HEIGHT_PX = (int)ENERGY_TICK_HEIGHT_DP;
 	private int CHANNEL_AXIS_HEIGHT_PX = (int)CHANNEL_AXIS_HEIGHT_DP;
+	private int HANDLE_SIZE_PX = (int)HANDLE_SIZE_DP;
+	private int HANDLE_TOUCH_RADIUS_PX = (int)HANDLE_TOUCH_RADIUS_DP;
 
 	private int TIMESTAMP_EACH_ROWS = 25;
+
+	// region handle constants
+	public static final int HANDLE_NONE = 0;
+	public static final int HANDLE_BG_START_LEFT = 1;
+	public static final int HANDLE_BG_END_RIGHT = 2;
+	public static final int HANDLE_SRC_START_LEFT = 3;
+	public static final int HANDLE_SRC_END_RIGHT = 4;
+
+	private static final int HANDLE_COLOR_BG = 0xFF44E044; // green
+	private static final int HANDLE_COLOR_SRC = Color.WHITE;
+	private static final int GUIDE_LINE_ALPHA = 110;
 
 	// cps data
 	private ArrayList<double[]> spectrogramData = null;
@@ -216,9 +232,31 @@ public class AtomSpectraSpectrogramView extends View {
 	private boolean lockHorizontalMove;
 	private boolean lockVerticalMove;
 
+	// region selection (row indices in the binned spectrogramData; -1 means uninitialised)
+	private int bgStartRow = -1;
+	private int bgEndRow = -1;
+	private int srcStartRow = -1;
+	private int srcEndRow = -1;
+	private int draggingHandle = HANDLE_NONE;
+
+	// last visible window snapshot (in binned cols / spectrogramData row indices) - used for change-detection
+	private int currentStartRow = 0;
+	private int currentEndRow = -1;
+	private int currentStartCol = 0;
+	private int currentEndCol = -1;
+	private int reportedVisibleStartChannel = -1; // unbinned
+	private int reportedVisibleEndChannel = -1;   // unbinned
+
+	private OnSpectrogramStateChangedListener stateChangedListener = null;
+
 	private final Object spectrogramBitmapSync = new Object();
 	private volatile Bitmap spectrogramBitmap = null;
 	private boolean autoScroll = true;
+
+	public interface OnSpectrogramStateChangedListener {
+		void onRegionsChanged();
+		void onVisibleChannelsChanged(int startChannel, int endChannel);
+	}
 
 	public AtomSpectraSpectrogramView(Context context) {
 		super(context);
@@ -230,6 +268,51 @@ public class AtomSpectraSpectrogramView extends View {
 
 	public AtomSpectraSpectrogramView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+	}
+
+	public void setOnSpectrogramStateChangedListener(OnSpectrogramStateChangedListener listener) {
+		this.stateChangedListener = listener;
+	}
+
+	public void setRegionRows(int bgStart, int bgEnd, int srcStart, int srcEnd) {
+		this.bgStartRow = bgStart;
+		this.bgEndRow = bgEnd;
+		this.srcStartRow = srcStart;
+		this.srcEndRow = srcEnd;
+		invalidate();
+	}
+
+	public int getBgStartRow() { return Math.min(bgStartRow, bgEndRow); }
+	public int getBgEndRow() { return Math.max(bgStartRow, bgEndRow); }
+	public int getSrcStartRow() { return Math.min(srcStartRow, srcEndRow); }
+	public int getSrcEndRow() { return Math.max(srcStartRow, srcEndRow); }
+
+	public int getVisibleStartChannel() {
+		if (currentStartCol < 0) return -1;
+		return currentStartCol * channelBin;
+	}
+
+	public int getVisibleEndChannel() {
+		if (currentEndCol < 0) return -1;
+		return Math.max(0, (currentEndCol + 1) * channelBin - 1);
+	}
+
+	public int getRowCount() {
+		return spectrogramData == null ? 0 : spectrogramData.size();
+	}
+
+	private void initializeRegionsIfNeeded(int rowCount) {
+		if (rowCount <= 0) return;
+		boolean uninitialised =
+				bgStartRow < 0 || bgEndRow < 0 || srcStartRow < 0 || srcEndRow < 0
+				|| bgStartRow >= rowCount || bgEndRow >= rowCount
+				|| srcStartRow >= rowCount || srcEndRow >= rowCount;
+		if (uninitialised) {
+			bgStartRow = 0;
+			bgEndRow = Math.max(0, rowCount / 4);
+			srcStartRow = Math.min(rowCount - 1, (rowCount * 3) / 4);
+			srcEndRow = rowCount - 1;
+		}
 	}
 
 	@Override
@@ -262,6 +345,13 @@ public class AtomSpectraSpectrogramView extends View {
 			case MotionEvent.ACTION_DOWN:
 				lastTouchY = event.getY();
 				lastTouchX = event.getX();
+
+				int hitHandle = pickHandle(lastTouchX, lastTouchY);
+				if (hitHandle != HANDLE_NONE) {
+					draggingHandle = hitHandle;
+					return true;
+				}
+
 				if (lastTouchX < TIME_AXIS_WIDTH_PX) {
 					isDragging = true;
 					lockHorizontalMove = true;
@@ -272,6 +362,13 @@ public class AtomSpectraSpectrogramView extends View {
 				}
 				return true;
 			case MotionEvent.ACTION_MOVE:
+				if (draggingHandle != HANDLE_NONE) {
+					int row = touchYToRow(event.getY());
+					setHandleRow(draggingHandle, row);
+					renderSpectrogramToBitmap();
+					invalidate();
+					return true;
+				}
 				if (isDragging) {
 					float currentY = event.getY();
 					float currentX = event.getX();
@@ -295,12 +392,87 @@ public class AtomSpectraSpectrogramView extends View {
 				return true;
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
+				if (draggingHandle != HANDLE_NONE) {
+					draggingHandle = HANDLE_NONE;
+					if (stateChangedListener != null) {
+						stateChangedListener.onRegionsChanged();
+					}
+					return true;
+				}
 				isDragging = false;
 				lockHorizontalMove = false;
 				lockVerticalMove = false;
 				return true;
 		}
 		return super.onTouchEvent(event);
+	}
+
+	private int pickHandle(float x, float y) {
+		if (currentEndRow < currentStartRow || POINT_SIZE_PX <= 0) {
+			return HANDLE_NONE;
+		}
+		int viewWidth = getWidth();
+		float touchRadiusSq = HANDLE_TOUCH_RADIUS_PX * HANDLE_TOUCH_RADIUS_PX;
+		int spgViewHeight = getHeight() - CHANNEL_AXIS_HEIGHT_PX;
+
+		int[] handles = new int[]{HANDLE_BG_START_LEFT, HANDLE_BG_END_RIGHT, HANDLE_SRC_START_LEFT, HANDLE_SRC_END_RIGHT};
+		int bestHandle = HANDLE_NONE;
+		float bestDistSq = touchRadiusSq;
+		for (int handle : handles) {
+			int row = getRowForHandle(handle);
+			if (row < 0) continue;
+			float apexX = isLeftHandle(handle) ? TIME_AXIS_WIDTH_PX : (viewWidth - HANDLE_SIZE_PX);
+			float apexY = rowToClampedY(row, spgViewHeight);
+			float dx = x - apexX;
+			float dy = y - apexY;
+			float distSq = dx * dx + dy * dy;
+			if (distSq < bestDistSq) {
+				bestDistSq = distSq;
+				bestHandle = handle;
+			}
+		}
+		return bestHandle;
+	}
+
+	private boolean isLeftHandle(int handle) {
+		return handle == HANDLE_BG_START_LEFT || handle == HANDLE_SRC_START_LEFT;
+	}
+
+	private int getRowForHandle(int handle) {
+		switch (handle) {
+			case HANDLE_BG_START_LEFT: return bgStartRow;
+			case HANDLE_BG_END_RIGHT: return bgEndRow;
+			case HANDLE_SRC_START_LEFT: return srcStartRow;
+			case HANDLE_SRC_END_RIGHT: return srcEndRow;
+			default: return -1;
+		}
+	}
+
+	private void setHandleRow(int handle, int row) {
+		switch (handle) {
+			case HANDLE_BG_START_LEFT: bgStartRow = row; break;
+			case HANDLE_BG_END_RIGHT: bgEndRow = row; break;
+			case HANDLE_SRC_START_LEFT: srcStartRow = row; break;
+			case HANDLE_SRC_END_RIGHT: srcEndRow = row; break;
+		}
+	}
+
+	private float rowToClampedY(int row, int spgViewHeight) {
+		if (POINT_SIZE_PX <= 0) return 0;
+		float y = (row - currentStartRow) * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
+		if (y < 0) y = 0;
+		if (y > spgViewHeight) y = spgViewHeight;
+		return y;
+	}
+
+	private int touchYToRow(float y) {
+		if (POINT_SIZE_PX <= 0) return 0;
+		int row = currentStartRow + Math.round(y / POINT_SIZE_PX);
+		int rowCount = getRowCount();
+		if (rowCount <= 0) return 0;
+		if (row < 0) row = 0;
+		if (row > rowCount - 1) row = rowCount - 1;
+		return row;
 	}
 
 	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBin, int channelBin, String scale, String palette, boolean scrollToBottom) {
@@ -423,6 +595,8 @@ public class AtomSpectraSpectrogramView extends View {
 		TIMESTAMP_TICK_WIDTH_PX = dpToPx(TIMESTAMP_TICK_WIDTH_DP);
 		ENERGY_TICK_HEIGHT_PX = dpToPx(ENERGY_TICK_HEIGHT_DP);
 		CHANNEL_AXIS_HEIGHT_PX = dpToPx(CHANNEL_AXIS_HEIGHT_DP);
+		HANDLE_SIZE_PX = dpToPx(HANDLE_SIZE_DP);
+		HANDLE_TOUCH_RADIUS_PX = dpToPx(HANDLE_TOUCH_RADIUS_DP);
 	}
 
 	private void recycleBitmap() {
@@ -510,6 +684,13 @@ public class AtomSpectraSpectrogramView extends View {
 		int endCol = Math.min(colCount - 1, startCol + maxColsInView - 1);
 		int colsToRender = endCol - startCol + 1;
 		int colsToRenderWidthPx = colsToRender * colWidthPx;
+
+		// snapshot for hit-testing and listener
+		this.currentStartRow = startRow;
+		this.currentEndRow = endRow;
+		this.currentStartCol = startCol;
+		this.currentEndCol = endCol;
+		initializeRegionsIfNeeded(rowCount);
 
 		int totalPixels = rowsToRender * rowHeightPx * colsToRenderWidthPx;
 		int[] spgPixels = new int[totalPixels];
@@ -642,9 +823,96 @@ public class AtomSpectraSpectrogramView extends View {
 			}
 		}
 
+		// render region handles + guide lines on top of everything
+		drawRegionHandles(viewWidth, spgViewHeight, startRow, endRow);
+
+		// notify listener about visible channel range changes
+		int visibleStartChannel = startCol * channelBin;
+		int visibleEndChannel = (endCol + 1) * channelBin - 1;
+		if (visibleStartChannel != reportedVisibleStartChannel || visibleEndChannel != reportedVisibleEndChannel) {
+			reportedVisibleStartChannel = visibleStartChannel;
+			reportedVisibleEndChannel = visibleEndChannel;
+			if (stateChangedListener != null) {
+				stateChangedListener.onVisibleChannelsChanged(visibleStartChannel, visibleEndChannel);
+			}
+		}
+
 		if (this.autoScroll) {
 			verticalOffsetPx += rowHeightPx;
 		}
+	}
+
+	private void drawRegionHandles(int viewWidth, int spgViewHeight, int startRow, int endRow) {
+		if (bgStartRow < 0 || srcStartRow < 0) {
+			return;
+		}
+		synchronized (this.spectrogramBitmapSync) {
+			if (this.spectrogramBitmap == null) return;
+			Canvas canvas = new Canvas(this.spectrogramBitmap);
+
+			Paint guidePaint = new Paint();
+			guidePaint.setAntiAlias(true);
+			guidePaint.setStyle(Paint.Style.STROKE);
+			guidePaint.setStrokeWidth(dpToPx(1));
+
+			Paint trianglePaint = new Paint();
+			trianglePaint.setAntiAlias(true);
+			trianglePaint.setStyle(Paint.Style.FILL);
+
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+					bgStartRow, true, HANDLE_COLOR_BG);
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+					bgEndRow, false, HANDLE_COLOR_BG);
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+					srcStartRow, true, HANDLE_COLOR_SRC);
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+					srcEndRow, false, HANDLE_COLOR_SRC);
+		}
+	}
+
+	private void drawHandle(Canvas canvas, Paint guidePaint, Paint trianglePaint,
+							int viewWidth, int spgViewHeight,
+							int row, boolean leftSide, int color) {
+		if (row < 0) return;
+
+		float apexY = rowToClampedY(row, spgViewHeight);
+		boolean visible = row >= currentStartRow && row <= currentEndRow;
+
+		// guide line drawn only when handle row is on-screen
+		if (visible) {
+			guidePaint.setColor(color);
+			guidePaint.setAlpha(GUIDE_LINE_ALPHA);
+			canvas.drawLine(TIME_AXIS_WIDTH_PX, apexY, viewWidth, apexY, guidePaint);
+		}
+
+		// triangle - drawn even when off-screen (clamped to top/bottom edge) so it stays reachable
+		trianglePaint.setColor(color);
+		trianglePaint.setAlpha(255);
+
+		float apexX, baseX;
+		if (leftSide) {
+			apexX = TIME_AXIS_WIDTH_PX;
+			baseX = TIME_AXIS_WIDTH_PX - HANDLE_SIZE_PX;
+		} else {
+			apexX = viewWidth - HANDLE_SIZE_PX;
+			baseX = viewWidth;
+		}
+		float halfBase = HANDLE_SIZE_PX / 2f;
+
+		Path path = new Path();
+		path.moveTo(apexX, apexY);
+		path.lineTo(baseX, apexY - halfBase);
+		path.lineTo(baseX, apexY + halfBase);
+		path.close();
+		canvas.drawPath(path, trianglePaint);
+
+		// dark outline for contrast against bright spectrogram cells
+		Paint outlinePaint = new Paint();
+		outlinePaint.setAntiAlias(true);
+		outlinePaint.setStyle(Paint.Style.STROKE);
+		outlinePaint.setStrokeWidth(dpToPx(1));
+		outlinePaint.setColor(Color.BLACK);
+		canvas.drawPath(path, outlinePaint);
 	}
 
 	private int mapValueToColor(double value) {
