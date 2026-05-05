@@ -947,12 +947,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                     setVisible(AtomSpectraService.newCalibration.getPointsCount() > 9);
 
             boolean isUSB = AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL;
-            boolean isFreeze = AtomSpectraService.getFreeze();
             app_menu.findItem(R.id.action_cal_store_device)
-                    .setEnabled(isUSB && isFreeze)
+                    .setEnabled(isUSB)
                     .setVisible(isUSB);
             app_menu.findItem(R.id.action_cal_retrieve_device)
-                    .setEnabled(isUSB && isFreeze)
+                    .setEnabled(isUSB)
                     .setVisible(isUSB);
         }
     }
@@ -2147,6 +2146,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        boolean isFreeze = AtomSpectraService.getFreeze();
+
         if (item.getItemId() == R.id.action_background_save) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 String dirName = getWorkingDir(false);
@@ -2454,7 +2455,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             return true;
         } else if (item.getItemId() == R.id.action_cal_store_device) {
             Log.d(TAG, "storing calibration to device");
-            setCalibrationSettingsToDevice();
+            if (isFreeze) {
+                setCalibrationSettingsToDevice();
+            } else {
+                showActionConfirmationDialog(getString(R.string.calibration_stop_before_save_device_text), this::setCalibrationSettingsToDevice);
+            }
+
             return true;
         } else if (item.getItemId() == R.id.action_cal_store_memory) {
             Log.d(TAG, "storing calibration to program");
@@ -2462,7 +2468,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             return true;
         } else if (item.getItemId() == R.id.action_cal_retrieve_device) {
             Log.d(TAG, "retrieving calibration from device");
-            getCalibrationSettingsFromDevice();
+            if (isFreeze) {
+                getCalibrationSettingsFromDevice();
+            } else {
+                showActionConfirmationDialog(getString(R.string.calibration_stop_before_load_device_text), this::getCalibrationSettingsFromDevice);
+            }
+
 //			updateCalibrationMenu();
             return true;
         } else if (item.getItemId() == R.id.action_cal_retrieve_memory) {
@@ -4359,7 +4370,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     private void updateVersionInMenu() {
         if (app_menu != null) {
-            String testSuffix = "_TEST1";
+            String testSuffix = "_TEST2";
             AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
             app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode + testSuffix);
         }
@@ -4530,6 +4541,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private boolean isSpectrumDisplayMode() {
         int displayMode = AtomSpectraService.getDisplayMode();
         return displayMode == Constants.DISPLAY_MODE_SPECTRUM || displayMode == Constants.DISPLAY_MODE_SPECTRUM_CHANGE;
+    }
+
+    private void showActionConfirmationDialog(String message, Runnable action) {
+        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.dialog_confirm_title))
+                .setMessage(message)
+                .setPositiveButton(R.string.dialog_continue_button, (dialog, whichButton) -> {
+                    action.run();
+                })
+                .setNegativeButton(android.R.string.ok, (dialog, whichButton) -> {});
+        alert.show();
     }
 
     private void showToastInMainLooper(String text, int duration) {
