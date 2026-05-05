@@ -2458,7 +2458,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             if (isFreeze) {
                 setCalibrationSettingsToDevice();
             } else {
-                showActionConfirmationDialog(getString(R.string.calibration_stop_before_save_device_text), this::setCalibrationSettingsToDevice);
+                showActionConfirmationDialog(getString(R.string.calibration_stop_before_save_device_text), () -> {
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    setCalibrationSettingsToDevice();
+                });
             }
 
             return true;
@@ -2471,7 +2474,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             if (isFreeze) {
                 getCalibrationSettingsFromDevice();
             } else {
-                showActionConfirmationDialog(getString(R.string.calibration_stop_before_load_device_text), this::getCalibrationSettingsFromDevice);
+                showActionConfirmationDialog(getString(R.string.calibration_stop_before_load_device_text), () -> {
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    getCalibrationSettingsFromDevice();
+                });
             }
 
 //			updateCalibrationMenu();
@@ -4550,7 +4556,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 .setPositiveButton(R.string.dialog_continue_button, (dialog, whichButton) -> {
                     action.run();
                 })
-                .setNegativeButton(android.R.string.ok, (dialog, whichButton) -> {});
+                .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {});
         alert.show();
     }
 
