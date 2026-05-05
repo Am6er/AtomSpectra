@@ -219,43 +219,47 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/displayModeSpectrumButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:drawableBottom="@drawable/divider"
-            android:gravity="center"
-            android:onClick="onClick_renderModeSpectrum"
-            android:text="@string/nav_bar_spectrum_short"
-            android:textAlignment="center"
-            android:textColor="#FFFFFFFF"
-            android:textSize="16dp" />
-
-        <TextView
-            android:id="@+id/displayModeSpectrumChangeButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:drawableBottom="@drawable/divider"
-            android:gravity="center"
-            android:onClick="onClick_renderModeSpectrumChange"
-            android:text="@string/nav_bar_spectrum_change_short"
-            android:textColor="#FFFFFFFF"
-            android:textSize="16dp" />
-
-        <TextView
             android:id="@+id/displayModeSearchButton"
-            android:layout_width="match_parent"
+            android:layout_width="100dp"
+            android:rotation="-90"
+            android:layout_marginLeft="-25dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:clickable="true"
             android:gravity="center"
             android:onClick="onClick_renderModeSearch"
-            android:text="@string/nav_bar_search_short"
+            android:text="@string/nav_bar_search"
             android:textColor="#FFFFFFFF"
-            android:textSize="16dp" />
+            android:textSize="18dp" />
+
+        <TextView
+            android:id="@+id/displayModeSpectrumChangeButton"
+            android:layout_width="100dp"
+            android:rotation="-90"
+            android:layout_marginLeft="-25dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrumChange"
+            android:text="@string/nav_bar_spectrum_change"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18dp" />
+
+        <TextView
+            android:id="@+id/displayModeSpectrumButton"
+            android:layout_width="100dp"
+            android:rotation="-90"
+            android:layout_marginLeft="-25dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrum"
+            android:text="@string/nav_bar_spectrum"
+            android:textAlignment="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18dp" />
 
 <!--    <TextView-->
 <!--        android:id="@+id/displayModeSpectrogramButton"-->

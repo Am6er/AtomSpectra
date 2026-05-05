@@ -13,7 +13,6 @@
         android:layout_marginTop="80dp"
         android:layout_marginBottom="50dp"
         android:alpha="0.85"
-        android:background="@drawable/background4"
         android:clickable="true"
         android:onClick="onClickShape" />
 
@@ -222,7 +221,6 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:clickable="true"
-            android:drawableRight="@drawable/divider_up"
             android:gravity="center"
             android:onClick="onClick_renderModeSpectrum"
             android:text="@string/nav_bar_spectrum"
@@ -236,7 +234,6 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:clickable="true"
-            android:drawableRight="@drawable/divider_up"
             android:gravity="center"
             android:onClick="onClick_renderModeSpectrumChange"
             android:text="@string/nav_bar_spectrum_change"
