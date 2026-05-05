@@ -1096,7 +1096,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 double search_int_cps_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR);
                                 error95Percent = Math.round(search_int_cps_error * 2);
 
-                                statusLineMiddleText.setText(formatCpsWithError(search_int_cps, error95Percent));
+                                statusLineMiddleText.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent)));
+                                if (!isAlarmMode) {
+                                    statusLineBottomText.setText("");
+                                }
                             } else {
                                 double dose_rate_c = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
                                 double dose_rate_c_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR);

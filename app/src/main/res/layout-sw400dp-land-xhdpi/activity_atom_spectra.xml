@@ -114,7 +114,7 @@
             style="?android:attr/buttonStyleSmall"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_marginRight="60dp"
+            android:layout_marginRight="110dp"
             android:layout_gravity="right|top"
             android:onClick="onClick_Dose"
             android:text="N"
@@ -158,6 +158,7 @@
         android:layout_width="400dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="24dp"
+        android:layout_marginTop="0dp"
         android:orientation="horizontal">
 
         <TextView

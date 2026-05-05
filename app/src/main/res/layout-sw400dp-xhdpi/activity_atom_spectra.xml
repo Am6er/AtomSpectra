@@ -176,7 +176,7 @@
         android:layout_height="wrap_content"
         android:gravity="top"
         android:layout_marginLeft="24dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="24dp"
         android:orientation="vertical">
 
         <TextView
@@ -186,7 +186,7 @@
             android:layout_weight="1"
             android:text="cps: 0 (0)"
             android:textColor="@android:color/white"
-            android:textSize="20dp" />
+            android:textSize="18dp" />
 
         <TextView
             android:id="@+id/statusLineMiddleText"
@@ -195,7 +195,7 @@
             android:layout_weight="1"
             android:text="avg: 0.000"
             android:textColor="@android:color/white"
-            android:textSize="20dp" />
+            android:textSize="18dp" />
 
         <TextView
             android:id="@+id/statusLineBottomText"
@@ -204,7 +204,7 @@
             android:layout_weight="1"
             android:text="time: 1s"
             android:textColor="@android:color/white"
-            android:textSize="20dp" />
+            android:textSize="18dp" />
 
     </LinearLayout>
 
