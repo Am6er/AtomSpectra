@@ -87,6 +87,7 @@
     <string name="atom_swift_app_dr_interval">AtomSwift DR: Interval</string>
     <string name="input_sound">Source:</string>
     <string name="input_sound_absent">No input source! Use default.</string>
+    <string name="interval_search_sound_disabled_label">alarm off</string>
     <string name="interval_search_output_sound_enabled">Enable sound alarm</string>
     <string name="interval_search_energy_range_full">Energy range: Full</string>
     <string name="interval_search_energy_range_format">Energy range: %1$.0f - %2$.0f keV</string>
