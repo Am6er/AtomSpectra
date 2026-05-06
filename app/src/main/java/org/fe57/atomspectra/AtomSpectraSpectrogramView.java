@@ -180,14 +180,14 @@ public class AtomSpectraSpectrogramView extends View {
 
 	private float STROKE_WIDTH_DP = 1.5f;
 	private float POINT_SIZE_DP = 2f;
-	private float TIME_AXIS_WIDTH_DP = 100f;
+	private float TIME_AXIS_WIDTH_DP = 64f;
 	private float TIMESTAMP_MARGIN_LEFT_DP = 2f;
 	private float TEXT_FONT_SIZE_DP = 11f;
 	private float TIMESTAMP_TICK_WIDTH_DP = 8f;
 	private float ENERGY_TICK_HEIGHT_DP = 8f;
 	private float CHANNEL_AXIS_HEIGHT_DP = 40f;
-	private float HANDLE_SIZE_DP = 14f;
-	private float HANDLE_TOUCH_RADIUS_DP = 28f;
+	private float HANDLE_SIZE_DP = 25f;
+	private float HANDLE_TOUCH_RADIUS_DP = 50f;
 
 	private int POINT_SIZE_PX = (int)POINT_SIZE_DP;
 	private int TIME_AXIS_WIDTH_PX = (int)TIME_AXIS_WIDTH_DP;
@@ -203,13 +203,13 @@ public class AtomSpectraSpectrogramView extends View {
 
 	// region handle constants
 	public static final int HANDLE_NONE = 0;
-	public static final int HANDLE_BG_START_LEFT = 1;
-	public static final int HANDLE_BG_END_RIGHT = 2;
-	public static final int HANDLE_SRC_START_LEFT = 3;
-	public static final int HANDLE_SRC_END_RIGHT = 4;
+	public static final int HANDLE_BG_LEFT = 1;
+	public static final int HANDLE_BG_RIGHT = 2;
+	public static final int HANDLE_FG_LEFT = 3;
+	public static final int HANDLE_FG_RIGHT = 4;
 
 	private static final int HANDLE_COLOR_BG = 0xFF44E044; // green
-	private static final int HANDLE_COLOR_SRC = Color.WHITE;
+	private static final int HANDLE_COLOR_FG = Color.WHITE;
 	private static final int GUIDE_LINE_ALPHA = 110;
 
 	// cps data
@@ -233,10 +233,10 @@ public class AtomSpectraSpectrogramView extends View {
 	private boolean lockVerticalMove;
 
 	// region selection (row indices in the binned spectrogramData; -1 means uninitialised)
-	private int bgStartRow = -1;
-	private int bgEndRow = -1;
-	private int srcStartRow = -1;
-	private int srcEndRow = -1;
+	private int bgLeftHandleRow = -1;
+	private int bgRightHandleRow = -1;
+	private int fgLeftHandleRow = -1;
+	private int fgRightHandleRow = -1;
 	private int draggingHandle = HANDLE_NONE;
 
 	// last visible window snapshot (in binned cols / spectrogramData row indices) - used for change-detection
@@ -275,17 +275,17 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	public void setRegionRows(int bgStart, int bgEnd, int srcStart, int srcEnd) {
-		this.bgStartRow = bgStart;
-		this.bgEndRow = bgEnd;
-		this.srcStartRow = srcStart;
-		this.srcEndRow = srcEnd;
+		this.bgLeftHandleRow = bgStart;
+		this.bgRightHandleRow = bgEnd;
+		this.fgLeftHandleRow = srcStart;
+		this.fgRightHandleRow = srcEnd;
 		invalidate();
 	}
 
-	public int getBgStartRow() { return Math.min(bgStartRow, bgEndRow); }
-	public int getBgEndRow() { return Math.max(bgStartRow, bgEndRow); }
-	public int getSrcStartRow() { return Math.min(srcStartRow, srcEndRow); }
-	public int getSrcEndRow() { return Math.max(srcStartRow, srcEndRow); }
+	public int getBgLeftHandleRow() { return Math.min(bgLeftHandleRow, bgRightHandleRow); }
+	public int getBgRightHandleRow() { return Math.max(bgLeftHandleRow, bgRightHandleRow); }
+	public int getFgLeftHandleRow() { return Math.min(fgLeftHandleRow, fgRightHandleRow); }
+	public int getFgRightHandleRow() { return Math.max(fgLeftHandleRow, fgRightHandleRow); }
 
 	public int getVisibleStartChannel() {
 		if (currentStartCol < 0) return -1;
@@ -304,14 +304,14 @@ public class AtomSpectraSpectrogramView extends View {
 	private void initializeRegionsIfNeeded(int rowCount) {
 		if (rowCount <= 0) return;
 		boolean uninitialised =
-				bgStartRow < 0 || bgEndRow < 0 || srcStartRow < 0 || srcEndRow < 0
-				|| bgStartRow >= rowCount || bgEndRow >= rowCount
-				|| srcStartRow >= rowCount || srcEndRow >= rowCount;
+				bgLeftHandleRow < 0 || bgRightHandleRow < 0 || fgLeftHandleRow < 0 || fgRightHandleRow < 0
+				|| bgLeftHandleRow >= rowCount || bgRightHandleRow >= rowCount
+				|| fgLeftHandleRow >= rowCount || fgRightHandleRow >= rowCount;
 		if (uninitialised) {
-			bgStartRow = 0;
-			bgEndRow = Math.max(0, rowCount / 4);
-			srcStartRow = Math.min(rowCount - 1, (rowCount * 3) / 4);
-			srcEndRow = rowCount - 1;
+			bgLeftHandleRow = 0;
+			bgRightHandleRow = Math.max(0, rowCount / 4);
+			fgLeftHandleRow = Math.min(rowCount - 1, (rowCount * 3) / 4);
+			fgRightHandleRow = rowCount - 1;
 		}
 	}
 
@@ -415,7 +415,7 @@ public class AtomSpectraSpectrogramView extends View {
 		float touchRadiusSq = HANDLE_TOUCH_RADIUS_PX * HANDLE_TOUCH_RADIUS_PX;
 		int spgViewHeight = getHeight() - CHANNEL_AXIS_HEIGHT_PX;
 
-		int[] handles = new int[]{HANDLE_BG_START_LEFT, HANDLE_BG_END_RIGHT, HANDLE_SRC_START_LEFT, HANDLE_SRC_END_RIGHT};
+		int[] handles = new int[]{HANDLE_BG_LEFT, HANDLE_BG_RIGHT, HANDLE_FG_LEFT, HANDLE_FG_RIGHT};
 		int bestHandle = HANDLE_NONE;
 		float bestDistSq = touchRadiusSq;
 		for (int handle : handles) {
@@ -435,31 +435,52 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	private boolean isLeftHandle(int handle) {
-		return handle == HANDLE_BG_START_LEFT || handle == HANDLE_SRC_START_LEFT;
+		return handle == HANDLE_BG_LEFT || handle == HANDLE_FG_LEFT;
 	}
 
 	private int getRowForHandle(int handle) {
 		switch (handle) {
-			case HANDLE_BG_START_LEFT: return bgStartRow;
-			case HANDLE_BG_END_RIGHT: return bgEndRow;
-			case HANDLE_SRC_START_LEFT: return srcStartRow;
-			case HANDLE_SRC_END_RIGHT: return srcEndRow;
+			case HANDLE_BG_LEFT: return bgLeftHandleRow;
+			case HANDLE_BG_RIGHT: return bgRightHandleRow;
+			case HANDLE_FG_LEFT: return fgLeftHandleRow;
+			case HANDLE_FG_RIGHT: return fgRightHandleRow;
 			default: return -1;
 		}
 	}
 
 	private void setHandleRow(int handle, int row) {
 		switch (handle) {
-			case HANDLE_BG_START_LEFT: bgStartRow = row; break;
-			case HANDLE_BG_END_RIGHT: bgEndRow = row; break;
-			case HANDLE_SRC_START_LEFT: srcStartRow = row; break;
-			case HANDLE_SRC_END_RIGHT: srcEndRow = row; break;
+			case HANDLE_BG_LEFT:
+                bgLeftHandleRow = row;
+                break;
+			case HANDLE_BG_RIGHT:
+                bgRightHandleRow = row;
+                break;
+			case HANDLE_FG_LEFT:
+                fgLeftHandleRow = row;
+                break;
+			case HANDLE_FG_RIGHT:
+                fgRightHandleRow = row;
+                break;
 		}
+
+        // row in this method expected to be 'floored' in binned row
+        // make sure range includes all rows from selected bin
+        if (bgLeftHandleRow < bgRightHandleRow) {
+            bgRightHandleRow += spectrumBin - 1;
+        } else {
+            bgLeftHandleRow += spectrumBin - 1;
+        }
+        if (fgLeftHandleRow < fgRightHandleRow) {
+            fgRightHandleRow += spectrumBin - 1;
+        } else {
+            fgLeftHandleRow += spectrumBin - 1;
+        }
 	}
 
 	private float rowToClampedY(int row, int spgViewHeight) {
 		if (POINT_SIZE_PX <= 0) return 0;
-		float y = (row - currentStartRow) * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
+		float y = (float) (row - currentStartRow) / spectrumBin * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
 		if (y < 0) y = 0;
 		if (y > spgViewHeight) y = spgViewHeight;
 		return y;
@@ -467,7 +488,7 @@ public class AtomSpectraSpectrogramView extends View {
 
 	private int touchYToRow(float y) {
 		if (POINT_SIZE_PX <= 0) return 0;
-		int row = currentStartRow + Math.round(y / POINT_SIZE_PX);
+		int row = currentStartRow + Math.round(y / POINT_SIZE_PX) * spectrumBin;
 		int rowCount = getRowCount();
 		if (rowCount <= 0) return 0;
 		if (row < 0) row = 0;
@@ -738,7 +759,7 @@ public class AtomSpectraSpectrogramView extends View {
 						int displayRowIndex = originalRowIndex + 1;
 						long timestamp = this.timestamps.get(originalRowIndex);
 						String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
-						String dateLabel = timestampStr[0] + " : " + String.format("%5d", displayRowIndex);
+						String dateLabel = timestampStr[0];
 						String timeLabel = timestampStr[1];
 
 						// label tick
@@ -843,11 +864,13 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	private void drawRegionHandles(int viewWidth, int spgViewHeight, int startRow, int endRow) {
-		if (bgStartRow < 0 || srcStartRow < 0) {
+		if (bgLeftHandleRow < 0 || fgLeftHandleRow < 0) {
 			return;
 		}
 		synchronized (this.spectrogramBitmapSync) {
-			if (this.spectrogramBitmap == null) return;
+			if (this.spectrogramBitmap == null) {
+                return;
+            }
 			Canvas canvas = new Canvas(this.spectrogramBitmap);
 
 			Paint guidePaint = new Paint();
@@ -860,13 +883,13 @@ public class AtomSpectraSpectrogramView extends View {
 			trianglePaint.setStyle(Paint.Style.FILL);
 
 			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
-					bgStartRow, true, HANDLE_COLOR_BG);
+                    bgLeftHandleRow, true, HANDLE_COLOR_BG);
 			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
-					bgEndRow, false, HANDLE_COLOR_BG);
+                    bgRightHandleRow, false, HANDLE_COLOR_BG);
 			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
-					srcStartRow, true, HANDLE_COLOR_SRC);
+                    fgLeftHandleRow, true, HANDLE_COLOR_FG);
 			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
-					srcEndRow, false, HANDLE_COLOR_SRC);
+                    fgRightHandleRow, false, HANDLE_COLOR_FG);
 		}
 	}
 

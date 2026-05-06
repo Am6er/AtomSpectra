@@ -7,7 +7,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,14 +19,12 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Locale;
 
 public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
@@ -162,10 +159,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (spgView == null) {
             return;
         }
-        bgStartRow = spgView.getBgStartRow();
-        bgEndRow = spgView.getBgEndRow();
-        srcStartRow = spgView.getSrcStartRow();
-        srcEndRow = spgView.getSrcEndRow();
+        bgStartRow = spgView.getBgLeftHandleRow();
+        bgEndRow = spgView.getBgRightHandleRow();
+        srcStartRow = spgView.getFgLeftHandleRow();
+        srcEndRow = spgView.getFgRightHandleRow();
         if (preview == null || !previewVisible) {
             return;
         }
@@ -285,10 +282,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             if (spgView != null) {
                 spgView.setRegionRows(bgStartRow, bgEndRow, srcStartRow, srcEndRow);
                 spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom);
-                bgStartRow = spgView.getBgStartRow();
-                bgEndRow = spgView.getBgEndRow();
-                srcStartRow = spgView.getSrcStartRow();
-                srcEndRow = spgView.getSrcEndRow();
+                bgStartRow = spgView.getBgLeftHandleRow();
+                bgEndRow = spgView.getBgRightHandleRow();
+                srcStartRow = spgView.getFgLeftHandleRow();
+                srcEndRow = spgView.getFgRightHandleRow();
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);

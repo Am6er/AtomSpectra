@@ -170,17 +170,31 @@ public class SpectrogramPreviewView extends View {
             maxValue = 1;
         }
 
-        // X labels: energy at first/middle/last visible channel if available, else channel index
+        // X labels
+        // left bound
         drawXLabel(canvas, startCh, plotLeft, plotBottom + paintText.getTextSize() + dpToPx(2), Paint.Align.LEFT);
+        // 1/4
+        drawXLabel(canvas, startCh + (endCh - startCh) / 4,
+                plotLeft + (plotRight - plotLeft) / 4f,
+                plotBottom + paintText.getTextSize() + dpToPx(2),
+                Paint.Align.CENTER);
+        // 2/4
         drawXLabel(canvas, (startCh + endCh) / 2,
                 (plotLeft + plotRight) / 2f,
                 plotBottom + paintText.getTextSize() + dpToPx(2),
                 Paint.Align.CENTER);
+        // 3/4
+        drawXLabel(canvas, endCh - (endCh - startCh) / 4,
+                plotRight - (plotRight - plotLeft) / 4f,
+                plotBottom + paintText.getTextSize() + dpToPx(2),
+                Paint.Align.CENTER);
+        // right bound
         drawXLabel(canvas, endCh, plotRight, plotBottom + paintText.getTextSize() + dpToPx(2), Paint.Align.RIGHT);
 
         // Y label - max CPS
         paintText.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText(formatCps(maxValue), plotLeft - dpToPx(2), plotTop + paintText.getTextSize(), paintText);
+        canvas.drawText("cps", plotLeft - dpToPx(2), plotTop + paintText.getTextSize() * 2, paintText);
         canvas.drawText("0", plotLeft - dpToPx(2), plotBottom, paintText);
 
         if (background != null) {
@@ -234,7 +248,7 @@ public class SpectrogramPreviewView extends View {
         if (ratio > 1) ratio = 1;
         switch (this.scale) {
             case AtomSpectraSpectrogramView.SCALE_LOG:
-                return Math.log(ratio * 9 + 1) / Math.log(10);
+                return Math.log(ratio * 99 + 1) / Math.log(100);
             case AtomSpectraSpectrogramView.SCALE_SQRT:
                 return Math.sqrt(ratio);
             default:

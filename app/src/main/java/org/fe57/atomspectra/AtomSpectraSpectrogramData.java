@@ -33,7 +33,7 @@ public class AtomSpectraSpectrogramData {
 
         int channelBinning = channels.length / CHANNEL_COUNT;
         if (channelBinning < 1) {
-            throw new IllegalArgumentException("Unsupported channels array lenght: " + channels.length);
+            throw new IllegalArgumentException("Unsupported channels array length: " + channels.length);
         }
 
         double[] binnedCpsData = new double[CHANNEL_COUNT];
@@ -84,20 +84,15 @@ public class AtomSpectraSpectrogramData {
        return new ArrayList<>(this.durations);
    }
 
-    /**
-     * Returns a duration-weighted average CPS spectrum for rows in [startRow, endRow] (inclusive).
-     * Each row is already in CPS, but rows can have different dwell times - so we weight by duration
-     * to combine them correctly. Returns null if the range is empty or the spectrogram has no data.
-     */
-    public double[] averageSpectrum(int startRow, int endRow) {
+    public double[] averageSpectrum(int bound1, int bound2) {
         synchronized (spectrogramSync) {
             int rowCount = this.spectrogram.size();
             if (rowCount == 0) {
                 return null;
             }
 
-            int from = Math.max(0, Math.min(startRow, endRow));
-            int to = Math.min(rowCount - 1, Math.max(startRow, endRow));
+            int from = Math.max(0, Math.min(bound1, bound2));
+            int to = Math.min(rowCount - 1, Math.max(bound1, bound2));
             if (from > to) {
                 return null;
             }
