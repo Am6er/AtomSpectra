@@ -274,18 +274,18 @@ public class AtomSpectraSpectrogramView extends View {
 		this.stateChangedListener = listener;
 	}
 
-	public void setRegionRows(int bgStart, int bgEnd, int srcStart, int srcEnd) {
-		this.bgLeftHandleRow = bgStart;
-		this.bgRightHandleRow = bgEnd;
-		this.fgLeftHandleRow = srcStart;
-		this.fgRightHandleRow = srcEnd;
+	public void setRegionRows(int bgLeftBound, int bgRightBound, int fgLeftBound, int fgRightBound) {
+		this.bgLeftHandleRow = bgLeftBound;
+		this.bgRightHandleRow = bgRightBound;
+		this.fgLeftHandleRow = fgLeftBound;
+		this.fgRightHandleRow = fgRightBound;
 		invalidate();
 	}
 
-	public int getBgLeftHandleRow() { return Math.min(bgLeftHandleRow, bgRightHandleRow); }
-	public int getBgRightHandleRow() { return Math.max(bgLeftHandleRow, bgRightHandleRow); }
-	public int getFgLeftHandleRow() { return Math.min(fgLeftHandleRow, fgRightHandleRow); }
-	public int getFgRightHandleRow() { return Math.max(fgLeftHandleRow, fgRightHandleRow); }
+	public int getBgLeftHandleRow() { return bgLeftHandleRow; }
+	public int getBgRightHandleRow() { return bgRightHandleRow; }
+	public int getFgLeftHandleRow() { return fgLeftHandleRow; }
+	public int getFgRightHandleRow() { return fgRightHandleRow; }
 
 	public int getVisibleStartChannel() {
 		if (currentStartCol < 0) return -1;

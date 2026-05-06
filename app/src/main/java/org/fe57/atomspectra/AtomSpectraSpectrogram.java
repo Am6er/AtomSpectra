@@ -36,10 +36,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static String palette = AtomSpectraSpectrogramView.PALETTE_IRON;
 
     // region selection state - kept static so it survives orientation changes / activity recreate
-    private static int bgStartRow = -1;
-    private static int bgEndRow = -1;
-    private static int srcStartRow = -1;
-    private static int srcEndRow = -1;
+    private static int bgLeftBound = -1;
+    private static int bgRightBound = -1;
+    private static int fgLeftBound = -1;
+    private static int fgRightBound = -1;
     private static int lastRowCount = 0;
     private static boolean previewVisible = true;
 
@@ -113,7 +113,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         // wire region handles + preview
         AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
         if (spgView != null) {
-            spgView.setRegionRows(bgStartRow, bgEndRow, srcStartRow, srcEndRow);
+            spgView.setRegionRows(bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
             spgView.setOnSpectrogramStateChangedListener(new AtomSpectraSpectrogramView.OnSpectrogramStateChangedListener() {
                 @Override
                 public void onRegionsChanged() {
@@ -159,15 +159,15 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (spgView == null) {
             return;
         }
-        bgStartRow = spgView.getBgLeftHandleRow();
-        bgEndRow = spgView.getBgRightHandleRow();
-        srcStartRow = spgView.getFgLeftHandleRow();
-        srcEndRow = spgView.getFgRightHandleRow();
+        bgLeftBound = spgView.getBgLeftHandleRow();
+        bgRightBound = spgView.getBgRightHandleRow();
+        fgLeftBound = spgView.getFgLeftHandleRow();
+        fgRightBound = spgView.getFgRightHandleRow();
         if (preview == null || !previewVisible) {
             return;
         }
-        double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgStartRow, bgEndRow);
-        double[] src = AtomSpectraSpectrogramData.instance.averageSpectrum(srcStartRow, srcEndRow);
+        double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound, bgRightBound);
+        double[] src = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound, fgRightBound);
         double[] energies = computeEnergiesArray();
         preview.setScale(scale);
         preview.setSpectra(bg, src, energies);
@@ -268,24 +268,24 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             // shift handle indices when oldest rows have been dropped (MAX_ROWS truncation)
             if (newRowCount == 0) {
-                bgStartRow = bgEndRow = srcStartRow = srcEndRow = -1;
+                bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = -1;
             } else if (lastRowCount > 0 && newRowCount < lastRowCount) {
                 int dropped = lastRowCount - newRowCount;
-                bgStartRow = shiftRowIndex(bgStartRow, dropped);
-                bgEndRow = shiftRowIndex(bgEndRow, dropped);
-                srcStartRow = shiftRowIndex(srcStartRow, dropped);
-                srcEndRow = shiftRowIndex(srcEndRow, dropped);
+                bgLeftBound = shiftRowIndex(bgLeftBound, dropped);
+                bgRightBound = shiftRowIndex(bgRightBound, dropped);
+                fgLeftBound = shiftRowIndex(fgLeftBound, dropped);
+                fgRightBound = shiftRowIndex(fgRightBound, dropped);
             }
             lastRowCount = newRowCount;
 
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                spgView.setRegionRows(bgStartRow, bgEndRow, srcStartRow, srcEndRow);
+                spgView.setRegionRows(bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
                 spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom);
-                bgStartRow = spgView.getBgLeftHandleRow();
-                bgEndRow = spgView.getBgRightHandleRow();
-                srcStartRow = spgView.getFgLeftHandleRow();
-                srcEndRow = spgView.getFgRightHandleRow();
+                bgLeftBound = spgView.getBgLeftHandleRow();
+                bgRightBound = spgView.getBgRightHandleRow();
+                fgLeftBound = spgView.getFgLeftHandleRow();
+                fgRightBound = spgView.getFgRightHandleRow();
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
