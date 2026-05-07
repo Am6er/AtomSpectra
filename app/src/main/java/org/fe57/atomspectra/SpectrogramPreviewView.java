@@ -38,7 +38,7 @@ public class SpectrogramPreviewView extends View {
     private static final float MARGIN_BOTTOM_DP = 16f;
 
     private double[] background;
-    private double[] source;
+    private double[] foreground;
     private double[] energies;
     private String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
     private int visibleStartChannel = -1;
@@ -82,9 +82,9 @@ public class SpectrogramPreviewView extends View {
         paintText.setTextSize(dpToPx(TEXT_FONT_SIZE_DP));
     }
 
-    public void setSpectra(double[] background, double[] source, double[] energies) {
+    public void setSpectra(double[] background, double[] foreground, double[] energies) {
         this.background = background;
-        this.source = source;
+        this.foreground = foreground;
         this.energies = energies;
         invalidate();
     }
@@ -151,59 +151,65 @@ public class SpectrogramPreviewView extends View {
         canvas.drawLine(plotLeft, plotTop, plotLeft, plotBottom, paintAxis);
         canvas.drawLine(plotLeft, plotBottom, plotRight, plotBottom, paintAxis);
 
-        if (background == null && source == null) {
+        if (background == null && foreground == null) {
             return;
         }
 
-        double maxValue = 0;
+        double maxCpsValue = 0;
+        double minNonZeroCpsValue = Double.MAX_VALUE;
         if (background != null) {
             for (int i = startCh; i <= endCh && i < background.length; i++) {
-                if (background[i] > maxValue) maxValue = background[i];
+                double val = background[i];
+                if (val > maxCpsValue) {
+                    maxCpsValue = val;
+                }
+                if (val < minNonZeroCpsValue && val > 0) {
+                    minNonZeroCpsValue = val;
+                }
             }
         }
-        if (source != null) {
-            for (int i = startCh; i <= endCh && i < source.length; i++) {
-                if (source[i] > maxValue) maxValue = source[i];
+        if (foreground != null) {
+            for (int i = startCh; i <= endCh && i < foreground.length; i++) {
+                double val = foreground[i];
+                if (val > maxCpsValue) {
+                    maxCpsValue = val;
+                }
+                if (val < minNonZeroCpsValue && val > 0) {
+                    minNonZeroCpsValue = val;
+                }
             }
         }
-        if (maxValue <= 0) {
-            maxValue = 1;
+        if (maxCpsValue <= 0) {
+            maxCpsValue = 1;
+        }
+        if (minNonZeroCpsValue > maxCpsValue) {
+            minNonZeroCpsValue = maxCpsValue;
         }
 
         // X labels
         // left bound
         drawXLabel(canvas, startCh, plotLeft, plotBottom + paintText.getTextSize() + dpToPx(2), Paint.Align.LEFT);
-        // 1/4
-//        drawXLabel(canvas, startCh + (endCh - startCh) / 4,
-//                plotLeft + (plotRight - plotLeft) / 4f,
-//                plotBottom + paintText.getTextSize() + dpToPx(2),
-//                Paint.Align.CENTER);
-        // 2/4
+        // middle
         drawXLabel(canvas, (startCh + endCh) / 2,
                 (plotLeft + plotRight) / 2f,
                 plotBottom + paintText.getTextSize() + dpToPx(2),
                 Paint.Align.CENTER);
-        // 3/4
-//        drawXLabel(canvas, endCh - (endCh - startCh) / 4,
-//                plotRight - (plotRight - plotLeft) / 4f,
-//                plotBottom + paintText.getTextSize() + dpToPx(2),
-//                Paint.Align.CENTER);
         // right bound
         drawXLabel(canvas, endCh, plotRight, plotBottom + paintText.getTextSize() + dpToPx(2), Paint.Align.RIGHT);
 
         // Y label - max CPS
         paintText.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(formatCps(maxValue), plotLeft - dpToPx(2), plotTop + paintText.getTextSize(), paintText);
+        canvas.drawText(formatCps(maxCpsValue), plotLeft - dpToPx(2), plotTop + paintText.getTextSize(), paintText);
         canvas.drawText("cps", plotLeft - dpToPx(2), plotTop + paintText.getTextSize() * 2, paintText);
         canvas.drawText("0", plotLeft - dpToPx(2), plotBottom, paintText);
 
         if (background != null) {
             paintLine.setColor(COLOR_BACKGROUND);
-            drawSpectrum(canvas, background, startCh, endCh, chSpan, plotLeft, plotTop, plotWidth, plotHeight, maxValue);
+            drawSpectrum(canvas, background, startCh, endCh, chSpan, plotLeft, plotTop, plotWidth, plotHeight, maxCpsValue, minNonZeroCpsValue);
         }
-        if (source != null) {
+        if (foreground != null) {
             paintLine.setColor(COLOR_SOURCE);
-            drawSpectrum(canvas, source, startCh, endCh, chSpan, plotLeft, plotTop, plotWidth, plotHeight, maxValue);
+            drawSpectrum(canvas, foreground, startCh, endCh, chSpan, plotLeft, plotTop, plotWidth, plotHeight, maxCpsValue, minNonZeroCpsValue);
         }
     }
 
@@ -219,7 +225,8 @@ public class SpectrogramPreviewView extends View {
     }
 
     private void drawSpectrum(Canvas canvas, double[] values, int startCh, int endCh, int chSpan,
-                              int plotLeft, int plotTop, int plotWidth, int plotHeight, double maxValue) {
+                              int plotLeft, int plotTop, int plotWidth, int plotHeight,
+                              double maxValue, double minNonZeroValue) {
         if (values.length == 0 || chSpan <= 0) {
             return;
         }
@@ -229,7 +236,7 @@ public class SpectrogramPreviewView extends View {
         for (int ch = startCh; ch <= endCh && ch < values.length; ch++) {
             double v = values[ch];
             float x = plotLeft + plotWidth * (ch - startCh) / (float) chSpan;
-            float y = plotTop + plotHeight * (1f - (float) scaledRatio(v, maxValue));
+            float y = plotTop + plotHeight * (1f - (float) scaledRatio(v, maxValue, minNonZeroValue));
             if (hasPrev) {
                 canvas.drawLine(prevX, prevY, x, y, paintLine);
             }
@@ -239,7 +246,7 @@ public class SpectrogramPreviewView extends View {
         }
     }
 
-    private double scaledRatio(double value, double max) {
+    private double scaledRatio(double value, double max, double minNonZero) {
         if (value <= 0 || max <= 0) {
             return 0;
         }
@@ -247,7 +254,11 @@ public class SpectrogramPreviewView extends View {
         double ratio = 0;
         switch (this.scale) {
             case AtomSpectraSpectrogramView.SCALE_LOG:
-                ratio = Math.log(value + 1) / Math.log(max + 1);
+                if (max <= minNonZero) {
+                    ratio = 1;
+                } else {
+                    ratio = Math.log(value / minNonZero + 1) / Math.log(max / minNonZero + 1);
+                }
                 break;
             case AtomSpectraSpectrogramView.SCALE_SQRT:
                 ratio = Math.sqrt(value) / Math.sqrt(max);

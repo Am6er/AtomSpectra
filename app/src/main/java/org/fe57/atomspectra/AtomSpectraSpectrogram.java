@@ -113,10 +113,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         // wire region handles + preview
         AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
         if (spgView != null) {
-            spgView.setRegionRows(bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
             spgView.setOnSpectrogramStateChangedListener(new AtomSpectraSpectrogramView.OnSpectrogramStateChangedListener() {
                 @Override
-                public void onRegionsChanged() {
+                public void onRowSelectionChanged() {
                     syncRegionsToPreview();
                 }
 
@@ -167,10 +166,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             return;
         }
         double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound, bgRightBound);
-        double[] src = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound, fgRightBound);
+        double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound, fgRightBound);
         double[] energies = computeEnergiesArray();
         preview.setScale(scale);
-        preview.setSpectra(bg, src, energies);
+        preview.setSpectra(bg, fg, energies);
         preview.setVisibleChannelRange(spgView.getVisibleStartChannel(), spgView.getVisibleEndChannel());
     }
 
@@ -269,6 +268,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             // shift handle indices when oldest rows have been dropped (MAX_ROWS truncation)
             if (newRowCount == 0) {
                 bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = -1;
+            } else if (newRowCount > 0 && (bgLeftBound < 0 || bgRightBound < 0 || fgLeftBound < 0 || fgRightBound < 0)) {
+                bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = 0;
             } else if (lastRowCount > 0 && newRowCount < lastRowCount) {
                 int dropped = lastRowCount - newRowCount;
                 bgLeftBound = shiftRowIndex(bgLeftBound, dropped);
