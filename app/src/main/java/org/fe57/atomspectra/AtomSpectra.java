@@ -1097,7 +1097,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
                                 statusLineMiddleText.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent)));
                                 if (!isAlarmMode) {
-                                    statusLineBottomText.setText("");
+                                    statusLineBottomText.setText(R.string.interval_search_sound_disabled_label);
                                 }
                             } else {
                                 double dose_rate_c = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
@@ -4376,7 +4376,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     private void updateVersionInMenu() {
         if (app_menu != null) {
-            String testSuffix = "_TEST2";
+            String testSuffix = "_TEST3";
             AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
             app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode + testSuffix);
         }
