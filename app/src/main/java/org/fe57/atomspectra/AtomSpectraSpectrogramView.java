@@ -577,6 +577,13 @@ public class AtomSpectraSpectrogramView extends View {
 			verticalOffsetPx = this.spectrogramBinData.size() * POINT_SIZE_PX;
 		}
 
+        // clamp max row index as during binning change handle might point to non-existent bin
+        int maxRow = originalSpectrogram.size();
+        bgLeftHandleRow = Math.min(bgLeftHandleRow, maxRow);
+        bgRightHandleRow = Math.min(bgRightHandleRow, maxRow);
+        fgLeftHandleRow = Math.min(fgLeftHandleRow, maxRow);
+        fgRightHandleRow = Math.min(fgRightHandleRow, maxRow);
+
 		this.renderSpectrogramToBitmap();
 		this.invalidate();
 	}
