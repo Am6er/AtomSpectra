@@ -174,20 +174,20 @@ public class SpectrogramPreviewView extends View {
         // left bound
         drawXLabel(canvas, startCh, plotLeft, plotBottom + paintText.getTextSize() + dpToPx(2), Paint.Align.LEFT);
         // 1/4
-        drawXLabel(canvas, startCh + (endCh - startCh) / 4,
-                plotLeft + (plotRight - plotLeft) / 4f,
-                plotBottom + paintText.getTextSize() + dpToPx(2),
-                Paint.Align.CENTER);
+//        drawXLabel(canvas, startCh + (endCh - startCh) / 4,
+//                plotLeft + (plotRight - plotLeft) / 4f,
+//                plotBottom + paintText.getTextSize() + dpToPx(2),
+//                Paint.Align.CENTER);
         // 2/4
         drawXLabel(canvas, (startCh + endCh) / 2,
                 (plotLeft + plotRight) / 2f,
                 plotBottom + paintText.getTextSize() + dpToPx(2),
                 Paint.Align.CENTER);
         // 3/4
-        drawXLabel(canvas, endCh - (endCh - startCh) / 4,
-                plotRight - (plotRight - plotLeft) / 4f,
-                plotBottom + paintText.getTextSize() + dpToPx(2),
-                Paint.Align.CENTER);
+//        drawXLabel(canvas, endCh - (endCh - startCh) / 4,
+//                plotRight - (plotRight - plotLeft) / 4f,
+//                plotBottom + paintText.getTextSize() + dpToPx(2),
+//                Paint.Align.CENTER);
         // right bound
         drawXLabel(canvas, endCh, plotRight, plotBottom + paintText.getTextSize() + dpToPx(2), Paint.Align.RIGHT);
 
@@ -243,17 +243,25 @@ public class SpectrogramPreviewView extends View {
         if (value <= 0 || max <= 0) {
             return 0;
         }
-        double ratio = value / max;
-        if (ratio < 0) ratio = 0;
-        if (ratio > 1) ratio = 1;
+
+        double ratio = 0;
         switch (this.scale) {
             case AtomSpectraSpectrogramView.SCALE_LOG:
-                return Math.log(ratio * 99 + 1) / Math.log(100);
+                ratio = Math.log(value + 1) / Math.log(max + 1);
+                break;
             case AtomSpectraSpectrogramView.SCALE_SQRT:
-                return Math.sqrt(ratio);
+                ratio = Math.sqrt(value) / Math.sqrt(max);
+                break;
             default:
-                return ratio;
+                ratio = value / max;
+                break;
+
         }
+
+        if (ratio < 0) ratio = 0;
+        if (ratio > 1) ratio = 1;
+
+        return ratio;
     }
 
     private static String formatCps(double v) {

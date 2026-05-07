@@ -186,8 +186,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private float TIMESTAMP_TICK_WIDTH_DP = 8f;
 	private float ENERGY_TICK_HEIGHT_DP = 8f;
 	private float CHANNEL_AXIS_HEIGHT_DP = 40f;
-	private float HANDLE_SIZE_DP = 25f;
-	private float HANDLE_TOUCH_RADIUS_DP = 50f;
+	private float HANDLE_SIZE_DP = 20f;
+	private float HANDLE_TOUCH_RADIUS_DP = 30f;
 
 	private int POINT_SIZE_PX = (int)POINT_SIZE_DP;
 	private int TIME_AXIS_WIDTH_PX = (int)TIME_AXIS_WIDTH_DP;
@@ -302,16 +302,21 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	private void initializeRegionsIfNeeded(int rowCount) {
-		if (rowCount <= 0) return;
+		if (rowCount <= 0) {
+            bgLeftHandleRow = -1;
+            bgRightHandleRow = -1;
+            fgLeftHandleRow = -1;
+            fgRightHandleRow = -1;
+        }
 		boolean uninitialised =
 				bgLeftHandleRow < 0 || bgRightHandleRow < 0 || fgLeftHandleRow < 0 || fgRightHandleRow < 0
 				|| bgLeftHandleRow >= rowCount || bgRightHandleRow >= rowCount
 				|| fgLeftHandleRow >= rowCount || fgRightHandleRow >= rowCount;
 		if (uninitialised) {
 			bgLeftHandleRow = 0;
-			bgRightHandleRow = Math.max(0, rowCount / 4);
-			fgLeftHandleRow = Math.min(rowCount - 1, (rowCount * 3) / 4);
-			fgRightHandleRow = rowCount - 1;
+			bgRightHandleRow = 0;
+			fgLeftHandleRow = 0;
+			fgRightHandleRow = 0;
 		}
 	}
 
@@ -422,7 +427,8 @@ public class AtomSpectraSpectrogramView extends View {
 			int row = getRowForHandle(handle);
 			if (row < 0) continue;
 			float apexX = isLeftHandle(handle) ? TIME_AXIS_WIDTH_PX : (viewWidth - HANDLE_SIZE_PX);
-			float apexY = rowToClampedY(row, spgViewHeight);
+			// float apexY = rowToClampedY(row, spgViewHeight);
+            float apexY = rowToY(row);
 			float dx = x - apexX;
 			float dy = y - apexY;
 			float distSq = dx * dx + dy * dy;
@@ -479,20 +485,29 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	private float rowToClampedY(int row, int spgViewHeight) {
-		if (POINT_SIZE_PX <= 0) return 0;
-		float y = (float) (row - currentStartRow) / spectrumBin * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
+		float y = rowToY(row);
+
 		if (y < 0) y = 0;
 		if (y > spgViewHeight) y = spgViewHeight;
+
 		return y;
 	}
 
+    private float rowToY(int row) {
+        float y = (float) (row - currentStartRow) / spectrumBin * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
+
+        return y;
+    }
+
 	private int touchYToRow(float y) {
 		if (POINT_SIZE_PX <= 0) return 0;
-		int row = currentStartRow + Math.round(y / POINT_SIZE_PX) * spectrumBin;
-		int rowCount = getRowCount();
-		if (rowCount <= 0) return 0;
+
+        int rowCount = getRowCount();
+		int row = currentStartRow + ((int) Math.floor(y / POINT_SIZE_PX)) * spectrumBin;
+        if (rowCount <= 0) return 0;
 		if (row < 0) row = 0;
 		if (row > rowCount - 1) row = rowCount - 1;
+
 		return row;
 	}
 
@@ -898,7 +913,8 @@ public class AtomSpectraSpectrogramView extends View {
 							int row, boolean leftSide, int color) {
 		if (row < 0) return;
 
-		float apexY = rowToClampedY(row, spgViewHeight);
+		// float apexY = rowToClampedY(row, spgViewHeight);
+        float apexY = rowToY(row);
 		boolean visible = row >= currentStartRow && row <= currentEndRow;
 
 		// guide line drawn only when handle row is on-screen
@@ -908,7 +924,7 @@ public class AtomSpectraSpectrogramView extends View {
 			canvas.drawLine(TIME_AXIS_WIDTH_PX, apexY, viewWidth, apexY, guidePaint);
 		}
 
-		// triangle - drawn even when off-screen (clamped to top/bottom edge) so it stays reachable
+		// triangle - drawn even when off-screen
 		trianglePaint.setColor(color);
 		trianglePaint.setAlpha(255);
 
