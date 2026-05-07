@@ -281,8 +281,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                spgView.setRegionRows(bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
                 spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom);
+                // todo: refactor, this method depends on spectrum binning, also it is not clear who is the source of truth for selection bounds
+                spgView.setRegionRows(bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
                 bgLeftBound = spgView.getBgLeftHandleRow();
                 bgRightBound = spgView.getBgRightHandleRow();
                 fgLeftBound = spgView.getFgLeftHandleRow();
