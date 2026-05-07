@@ -188,6 +188,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private float CHANNEL_AXIS_HEIGHT_DP = 40f;
 	private float HANDLE_SIZE_DP = 24f;
 	private float HANDLE_TOUCH_RADIUS_DP = 40f;
+	private float PADDING_TOP_DP = HANDLE_SIZE_DP / 2f;
+	private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
 
 	private int POINT_SIZE_PX = (int)POINT_SIZE_DP;
 	private int TIME_AXIS_WIDTH_PX = (int)TIME_AXIS_WIDTH_DP;
@@ -198,6 +200,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private int CHANNEL_AXIS_HEIGHT_PX = (int)CHANNEL_AXIS_HEIGHT_DP;
 	private int HANDLE_SIZE_PX = (int)HANDLE_SIZE_DP;
 	private int HANDLE_TOUCH_RADIUS_PX = (int)HANDLE_TOUCH_RADIUS_DP;
+	private int PADDING_TOP_PX = (int)HANDLE_SIZE_DP / 2;
+	private int PADDING_RIGHT_PX = (int)HANDLE_SIZE_DP;
 
 	private int TIMESTAMP_EACH_BINS = 25;
 
@@ -390,8 +394,6 @@ public class AtomSpectraSpectrogramView extends View {
 			int row = getRowForHandle(handle);
 			if (row < 0) continue;
 			float apexX = isLeftHandle(handle) ? TIME_AXIS_WIDTH_PX : (viewWidth - HANDLE_SIZE_PX);
-            // int spgViewHeight = getHeight() - CHANNEL_AXIS_HEIGHT_PX;
-			// float apexY = rowToClampedY(row, spgViewHeight);
             float apexY = rowToY(row);
 			float dx = x - apexX;
 			float dy = y - apexY;
@@ -457,7 +459,7 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     private float rowToY(int row) {
-        return getBinForRow(row - visibleStartRow, spectrumBinning) * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
+        return getBinForRow(row - visibleStartRow, spectrumBinning) * POINT_SIZE_PX + POINT_SIZE_PX / 2f + PADDING_TOP_PX;
     }
 
 	private int touchYToBinStartRow(float y) {
@@ -466,7 +468,7 @@ public class AtomSpectraSpectrogramView extends View {
             return visibleStartRow;
         }
 
-        int bin = (int) Math.floor(y / POINT_SIZE_PX);
+        int bin = (int) Math.floor((y - PADDING_TOP_PX) / POINT_SIZE_PX);
 		int row = visibleStartRow + getBinStartRow(bin, spectrumBinning);
 
         return Constants.MinMax(row, visibleStartRow, visibleEndRow);
@@ -603,6 +605,8 @@ public class AtomSpectraSpectrogramView extends View {
 		CHANNEL_AXIS_HEIGHT_PX = dpToPx(CHANNEL_AXIS_HEIGHT_DP);
 		HANDLE_SIZE_PX = dpToPx(HANDLE_SIZE_DP);
 		HANDLE_TOUCH_RADIUS_PX = dpToPx(HANDLE_TOUCH_RADIUS_DP);
+		PADDING_TOP_PX = dpToPx(PADDING_TOP_DP);
+		PADDING_RIGHT_PX = dpToPx(PADDING_RIGHT_DP);
 	}
 
 	private void recycleBitmap() {
@@ -666,8 +670,8 @@ public class AtomSpectraSpectrogramView extends View {
 			return;
 		}
 
-		int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX;
-		int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX;
+		int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
+		int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX - PADDING_TOP_PX;
 
 		int rowBinsCount = spectrogramBinData.size();
 		int colBinsCount = spectrogramBinData.get(0).length;
@@ -743,7 +747,7 @@ public class AtomSpectraSpectrogramView extends View {
 
 		synchronized (spectrogramBitmapSync) {
 			if (this.spectrogramBitmap != null) {
-				this.spectrogramBitmap.setPixels(spgPixels, 0, colBinsToRenderWidthPx, TIME_AXIS_WIDTH_PX, 0, colBinsToRenderWidthPx, rowBinsToRenderHeightPx);
+				this.spectrogramBitmap.setPixels(spgPixels, 0, colBinsToRenderWidthPx, TIME_AXIS_WIDTH_PX, PADDING_TOP_PX, colBinsToRenderWidthPx, rowBinsToRenderHeightPx);
 			}
 		}
 
@@ -780,13 +784,14 @@ public class AtomSpectraSpectrogramView extends View {
 								: TIMESTAMP_TICK_WIDTH_PX / 2;
 
 						int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
-						int tickY = (tsBinIndex - rowBinStart) * POINT_SIZE_PX;
+						int tickY = (tsBinIndex - rowBinStart) * POINT_SIZE_PX + PADDING_TOP_PX;
 						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
 						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + 2 * TEXT_FONT_SIZE_PX + dpToPx(2), paint);
 						canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
 					}
 
-					canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, 0, TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight, paint);
+					canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, PADDING_TOP_PX, TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
+					// canvas.drawLine(viewWidth - PADDING_RIGHT_PX + 0.5f, PADDING_TOP_PX, viewWidth - PADDING_RIGHT_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
 				}
 			}
 		}
@@ -803,8 +808,8 @@ public class AtomSpectraSpectrogramView extends View {
 				paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
 				// energy axis render
-				int energyAxisBaseline = spgViewHeight;
-				int channelAxisBaseline = spgViewHeight + CHANNEL_AXIS_HEIGHT_PX / 2;
+				int energyAxisBaseline = spgViewHeight + PADDING_TOP_PX;
+				int channelAxisBaseline = spgViewHeight + PADDING_TOP_PX + CHANNEL_AXIS_HEIGHT_PX / 2;
 				for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
 					int tickX = (colBin - colBinStart) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
 
@@ -857,7 +862,7 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 
 		// render region handles + guide lines on top of everything
-		drawRegionHandles(viewWidth, spgViewHeight);
+		drawRegionHandles(viewWidth);
 
 		// notify listener about visible channel range changes
         // TODO: looks like not optimal place to do notification
@@ -874,7 +879,7 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 	}
 
-	private void drawRegionHandles(int viewWidth, int spgViewHeight) {
+	private void drawRegionHandles(int viewWidth) {
 		synchronized (this.spectrogramBitmapSync) {
 			if (this.spectrogramBitmap == null) {
                 return;
@@ -914,7 +919,7 @@ public class AtomSpectraSpectrogramView extends View {
 
         guidePaint.setColor(color);
         guidePaint.setAlpha(GUIDE_LINE_ALPHA);
-        canvas.drawLine(TIME_AXIS_WIDTH_PX, apexY, viewWidth, apexY, guidePaint);
+        canvas.drawLine(TIME_AXIS_WIDTH_PX, apexY, viewWidth - PADDING_RIGHT_PX, apexY, guidePaint);
 
 		trianglePaint.setColor(color);
 		trianglePaint.setAlpha(255);
