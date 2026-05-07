@@ -36,6 +36,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static String palette = AtomSpectraSpectrogramView.PALETTE_IRON;
 
     // region selection state - kept static so it survives orientation changes / activity recreate
+    private static String recordingId = "";
     private static int bgLeftBound = -1;
     private static int bgRightBound = -1;
     private static int fgLeftBound = -1;
@@ -244,6 +245,16 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         super.onStart();
         isActive = true;
 
+        // reset state for each new spectrogram
+        if (recordingId != AtomSpectraSpectrogramData.instance.getRecordingId()) {
+            sbin = 1;
+            bgLeftBound = -1;
+            bgRightBound = -1;
+            fgLeftBound = -1;
+            fgRightBound = -1;
+            recordingId = AtomSpectraSpectrogramData.instance.getRecordingId();
+        }
+
         // scroll to bottom at first render if recording is in progress
         boolean scrollToBottom = !AtomSpectraService.getFreeze();
         updateSpectrogram(scrollToBottom);
@@ -281,13 +292,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
-                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom);
-                // todo: refactor, this method depends on spectrum binning, also it is not clear who is the source of truth for selection bounds
-                spgView.setRegionRows(bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
-                bgLeftBound = spgView.getBgLeftHandleRow();
-                bgRightBound = spgView.getBgRightHandleRow();
-                fgLeftBound = spgView.getFgLeftHandleRow();
-                fgRightBound = spgView.getFgRightHandleRow();
+                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom,
+                        bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);

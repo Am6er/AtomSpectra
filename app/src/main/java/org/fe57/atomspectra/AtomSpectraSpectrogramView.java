@@ -274,16 +274,6 @@ public class AtomSpectraSpectrogramView extends View {
 		this.stateChangedListener = listener;
 	}
 
-	public void setRegionRows(int bgLeftBound, int bgRightBound, int fgLeftBound, int fgRightBound) {
-		this.bgLeftHandleRow = bgLeftBound;
-		this.bgRightHandleRow = bgRightBound;
-		this.fgLeftHandleRow = fgLeftBound;
-		this.fgRightHandleRow = fgRightBound;
-
-        ensureHandlesIncludeWholeBins();
-		invalidate();
-	}
-
 	public int getBgLeftHandleRow() { return bgLeftHandleRow; }
 	public int getBgRightHandleRow() { return bgRightHandleRow; }
 	public int getFgLeftHandleRow() { return fgLeftHandleRow; }
@@ -466,15 +456,6 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
-	private float rowToClampedY(int row, int spgViewHeight) {
-		float y = rowToY(row);
-
-		if (y < 0) y = 0;
-		if (y > spgViewHeight) y = spgViewHeight;
-
-		return y;
-	}
-
     private float rowToY(int row) {
         return getBinForRow(row - visibleStartRow, spectrumBinning) * POINT_SIZE_PX + POINT_SIZE_PX / 2f;
     }
@@ -491,14 +472,23 @@ public class AtomSpectraSpectrogramView extends View {
         return Constants.MinMax(row, visibleStartRow, visibleEndRow);
     }
 
-	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBinning, int channelBinning, String scale, String palette, boolean scrollToBottom) {
+	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBinning, int channelBinning,
+                                  String scale, String palette, boolean scrollToBottom,
+                                  int bgLeftBound, int bgRightBound, int fgLeftBound, int fgRightBound) {
+        ArrayList<double[]> originalSpectrogram = data.getSpectrogram();
 		// TODO: validate bin values, must be 2^n
 		this.spectrumBinning = spectrumBinning;
 		this.channelBinning = channelBinning;
 		this.scale = scale;
 		this.palette = palette;
 
-		ArrayList<double[]> originalSpectrogram = data.getSpectrogram();
+        int maxRow = originalSpectrogram.size() - 1;
+        this.bgLeftHandleRow = Math.min(bgLeftBound, maxRow);
+        this.bgRightHandleRow = Math.min(bgRightBound, maxRow);;
+        this.fgLeftHandleRow = Math.min(fgLeftBound, maxRow);
+        this.fgRightHandleRow = Math.min(fgRightBound, maxRow);
+        ensureHandlesIncludeWholeBins();
+
 		ArrayList<double[]> binnedSpectrogram;
 		int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
 		int channelBinsCount = originalChannelCount / channelBinning;
@@ -577,14 +567,7 @@ public class AtomSpectraSpectrogramView extends View {
 			verticalOffsetPx = this.spectrogramBinData.size() * POINT_SIZE_PX;
 		}
 
-        // clamp max row index as during binning change handle might point to non-existent bin
-        int maxRow = originalSpectrogram.size();
-        bgLeftHandleRow = Math.min(bgLeftHandleRow, maxRow);
-        bgRightHandleRow = Math.min(bgRightHandleRow, maxRow);
-        fgLeftHandleRow = Math.min(fgLeftHandleRow, maxRow);
-        fgRightHandleRow = Math.min(fgRightHandleRow, maxRow);
-
-		this.renderSpectrogramToBitmap();
+        this.renderSpectrogramToBitmap();
 		this.invalidate();
 	}
 
@@ -892,10 +875,6 @@ public class AtomSpectraSpectrogramView extends View {
 	}
 
 	private void drawRegionHandles(int viewWidth, int spgViewHeight) {
-		if (bgLeftHandleRow < 0 || fgLeftHandleRow < 0 || bgRightHandleRow < 0 || fgRightHandleRow < 0) {
-			return;
-		}
-
 		synchronized (this.spectrogramBitmapSync) {
 			if (this.spectrogramBitmap == null) {
                 return;
@@ -911,23 +890,21 @@ public class AtomSpectraSpectrogramView extends View {
 			trianglePaint.setAntiAlias(true);
 			trianglePaint.setStyle(Paint.Style.FILL);
 
-			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
                     bgLeftHandleRow, true, HANDLE_COLOR_BG);
-			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
                     bgRightHandleRow, false, HANDLE_COLOR_BG);
-			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
                     fgLeftHandleRow, true, HANDLE_COLOR_FG);
-			drawHandle(canvas, guidePaint, trianglePaint, viewWidth, spgViewHeight,
+			drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
                     fgRightHandleRow, false, HANDLE_COLOR_FG);
 		}
 	}
 
 	private void drawHandle(Canvas canvas, Paint guidePaint, Paint trianglePaint,
-							int viewWidth, int spgViewHeight,
-							int row, boolean leftSide, int color) {
+							int viewWidth, int row, boolean leftSide, int color) {
 		if (row < 0) return;
 
-		// float apexY = rowToClampedY(row, spgViewHeight);
         float apexY = rowToY(row);
 		boolean visible = row >= visibleStartRow && row <= visibleEndRow;
 

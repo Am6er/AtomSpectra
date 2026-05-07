@@ -14,6 +14,12 @@ public class AtomSpectraSpectrogramData {
     private final ArrayList<Double> durations = new ArrayList<>();
     private Spectrum baseSpectrum = null;
 
+    private String recordingId = java.util.UUID.randomUUID().toString();
+
+    public String getRecordingId() {
+        return recordingId;
+    }
+
     public void setBaseSpectrum(Spectrum baseSpectrum) {
         this.baseSpectrum = baseSpectrum;
     }
@@ -69,6 +75,7 @@ public class AtomSpectraSpectrogramData {
             this.timestamps.clear();
             this.spectrogram.clear();
             this.durations.clear();
+            this.recordingId = java.util.UUID.randomUUID().toString();
         }
     }
 
