@@ -180,9 +180,9 @@ public class AtomSpectraSpectrogramView extends View {
 
 	private float STROKE_WIDTH_DP = 1.5f;
 	private float POINT_SIZE_DP = 2f;
-	private float TIME_AXIS_WIDTH_DP = 64f;
+	private float TIME_AXIS_WIDTH_DP = 90f;
 	private float TIMESTAMP_MARGIN_LEFT_DP = 2f;
-	private float TEXT_FONT_SIZE_DP = 11f;
+	private float TEXT_FONT_SIZE_DP = 12f;
 	private float TIMESTAMP_TICK_WIDTH_DP = 8f;
 	private float ENERGY_TICK_HEIGHT_DP = 8f;
 	private float CHANNEL_AXIS_HEIGHT_DP = 40f;
