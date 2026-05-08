@@ -523,6 +523,7 @@
     <string name="spectrogram_loading_dialog_stop">Stop and view loaded</string>
     <string name="spectrogram_view">View</string>
     <string name="spectrogram_row_count">Rows: %1$d</string>
+    <string name="spectrogram_preview_toggle">Show or hide the spectrum preview</string>
 
     <string name="help_menu">Help</string>
     <string name="help">Atom Spectra Quick Help</string>
