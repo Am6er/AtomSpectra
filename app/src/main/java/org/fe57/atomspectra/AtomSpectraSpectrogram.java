@@ -357,6 +357,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     @Override
     public void onLongPress(@NonNull MotionEvent e) {
+        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
+        if (spgView != null && !spgView.isTouchInContentArea(e.getX(), e.getY())) {
+            return;
+        }
         // update palette
         switch (palette) {
             case AtomSpectraSpectrogramView.PALETTE_IRON:

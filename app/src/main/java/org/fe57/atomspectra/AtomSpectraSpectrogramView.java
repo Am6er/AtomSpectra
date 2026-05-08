@@ -305,6 +305,13 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 	}
 
+	public boolean isTouchInContentArea(float x, float y) {
+		return x >= TIME_AXIS_WIDTH_PX
+				&& x <= getWidth() - PADDING_RIGHT_PX
+				&& y <= getHeight() - CHANNEL_AXIS_HEIGHT_PX
+        && y >= PADDING_TOP_PX;
+	}
+
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		if (spectrogramBinData == null || spectrogramBinData.isEmpty()) {
