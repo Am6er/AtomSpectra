@@ -3,42 +3,27 @@
     android:id="@+id/FrameLayout1"
     android:layout_width="match_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/background4"
+    android:background="#000000"
     tools:context=".AtomSpectra">
-
-    <View
-        android:id="@+id/placeholder"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:alpha="0.85"
-        android:background="@android:color/black" />
-
-    <View
-        android:id="@+id/placeholder2"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_gravity="bottom"
-        android:alpha="0.85"
-        android:background="@android:color/black" />
 
     <org.fe57.atomspectra.AtomSpectraShapeView
         android:id="@+id/shape_area"
         android:layout_width="match_parent"
         android:layout_height="fill_parent"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="80dp"
         android:layout_marginBottom="50dp"
         android:alpha="0.85"
-        android:background="@drawable/background4"
         android:clickable="true"
         android:onClick="onClickShape" />
 
     <Button
-        android:id="@+id/addPointButton"
+        android:id="@+id/addCalibrationPointButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="right|top"
-        android:layout_marginRight="160dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="110dp"
         android:onClick="onAddCalibrationPoint"
         android:text="1"
         android:textColor="#FFFFFFFF"
@@ -50,7 +35,8 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="right|top"
-        android:layout_marginRight="110dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="60dp"
         android:enabled="false"
         android:onClick="onCalibrateButton"
         android:text="@string/leftwards"
@@ -63,6 +49,7 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="right|top"
+        android:layout_marginTop="50dp"
         android:layout_marginRight="60dp"
         android:onClick="onClearCalibrationButton"
         android:text="@string/rightwards"
@@ -75,6 +62,7 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="right|top"
+        android:layout_marginTop="0dp"
         android:adjustViewBounds="true"
         android:contentDescription="@string/action_restart"
         android:foregroundGravity="center"
@@ -87,7 +75,8 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
+        android:layout_gravity="top|right"
+        android:layout_marginTop="50dp"
         android:background="@drawable/input_none"
         android:clickable="false"
         android:enabled="false"
@@ -96,12 +85,13 @@
         android:textSize="12dp" />
 
     <Button
-        android:id="@+id/channelButton"
+        android:id="@+id/keVOrChannelButton"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="50dp"
+        android:layout_gravity="right|top"
+        android:layout_marginTop="50dp"
+        android:layout_marginRight="110dp"
         android:onClick="onClick_xAxisScale"
         android:text="@string/mode_axis_kev_button"
         android:textColor="#FFFFFFFF"
@@ -112,8 +102,9 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="100dp"
+        android:layout_gravity="right|top"
+        android:layout_marginTop="50dp"
+        android:layout_marginRight="60dp"
         android:onClick="onClick_fms"
         android:text="F"
         android:textColor="#FFFFFFFF"
@@ -124,8 +115,9 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="150dp"
+        android:layout_gravity="right|top"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="60dp"
         android:onClick="onClick_Dose"
         android:text="N"
         android:textColor="#FFFFFFFF"
@@ -136,31 +128,20 @@
         style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="200dp"
+        android:layout_gravity="right|top"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="110dp"
         android:enabled="false"
         android:onClick="onClick_Sound"
         android:text="≈"
         android:textColor="#FFFFFFFF"
         android:textSize="18dp" />
 
-    <Button
-        android:id="@+id/displayModeButton"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="100dp"
-        android:layout_height="50dp"
-        android:layout_gravity="bottom|right"
-        android:layout_marginRight="250dp"
-        android:onClick="onClick_renderMode"
-        android:text="@string/mode_spectrum_button"
-        android:textColor="#FFFFFFFF"
-        android:textSize="16dp" />
-
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center|top"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="200dp"
         android:orientation="horizontal">
 
         <SeekBar
@@ -181,8 +162,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:layout_marginLeft="0dp"
-        android:layout_marginTop="75dp"
-        android:layout_marginRight="0dp"
+        android:layout_marginTop="130dp"
+        android:layout_marginRight="20dp"
         android:background="@color/colorCursorBackground"
         android:gravity="center"
         android:onClick="onClick_Channel"
@@ -191,37 +172,97 @@
         android:textSize="14dp" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="top|left"
+        android:gravity="top"
+        android:layout_marginLeft="24dp"
+        android:layout_marginTop="24dp"
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/channelText"
+            android:id="@+id/statusLineTopText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="30sp"
-            android:clickable="true"
-            android:longClickable="true"
-            android:minWidth="100dp"
-            android:onClick="onClick_Coord"
-            android:text="@string/cps"
+            android:layout_weight="1"
+            android:text="cps: 0 (0)"
             android:textColor="@android:color/white"
             android:textSize="18dp" />
 
         <TextView
-            android:id="@+id/doserateText"
+            android:id="@+id/statusLineMiddleText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="30sp"
-            android:clickable="true"
-            android:longClickable="true"
-            android:minWidth="100dp"
-            android:onClick="onClick_Coord"
-            android:text="12 uSv"
+            android:layout_weight="1"
+            android:text="avg: 0.000"
             android:textColor="@android:color/white"
             android:textSize="18dp" />
 
+        <TextView
+            android:id="@+id/statusLineBottomText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="time: 1s"
+            android:textColor="@android:color/white"
+            android:textSize="18dp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:layout_gravity="bottom"
+        android:background="#333333"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/displayModeSpectrumButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrum"
+            android:text="@string/nav_bar_spectrum"
+            android:textAlignment="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18dp" />
+
+        <TextView
+            android:id="@+id/displayModeSpectrumChangeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSpectrumChange"
+            android:text="@string/nav_bar_spectrum_change"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18dp" />
+
+        <TextView
+            android:id="@+id/displayModeSearchButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:gravity="center"
+            android:onClick="onClick_renderModeSearch"
+            android:text="@string/nav_bar_search"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18dp" />
+
+<!--        <TextView-->
+<!--            android:id="@+id/displayModeSpectrogramButton"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="1"-->
+<!--            android:clickable="true"-->
+<!--            android:gravity="center"-->
+<!--            android:onClick="onClick_renderModeSpectrogram"-->
+<!--            android:text="@string/nav_bar_spectrogram"-->
+<!--            android:textColor="#FFFFFFFF"-->
+<!--            android:textSize="16dp" />-->
     </LinearLayout>
 
     <LinearLayout
@@ -229,7 +270,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
-        android:layout_marginTop="200dp"
+        android:layout_marginTop="300dp"
+        android:layout_marginRight="20dp"
         android:orientation="vertical">
 
         <TextView
