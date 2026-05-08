@@ -253,8 +253,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             fgLeftBound = -1;
             fgRightBound = -1;
             recordingId = AtomSpectraSpectrogramData.instance.getRecordingId();
+
         }
 
+        updateControlPanel();
         // scroll to bottom at first render if recording is in progress
         boolean scrollToBottom = !AtomSpectraService.getFreeze();
         updateSpectrogram(scrollToBottom);
