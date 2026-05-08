@@ -523,6 +523,7 @@
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
+    <string name="spectrogram_preview_toggle">Показать или скрыть предпросмотр спектра</string>
 
     <string name="help_menu">Помощь</string>
     <string name="help">Atom Spectra Краткая помощь</string>

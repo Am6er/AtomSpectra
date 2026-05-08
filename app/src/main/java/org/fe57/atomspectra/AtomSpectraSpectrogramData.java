@@ -14,6 +14,12 @@ public class AtomSpectraSpectrogramData {
     private final ArrayList<Double> durations = new ArrayList<>();
     private Spectrum baseSpectrum = null;
 
+    private String recordingId = java.util.UUID.randomUUID().toString();
+
+    public String getRecordingId() {
+        return recordingId;
+    }
+
     public void setBaseSpectrum(Spectrum baseSpectrum) {
         this.baseSpectrum = baseSpectrum;
     }
@@ -33,7 +39,7 @@ public class AtomSpectraSpectrogramData {
 
         int channelBinning = channels.length / CHANNEL_COUNT;
         if (channelBinning < 1) {
-            throw new IllegalArgumentException("Unsupported channels array lenght: " + channels.length);
+            throw new IllegalArgumentException("Unsupported channels array length: " + channels.length);
         }
 
         double[] binnedCpsData = new double[CHANNEL_COUNT];
@@ -69,6 +75,7 @@ public class AtomSpectraSpectrogramData {
             this.timestamps.clear();
             this.spectrogram.clear();
             this.durations.clear();
+            this.recordingId = java.util.UUID.randomUUID().toString();
         }
     }
 
@@ -83,6 +90,42 @@ public class AtomSpectraSpectrogramData {
    public ArrayList<Double> getDurations() {
        return new ArrayList<>(this.durations);
    }
+
+    public double[] averageSpectrum(int bound1, int bound2) {
+        synchronized (spectrogramSync) {
+            int rowCount = this.spectrogram.size();
+            if (rowCount == 0) {
+                return null;
+            }
+
+            int from = Math.max(0, Math.min(bound1, bound2));
+            int to = Math.min(rowCount - 1, Math.max(bound1, bound2));
+            if (from > to) {
+                return null;
+            }
+
+            double[] result = new double[CHANNEL_COUNT];
+            double totalDuration = 0;
+            for (int i = from; i <= to; i++) {
+                double duration = this.durations.get(i);
+                double[] row = this.spectrogram.get(i);
+                totalDuration += duration;
+                for (int k = 0; k < CHANNEL_COUNT; k++) {
+                    result[k] += row[k] * duration;
+                }
+            }
+
+            if (totalDuration <= 0) {
+                return null;
+            }
+
+            for (int k = 0; k < CHANNEL_COUNT; k++) {
+                result[k] /= totalDuration;
+            }
+
+            return result;
+        }
+    }
 
     public double channelToEnergy(int channel) {
         if (this.baseSpectrum == null) {
