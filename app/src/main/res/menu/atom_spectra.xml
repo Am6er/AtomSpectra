@@ -82,14 +82,6 @@
                 android:icon="@drawable/menu_smooth"
                 android:orderInCategory="207"
                 android:title="@string/hist_smooth" />
-            <item
-                android:id="@+id/action_hist_delta"
-                android:checkable="true"
-                android:checked="false"
-                android:enabled="true"
-                android:icon="@drawable/menu_delta_time"
-                android:orderInCategory="208"
-                android:title="@string/hist_delta" />
         </menu>
     </item>
     <item
