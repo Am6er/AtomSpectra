@@ -243,6 +243,7 @@ public class AtomSpectraSpectrogramView extends View {
 	private int fgLeftHandleRow = -1;
 	private int fgRightHandleRow = -1;
 	private int draggingHandle = HANDLE_NONE;
+	private boolean clampHandles = true;
 
 	// last visible window snapshot (in original cols / spectrogramData row indices) - used for change-detection
 	private int visibleStartRow = 0;
@@ -402,7 +403,7 @@ public class AtomSpectraSpectrogramView extends View {
 			int row = getRowForHandle(handle);
 			if (row < 0) continue;
 			float apexX = isLeftHandle(handle) ? TIME_AXIS_WIDTH_PX : (viewWidth - HANDLE_SIZE_PX);
-            float apexY = rowToY(row);
+            float apexY = rowToY(row, clampHandles);
 			float dx = x - apexX;
 			float dy = y - apexY;
 			float distSq = dx * dx + dy * dy;
@@ -466,8 +467,20 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
-    private float rowToY(int row) {
-        return getBinForRow(row - visibleStartRow, spectrumBinning) * POINT_SIZE_PX + POINT_SIZE_PX / 2f + PADDING_TOP_PX;
+    private float rowToY(int row, boolean clamp) {
+		float y = getBinForRow(row - visibleStartRow, spectrumBinning) * POINT_SIZE_PX + POINT_SIZE_PX / 2f + PADDING_TOP_PX;
+
+		if (clamp && y < PADDING_TOP_PX) {
+			y = PADDING_TOP_PX;
+		}
+
+		int viewHeight = getHeight();
+		if (clamp && y > viewHeight - CHANNEL_AXIS_HEIGHT_PX) {
+			y = viewHeight - CHANNEL_AXIS_HEIGHT_PX;
+		}
+
+
+        return y;
     }
 
 	private int touchYToBinStartRow(float y) {
@@ -918,44 +931,46 @@ public class AtomSpectraSpectrogramView extends View {
 							int viewWidth, int row, boolean leftSide, int color) {
 		if (row < 0) return;
 
-        float apexY = rowToY(row);
+        float apexY = rowToY(row, clampHandles);
 		boolean visible = row >= visibleStartRow && row <= visibleEndRow;
 
-        if (!visible) {
-            return;
-        }
-
-        guidePaint.setColor(color);
-        guidePaint.setAlpha(GUIDE_LINE_ALPHA);
-        canvas.drawLine(TIME_AXIS_WIDTH_PX, apexY, viewWidth - PADDING_RIGHT_PX, apexY, guidePaint);
-
-		trianglePaint.setColor(color);
-		trianglePaint.setAlpha(255);
-
-		float apexX, baseX;
-		if (leftSide) {
-			apexX = TIME_AXIS_WIDTH_PX;
-			baseX = TIME_AXIS_WIDTH_PX - HANDLE_SIZE_PX;
-		} else {
-			apexX = viewWidth - HANDLE_SIZE_PX;
-			baseX = viewWidth;
+		if (visible) {
+			// selection boundary line
+			guidePaint.setColor(color);
+			guidePaint.setAlpha(GUIDE_LINE_ALPHA);
+			canvas.drawLine(TIME_AXIS_WIDTH_PX, apexY, viewWidth - PADDING_RIGHT_PX, apexY, guidePaint);
 		}
-		float halfBase = HANDLE_SIZE_PX / 2f;
 
-		Path path = new Path();
-		path.moveTo(apexX, apexY);
-		path.lineTo(baseX, apexY - halfBase);
-		path.lineTo(baseX, apexY + halfBase);
-		path.close();
-		canvas.drawPath(path, trianglePaint);
+		if (visible || clampHandles) {
+			// triangle handles
+			trianglePaint.setColor(color);
+			trianglePaint.setAlpha(visible ? 255 : 128);
 
-		// dark outline for contrast against bright spectrogram cells
-		Paint outlinePaint = new Paint();
-		outlinePaint.setAntiAlias(true);
-		outlinePaint.setStyle(Paint.Style.STROKE);
-		outlinePaint.setStrokeWidth(dpToPx(1));
-		outlinePaint.setColor(Color.BLACK);
-		canvas.drawPath(path, outlinePaint);
+			float apexX, baseX;
+			if (leftSide) {
+				apexX = TIME_AXIS_WIDTH_PX;
+				baseX = TIME_AXIS_WIDTH_PX - HANDLE_SIZE_PX;
+			} else {
+				apexX = viewWidth - HANDLE_SIZE_PX;
+				baseX = viewWidth;
+			}
+			float halfBase = HANDLE_SIZE_PX / 2f;
+
+			Path path = new Path();
+			path.moveTo(apexX, apexY);
+			path.lineTo(baseX, apexY - halfBase);
+			path.lineTo(baseX, apexY + halfBase);
+			path.close();
+			canvas.drawPath(path, trianglePaint);
+
+			// dark outline for contrast against bright spectrogram cells
+			Paint outlinePaint = new Paint();
+			outlinePaint.setAntiAlias(true);
+			outlinePaint.setStyle(Paint.Style.STROKE);
+			outlinePaint.setStrokeWidth(dpToPx(1));
+			outlinePaint.setColor(Color.BLACK);
+			canvas.drawPath(path, outlinePaint);
+		}
 	}
 
 	private int mapValueToColor(double value) {
