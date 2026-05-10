@@ -690,7 +690,7 @@
         \t- You can view the currently recording spectrogram using the <annotation foreground="parameter">View</annotation> command in the <annotation foreground="parameter">Spectrogram</annotation> submenu. The first line of the spectrogram appears once the first recording interval elapses.\n
         \t- You can view a previously recorded spectrogram using the command <annotation foreground="parameter">Load from…</annotation> in the submenu <annotation foreground="parameter">Spectrogram</annotation>.\n
         \t- To record spectrograms 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation>, which allows you to limit the size of the recorded files.\n
-        \t- When saving spectrograms, full data on all 8192 spectrum channels is recorded. When displayed, the spectrogram data is compressed to 512 channels.\n
+        \t- When saving spectrograms, full data on all 8192 spectrum channels is recorded. When displayed, the spectrogram data is compressed to 1024 channels.\n
         \tNOTE: Using the spectrogram recording mode results in increased consumption of RAM.\n
         \n
     </string>
