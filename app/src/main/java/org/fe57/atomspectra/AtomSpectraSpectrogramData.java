@@ -5,13 +5,13 @@ import java.util.Date;
 
 public class AtomSpectraSpectrogramData {
     public static final AtomSpectraSpectrogramData instance = new AtomSpectraSpectrogramData();
-    public static final int CHANNEL_COUNT = 512; // must be 2^n and less then 8192
+    public static final int CHANNEL_COUNT = 1024; // must be 2^n and less then 8192
     public static final int MAX_ROWS = 25000;
 
     private final Object spectrogramSync = new Object();
-    private final ArrayList<double[]> spectrogram = new ArrayList<>();
+    private final ArrayList<float[]> spectrogram = new ArrayList<>();
     private final ArrayList<Long> timestamps = new ArrayList<>();
-    private final ArrayList<Double> durations = new ArrayList<>();
+    private final ArrayList<Float> durations = new ArrayList<>();
     private Spectrum baseSpectrum = null;
 
     private String recordingId = java.util.UUID.randomUUID().toString();
@@ -42,19 +42,19 @@ public class AtomSpectraSpectrogramData {
             throw new IllegalArgumentException("Unsupported channels array length: " + channels.length);
         }
 
-        double[] binnedCpsData = new double[CHANNEL_COUNT];
+        float[] binnedCpsData = new float[CHANNEL_COUNT];
         for (int i = 0; i < channels.length; i += channelBinning) {
             long summ = 0;
             for (int j = 0; j < channelBinning && (i + j) < channels.length; j++) {
                 summ += channels[i + j];
             }
 
-            binnedCpsData[i / channelBinning] = summ / duration;
+            binnedCpsData[i / channelBinning] = (float) (summ / duration);
         }
 
         synchronized (spectrogramSync) {
             this.spectrogram.add(binnedCpsData);
-            this.durations.add(duration);
+            this.durations.add((float) duration);
             this.timestamps.add(timestamp);
 
             if (this.rowCount() > MAX_ROWS) {
@@ -79,7 +79,7 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    public ArrayList<double[]> getSpectrogram() {
+    public ArrayList<float[]> getSpectrogram() {
         return new ArrayList<>(this.spectrogram);
     }
 
@@ -87,7 +87,7 @@ public class AtomSpectraSpectrogramData {
        return new ArrayList<>(this.timestamps);
    }
 
-   public ArrayList<Double> getDurations() {
+   public ArrayList<Float> getDurations() {
        return new ArrayList<>(this.durations);
    }
 
@@ -108,7 +108,7 @@ public class AtomSpectraSpectrogramData {
             double totalDuration = 0;
             for (int i = from; i <= to; i++) {
                 double duration = this.durations.get(i);
-                double[] row = this.spectrogram.get(i);
+                float[] row = this.spectrogram.get(i);
                 totalDuration += duration;
                 for (int k = 0; k < CHANNEL_COUNT; k++) {
                     result[k] += row[k] * duration;

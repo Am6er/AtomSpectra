@@ -218,7 +218,7 @@ public class AtomSpectraSpectrogramView extends View {
 	private static final int GUIDE_LINE_ALPHA = 110;
 
 	// cps data
-	private ArrayList<double[]> spectrogramBinData = null;
+	private ArrayList<float[]> spectrogramBinData = null;
 	private ArrayList<Long> timestamps = null;
 	private HashMap<Integer, Integer> energyTicks = null;
 	private double maxValue = 0;
@@ -498,7 +498,7 @@ public class AtomSpectraSpectrogramView extends View {
 	public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBinning, int channelBinning,
                                   String scale, String palette, boolean scrollToBottom,
                                   int bgLeftBound, int bgRightBound, int fgLeftBound, int fgRightBound) {
-        ArrayList<double[]> originalSpectrogram = data.getSpectrogram();
+        ArrayList<float[]> originalSpectrogram = data.getSpectrogram();
 		// TODO: validate bin values, must be 2^n
 		this.spectrumBinning = spectrumBinning;
 		this.channelBinning = channelBinning;
@@ -512,15 +512,15 @@ public class AtomSpectraSpectrogramView extends View {
         this.fgRightHandleRow = Math.min(fgRightBound, maxRow);
         ensureHandlesIncludeWholeBins();
 
-		ArrayList<double[]> binnedSpectrogram;
+		ArrayList<float[]> binnedSpectrogram;
 		int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
 		int channelBinsCount = originalChannelCount / channelBinning;
 		if (channelBinning > 1) {
 			binnedSpectrogram = new ArrayList<>(originalSpectrogram.size());
-			for (double[] row : originalSpectrogram) {
-				double[] binnedRow = new double[channelBinsCount];
+			for (float[] row : originalSpectrogram) {
+				float[] binnedRow = new float[channelBinsCount];
 				for (int i = 0; i < originalChannelCount; i += channelBinning) {
-					double sum = 0;
+					float sum = 0;
 					for (int j = 0; j < channelBinning && (i + j) < originalChannelCount; j++) {
 						sum += row[i + j];
 					}
@@ -535,13 +535,13 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 
 		if (spectrumBinning > 1) {
-			ArrayList<Double> originalDurations = data.getDurations();
-			ArrayList<double[]> spectrumBinnedSpectrogram = new ArrayList<>(binnedSpectrogram.size() / spectrumBinning);
+			ArrayList<Float> originalDurations = data.getDurations();
+			ArrayList<float[]> spectrumBinnedSpectrogram = new ArrayList<>(binnedSpectrogram.size() / spectrumBinning);
 			for (int i = 0; i < binnedSpectrogram.size(); i += spectrumBinning) {
-				double binnedDuration = 0;
-				double[] binnedRow = new double[channelBinsCount];
+				float binnedDuration = 0;
+				float[] binnedRow = new float[channelBinsCount];
 				for (int j = 0; j < spectrumBinning && (i + j) < binnedSpectrogram.size(); j++) {
-					double rowDuration = originalDurations.get(i + j);
+					float rowDuration = originalDurations.get(i + j);
 					binnedDuration += rowDuration;
 					for (int k = 0; k < channelBinsCount; k++) {
 						binnedRow[k] += binnedSpectrogram.get(i + j)[k] * rowDuration; // counts
@@ -561,7 +561,7 @@ public class AtomSpectraSpectrogramView extends View {
 		this.spectrogramBinData = binnedSpectrogram;
 		this.timestamps = data.getTimestamps();
 		this.maxValue = 0;
-		for (double[] deltas : this.spectrogramBinData) {
+		for (float[] deltas : this.spectrogramBinData) {
 			for (double value : deltas) {
 				if (value > this.maxValue) {
 					this.maxValue = value;
