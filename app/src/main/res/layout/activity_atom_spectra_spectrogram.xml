@@ -136,13 +136,13 @@
 
         </LinearLayout>
 
-        <ImageButton
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:src="@drawable/divider"
-            android:layout_marginBottom="45dp"
-            android:layout_gravity="bottom">
-        </ImageButton>
+<!--        <ImageButton-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="1dp"-->
+<!--            android:src="@drawable/divider"-->
+<!--            android:layout_marginBottom="45dp"-->
+<!--            android:layout_gravity="bottom">-->
+<!--        </ImageButton>-->
     </FrameLayout>
 
 </LinearLayout>
