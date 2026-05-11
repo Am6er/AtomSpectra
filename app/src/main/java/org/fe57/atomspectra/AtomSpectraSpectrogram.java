@@ -122,7 +122,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
                 @Override
                 public void onVisibleChannelsChanged(int startChannel, int endChannel) {
-                    SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
+                    AtomSpectraSpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
                     if (preview != null && previewVisible) {
                         preview.setVisibleChannelRange(startChannel, endChannel);
                     }
@@ -131,7 +131,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
 
         // preview visibility
-        SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
+        AtomSpectraSpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
         if (preview != null) {
             preview.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
             preview.setScale(scale);
@@ -140,7 +140,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     private void syncRegionsToPreview() {
         AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
-        SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
+        AtomSpectraSpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
         if (spgView == null) {
             return;
         }
@@ -418,7 +418,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     public void onClick_previewToggle(View v) {
         previewVisible = !previewVisible;
-        SpectrogramPreviewView pv = findViewById(R.id.viewSpectrogramPreview);
+        AtomSpectraSpectrogramPreviewView pv = findViewById(R.id.viewSpectrogramPreview);
         if (pv != null) {
             pv.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
         }

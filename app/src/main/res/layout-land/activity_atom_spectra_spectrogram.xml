@@ -79,7 +79,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="3" />
 
-            <org.fe57.atomspectra.SpectrogramPreviewView
+            <org.fe57.atomspectra.AtomSpectraSpectrogramPreviewView
                 android:id="@+id/viewSpectrogramPreview"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"

@@ -23,7 +23,7 @@ import java.util.Locale;
  * lin/sqrt/log scale.
  */
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
-public class SpectrogramPreviewView extends View {
+public class AtomSpectraSpectrogramPreviewView extends View {
     private static final int COLOR_BACKGROUND = 0xFF44E044; // green
     private static final int COLOR_SOURCE = Color.WHITE;
     private static final int COLOR_GRID = 0xFF303030;
@@ -49,17 +49,17 @@ public class SpectrogramPreviewView extends View {
     private final Paint paintAxis = new Paint();
     private final Paint paintText = new Paint();
 
-    public SpectrogramPreviewView(Context context) {
+    public AtomSpectraSpectrogramPreviewView(Context context) {
         super(context);
         init();
     }
 
-    public SpectrogramPreviewView(Context context, AttributeSet attrs) {
+    public AtomSpectraSpectrogramPreviewView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public SpectrogramPreviewView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public AtomSpectraSpectrogramPreviewView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
@@ -138,7 +138,7 @@ public class SpectrogramPreviewView extends View {
         int chSpan = endCh - startCh;
 
         // grid + axes
-        int hLines = 4;
+        int hLines = 1;
         for (int i = 0; i <= hLines; i++) {
             float y = plotTop + plotHeight * i / (float) hLines;
             canvas.drawLine(plotLeft, y, plotRight, y, paintGrid);
