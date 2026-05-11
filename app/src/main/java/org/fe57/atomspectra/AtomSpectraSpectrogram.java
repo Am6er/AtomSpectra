@@ -130,26 +130,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             });
         }
 
-        // preview visibility + toggle button
+        // preview visibility
         SpectrogramPreviewView preview = findViewById(R.id.viewSpectrogramPreview);
         if (preview != null) {
             preview.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
             preview.setScale(scale);
-        }
-        ImageButton toggleBtn = findViewById(R.id.buttonPreviewToggle);
-        if (toggleBtn != null) {
-            toggleBtn.setImageResource(previewVisible ? R.drawable.ic_preview_close : R.drawable.ic_preview_show);
-            toggleBtn.setOnClickListener(v -> {
-                previewVisible = !previewVisible;
-                SpectrogramPreviewView pv = findViewById(R.id.viewSpectrogramPreview);
-                if (pv != null) {
-                    pv.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
-                }
-                ((ImageButton) v).setImageResource(previewVisible ? R.drawable.ic_preview_close : R.drawable.ic_preview_show);
-                if (previewVisible) {
-                    updateSpectrogram(false);
-                }
-            });
         }
     }
 
@@ -319,9 +304,29 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             textSpectrumBin.setText(String.format("↕bin:%dx", sbin));
         }
 
+        ImageButton btnSpectrumBinInc = findViewById(R.id.buttonSpectrumBinInc);
+        if (btnSpectrumBinInc != null) {
+            btnSpectrumBinInc.setEnabled(sbin < MAX_SBIN);
+        }
+
+        ImageButton btnSpectrumBinDec = findViewById(R.id.buttonSpectrumBinDec);
+        if (btnSpectrumBinDec != null) {
+            btnSpectrumBinDec.setEnabled(sbin > 1);
+        }
+
         TextView textChannelBin = findViewById(R.id.textViewChBinValue);
         if (textChannelBin != null) {
             textChannelBin.setText(String.format("↔bin:%dx", cbin));
+        }
+
+        ImageButton btnChannelBinInc = findViewById(R.id.buttonChannelBinInc);
+        if (btnChannelBinInc != null) {
+            btnChannelBinInc.setEnabled(cbin < MAX_CBIN);
+        }
+
+        ImageButton btnChannelBinDec = findViewById(R.id.buttonChannelBinDec);
+        if (btnChannelBinDec != null) {
+            btnChannelBinDec.setEnabled(cbin > 1);
         }
 
         TextView textPalette = findViewById(R.id.textViewSpgPalette);
@@ -332,6 +337,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         TextView textScale = findViewById(R.id.textViewSpgScale);
         if (textScale != null) {
             textScale.setText(scale);
+        }
+
+        ImageButton toggleBtn = findViewById(R.id.buttonPreviewToggle);
+        if (toggleBtn != null) {
+            toggleBtn.setImageResource(previewVisible ? R.drawable.ic_spg_spectrum_preview_close : R.drawable.ic_spg_spectrum_preview_show);
         }
     }
 
@@ -390,6 +400,32 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         return false;
     }
 
+    public void onClick_spectrumBinInc(View v) {
+        increaseSpectrumBin();
+    }
+
+    public void onClick_spectrumBinDec(View v) {
+        reduceSpectrumBin();
+    }
+
+    public void onClick_channelBinInc(View v) {
+        increaseChannelBin();
+    }
+
+    public void onClick_channelBinDec(View v) {
+        reduceChannelBin();
+    }
+
+    public void onClick_previewToggle(View v) {
+        previewVisible = !previewVisible;
+        SpectrogramPreviewView pv = findViewById(R.id.viewSpectrogramPreview);
+        if (pv != null) {
+            pv.setVisibility(previewVisible ? View.VISIBLE : View.GONE);
+        }
+        ((ImageButton) v).setImageResource(previewVisible ? R.drawable.ic_spg_spectrum_preview_close : R.drawable.ic_spg_spectrum_preview_show);
+        updateSpectrogram(false);
+    }
+
     public float pxToDp(float px) {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         return px / displayMetrics.density;
@@ -410,43 +446,55 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             if (deltaXDp > 50) {
                 if (horizontalFactor > 1.4) {
-                    // reduce channel bin
-                    if (cbin > 1) {
-                        cbin /= 2;
-                        updateControlPanel();
-                        updateSpectrogram(false);
-                    }
+                    reduceChannelBin();
                 }
 
                 if (horizontalFactor < 0.7) {
-                    // increase channel bin
-                    if (cbin < MAX_CBIN) {
-                        cbin *= 2;
-                        updateControlPanel();
-                        updateSpectrogram(false);
-                    }
+                    increaseChannelBin();
                 }
             }
 
             if (deltaYDp > 50) {
                 if (verticalFactor > 1.4) {
-                    // reduce spectrum bin
-                    if (sbin > 1) {
-                        sbin /= 2;
-                        updateControlPanel();
-                        updateSpectrogram(false);
-                    }
+                    reduceSpectrumBin();
                 }
 
                 if (verticalFactor < 0.7) {
-                    // increase spectrum bin
-                    if (sbin < MAX_SBIN) {
-                        sbin *= 2;
-                        updateControlPanel();
-                        updateSpectrogram(false);
-                    }
+                    increaseSpectrumBin();
                 }
             }
+        }
+    }
+
+    private void reduceSpectrumBin() {
+        if (sbin > 1) {
+            sbin /= 2;
+            updateControlPanel();
+            updateSpectrogram(false);
+        }
+    }
+
+    private void increaseSpectrumBin() {
+        if (sbin < MAX_SBIN) {
+            sbin *= 2;
+            updateControlPanel();
+            updateSpectrogram(false);
+        }
+    }
+
+    private void reduceChannelBin() {
+        if (cbin > 1) {
+            cbin /= 2;
+            updateControlPanel();
+            updateSpectrogram(false);
+        }
+    }
+
+    private void increaseChannelBin() {
+        if (cbin < MAX_CBIN) {
+            cbin *= 2;
+            updateControlPanel();
+            updateSpectrogram(false);
         }
     }
 }

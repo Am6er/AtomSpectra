@@ -70,6 +70,7 @@
             android:id="@+id/spectrogramSplit"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginBottom="45dp"
             android:orientation="vertical">
 
             <org.fe57.atomspectra.SpectrogramPreviewView
@@ -85,17 +86,63 @@
                 android:layout_weight="2" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/spgControlPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/buttonSpectrumBinInc"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:scaleType="fitCenter"
+                android:onClick="onClick_spectrumBinInc"
+                android:src="@drawable/ic_spg_spectrum_bin_inc" />
+
+            <ImageButton
+                android:id="@+id/buttonSpectrumBinDec"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:scaleType="fitCenter"
+                android:onClick="onClick_spectrumBinDec"
+                android:src="@drawable/ic_spg_spectrum_bin_dec" />
+
+            <ImageButton
+                android:id="@+id/buttonChannelBinInc"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:scaleType="fitCenter"
+                android:onClick="onClick_channelBinInc"
+                android:src="@drawable/ic_spg_channel_bin_inc" />
+
+            <ImageButton
+                android:id="@+id/buttonChannelBinDec"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:scaleType="fitCenter"
+                android:onClick="onClick_channelBinDec"
+                android:src="@drawable/ic_spg_channel_bin_dec" />
+
+            <ImageButton
+                android:id="@+id/buttonPreviewToggle"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:scaleType="fitCenter"
+                android:onClick="onClick_previewToggle"
+                android:src="@drawable/ic_spg_spectrum_preview_close" />
+
+        </LinearLayout>
+
         <ImageButton
-            android:id="@+id/buttonPreviewToggle"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="top|right"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="30dp"
-            android:background="@android:color/transparent"
-            android:contentDescription="@string/spectrogram_preview_toggle"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_preview_close" />
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:src="@drawable/divider"
+            android:layout_marginBottom="45dp"
+            android:layout_gravity="bottom">
+        </ImageButton>
     </FrameLayout>
 
 </LinearLayout>
