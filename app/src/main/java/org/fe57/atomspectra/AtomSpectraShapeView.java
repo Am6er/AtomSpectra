@@ -24,6 +24,13 @@ import androidx.annotation.NonNull;
 
 @SuppressLint({ "DefaultLocale", "DrawAllocation" })
 public class AtomSpectraShapeView extends View {
+	public final static int COLOR_COMPENSATED_DOSE = 0xFFFF00FF;
+	public final static int COLOR_NON_COMPENSATED_DOSE = Color.GREEN;
+	public final static int COLOR_INTERVAL_CPS = Color.WHITE;
+	public final static int COLOR_BASELINE_CPS = Color.GREEN;
+	public final static int COLOR_ALARM_CPS = Color.RED;
+
+
 	private final Object renderSync = new Object();
 	private final int RENDER_MODE_SPECTRUM = 0;
 	private final int RENDER_MODE_SEARCH = 1;
@@ -795,12 +802,11 @@ public class AtomSpectraShapeView extends View {
 		invalidate();
 	}
 
-	public void showSearch(
+	public void showIntervalSearch(
 			double[] search_values, // array to draw
 			double[] alarm_high,
 			double[] alarm_low,
 			double[] baseline,
-			boolean is_interval_search,
 			boolean show_alarm_level,
 			float y_zoom_factor
 	) {
@@ -813,7 +819,7 @@ public class AtomSpectraShapeView extends View {
 			}
 
 			this.render_mode = RENDER_MODE_SEARCH;
-			this.is_interval_search = is_interval_search;
+			this.is_interval_search = true;
 			x_max_value = size;
 			x_min_value = 0;
 			x_units = ", " + getResources().getString(R.string.graph_show_points);
@@ -851,11 +857,11 @@ public class AtomSpectraShapeView extends View {
 				m_dose_mode = false;
 			}
 
-			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);
+			Shape search_shape = getShape(search_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, COLOR_INTERVAL_CPS, COLOR_INTERVAL_CPS);
 			if (show_alarm_level) {
-				Shape[] alarm_high_shape = getNonZeroShapes(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
-				Shape[] alarm_low_shape = getNonZeroShapes(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, Color.RED, Color.RED);
-				Shape[] baseline_shape = getNonZeroShapes(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, Color.GREEN, Color.GREEN);
+				Shape[] alarm_high_shape = getNonZeroShapes(alarm_high_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, COLOR_ALARM_CPS, COLOR_ALARM_CPS);
+				Shape[] alarm_low_shape = getNonZeroShapes(alarm_low_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, COLOR_ALARM_CPS, COLOR_ALARM_CPS);
+				Shape[] baseline_shape = getNonZeroShapes(baseline_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_DASH, COLOR_BASELINE_CPS, COLOR_BASELINE_CPS);
 				this.shapes = new Shape[alarm_high_shape.length + alarm_low_shape.length + baseline_shape.length + 1];
 				int index = 0;
 				this.shapes[index++] = search_shape;
@@ -871,6 +877,60 @@ public class AtomSpectraShapeView extends View {
 			} else {
 				this.shapes = new Shape[]{search_shape};
 			}
+		}
+		invalidate();
+	}
+
+	public void showDoseSearch(
+			double[] non_compensated_values,
+			double[] compensated_values,
+			float y_zoom_factor
+	) {
+		synchronized (renderSync) {
+			int size = Math.min(non_compensated_values.length, compensated_values.length);
+			if (size == 0) {
+				String message = "Empty array provided to render search plot";
+				AtomSpectraLog.addMessage(this.getContext(), message);
+				return;
+			}
+
+			// TODO: reuse common code from interval search mode
+			this.render_mode = RENDER_MODE_SEARCH;
+			this.is_interval_search = false;
+			x_max_value = size;
+			x_min_value = 0;
+			x_units = ", " + getResources().getString(R.string.graph_show_points);
+			y_zoom = y_zoom_factor;
+			y_max = Constants.DOSE_SCALE * Constants.DOSE_OVERHEAD;
+			y_min = 0;
+			double[] non_compensated_values_reversed = getReversed(non_compensated_values);
+			double[] compensated_values_reversed = getReversed(compensated_values);
+
+			for (int i = 0; i < size; i++) {
+				if (non_compensated_values_reversed[i] > y_max) {
+					y_max = non_compensated_values_reversed[i];
+				}
+
+				if (compensated_values_reversed[i] > y_max) {
+					y_max = compensated_values_reversed[i];
+				}
+			}
+
+			y_max *= Constants.DOSE_OVERHEAD;
+			if (y_max > 1000) {
+				m_dose_mode = true;
+				y_max /= 1000;
+				for (int i = 0; i < size; i++) {
+					non_compensated_values_reversed[i] /= 1000.0;
+					compensated_values_reversed[i] /= 1000.0;
+				}
+			} else {
+				m_dose_mode = false;
+			}
+
+			Shape non_compensated_shape = getShape(non_compensated_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, COLOR_NON_COMPENSATED_DOSE, COLOR_NON_COMPENSATED_DOSE);
+			Shape compensated_shape = getShape(compensated_values_reversed, y_zoom_factor, 1, y_max, 1.0, y_min, Shape.STYLE_LINE, COLOR_COMPENSATED_DOSE, COLOR_COMPENSATED_DOSE);
+			this.shapes = new Shape[]{non_compensated_shape, compensated_shape};
 		}
 		invalidate();
 	}

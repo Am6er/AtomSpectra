@@ -133,6 +133,7 @@
     <string name="mode_slow_button">М</string>
     <string name="mode_compensated_button">К</string>
     <string name="mode_uncompensated_button">Н</string>
+    <string name="mode_combined_dose_button">Д</string>
     <string name="mode_interval_button">И</string>
     <string name="mode_spectrum_button">Спектр</string>
     <string name="mode_search_button">Поиск</string>
@@ -547,8 +548,8 @@
         \t- Двойное касание для выбора линейного или логарифмического по основанию 10 вывода шкалы значений.\n
         \t- Длительное нажатие для переключения между линейчатым и столбцовым выводами.\n
         \t- Кнопка <annotation foreground="parameter">кэВ/к.</annotation> для переключения между отображением энергий и каналов при выводе спектра.\n
-        \t- Кнопка <annotation foreground="parameter">КНИ</annotation> для переключения между типами мощности дозы (компенсированная, некомпенсированная, скорость счета в интервале).\n
-        \t- Кнопка <annotation foreground="parameter">БСМ</annotation> для переключения между константами поиска (быстрый, средний, медленный).\n
+        \t- Кнопка <annotation foreground="parameter">Д/И</annotation> для переключения между типами графиков поиска (мощность дозы или скорость счета в интервале).\n
+        \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> для переключения между константами поиска (быстрый, средний, медленный).\n
         \n
         \tРежим отображения спектрограммы:\n
         \t- Горизонтальный щипок для масштабирования спектрограммы по горизонтали (шкала каналов/энергий). Для применения действия уберите пальцы с экрана.\n
@@ -603,17 +604,17 @@
     <string name="help_text_part4">
         <big><annotation foreground="caption">4. Режим <annotation foreground="parameter">Поиск</annotation> - расчёт и отображение мощности дозы и скорости счета в интервале энергий:</annotation></big>\n
         Программа выполняет расчёт трех значений - некомпенсированная мощность дозы, компенсированная мощность дозы, скорость счета в заданном диапазоне (интервале) энергий. Некомпенсированная - линейный пересчет общей скорости счета в мощность дозы с использованием коэффициента. Компенсированная - расчет мощности дозы с учетом энергии регистриремых гамма квантов, кривой чувствительности детектора и коэффициента.\n
-        \t- Кнопка <annotation foreground="parameter">БСМ</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Значения для усреднения по каждому типу можно задать в <annotation foreground="parameter">Настройках</annotation>. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
-        \t- Для переключения между типами мощности дозы, отображаемыми на графике, нажмите на кнопку <annotation foreground="parameter">КНИ</annotation>. <annotation foreground="parameter">К</annotation> означает «история компенсированной мощности дозы». <annotation foreground="parameter">Н</annotation> означает «история некомпенсированной мощности дозы». <annotation foreground="parameter">И</annotation> означает «история скорости счета в интервале».\n
+        \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Значения для усреднения по каждому типу можно задать в <annotation foreground="parameter">Настройках</annotation>. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
+        \t- Для переключения между типами данных, отображаемыми на графике, нажмите на кнопку <annotation foreground="parameter">Д/И</annotation>. <annotation foreground="parameter">Д</annotation> означает «история мощности дозы». <annotation foreground="parameter">И</annotation> означает «история скорости счета в интервале».\n
         \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \n
-        Некомпенсированная мощность дозы (режим <annotation foreground="parameter">Н</annotation>):\n
+        Некомпенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, зеленый график):\n
         \t- В данном режиме производится пересчет скорости счета по всему спектру в мощность дозы с использованием коэффициента, задаваемого в настройках. Пересчет линейный без учета энергии регистрируемых квантов и без учета мертвого времени.\n
         \t- Необходимо задать параметр <annotation foreground="parameter">Чувств</annotation> (имп/с при 1 мкЗв/ч) в <annotation foreground="parameter">Настройках</annotation> для пересчёта импульсов в некомпенсированную мощность дозы.\n
         \t- Дополнительно можно задать параметр <annotation foreground="parameter">СчФона</annotation> для вычитания фона из показаний cps при расчёте некомпенсированной мощности дозы.\n
         \t- Текстовое поле <annotation foreground="parameter">мд(н)</annotation> отображает некомпенсированное значение мощности дозы.\n
         \n
-        Компенсированная мощность дозы (режим <annotation foreground="parameter">K</annotation>):\n
+        Компенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, пурпурный график):\n
         \t- В данном режиме производится расчет мощности дозы исходя из индивидуального вклада отдельных энергетических диапазонов спектра.\n
         \t- Коэффициенты, определяющие относительный вклад отдельных энергетических диапазонов в расчет мощности дозы задаются в таблице, доступной в пункте меню <annotation foreground="parameter">Чувствительность…</annotation> в подменю <annotation foreground="parameter">Устройство</annotation>.\n
         \t- Для расчета также необходимо установить параметр <annotation foreground="parameter">Чувств(компенсированная)</annotation> (имп/с при 1 мкЗв/ч). При расчете мощности дозы скорость счета в каждом энергетическом диапазоне умножается на коэффициент из таблицы и делится на коэффициент <annotation foreground="parameter">Чувств(компенсированная)</annotation>. Значение мощности дозы определяется как сумма по всем энергетическим диапазонам.\n

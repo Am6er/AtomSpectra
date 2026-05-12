@@ -1060,6 +1060,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
                             statusLineMiddleText.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
                             statusLineBottomText.setText(getString(R.string.total_time_format, total_time));
+                            statusLineTopText.setTextColor(Color.WHITE);
+                            statusLineMiddleText.setTextColor(Color.WHITE);
+                            statusLineBottomText.setTextColor(Color.WHITE);
                             break;
                         case Constants.DISPLAY_MODE_SPECTRUM_CHANGE:
                             long delta_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS);
@@ -1073,9 +1076,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
                             statusLineMiddleText.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
                             statusLineBottomText.setText(getString(R.string.delta_time_format, delta_time, delta_back_time));
+                            statusLineTopText.setTextColor(Color.WHITE);
+                            statusLineMiddleText.setTextColor(Color.WHITE);
+                            statusLineBottomText.setTextColor(Color.WHITE);
                             break;
                         case Constants.DISPLAY_MODE_SEARCH:
                             statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+                            statusLineTopText.setTextColor(Color.WHITE);
 
                             long error95Percent = 0;
                             boolean isAlarmMode = AtomSpectraService.intervalSearchAlarmEnabled;
@@ -1085,8 +1092,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 error95Percent = Math.round(2 * baseline.getBaselineError());
                                 if (baseline.isStable()) {
                                     statusLineBottomText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
+                                    statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_ALARM_CPS);
                                 } else {
                                     statusLineBottomText.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
+                                    statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_BASELINE_CPS);
                                 }
                             }
 
@@ -1096,8 +1105,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 error95Percent = Math.round(search_int_cps_error * 2);
 
                                 statusLineMiddleText.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent)));
+                                statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_INTERVAL_CPS);
                                 if (!isAlarmMode) {
                                     statusLineBottomText.setText(R.string.interval_search_sound_disabled_label);
+                                    statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_ALARM_CPS);
                                 }
                             } else {
                                 double dose_rate_c = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
@@ -1108,7 +1119,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 long error95PercentN = Math.round(dose_rate_n_error * 2);
 
                                 statusLineMiddleText.setText(getString(R.string.dose_rate_noncompensated_prefix, formatDoseRateWithError(dose_rate_n, error95PercentN)));
+                                statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_NON_COMPENSATED_DOSE);
                                 statusLineBottomText.setText(getString(R.string.dose_rate_compensated_prefix, formatDoseRateWithError(dose_rate_c, error95PercentC)));
+                                statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_COMPENSATED_DOSE);
                             }
                             break;
                         case Constants.DISPLAY_MODE_SPECTROGRAM:
@@ -1239,49 +1252,55 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             break;
                         case Constants.DISPLAY_MODE_SEARCH:
                             // Toast.makeText(context, "search mode", Toast.LENGTH_SHORT).show();
-                            double[] search_data = null;
-                            double[] alarmLevelHigh = null;
-                            double[] alarmLevelLow = null;
-                            double[] alarmBaseline = null;
-                            boolean isIntervalSearch = false;
                             switch (DisplayDose) {
                                 case Constants.DISPLAY_DOSE_INTERVAL:
-                                    search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY);
-                                    alarmLevelHigh = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY);
-                                    alarmLevelLow = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY);
-                                    alarmBaseline = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY);
-                                    isIntervalSearch = true;
+                                    double[] interval_search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY);
+                                    double[] alarmLevelHigh = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY);
+                                    double[] alarmLevelLow = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY);
+                                    double[] alarmBaseline = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY);
+
+                                    if (interval_search_data == null) {
+                                        interval_search_data = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                                    }
+                                    if (alarmLevelHigh == null) {
+                                        alarmLevelHigh = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                                    }
+                                    if (alarmLevelLow == null) {
+                                        alarmLevelLow = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                                    }
+                                    if (alarmBaseline == null) {
+                                        alarmBaseline = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                                    }
+
+                                    mAtomSpectraShapeView.showIntervalSearch(
+                                            interval_search_data,
+                                            alarmLevelHigh,
+                                            alarmLevelLow,
+                                            alarmBaseline,
+                                            sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false),
+                                            zoom_factor
+                                    );
                                     break;
                                 case Constants.DISPLAY_DOSE_COMPENSATED:
-                                    search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY);
-                                    break;
                                 case Constants.DISPLAY_DOSE_NON_COMPENSATED:
-                                    search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY);
+                                    double[] compensated_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY);
+                                    double[] non_compensated_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY);
+
+                                    if (compensated_data == null) {
+                                        compensated_data = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                                    }
+                                    if (non_compensated_data == null) {
+                                        non_compensated_data = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                                    }
+
+                                    mAtomSpectraShapeView.showDoseSearch(
+                                            non_compensated_data,
+                                            compensated_data,
+                                            zoom_factor
+                                    );
                                     break;
                             }
 
-                            if (search_data == null) {
-                                search_data = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
-                            }
-                            if (alarmLevelHigh == null) {
-                                alarmLevelHigh = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
-                            }
-                            if (alarmLevelLow == null) {
-                                alarmLevelLow = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
-                            }
-                            if (alarmBaseline == null) {
-                                alarmBaseline = new double[AtomSpectraService.SEARCH_WINDOW_SIZE];
-                            }
-
-                            mAtomSpectraShapeView.showSearch(
-                                    search_data,
-                                    alarmLevelHigh,
-                                    alarmLevelLow,
-                                    alarmBaseline,
-                                    isIntervalSearch,
-                                    isIntervalSearch && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false),
-                                    zoom_factor
-                            );
                             break;
                         case Constants.DISPLAY_MODE_SPECTROGRAM:
                         default:
@@ -1584,8 +1603,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         String newDisplayDose;
         switch (DisplayDose) {
             case Constants.DISPLAY_DOSE_COMPENSATED:
-                newDisplayDose = Constants.DISPLAY_DOSE_NON_COMPENSATED;
-                break;
             case Constants.DISPLAY_DOSE_NON_COMPENSATED:
                 newDisplayDose = Constants.DISPLAY_DOSE_INTERVAL;
                 break;
@@ -4376,7 +4393,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     private void updateVersionInMenu() {
         if (app_menu != null) {
-            String testSuffix = "_TEST9";
+            String testSuffix = "_TEST10";
             AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
             app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode + testSuffix);
         }
@@ -4408,10 +4425,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Button doseButton = (Button) findViewById(R.id.doseButton);
         switch (mode) {
             case Constants.DISPLAY_DOSE_NON_COMPENSATED:
-                doseButton.setText(getText(R.string.mode_uncompensated_button));
-                break;
             case Constants.DISPLAY_DOSE_COMPENSATED:
-                doseButton.setText(getText(R.string.mode_compensated_button));
+                doseButton.setText(getText(R.string.mode_combined_dose_button));
                 break;
             case Constants.DISPLAY_DOSE_INTERVAL:
                 doseButton.setText(getText(R.string.mode_interval_button));
