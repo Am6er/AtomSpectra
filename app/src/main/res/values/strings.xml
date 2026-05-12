@@ -133,6 +133,7 @@
     <string name="mode_slow_button">S</string>
     <string name="mode_compensated_button">C</string>
     <string name="mode_uncompensated_button">N</string>
+    <string name="mode_combined_dose_button">D</string>
     <string name="mode_interval_button">I</string>
     <string name="mode_spectrum_button">Spectrum</string>
     <string name="mode_search_button">Search</string>
@@ -546,8 +547,8 @@
         \t- Use a double tap to select linear or log10 scale.\n
         \t- Use a long tap to switch between bar and line view modes.\n
         \t- Use <annotation foreground="parameter">kev/ch.</annotation> button to switch between channel and keV modes in spectrum view.\n
-        \t- Use <annotation foreground="parameter">CNI</annotation> button to switch between kinds of dose rate (compensated, non-compensated, count rate within interval).\n
-        \t- Use <annotation foreground="parameter">FMS</annotation> button to switch between search constant (fast, medium, slow).\n
+        \t- Use <annotation foreground="parameter">D/I</annotation> button to switch between kinds of search plot (dose rate or count rate within interval).\n
+        \t- Use <annotation foreground="parameter">F/M/S</annotation> button to switch between search constant (fast, medium, slow).\n
         \t- Use <annotation foreground="parameter">Spectrum/Search</annotation> button to switch between spectrum and search modes.\n
         \n
         \tSpectrogram display mode:\n
@@ -600,17 +601,17 @@
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. <annotation foreground="parameter">Search</annotation> mode - dose rate/energy range count rate calculation and output:</annotation></big>\n
         The program calculates three values - non-compensated dose rate, compensated dose rate, count rate in a given range (interval) of energies. Non-compensated - linear conversion of the overall count rate into dose rate using a coefficient. Compensated - calculation of dose rate taking into account the energy of the registered photons, the detector sensitivity curve and the coefficient.\n
-        \t- The <annotation foreground="parameter">FMS</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count values for averaging for each type can be set in the <annotation foreground="parameter">Settings</annotation>. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
-        \t- To switch between value types, press the <annotation foreground="parameter">CNI</annotation> button.  <annotation foreground="parameter">C</annotation> means \'compensated dose rate history\'. <annotation foreground="parameter">N</annotation> means \'non-compensated dose rate history\'. <annotation foreground="parameter">I</annotation> means \'interval count rate history\'.\n
+        \t- The <annotation foreground="parameter">F/M/S</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count values for averaging for each type can be set in the <annotation foreground="parameter">Settings</annotation>. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
+        \t- To switch between value types, press the <annotation foreground="parameter">D/I</annotation> button. <annotation foreground="parameter">D</annotation> means \'dose rate history\'. <annotation foreground="parameter">I</annotation> means \'interval count rate history\'.\n
         \t- For all value types, the text field <annotation foreground="parameter">cps</annotation> displays the number of count during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \n
-        Non-compensated dose rate (mode <annotation foreground="parameter">N</annotation>):\n
+        Non-compensated dose rate (mode <annotation foreground="parameter">D</annotation>, green plot):\n
         \t- In this mode, the count rate across the entire spectrum is converted into dose rate using a coefficient specified in the settings. The conversion is linear, without taking into account the energy of the detected photons or dead time.\n
         \t- You need to set a <annotation foreground="parameter">Sens</annotation> parameter (cps at 1 uSv/h) in <annotation foreground="parameter">Settings</annotation> to convert the counts to the non-compensated dose rate.\n
         \t- Additionally you can set a <annotation foreground="parameter">BckgCps</annotation> parameter to be subtracted from cps in non-compensated dose rate calculation.\n
         \t- The text field <annotation foreground="parameter">dr(n)</annotation> displays the non-compensated dose rate value.\n
         \n
-        Compensated dose rate (mode <annotation foreground="parameter">C</annotation>):\n
+        Compensated dose rate (mode <annotation foreground="parameter">D</annotation>, purple plot):\n
         \t- In this mode, the dose rate is calculated based on the individual contribution of individual energy ranges of the spectrum.\n
         \t- The coefficients that determine the relative contribution of individual energy ranges to the dose rate calculation are specified in the table available through the <annotation foreground="parameter">Sensitivity...</annotation> menu item in the <annotation foreground="parameter">Device</annotation> submenu.\n
         \t- For the calculation, it is also necessary to set the <annotation foreground="parameter">Sens(compensated)</annotation> parameter (cps at 1 μSv/h). When calculating the dose rate, the count rate in each energy range is multiplied by the coefficient from the table and divided by the <annotation foreground="parameter">Sens(compensated)</annotation> coefficient. The dose rate value is determined as the sum over all energy ranges.\n
