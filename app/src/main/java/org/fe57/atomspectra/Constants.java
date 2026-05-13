@@ -1,13 +1,6 @@
 package org.fe57.atomspectra;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.TreeMap;
 
 /**
  * Created by ENDulov on 20.02.17.
@@ -60,9 +53,9 @@ public class Constants {
     public static final int COMPRESS_GRAPH_MAX = 2;                                                                      //show max values
     public static final int DEFAULT_POLI_FACTOR = 1;                                                                     //maximum factor for energy calibration
     public static final int DEFAULT_GOLAY_WINDOW = 1;                                                                    //default Golay window
-    public static final boolean OUTPUT_FILE_NAME_PREFIX_DEFAULT = true;                                                  //add prefix to output file name
-    public static final boolean OUTPUT_FILE_NAME_DATE_DEFAULT = true;                                                    //add date to output file name
-    public static final boolean OUTPUT_FILE_NAME_TIME_DEFAULT = true;                                                    //add date to output file name
+    public static final boolean OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT = true;                                                  //add prefix to output file name
+    public static final boolean OUTPUT_FILE_NAME_ADD_DATE_DEFAULT = true;                                                    //add date to output file name
+    public static final boolean OUTPUT_FILE_NAME_ADD_TIME_DEFAULT = true;                                                    //add date to output file name
     public static final int DEFAULT_DELTA_TIME = 1;                                                                      //default delta time in seconds between output
     public static final int UPDATE_PERIOD = 100; //in ms DO NOT CHANGE - a lot of code relies on exact 100 ms
     public static String[] LOCALES = {"Default", "Russian", "English"};
@@ -126,9 +119,9 @@ public class Constants {
         String CONF_SENS_TABLE_ENERGY = "CalCEnergy";
         String CONF_AUDIO_SOURCE = "Audio source:";
         String CONF_DIRECTORY_SELECTED = "Directory selected";
-        String CONF_OUTPUT_FILE_NAME_PREFIX = "File name prefix";
-        String CONF_OUTPUT_FILE_NAME_DATE = "File name date";
-        String CONF_OUTPUT_FILE_NAME_TIME = "File name time";
+        String CONF_OUTPUT_FILE_NAME_ADD_PREFIX = "File name prefix";
+        String CONF_OUTPUT_FILE_NAME_ADD_DATE = "File name date";
+        String CONF_OUTPUT_FILE_NAME_ADD_TIME = "File name time";
         String CONF_ADD_GPS_TO_FILES = "Add GPS coord";
         String CONF_OUTPUT_SOUND = "Sound output";
         String CONF_OUTPUT_SOUND_DEVICE_ID = "Sound device ID";

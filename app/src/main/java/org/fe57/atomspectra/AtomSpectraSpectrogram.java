@@ -3,6 +3,7 @@ package org.fe57.atomspectra;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +11,10 @@ import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -43,6 +47,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static int fgRightBound = -1;
     private static int lastRowCount = 0;
     private static boolean previewVisible = true;
+
+    // exporting state
+    private static boolean isExportingSpectrum = false;
+    private static CancellationToken exportSpectrumCancellationToken = null;
+    private static AlertDialog spectrumExportingDialog = null;
 
     private GestureDetector gestureDetector;
     private ScaleGestureDetector scaleGestureDetector;
@@ -254,6 +263,13 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        checkSpectrumIsExporting();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mDataUpdateReceiver);
@@ -426,9 +442,98 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         updateSpectrogram(false);
     }
 
+    public void onClick_exportSpectrum(View v) {
+        exportSpectrogramSelection();
+    }
+
     public float pxToDp(float px) {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         return px / displayMetrics.density;
+    }
+
+    private void exportSpectrogramSelection() {
+        if (isExportingSpectrum) {
+            String message = "ERROR: exportSpectrogramSelection called while spectrum is already exporting.";
+            AtomSpectraLog.addMessage(this, message);
+            ToastHelper.showToast(this, message);
+            return;
+        }
+
+        DialogHelper.showActionConfirmationDialog(this, getString(R.string.spectrogram_spectrum_export_confirm_dialog_message), () -> {
+            exportSpectrumCancellationToken = new CancellationToken();
+            showSpectrumExportingDialog();
+
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            new Thread(() -> {
+                isExportingSpectrum = true;
+                try {
+                    exportSpectrum(bgLeftBound, bgRightBound, "bg-combined", exportSpectrumCancellationToken);
+                    if (!exportSpectrumCancellationToken.isCancelled()) {
+                        exportSpectrum(fgLeftBound, fgRightBound, "fg-combined", exportSpectrumCancellationToken);
+                    }
+                } finally {
+                    isExportingSpectrum = false;
+                    mainHandler.post(() -> {
+                        dismissSpectrumExportingDialog();
+                    });
+                }
+            }).start();
+        });
+    }
+
+    private void showSpectrumExportingDialog() {
+        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+                .setTitle(R.string.spectrogram_spectrum_exporting_dialog_title)
+                .setMessage(getString(R.string.spectrogram_spectrum_exporting_dialog_default_message))
+                .setPositiveButton(getString(R.string.dialog_cancel_button), (dialog, whichButton) -> {
+                    if (exportSpectrumCancellationToken != null) {
+                        exportSpectrumCancellationToken.cancel();
+                    }
+                })
+                .setCancelable(false);
+
+        spectrumExportingDialog = alert.show();
+    }
+
+    private void dismissSpectrumExportingDialog() {
+        if (spectrumExportingDialog != null) {
+            spectrumExportingDialog.dismiss();
+            spectrumExportingDialog = null;
+        }
+    }
+
+    private void checkSpectrumIsExporting() {
+        if (isActive && isExportingSpectrum && spectrumExportingDialog == null) {
+            showSpectrumExportingDialog();
+        }
+    }
+
+    private void exportSpectrum(int leftBound, int rightBound, String spectrumName, CancellationToken cancellationToken) {
+        SpectrumFileAS spectrum = new SpectrumFileAS();
+        int fromDelta = Math.min(leftBound, rightBound);
+        fromDelta = Constants.MinMax(fromDelta, 0, AtomSpectraSpectrogramData.instance.rowCount() - 1);
+        int toDelta = Math.max(leftBound, rightBound);
+        toDelta = Constants.MinMax(toDelta, 0, AtomSpectraSpectrogramData.instance.rowCount() - 1);
+        try {
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            String spectrumFileName = spectrum.exportSpectrogramPartAsSpectrum(AtomSpectraSpectrogramData.instance.getSpectrogramFileName(), spectrumName, fromDelta, toDelta, this, progress -> {
+                mainHandler.post(() -> {
+                    if (isActive && spectrumExportingDialog != null) {
+                        spectrumExportingDialog.setMessage(progress);
+                    }
+                });
+            }, cancellationToken);
+            if (spectrumFileName == null && !cancellationToken.isCancelled()) {
+                throw new IllegalStateException("Spectrum name is null while operation was not cancelled");
+            }
+
+            if (spectrumFileName != null) {
+                ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_save_success, spectrumFileName));
+            } // otherwise cancelled
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
+            ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_save_error, spectrumName, e.getMessage()));
+        }
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {

@@ -1,5 +1,7 @@
 package org.fe57.atomspectra;
 
+import android.net.Uri;
+
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -16,12 +18,19 @@ public class AtomSpectraSpectrogramData {
 
     private String recordingId = java.util.UUID.randomUUID().toString();
 
+    private Uri spectrogramFileName = null;
+
     public String getRecordingId() {
         return recordingId;
     }
 
-    public void setBaseSpectrum(Spectrum baseSpectrum) {
+    public Uri getSpectrogramFileName() {
+        return spectrogramFileName;
+    }
+
+    public void setBaseSpectrum(Spectrum baseSpectrum, Uri spectrogramFileName) {
         this.baseSpectrum = baseSpectrum;
+        this.spectrogramFileName = spectrogramFileName;
     }
 
     public void addDelta(Spectrum delta) {

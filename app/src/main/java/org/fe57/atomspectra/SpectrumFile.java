@@ -1,6 +1,8 @@
 package org.fe57.atomspectra;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -11,13 +13,13 @@ import androidx.documentfile.provider.DocumentFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
-import java.util.function.Consumer;
 
 //This class helps read and write spectra in different formats
 //To use it create a class with appropriate load/save methods.
@@ -26,7 +28,7 @@ import java.util.function.Consumer;
 public abstract class SpectrumFile {
     protected final ArrayList<Spectrum> spectrumList = new ArrayList<>();
     protected Spectrum backgroundSpectrum = null;
-    protected int Channels = Constants.NUM_HIST_POINTS; //how many channels need to save or load
+    protected int Channels = Constants.NUM_HIST_POINTS; // how many channels need to save or load
     protected int channelCompression = 1;
     private static final String TAG = SpectrumFile.class.getSimpleName();
 
@@ -35,13 +37,9 @@ public abstract class SpectrumFile {
         return this;
     }
 
-    public final SpectrumFile addBackgroundSpectrum(@NonNull Spectrum spectrum) {
+    public final SpectrumFile setBackgroundSpectrum(@NonNull Spectrum spectrum) {
         backgroundSpectrum = spectrum;
         return this;
-    }
-
-    public final boolean hasBackground() {
-        return backgroundSpectrum != null;
     }
 
     public final int spectrumCount() {
@@ -62,106 +60,113 @@ public abstract class SpectrumFile {
         return this;
     }
 
-    public final int getChannelCompression() {
-        return channelCompression;
-    }
-
     public final Spectrum getSpectrum(int id) {
         if (id < 0 || id >= spectrumList.size())
             return null;
         return spectrumList.get(id);
     }
 
-    public final Spectrum getBackgroundSpectrum() {
-        if (backgroundSpectrum == null)
-            return null;
-        return backgroundSpectrum;
+    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean removeExistingFile) {
+        SharedPreferences sharedPreferences = PrefHelper.getASSharedPreferences(context);
+        boolean addPrefixToFileName = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT);
+        boolean addDateToFileName = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT);
+        boolean addTimeToFileName = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, Constants.OUTPUT_FILE_NAME_ADD_TIME_DEFAULT);
+
+        return prepareOutputFileStream(context, fileNamePrefix, fileNameDate, fileNameSuffix, extension, mimeType, addPrefixToFileName, addDateToFileName, addTimeToFileName, removeExistingFile);
     }
 
-    public static Pair<OutputStreamWriter, Uri> prepareOutputStream(@NonNull Context context, String folder, long date, @NonNull String prefix, boolean addPrefix, String suffix, @NonNull String extension, @NonNull String mimeType, boolean addDate, boolean addTime, boolean removeFirst) {
+    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, @NonNull String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean addPrefixToFileName, boolean addDateToFileName, boolean addTimeToFileName, boolean removeExistingFile) {
+        SharedPreferences sharedPreferences = PrefHelper.getASSharedPreferences(context);
+        String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+        if (workingDir == null) {
+            throw new IllegalStateException(context.getString(R.string.error_working_dir_not_set));
+        }
+
+        return prepareOutputFileStream(context, workingDir, fileNamePrefix, fileNameDate, fileNameSuffix, extension, mimeType, addPrefixToFileName, addDateToFileName, addTimeToFileName, removeExistingFile);
+    }
+
+    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, @NonNull String workingDir, @NonNull String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean addPrefixToFileName, boolean addDateToFileName, boolean addTimeToFileName, boolean removeExistingFile) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH-mm-ss", Locale.US);
         // make file name from current date-time
         String fileName;
-        boolean addSuffix = (suffix != null) && !suffix.isEmpty();
-        //Without prefix, date and suffix add prefix by default
-        if (!addPrefix && !addDate && !addSuffix)
-            addPrefix = true;
+        boolean addSuffix = (fileNameSuffix != null) && !fileNameSuffix.isEmpty();
+        // Without fileNamePrefix, fileNameDate and fileNameSuffix add fileNamePrefix by default
+        if (!addPrefixToFileName && !addDateToFileName && !addSuffix) {
+            addPrefixToFileName = true;
+        }
 
-        fileName = addPrefix ? prefix : "";
-        if (addDate) {
+        fileName = addPrefixToFileName ? fileNamePrefix : "";
+        if (addDateToFileName) {
             if (!fileName.isEmpty())
                 fileName = fileName + "-";
-            if (date == 0) {
+            if (fileNameDate == 0) {
                 fileName = fileName + dateFormat.format(new Date());
             } else {
-                fileName = fileName + dateFormat.format(new Date(date));
+                fileName = fileName + dateFormat.format(new Date(fileNameDate));
             }
         }
-        if (addTime) {
-            if (addDate) {
+        if (addTimeToFileName) {
+            if (addDateToFileName) {
                 fileName += "_";
             } else {
-                if (!fileName.isEmpty())
+                if (!fileName.isEmpty()) {
                     fileName = fileName + "-";
+                }
             }
-            if (date == 0) {
+            if (fileNameDate == 0) {
                 fileName = fileName + timeFormat.format(new Date());
             } else {
-                fileName = fileName + timeFormat.format(new Date(date));
+                fileName = fileName + timeFormat.format(new Date(fileNameDate));
             }
         }
         if (addSuffix) {
-            if (!fileName.isEmpty())
+            if (!fileName.isEmpty()) {
                 fileName = fileName + "-";
-            fileName += suffix;
+            }
+
+            fileName += fileNameSuffix;
         }
         fileName = fileName + (mimeType.equals("application/octet-stream") ? extension : "");
         OutputStreamWriter docStream;
         String spectrumFileName;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (folder == null) {
-                return null;
-            }
-            Uri dir = Uri.parse(folder);
+            Uri dir = Uri.parse(workingDir);
             if (dir == null) {
-                return null;
+                throw new IllegalStateException(context.getString(R.string.error_working_dir_not_valid, workingDir));
             }
             DocumentFile dirFile = DocumentFile.fromTreeUri(context, dir);
             if ((dirFile == null) || !dirFile.isDirectory()) {
-                return null;
+                throw new IllegalStateException(context.getString(R.string.error_working_dir_not_valid, workingDir));
             }
-            if (removeFirst) {
+            if (removeExistingFile) {
                 DocumentFile file = dirFile.findFile(fileName);
                 if ((file != null) && file.isFile()) {
                     if (!file.delete()) {
-                        return null;
+                        throw new IllegalStateException(context.getString(R.string.error_unable_to_delete_existing_file, fileName));
                     }
                 }
             }
             DocumentFile spectrumFile = dirFile.createFile(mimeType, fileName);
             if (spectrumFile == null) {
-                return null;
+                throw new IllegalStateException(context.getString(R.string.error_unable_to_create_file, fileName));
             }
             try {
                 docStream = new OutputStreamWriter(context.getContentResolver().openOutputStream(spectrumFile.getUri()));
             } catch (Exception e) {
-                return null;
+                throw new IllegalStateException(context.getString(R.string.error_unable_to_create_file_ex, fileName, e.getMessage()));
             }
             spectrumFileName = spectrumFile.getUri().getPath();
             spectrumFileName = spectrumFileName == null ? "" : spectrumFileName;
             Log.d(TAG, spectrumFileName);
             return new Pair<>(docStream, spectrumFile.getUri());
         } else {
-            if (folder == null) {
-                return null;
-            }
-            final String filename = folder + "/" + fileName + extension;
+            final String filename = workingDir + "/" + fileName + extension;
             spectrumFileName = filename;
             try {
-                docStream = new OutputStreamWriter(new FileOutputStream(filename));//new FileOutputStream(filename);
+                docStream = new OutputStreamWriter(new FileOutputStream(filename));
             } catch (Exception e) {
-                return null;
+                throw new IllegalStateException(context.getString(R.string.error_unable_to_create_file_ex, fileName, e.getMessage()));
             }
             Log.d(TAG, spectrumFileName);
         }
@@ -171,14 +176,10 @@ public abstract class SpectrumFile {
     //abstract methods
 
     //load spectrum from external source
-    abstract public boolean loadSpectrum(@NonNull InputStream histFile, Context context);
-
-    //load delta spectrum from external source
-    abstract public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken);
+    abstract public void loadSpectrum(@NonNull Uri spectrumFilePath, Context context) throws InvalidParameterException, IOException;
 
     //save spectrum to external source
-    abstract public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context);
+    abstract public void saveSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream, Context context) throws IOException, PackageManager.NameNotFoundException;
 
-    //save incremental spectrum to external source
-    abstract public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context);
+
 }

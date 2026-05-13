@@ -134,6 +134,14 @@
                 android:onClick="onClick_previewToggle"
                 android:src="@drawable/ic_spg_spectrum_preview_close" />
 
+            <ImageButton
+                android:id="@+id/buttonExportSpectrum"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:scaleType="fitCenter"
+                android:onClick="onClick_exportSpectrum"
+                android:src="@drawable/ic_spg_spectrum_preview_export" />
+
         </LinearLayout>
 
 <!--        <ImageButton-->

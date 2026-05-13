@@ -1494,17 +1494,17 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     private void updateFilenamePatternText() {
         TextView filenamePatternText = findViewById(R.id.outputFileNamePatternText);
         filenamePatternText.setText(getResources().getTextArray(R.array.file_name_array)[
-                (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT) ? 4 : 0) +
-                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT) ? 2 : 0) +
-                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT) ? 1 : 0)
+                (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT) ? 4 : 0) +
+                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, Constants.OUTPUT_FILE_NAME_ADD_TIME_DEFAULT) ? 2 : 0) +
+                        (sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT) ? 1 : 0)
                 ]);
     }
 
     public void onClick_outputFilenameTemplate_minus(View v) {
         SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        boolean prefix = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
-        boolean date = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
-        boolean time = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
+        boolean prefix = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT);
+        boolean date = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT);
+        boolean time = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, Constants.OUTPUT_FILE_NAME_ADD_TIME_DEFAULT);
         int val = (prefix ? 4 : 0) + (time ? 2 : 0) + (date ? 1 : 0);
 
         if (val > 0) {
@@ -1516,9 +1516,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     public void onClick_outputFilenameTemplate_plus(View v) {
         SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        boolean prefix = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
-        boolean date = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
-        boolean time = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
+        boolean prefix = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT);
+        boolean date = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT);
+        boolean time = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, Constants.OUTPUT_FILE_NAME_ADD_TIME_DEFAULT);
         int val = (prefix ? 4 : 0) + (time ? 2 : 0) + (date ? 1 : 0);
 
         if (val < 7) {
@@ -1531,9 +1531,9 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     private void saveFilenamePattern(int val) {
         SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor prefEditor = settings.edit();
-        prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, (val & 4) != 0);
-        prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, (val & 2) != 0);
-        prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, (val & 1) != 0);
+        prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, (val & 4) != 0);
+        prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, (val & 2) != 0);
+        prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, (val & 1) != 0);
         prefEditor.apply();
         updateFilenamePatternText();
     }

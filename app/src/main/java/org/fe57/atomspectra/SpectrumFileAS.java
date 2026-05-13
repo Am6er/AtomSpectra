@@ -1,316 +1,570 @@
 package org.fe57.atomspectra;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.Toast;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.Locale;
 
 //This is the main class to load and store own Atom Spectra spectrum
 public class SpectrumFileAS extends SpectrumFile {
     @Override
-    public boolean loadSpectrum(@NonNull InputStream histFile, Context context) {
-        boolean result = false;
-        if (spectrumCount() == 0 && backgroundSpectrum == null) {
-            BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
-            try {
-//            Log.d(TAG, filename + " loading started...");
-                String ident = fr.readLine();
-                if (!ident.matches("^[+-]?\\d+(\\.(\\d+)?)?$")) {
-                    result = loadSpectrumV3(fr, ident, context);
-                } else {
-                    result = loadSpectrumV1(fr, ident, context);
-                }
+    public void loadSpectrum(@NonNull Uri spectrumFilePath, Context context) throws InvalidParameterException, IOException {
+        validateLoadState();
 
-                fr.close();
-            } catch (Exception e) {
-                return false;
+        InputStream inputFile = context.getContentResolver().openInputStream(spectrumFilePath);
+        BufferedReader fr = new BufferedReader(new InputStreamReader(inputFile));
+        try {
+            String version = fr.readLine();
+            if (!version.matches("^[+-]?\\d+(\\.(\\d+)?)?$")) {
+                loadSpectrumV3(fr, version);
+            } else {
+                loadSpectrumV1(fr, version);
             }
+        } catch (InvalidParameterException e) {
+            fr.close();
+            throw e;
         }
-        return result;
     }
 
-    //old spectrum data
-    private boolean loadSpectrumV1(BufferedReader fr, String ident, Context context) {
+    // old spectrum data
+    private void loadSpectrumV1(BufferedReader fr, String version) throws InvalidParameterException, IOException {
         Spectrum spectrum = new Spectrum();
+
+        double spectrumTime;
         try {
-            spectrum.setSpectrumTime((long) (Double.parseDouble(ident) * 1000.0 / Constants.UPDATE_PERIOD)); //convert from seconds to counts
-            int poli_save = Integer.parseInt(fr.readLine());
-            if ((poli_save < 1) || (poli_save > Constants.MAX_POLI_SIZE)) {
-                throw new Exception("Poli scale read error");
+            spectrumTime = Double.parseDouble(version);
+        } catch (Exception e) {
+            throw new InvalidParameterException(String.format("Unable to parse spectrum time: %s", version));
+        }
+        spectrum.setRealSpectrumTime(spectrumTime);
+
+        String poliFactorStr = fr.readLine();
+        int poliFactor;
+        try {
+            poliFactor = Integer.parseInt(poliFactorStr);
+        } catch (Exception e) {
+            throw new InvalidParameterException(String.format("Unable to parse polinom factor: %s", poliFactorStr));
+        }
+
+        if ((poliFactor < 1) || (poliFactor > Constants.MAX_POLI_SIZE)) {
+            throw new InvalidParameterException(String.format("Unsupported polinom factor value: %d", poliFactor));
+        }
+        Calibration save_calibration = new Calibration();
+        int hist_compress;
+        if (Channels % (1 << Constants.ADC_MAX) == 0)
+            hist_compress = Channels / (1 << Constants.ADC_MAX);
+        else
+            hist_compress = Channels / (1 << Constants.ADC_MAX) + 1;
+        if (hist_compress == 0)
+            hist_compress = 1;
+
+        double cal, cal_E;
+        for (int i = 0; i <= poliFactor; i++) {
+            String channelStr = fr.readLine();
+            double channel;
+            try {
+                channel = Double.parseDouble(channelStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse calibration channel: %s", channelStr));
             }
-            Calibration save_calibration = new Calibration();
-            double cal, cal_E;
-            int hist_compress;
-            if (Channels % (1 << Constants.ADC_MAX) == 0)
-                hist_compress = Channels / (1 << Constants.ADC_MAX);
-            else
-                hist_compress = Channels / (1 << Constants.ADC_MAX) + 1;
-            if (hist_compress == 0)
-                hist_compress = 1;
-            for (int i = 0; i <= poli_save; i++) {
-                cal = Double.parseDouble(fr.readLine()) / hist_compress;
-                cal_E = Double.parseDouble(fr.readLine());
-                if (save_calibration.containsPointChannel((int) cal))
-                    throw new Exception("Poli data read error");
-                save_calibration.addPoint((int) cal, cal_E);
+            cal = channel / hist_compress;
+
+            String energyStr = fr.readLine();
+            double energy;
+            try {
+                energy = Double.parseDouble(energyStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse calibration energy: %s", energyStr));
             }
-            save_calibration.Calculate();
-            if (!save_calibration.isCorrect())
-                throw new Exception("Poli calc error");
-            long[] tmp = new long[Constants.NUM_HIST_POINTS];
-            for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
-                for (int j = 0; j < hist_compress; j++) {
-                    if ((i * hist_compress + j) < 65536)
-                        tmp[i] += Long.parseLong(fr.readLine());                                               //get channel data
+            cal_E = energy;
+
+            if (save_calibration.containsPointChannel((int) cal)) {
+                throw new InvalidParameterException("The same calibration point has been already added");
+            }
+            save_calibration.addPoint((int) cal, cal_E);
+        }
+        save_calibration.Calculate();
+        if (!save_calibration.isCorrect()) {
+            throw new InvalidParameterException("Incorrect calibration");
+        }
+        long[] tmp = new long[Constants.NUM_HIST_POINTS];
+        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+            for (int j = 0; j < hist_compress; j++) {
+                if ((i * hist_compress + j) < 65536) {
+                    String countsStr = fr.readLine();
+                    long counts;
+                    try {
+                        counts = Long.parseLong(countsStr);
+                    } catch (Exception e) {
+                        throw new InvalidParameterException(String.format("Unable to parse channel counts: %s", countsStr));
+                    }
+
+                    tmp[i] += counts;
                 }
             }
-            spectrum
-                    .setSpectrumCalibration(save_calibration)
-                    .setSpectrumOnly(tmp)
-                    .setChanged(false);
-
-        } catch (Exception e) {
-            return false;
         }
+        spectrum.setSpectrumCalibration(save_calibration)
+                .setSpectrumOnly(tmp)
+                .setChanged(false);
+
         spectrumList.add(spectrum);
-        return true;
     }
 
     //V2, V3 spectrum data
-    private boolean loadSpectrumV3(BufferedReader fr, String ident, Context context) {
+    private void loadSpectrumV3(BufferedReader fr, String version) throws InvalidParameterException, IOException {
         Spectrum spectrum = new Spectrum();
         int formatCode;
         try {
-            formatCode = Integer.parseInt(ident.substring(8));
+            formatCode = Integer.parseInt(version.substring(8));
         } catch (Exception ignored) {
-            return false;
+            throw new InvalidParameterException(String.format("Unable to parse version string: %s", version));
         }
+
         if (formatCode < 1 || formatCode > 3) {
-            return false;
+            throw new InvalidParameterException(String.format("Unsupported version: %d", formatCode));
         }
-        try {
-            if (formatCode >= 2) {
-                //version 2
-                String comments = fr.readLine();
-                long date = Long.parseLong(fr.readLine());//version 2
-                long GPSDate = Long.parseLong(fr.readLine());//version 2
-                double Latitude = Double.parseDouble(fr.readLine());//version 2
-                double Longitude = Double.parseDouble(fr.readLine());//version 2
-                spectrum
-                        .setLocationOnly(Latitude, Longitude, GPSDate)
-                        .setComments(comments)
-                        .setSpectrumDate(date);
+        if (formatCode >= 2) {
+            String comments = fr.readLine();
+            String dateStr = fr.readLine();
+            long date;
+            try {
+                date = Long.parseLong(dateStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse date: %s", dateStr));
             }
-            if (formatCode >= 3) {
-                //version 3
-                spectrum
-                        .setSuffix(fr.readLine())
-                        .setDeviceInfo(fr.readLine());
+
+            String GPSDateStr = fr.readLine();
+            long GPSDate;
+            try {
+                GPSDate = Long.parseLong(GPSDateStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse gps date: %s", GPSDateStr));
             }
-            spectrum.setSpectrumTime((long) (Double.parseDouble(fr.readLine()) * 1000.0 / Constants.UPDATE_PERIOD)); //convert from seconds to counts
-            int num_points = StrictMath.min(Integer.parseInt(fr.readLine()), Channels);
-            int poli_save = Integer.parseInt(fr.readLine());
-            if ((poli_save < 1) || (poli_save > Constants.MAX_POLI_SIZE)) {
-                throw new IOException("Poli scale read error");
+
+            String latStr = fr.readLine();
+            double lat;
+            try {
+                lat = Double.parseDouble(latStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse gps latitude: %s", latStr));
             }
-            Calibration save_calibration = new Calibration();
-            int compactness = num_points / Constants.NUM_HIST_POINTS;
-            if (num_points % Constants.NUM_HIST_POINTS != 0)
-                compactness++;
-            if (formatCode >= 3) {
-                double x = 1;
-                double[] coeffs = new double[poli_save + 1];
-                for (int i = 0; i <= poli_save; i++) {
-                    coeffs[i] = Double.parseDouble(fr.readLine()) * x;
-                    x *= compactness;
-                }
-                save_calibration.Calculate(coeffs);
-            } else {
-                double cal, cal_E;
-                for (int i = 0; i <= poli_save; i++) {
-                    cal = Double.parseDouble(fr.readLine()) / compactness;
-                    cal_E = Double.parseDouble(fr.readLine());
-                    if (save_calibration.containsPointChannel((int) cal))
-                        throw new IOException("Poli data read error");
-                    save_calibration.addPoint((int) cal, cal_E);
-                }
-                save_calibration.Calculate();
+
+            String lonStr = fr.readLine();
+            double lon;
+            try {
+                lon = Double.parseDouble(lonStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse gps longitude: %s", lonStr));
             }
-            if (!save_calibration.isCorrect())
-                throw new IOException("Poli calc error");
-            long[] tmp = new long[Constants.NUM_HIST_POINTS];
-            for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
-                for (int j = 0; j < compactness; j++) {
-                    if ((i * compactness + j) < num_points)
-                        tmp[i] += Long.parseLong(fr.readLine());                                               //get channel data
-                }
-            }
+
             spectrum
-                    .setSpectrumCalibration(save_calibration)
-                    .setSpectrumOnly(tmp)
-                    .setChanged(false);
-        } catch (Exception e) {
-            return false;
+                    .setLocationOnly(lat, lon, GPSDate)
+                    .setComments(comments)
+                    .setSpectrumDate(date);
         }
-        spectrumList.add(spectrum);
-        return true;
-    }
+        if (formatCode >= 3) {
+            spectrum
+                    .setSuffix(fr.readLine())
+                    .setDeviceInfo(fr.readLine());
+        }
 
-    @Override
-    public boolean saveSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
-        //We just save the only one spectrum
-        if (spectrumCount() != 1 || backgroundSpectrum != null)
-            return false;
-
-        Spectrum spectrum = spectrumList.get(0);
+        String spectrumTimeStr = fr.readLine();
+        double spectrumTime;
         try {
-            OutputStreamWriter fw = docStream;
-            long[] tmp = spectrum.getDataArray();
-            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
-            fw.append("FORMAT: 3\n");
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));    //version 2
-            if (spectrum.getSpectrumDate() == 0) {
-                fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));    //version 2
-            } else {
-                fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));                   //version 2
-            }
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getGPSDate()));                //version 2
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));               //version 2
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));              //version 2
-            fw.append(spectrum.getSuffix()).append("\n"); //version 3
-            fw.append(spectrum.getDeviceInfo()).append("\n");//version 3
-            fw.append(String.format(Locale.US, "%f\n", time)); //convert from counts to seconds
-            fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
-            fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
-            for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
-                fw.append(String.format(Locale.US, "%.12g\n", coeff));
-            }
-            for (long l : tmp) {
-                fw.append(String.format(Locale.US, "%d\n", l));
-            }
-            fw.close();
+            spectrumTime = Double.parseDouble(spectrumTimeStr);
         } catch (Exception e) {
-            return false;
+            throw new InvalidParameterException(String.format("Unable to parse spectrum time: %s", spectrumTimeStr));
         }
-        return true;
+        spectrum.setRealSpectrumTime(spectrumTime);
+
+        String channelCountStr = fr.readLine();
+        int channelCount;
+        try {
+            channelCount = Integer.parseInt(channelCountStr);
+        } catch (Exception e) {
+            throw new InvalidParameterException(String.format("Unable to parse channel count: %s", channelCountStr));
+        }
+
+        String calPoliFactorStr = fr.readLine();
+        int calPoliFactor;
+        try {
+            calPoliFactor = Integer.parseInt(calPoliFactorStr);
+        } catch (Exception e) {
+            throw new InvalidParameterException(String.format("Unable to parse calibration polinom factor: %s", calPoliFactorStr));
+        }
+
+        if ((calPoliFactor < 1) || (calPoliFactor > Constants.MAX_POLI_SIZE)) {
+            throw new InvalidParameterException(String.format("Unsupported calibration polinom factor: %d", calPoliFactor));
+        }
+
+        Calibration save_calibration = new Calibration();
+        int num_points = StrictMath.min(channelCount, Channels);
+        int compactness = num_points / Constants.NUM_HIST_POINTS;
+        if (num_points % Constants.NUM_HIST_POINTS != 0) {
+            compactness++;
+        }
+        if (formatCode >= 3) {
+            double x = 1;
+            double[] coeffs = new double[calPoliFactor + 1];
+            for (int i = 0; i <= calPoliFactor; i++) {
+                String poliCoeffStr = fr.readLine();
+                double poliCoeff;
+                try {
+                    poliCoeff = Double.parseDouble(poliCoeffStr);
+                } catch (Exception e) {
+                    throw new InvalidParameterException(String.format("Unable to parse calibration coefficient: %s", poliCoeffStr));
+                }
+
+                coeffs[i] = poliCoeff * x;
+                x *= compactness;
+            }
+            save_calibration.Calculate(coeffs);
+        } else {
+            double cal, cal_E;
+            for (int i = 0; i <= calPoliFactor; i++) {
+                String channelStr = fr.readLine();
+                double channel;
+                try {
+                    channel = Double.parseDouble(channelStr);
+                } catch (Exception e) {
+                    throw new InvalidParameterException(String.format("Unable to parse calibration channel: %s", channelStr));
+                }
+                cal = channel / compactness;
+
+                String energyStr = fr.readLine();
+                double energy;
+                try {
+                    energy = Double.parseDouble(energyStr);
+                } catch (Exception e) {
+                    throw new InvalidParameterException(String.format("Unable to parse calibration energy: %s", energyStr));
+                }
+                cal_E = energy;
+
+                if (save_calibration.containsPointChannel((int) cal)) {
+                    throw new InvalidParameterException("The same calibration point has been already added");
+                }
+                save_calibration.addPoint((int) cal, cal_E);
+            }
+            save_calibration.Calculate();
+        }
+        if (!save_calibration.isCorrect()) {
+            throw new InvalidParameterException("Incorrect calibration");
+        }
+
+        long[] tmp = new long[Constants.NUM_HIST_POINTS];
+        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+            for (int j = 0; j < compactness; j++) {
+                if ((i * compactness + j) < num_points) {
+                    String countsStr = fr.readLine();
+                    long counts;
+                    try {
+                        counts = Long.parseLong(countsStr);
+                    } catch (Exception e) {
+                        throw new InvalidParameterException(String.format("Unable to parse channel counts: %s", countsStr));
+                    }
+
+                    tmp[i] += counts;
+                }
+            }
+        }
+
+        spectrum.setSpectrumCalibration(save_calibration)
+                .setSpectrumOnly(tmp)
+                .setChanged(false);
+
+        spectrumList.add(spectrum);
     }
 
     @Override
-    public boolean loadSpectrogram(@NonNull InputStream histFile, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) {
-        if (spectrumCount() != 0) {
-            // something already loaded
-            return false;
+    public void saveSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream, Context context) throws IOException, IllegalStateException {
+        validateSaveState();
+        Spectrum spectrum = spectrumList.get(0);
+        OutputStreamWriter fw = docStream;
+        long[] tmp = spectrum.getDataArray();
+        double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+
+        fw.append("FORMAT: 3\n");
+        fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));                           //version 2
+        if (spectrum.getSpectrumDate() == 0) {
+            fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));                         //version 2
+        } else {
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));                   //version 2
+        }
+        fw.append(String.format(Locale.US, "%s\n", spectrum.getGPSDate()));                            //version 2
+        fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));                           //version 2
+        fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));                          //version 2
+        fw.append(spectrum.getSuffix()).append("\n");                                                         //version 3
+        fw.append(spectrum.getDeviceInfo()).append("\n");                                                    //version 3
+        fw.append(String.format(Locale.US, "%f\n", time));
+        fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
+        fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
+        for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
+            fw.append(String.format(Locale.US, "%.12g\n", coeff));
+        }
+        for (long l : tmp) {
+            fw.append(String.format(Locale.US, "%d\n", l));
+        }
+        fw.close();
+    }
+
+    public void loadSpectrogram(@NonNull Uri spectrogramFilePath, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) throws InvalidParameterException, IOException {
+        validateLoadState();
+
+        InputStream histFile = context.getContentResolver().openInputStream(spectrogramFilePath);
+        BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
+        try {
+            String versionStr = fr.readLine();
+            loadSpectrumV3(fr, versionStr);
+            target.clear();
+            target.setBaseSpectrum(this.spectrumList.get(0), spectrogramFilePath);
+            // load deltas
+            while (true) {
+                if (cancellationToken.isCancelled()) {
+                    break;
+                }
+
+                if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
+                    ToastHelper.showToast(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
+                    break;
+                }
+
+                SpectrumDelta delta = readNextDelta(fr, Constants.NUM_HIST_POINTS / AtomSpectraSpectrogramData.CHANNEL_COUNT);
+                if (delta == null) {
+                    break;
+                }
+                target.addDelta(delta.channels, delta.duration, delta.date);
+
+                if (target.rowCount() > 0 && target.rowCount() % 50 == 0) {
+                    onDeltasLoaded.accept(target.rowCount());
+                }
+            }
+        } catch (InvalidParameterException e) {
+            fr.close();
+            throw e;
+        }
+    }
+
+    public String exportSpectrogramPartAsSpectrum(@NonNull Uri spectrogramFilePath, String spectrumName, int fromDelta, int toDelta, Context context, ProgressCallback<String> onProgress, CancellationToken cancellationToken) throws InvalidParameterException, IOException {
+        validateLoadState();
+
+        if (toDelta < fromDelta || toDelta < 0 || fromDelta < 0) {
+            throw new InvalidParameterException(String.format("Invalid delta indices [%d, %d]", fromDelta, toDelta));
         }
 
+        InputStream histFile = context.getContentResolver().openInputStream(spectrogramFilePath);
         BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
         try {
             // load base spectrum
-            String ident = fr.readLine();
-            if (!ident.matches("^[+-]?\\d+(\\.(\\d+)?)?$") && loadSpectrumV3(fr, ident, context)) {
-                target.clear();
-                target.setBaseSpectrum(this.spectrumList.get(0));
-                // load deltas
-                while (true) {
-                    if (cancellationToken.isCancelled()) {
-                        break;
-                    }
-
-                    if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
-                        showToastInMainLooper(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS, Toast.LENGTH_LONG);
-                        break;
-                    }
-
-                    String dateStr = fr.readLine();
-                    if (dateStr == null || dateStr.isEmpty()) {
-                        // EOF
-                        break;
-                    }
-
-                    long date = Long.parseLong(dateStr);
-
-                    // skip lat/lon as those values not used at the time (slightly speeds up parsing)
-                    // double latitude = Double.parseDouble(fr.readLine());
-                    // double longitude = Double.parseDouble(fr.readLine());
-                    fr.readLine();
-                    fr.readLine();
-
-                    double duration = Double.parseDouble(fr.readLine());
-                    String[] channelsStr = fr.readLine().split("\t");
-
-                    int binFactor = Constants.NUM_HIST_POINTS / AtomSpectraSpectrogramData.CHANNEL_COUNT;
-                    long[] channels = new long[AtomSpectraSpectrogramData.CHANNEL_COUNT];
-                    for (int i = 0; i < Constants.NUM_HIST_POINTS; i += binFactor) {
-                        long summ = 0;
-                        for (int j = 0; j < binFactor && (i + j) < channelsStr.length; j++) {
-                            summ += Long.parseLong(channelsStr[i + j]);
-                        }
-
-                        channels[i / binFactor] = summ;
-                    }
-
-                    target.addDelta(channels, duration, date);
-
-                    if (target.rowCount() > 0 && target.rowCount() % 50 == 0) {
-                        onDeltasLoaded.accept(target.rowCount());
-                    }
+            String versionStr = fr.readLine();
+            onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_loading_base, spectrumName));
+            loadSpectrumV3(fr, versionStr);
+            Spectrum spectrumToSave = this.spectrumList.get(0);
+            // TODO: validate channel count
+            long[] combinedSpectrum = new long[Constants.NUM_HIST_POINTS];
+            double combinedDuration = 0;
+            long lastDeltaDate = 0;
+            int deltaIndex = 0;
+            // load deltas
+            onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas, spectrumName));
+            while (true) {
+                if (cancellationToken.isCancelled()) {
+                    break;
                 }
 
-                fr.close();
-                return true;
-            } else {
-                fr.close();
-            }
-        } catch (Exception e) {
-            return false;
-        }
+                if (deltaIndex < fromDelta) {
+                    skipNextDelta(fr);
+                    deltaIndex++;
 
-        return false;
+                    if ((fromDelta - deltaIndex) % 50 == 0) {
+                        int progressPercent = deltaIndex * 100 / (fromDelta + 1); // just to avoid potential zero division, even it is not the case here
+                        onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas_percent, spectrumName, progressPercent));
+                    }
+
+                    continue;
+                }
+
+                if (deltaIndex > toDelta) {
+                    break;
+                }
+
+                if ((deltaIndex - fromDelta) % 50 == 0) {
+                    int progressPercent = (deltaIndex - fromDelta) * 100 / (toDelta - fromDelta + 1);
+                    onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_combining_deltas_percent, spectrumName, progressPercent));
+                }
+                SpectrumDelta delta = readNextDelta(fr, 1);
+                if (delta == null) {
+                    throw new InvalidParameterException(String.format("Null delta for index: %d", deltaIndex));
+                }
+                lastDeltaDate = delta.date;
+                combinedDuration += delta.duration;
+                for (int i = 0; i < combinedSpectrum.length; i++) {
+                    combinedSpectrum[i] += delta.channels[i];
+                }
+
+                deltaIndex++;
+            }
+            fr.close();
+
+            if (!cancellationToken.isCancelled()) {
+                onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_saving_spectrum, spectrumName));
+                spectrumToSave.setRealSpectrumTime(combinedDuration);
+                spectrumToSave.setLocation(0, 0, 0);
+                spectrumToSave.setSpectrumDate(lastDeltaDate);
+                spectrumToSave.setSpectrumOnly(combinedSpectrum);
+                spectrumToSave.updateComments();
+
+                Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(context, context.getString(R.string.file_atomspectra_spectrum_prefix), 0, spectrumName, ".txt", "text/plain", false);
+                OutputStreamWriter docStream = streamInfo.first;
+                String spectrumFileName = streamInfo.second.getPath();
+
+                SpectrumFileAS saveFile = new SpectrumFileAS();
+                saveFile.addSpectrum(spectrumToSave)
+                        .setChannels(spectrumToSave.getDataArray().length)
+                        .setChannelCompression(1);
+                saveSpectrumAndCloseStream(docStream, context);
+
+                return spectrumFileName;
+            }
+
+            return null;
+        } catch (InvalidParameterException e) {
+            fr.close();
+            throw e;
+        }
     }
 
-    @Override
-    public boolean saveDeltaSpectrum(@NonNull OutputStreamWriter docStream, Context context) {
-        // We just save the only one incremental spectrum
-        if (spectrumCount() != 1 || backgroundSpectrum != null)
-            return false;
+    public void saveDeltaSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream) throws IOException {
+        validateSaveState();
 
         Spectrum spectrum = spectrumList.get(0);
-        try {
-            OutputStreamWriter fw = docStream;
-            long[] tmp = spectrum.getDataArray();
-            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+        OutputStreamWriter fw = docStream;
+        long[] tmp = spectrum.getDataArray();
+        double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
 
-            if (spectrum.getSpectrumDate() == 0) {
-                fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));
-            } else {
-                fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));
-            }
-
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));
-            fw.append(String.format(Locale.US, "%f\n", time));
-
-            for (long l : tmp) {
-                fw.append(String.format(Locale.US, "%d\t", l));
-            }
-            fw.append("\n");
-            fw.close();
-        } catch (Exception e) {
-            return false;
+        if (spectrum.getSpectrumDate() == 0) {
+            fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));
+        } else {
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));
         }
-        return true;
+
+        fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));
+        fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));
+        fw.append(String.format(Locale.US, "%f\n", time));
+
+        for (long l : tmp) {
+            fw.append(String.format(Locale.US, "%d\t", l));
+        }
+        fw.append("\n");
+        fw.close();
     }
 
-    private void showToastInMainLooper(Context context, String text, int duration) {
-        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, text, duration).show());
+    private SpectrumDelta readNextDelta(BufferedReader buffer, int channelBinning) throws InvalidParameterException, IOException {
+        String dateStr = buffer.readLine();
+        if (dateStr == null || dateStr.isEmpty()) {
+            // EOF
+            return null;
+        }
+
+        long date;
+        try {
+            date = Long.parseLong(dateStr);
+        } catch (Exception e) {
+            throw new InvalidParameterException(String.format("Unable to parse delta date: %s", dateStr));
+        }
+
+        // skip lat/lon as those values not used at the time (slightly speeds up parsing)
+        // double latitude = Double.parseDouble(fr.readLine());
+        // double longitude = Double.parseDouble(fr.readLine());
+        buffer.readLine();
+        buffer.readLine();
+
+        String durationStr = buffer.readLine();
+        double duration;
+        try {
+            duration = Double.parseDouble(durationStr);
+        } catch (Exception e) {
+            throw new InvalidParameterException(String.format("Unable to parse delta duration: %s", durationStr));
+        }
+
+        String channelStr = buffer.readLine();
+        if (channelStr == null || channelStr.isEmpty()) {
+            throw new InvalidParameterException(String.format("Unable to parse delta channels: %s", channelStr));
+        }
+
+        String[] channelsStr = channelStr.split("\t");
+        if (channelsStr.length != Constants.NUM_HIST_POINTS) {
+            throw new InvalidParameterException(String.format("Unsupported delta channels count: %d", channelsStr.length));
+        }
+
+        int channelCount = Constants.NUM_HIST_POINTS / channelBinning;
+        long[] channels = new long[channelCount];
+        for (int i = 0; i < Constants.NUM_HIST_POINTS; i += channelBinning) {
+            long summ = 0;
+            for (int j = 0; j < channelBinning && (i + j) < channelsStr.length; j++) {
+                try {
+                    summ += Long.parseLong(channelsStr[i + j]);
+                } catch (Exception e) {
+                    throw new InvalidParameterException(String.format("Unable to parse channel value: %s", channelsStr[i + j]));
+                }
+            }
+
+            channels[i / channelBinning] = summ;
+        }
+
+        return new SpectrumDelta(duration, channels, date);
+    }
+
+    private void skipNextDelta(BufferedReader buffer) throws IOException {
+        buffer.readLine(); // date
+        buffer.readLine(); // lat
+        buffer.readLine(); // lon
+        buffer.readLine(); // duration
+        buffer.readLine(); // channels
+    }
+
+    private void validateSaveState() throws IllegalStateException {
+        if (this.spectrumList.isEmpty()) {
+            throw new IllegalStateException("No spectrum to save.");
+        }
+
+        if (this.spectrumList.size() > 1) {
+            throw new IllegalStateException("Only single spectrum is supported by AtomSpectra file format.");
+        }
+
+        if (this.backgroundSpectrum != null) {
+            throw new IllegalStateException("Background spectrum is not supported by AtomSpectra file format.");
+        }
+    }
+
+    private void validateLoadState() throws IllegalStateException {
+        if (!this.spectrumList.isEmpty()) {
+            throw new IllegalStateException("Spectrum is already loaded.");
+        }
+    }
+
+    private static class SpectrumDelta {
+        public final double duration; // s
+        public final long[] channels; // spectrum channels
+
+        public final long date; // date
+
+        private SpectrumDelta(
+                double duration,
+                long[] channels,
+                long date) {
+            this.duration = duration;
+            this.channels = channels;
+            this.date = date;
+        }
     }
 }
