@@ -33,6 +33,10 @@ public class AtomSpectraSpectrogramData {
         this.spectrogramFileName = spectrogramFileName;
     }
 
+    public Spectrum getBaseSpectrum() {
+        return baseSpectrum;
+    }
+
     public void addDelta(Spectrum delta) {
         long[] channels = delta.getDataArray();
         double duration = delta.getRealSpectrumTime();

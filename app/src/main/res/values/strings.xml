@@ -539,7 +539,14 @@
     <string name="spectrogram_preview_toggle">Show or hide the spectrum preview</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Exporting spectrum…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Exporting…</string>
-    <string name="spectrogram_spectrum_export_confirm_dialog_message">The selected areas will be saved to the spectrum files \'bg-combined\' and \'fg-combined\'</string>
+    <string name="spectrogram_spectrum_export_dialog_title">Export</string>
+    <string name="spectrogram_spectrum_export_dialog_message">Set names for the exported spectra:</string>
+    <string name="spectrogram_spectrum_export_bg_name_hint">Background spectrum name</string>
+    <string name="spectrogram_spectrum_export_fg_name_hint">Foreground spectrum name</string>
+    <string name="spectrogram_spectrum_export_bg_name_default">background</string>
+    <string name="spectrogram_spectrum_export_fg_name_default">foreground</string>
+    <string name="spectrogram_spectrum_export_name_empty_error">Spectrum name cannot be empty</string>
+    <string name="spectrogram_spectrum_export_name_invalid_char">Character not allowed in file names</string>
     <string name="spectrogram_spectrum_export_save_success">File %1$s saved</string>
     <string name="spectrogram_spectrum_export_save_error">ERROR: %1$s was not saved. %2$s</string>
     <string name="spectrogram_spectrum_export_progress_loading_base">[%1$s] Loading base spectrum…</string>

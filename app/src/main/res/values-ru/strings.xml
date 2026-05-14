@@ -539,7 +539,14 @@
     <string name="spectrogram_preview_toggle">Показать или скрыть предпросмотр спектра</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Экспорт спектра…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Экспорт…</string>
-    <string name="spectrogram_spectrum_export_confirm_dialog_message">Выбранные области будут сохранены в файлы спектра \'bg-combined\' и \'fg-combined\'</string>
+    <string name="spectrogram_spectrum_export_dialog_title">Экспорт спектров</string>
+    <string name="spectrogram_spectrum_export_dialog_message">Задайте имена экспортируемых спектров:</string>
+    <string name="spectrogram_spectrum_export_bg_name_hint">Имя фонового спектра</string>
+    <string name="spectrogram_spectrum_export_fg_name_hint">Имя основного спектра</string>
+    <string name="spectrogram_spectrum_export_bg_name_default">фон</string>
+    <string name="spectrogram_spectrum_export_fg_name_default">объект</string>
+    <string name="spectrogram_spectrum_export_name_empty_error">Имя спектра не может быть пустым</string>
+    <string name="spectrogram_spectrum_export_name_invalid_char">Символ недопустим в именах файлов</string>
     <string name="spectrogram_spectrum_export_save_success">Файл %1$s сохранен</string>
     <string name="spectrogram_spectrum_export_save_error">ОШИБКА: %1$s не сохранен. %2$s</string>
     <string name="spectrogram_spectrum_export_progress_loading_base">[%1$s] Чтение базового спектра…</string>
