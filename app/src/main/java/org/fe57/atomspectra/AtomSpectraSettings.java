@@ -95,7 +95,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             bar.setDisplayHomeAsUpEnabled(true);
         }
 
-        sp = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        sp = PrefHelper.getASSharedPreferences(this);
 
         // --- audio processing
         mAtomSpectraSignalView = findViewById(R.id.signal_area);
@@ -278,7 +278,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         inputSoundCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && !inputDeviceName.equals("(none)"));
         inputSoundCheckBox.setEnabled(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         inputSoundCheckBox.setOnClickListener(v -> {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             boolean inputSound = ((CheckBox) v).isChecked();
             String inputName = settings.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
             if (inputName == null)
@@ -342,7 +342,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_minFront_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
         int rr = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
         if (r < rr - 1) {
@@ -356,7 +356,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_minFront_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
         if (r > 1) {
             r--;
@@ -382,7 +382,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_maxFront_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
         if (r < 4096) {
             r++;
@@ -395,7 +395,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_maxFront_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
         int rr = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
         if (r > rr + 1) {
@@ -420,7 +420,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_adcRoundedTo_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
 
         if (r > Constants.ADC_MIN) {
@@ -433,7 +433,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_adcRoundedTo_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
 
         if (r < Constants.ADC_MAX) {
@@ -459,7 +459,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_reducedTo_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int reducedTo = settings.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
         if (reducedTo < 1024) reducedTo *= 2;
 
@@ -467,7 +467,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_reducedTo_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int reducedTo = settings.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
         if (reducedTo > 128) reducedTo /= 2;
 
@@ -492,7 +492,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     public void onClick_noise_minus(View v) {
         if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
 
             if (r > 0) {
@@ -512,7 +512,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     public void onClick_noise_plus(View v) {
         if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
 
             if (r < (Constants.NUM_HIST_POINTS / 4)) {
@@ -555,7 +555,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
         alert.setPositiveButton("Ok", (dialog, whichButton) -> {
             if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
-                SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+                SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
                 int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
                 String value = input.getText().toString();
                 int intValue = r;
@@ -593,7 +593,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Factor_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR);
 
         if (r > 1) {
@@ -606,7 +606,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Factor_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR);
 
         if (r < 4) {
@@ -632,7 +632,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Smoothness_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
 
         if (r > 1) {
@@ -645,7 +645,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Smoothness_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
 
         if (r < 5) {
@@ -677,7 +677,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_CompressGraph_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_COMPRESS_GRAPH, Constants.COMPRESS_GRAPH_SUM);
         CharSequence[] data = getResources().getTextArray(R.array.compress_graph_array);
         r = r < (data.length - 1) ? r + 1 : data.length - 1;
@@ -686,7 +686,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_CompressGraph_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_COMPRESS_GRAPH, Constants.COMPRESS_GRAPH_SUM);
         r = r > 0 ? r - 1 : 0;
 
@@ -707,7 +707,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Diff_Time_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_SPECTRUM_CHANGE_DIFF_TIME, Constants.DEFAULT_DELTA_TIME);
 
         if (r > 60) {
@@ -724,7 +724,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Diff_Time_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_SPECTRUM_CHANGE_DIFF_TIME, Constants.DEFAULT_DELTA_TIME);
 
         if (r < 10) {
@@ -768,7 +768,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_spgDeltaDuration_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int val = settings.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
         if (val > Constants.SPG_DELTA_DURATION_MIN) {
             val -= Constants.SPG_DELTA_DURATION_MIN;
@@ -780,7 +780,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_spgDeltaDuration_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int val = settings.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
         if (val <= (Constants.SPG_DELTA_DURATION_MAX - Constants.SPG_DELTA_DURATION_MIN)) {
             val += Constants.SPG_DELTA_DURATION_MIN;
@@ -1017,7 +1017,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_intervalAlarmVolume_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
 
         if (r < 10) {
@@ -1034,7 +1034,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_intervalAlarmVolume_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
 
         if (r < 10) {
@@ -1062,7 +1062,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_intervalDetectionLevel_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
 
         if (r < 3) {
@@ -1079,7 +1079,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_intervalDetectionLevel_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
 
         if (r < 3) {
@@ -1183,7 +1183,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     public void onSelectWorkingDirectoryClick(View v) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             String dirName = settings.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
 
@@ -1253,7 +1253,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         CheckBox enableGPSCheckbox = findViewById(R.id.enableGPSCheckbox);
         enableGPSCheckbox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false));
         enableGPSCheckbox.setOnClickListener(v -> {
-            SharedPreferences.Editor prefEditor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
+            SharedPreferences.Editor prefEditor = PrefHelper.getASSharedPreferences(this).edit();
             boolean res = ((CheckBox) v).isChecked();
             if (res) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1290,7 +1290,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_save_channels_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_SAVE_CHANNELS, Constants.EXPORT_CHANNELS_DEFAULT), 1024, Constants.NUM_HIST_POINTS);
 
         if (r > 2048) {
@@ -1303,7 +1303,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_save_channels_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_SAVE_CHANNELS, Constants.EXPORT_CHANNELS_DEFAULT), 1024, Constants.NUM_HIST_POINTS);
 
         if (r < (Constants.NUM_HIST_POINTS / 2)) {
@@ -1327,7 +1327,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         alert.setView(input);
 
         alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_SAVE_CHANNELS, Constants.EXPORT_CHANNELS_DEFAULT), 1024, Constants.NUM_HIST_POINTS);
             alert.setTitle("Channels to save to file " + r);
             String value = input.getText().toString();
@@ -1359,7 +1359,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_load_channels_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_LOAD_CHANNELS, 65536);
 
         if (r > 2048) {
@@ -1372,7 +1372,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_load_channels_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_LOAD_CHANNELS, 65536);
 
         if (r < 32768) {
@@ -1396,7 +1396,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         alert.setView(input);
 
         alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = settings.getInt(Constants.CONFIG.CONF_LOAD_CHANNELS, 65536);
             alert.setTitle("Channels to load from file " + r);
             String value = input.getText().toString();
@@ -1428,7 +1428,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_compression_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
 
         if (r > 2) {
@@ -1441,7 +1441,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_compression_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = settings.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
 
         if (r < 32) {
@@ -1465,7 +1465,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         alert.setView(input);
 
         alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-            SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = settings.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
             alert.setTitle("Channel compression " + r);
             String value = input.getText().toString();
@@ -1501,7 +1501,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_outputFilenameTemplate_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         boolean prefix = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT);
         boolean date = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT);
         boolean time = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, Constants.OUTPUT_FILE_NAME_ADD_TIME_DEFAULT);
@@ -1515,7 +1515,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_outputFilenameTemplate_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         boolean prefix = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT);
         boolean date = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT);
         boolean time = settings.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, Constants.OUTPUT_FILE_NAME_ADD_TIME_DEFAULT);
@@ -1529,7 +1529,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     private void saveFilenamePattern(int val) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, (val & 4) != 0);
         prefEditor.putBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_TIME, (val & 2) != 0);
@@ -1549,7 +1549,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Locale_plus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = sp.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
         r = (r + 1) < Constants.LOCALES_ID.length ? r + 1 : (Constants.LOCALES_ID.length - 1);
 
@@ -1557,7 +1557,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     public void onClick_Locale_minus(View v) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         int r = sp.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
         r = (r > 1) ? (r - 1) : 0;
 
@@ -1575,21 +1575,21 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     private void saveStringPref(String value, String setting) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putString(setting, value);
         prefEditor.apply();
     }
 
     private void saveBooleanPref(boolean value, String setting) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putBoolean(setting, value);
         prefEditor.apply();
     }
 
     private void saveIntPref(int value, String setting) {
-        SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putInt(setting, value);
         prefEditor.apply();
@@ -1631,7 +1631,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SELECT_DIR_CODE_SETTINGS) {
             if (resultCode == RESULT_OK && (data != null)) {
-                SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+                SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
                 SharedPreferences.Editor editor = settings.edit();
                 Uri uri = data.getData();
                 if (uri != null) {
@@ -1668,7 +1668,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                     int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
                     int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
                     countsTextField.setText(getString(R.string.cps_show, cps, cps_interval));
-                    SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+                    SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
                     if (showPulseShape) {
                         double[] reference_pulse_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA);
                         if (reference_pulse_data == null) {
@@ -1743,7 +1743,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                     inputSoundCheckbox.setChecked(false);
             }
             if (Constants.ACTION.ACTION_UPDATE_SETTINGS.equals(action)) {
-                SharedPreferences settings = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+                SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
                 CheckBox box = findViewById(R.id.enableGPSCheckbox);
                 box.setChecked(settings.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false));
                 if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {

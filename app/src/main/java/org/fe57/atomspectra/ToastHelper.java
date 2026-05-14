@@ -17,6 +17,7 @@ public class ToastHelper {
     }
 
     private static void showToastInMainLooper(@NonNull Context appContext, String text) {
+        AtomSpectraLog.addMessage(appContext, text);
         new Handler(Looper.getMainLooper()).post(() -> {
             Toast.makeText(appContext, text, Toast.LENGTH_LONG).show();
         });
