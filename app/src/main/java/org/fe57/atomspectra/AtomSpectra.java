@@ -1119,7 +1119,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 statusLineMiddleText.setText(getString(R.string.dose_rate_noncompensated_prefix, formatDoseRateWithError(dose_rate_n, error95PercentN)));
                                 statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_NON_COMPENSATED_DOSE);
                                 statusLineBottomText.setText(getString(R.string.dose_rate_compensated_prefix, formatDoseRateWithError(dose_rate_c, error95PercentC)));
-                                statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_COMPENSATED_DOSE);
+                                statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_COMPENSATED_DOSE);
                             }
                             break;
                         case Constants.DISPLAY_MODE_SPECTROGRAM:
