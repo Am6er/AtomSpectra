@@ -546,6 +546,7 @@
     <string name="spectrogram_spectrum_export_bg_name_default">фон</string>
     <string name="spectrogram_spectrum_export_fg_name_default">объект</string>
     <string name="spectrogram_spectrum_export_name_empty_error">Имя спектра не может быть пустым</string>
+    <string name="spectrogram_spectrum_export_nothing_selected_error">Выберите хотя бы один спектр для экспорта</string>
     <string name="spectrogram_spectrum_export_name_invalid_char">Символ недопустим в именах файлов</string>
     <string name="spectrogram_spectrum_export_save_success">Файл %1$s сохранен</string>
     <string name="spectrogram_spectrum_export_save_error">ОШИБКА: %1$s не сохранен. %2$s</string>

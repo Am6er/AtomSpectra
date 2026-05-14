@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -498,29 +499,50 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             return null;
         };
 
+        final CheckBox fgCheckBox = new CheckBox(this);
+        fgCheckBox.setChecked(true);
+
         final EditText fgNameInput = new EditText(this);
         fgNameInput.setHint(R.string.spectrogram_spectrum_export_fg_name_hint);
         fgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_fg_name_default));
         fgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
         fgNameInput.setFilters(new InputFilter[]{filenameFilter});
-        container.addView(fgNameInput);
+
+        LinearLayout fgRow = new LinearLayout(this);
+        fgRow.setOrientation(LinearLayout.HORIZONTAL);
+        fgRow.addView(fgCheckBox);
+        fgRow.addView(fgNameInput, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        container.addView(fgRow);
+
+        final CheckBox bgCheckBox = new CheckBox(this);
+        bgCheckBox.setChecked(true);
 
         final EditText bgNameInput = new EditText(this);
         bgNameInput.setHint(R.string.spectrogram_spectrum_export_bg_name_hint);
         bgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_bg_name_default));
         bgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
         bgNameInput.setFilters(new InputFilter[]{filenameFilter});
-        bgNameInput.selectAll();
-        container.addView(bgNameInput);
+
+        LinearLayout bgRow = new LinearLayout(this);
+        bgRow.setOrientation(LinearLayout.HORIZONTAL);
+        bgRow.addView(bgCheckBox);
+        bgRow.addView(bgNameInput, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        container.addView(bgRow);
 
         new AlertDialog.Builder(this)
                 .setTitle(R.string.spectrogram_spectrum_export_dialog_title)
                 .setMessage(getString(R.string.spectrogram_spectrum_export_dialog_message))
                 .setView(container)
                 .setPositiveButton(R.string.dialog_continue_button, (dialog, whichButton) -> {
+                    boolean exportFg = fgCheckBox.isChecked();
+                    boolean exportBg = bgCheckBox.isChecked();
+                    if (!exportFg && !exportBg) {
+                        ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_nothing_selected_error));
+                        return;
+                    }
                     String bgName = bgNameInput.getText().toString().trim();
                     String fgName = fgNameInput.getText().toString().trim();
-                    if (bgName.isEmpty() || fgName.isEmpty()) {
+                    if ((exportBg && bgName.isEmpty()) || (exportFg && fgName.isEmpty())) {
                         ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_name_empty_error));
                         return;
                     }
@@ -535,8 +557,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                             updateControlPanel();
                         });
                         try {
-                            exportSpectrum(bgLeftBound, bgRightBound, bgName, exportSpectrumCancellationToken);
-                            if (!exportSpectrumCancellationToken.isCancelled()) {
+                            if (exportBg) {
+                                exportSpectrum(bgLeftBound, bgRightBound, bgName, exportSpectrumCancellationToken);
+                            }
+                            if (exportFg && !exportSpectrumCancellationToken.isCancelled()) {
                                 exportSpectrum(fgLeftBound, fgRightBound, fgName, exportSpectrumCancellationToken);
                             }
                         } finally {
@@ -548,8 +572,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                         }
                     }).start();
                 })
-                .setNegativeButton(R.string.dialog_cancel_button, (dialog, whichButton) -> {
-                })
+                .setNegativeButton(R.string.dialog_cancel_button, (dialog, whichButton) -> {})
                 .show();
     }
 
