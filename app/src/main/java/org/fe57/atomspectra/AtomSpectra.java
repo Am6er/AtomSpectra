@@ -3562,7 +3562,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             } else {
                 AtomSpectraService.freeze(true);
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
-                AtomSpectraService.ForegroundSpectrum.Clone(spectrum);
+                AtomSpectraService.ForegroundSpectrum.ReinitializeFrom(spectrum);
                 ((TextView) findViewById(R.id.suffixView)).setText(spectrum.getSuffix());
             }
             AtomSpectraService.recalculateInterval();
@@ -3665,7 +3665,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                         }
                                     });
                                 }, loadingSpectrogramCancellationToken);
-                showSpectrogramView();
+                mainHandler.post(() -> showSpectrogramView());
                 ToastHelper.showToast(getContext(), getString(R.string.spectrogram_load_success));
             } catch (Exception e) {
                 AtomSpectraLog.addMessage(getContext(), Log.getStackTraceString(e));
@@ -3705,7 +3705,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     }
 
     private void moveToBackground() {
-        AtomSpectraService.BackgroundSpectrum.Clone(AtomSpectraService.ForegroundSpectrum);
+        AtomSpectraService.BackgroundSpectrum.ReinitializeFrom(AtomSpectraService.ForegroundSpectrum);
         boolean show_back = !AtomSpectraService.BackgroundSpectrum.isEmpty();
         AtomSpectraService.background_show = show_back;
         app_menu.findItem(R.id.action_background_show).setChecked(show_back);
@@ -3754,7 +3754,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                     return;
                 }
                 String path = workingDir + "/Background";
-                backgroundFilePath = Uri.parse(path);
+                backgroundFilePath = Uri.fromFile(new File(path));
                 if (backgroundFilePath == null) {
                     AtomSpectraLog.addMessage(this, String.format("Unexpected: unable to construct default background Uri from path '%s'", path));
                     ToastHelper.showToast(this, getString(R.string.background_load_error));
@@ -3770,7 +3770,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             if (spectrum == null) {
                 throw new NullPointerException("Unexpected: spectrum is null after load");
             }
-            AtomSpectraService.BackgroundSpectrum.Clone(spectrum);
+            AtomSpectraService.BackgroundSpectrum.ReinitializeFrom(spectrum);
             background_subtract = false;
             boolean show_back = !AtomSpectraService.BackgroundSpectrum.isEmpty();
             AtomSpectraService.background_show = show_back;
@@ -4287,10 +4287,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Button doseButton = (Button) findViewById(R.id.doseButton);
         switch (mode) {
             case Constants.DISPLAY_DOSE_NON_COMPENSATED:
-                doseButton.setText(getText(R.string.mode_uncompensated_button));
-                break;
             case Constants.DISPLAY_DOSE_COMPENSATED:
-                doseButton.setText(getText(R.string.mode_compensated_button));
+                doseButton.setText(getText(R.string.mode_combined_dose_button));
                 break;
             case Constants.DISPLAY_DOSE_INTERVAL:
                 doseButton.setText(getText(R.string.mode_interval_button));

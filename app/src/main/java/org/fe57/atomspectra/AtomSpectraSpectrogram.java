@@ -273,6 +273,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mDataUpdateReceiver);
+        dismissSpectrumExportingDialog();
     }
 
     private void updateSpectrogram(boolean scrollToBottom) {

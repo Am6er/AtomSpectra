@@ -34,6 +34,8 @@ public class SpectrumFileAS extends SpectrumFile {
             fr.close();
             throw e;
         }
+
+        fr.close();
     }
 
     // old spectrum data
@@ -368,7 +370,7 @@ public class SpectrumFileAS extends SpectrumFile {
             String versionStr = fr.readLine();
             onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_loading_base, spectrumName));
             loadSpectrumV3(fr, versionStr);
-            Spectrum spectrumToSave = this.spectrumList.get(0);
+            Spectrum baseSpectrum = this.spectrumList.get(0);
             // TODO: validate channel count
             long[] combinedSpectrum = new long[Constants.NUM_HIST_POINTS];
             double combinedDuration = 0;
@@ -417,7 +419,9 @@ public class SpectrumFileAS extends SpectrumFile {
 
             if (!cancellationToken.isCancelled()) {
                 onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_saving_spectrum, spectrumName));
+                Spectrum spectrumToSave = new Spectrum(baseSpectrum);
                 spectrumToSave.setRealSpectrumTime(combinedDuration);
+                spectrumToSave.setSuffix(spectrumName);
                 spectrumToSave.setLocation(0, 0, 0);
                 spectrumToSave.setSpectrumDate(lastDeltaDate);
                 spectrumToSave.setSpectrumOnly(combinedSpectrum);
@@ -431,7 +435,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 saveFile.addSpectrum(spectrumToSave)
                         .setChannels(spectrumToSave.getDataArray().length)
                         .setChannelCompression(1);
-                saveSpectrumAndCloseStream(docStream, context);
+                saveFile.saveSpectrumAndCloseStream(docStream, context);
 
                 return spectrumFileName;
             }
