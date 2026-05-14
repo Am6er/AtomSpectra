@@ -1806,7 +1806,9 @@ public class AtomSpectraService extends Service {
     private static void resetCpsData() {
         Arrays.fill(cpsArray, 0);
         Arrays.fill(cpsArrayInterval, 0);
-        Arrays.fill(cpsArrayEnergyBins, new int[EnergyBins.length]);
+        for (int i = 0; i < cpsArrayEnergyBins.length; i++) {
+            cpsArrayEnergyBins[i] = new int[EnergyBins.length];
+        }
         cps = 0;
         cpsInterval = 0;
     }
