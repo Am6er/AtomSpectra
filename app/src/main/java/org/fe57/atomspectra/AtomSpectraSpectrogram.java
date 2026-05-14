@@ -498,6 +498,13 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             return null;
         };
 
+        final EditText fgNameInput = new EditText(this);
+        fgNameInput.setHint(R.string.spectrogram_spectrum_export_fg_name_hint);
+        fgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_fg_name_default));
+        fgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        fgNameInput.setFilters(new InputFilter[]{filenameFilter});
+        container.addView(fgNameInput);
+
         final EditText bgNameInput = new EditText(this);
         bgNameInput.setHint(R.string.spectrogram_spectrum_export_bg_name_hint);
         bgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_bg_name_default));
@@ -505,13 +512,6 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         bgNameInput.setFilters(new InputFilter[]{filenameFilter});
         bgNameInput.selectAll();
         container.addView(bgNameInput);
-
-        final EditText fgNameInput = new EditText(this);
-        fgNameInput.setHint(R.string.spectrogram_spectrum_export_fg_name_hint);
-        fgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_fg_name_default));
-        fgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
-        fgNameInput.setFilters(new InputFilter[]{filenameFilter});
-        container.addView(fgNameInput);
 
         new AlertDialog.Builder(this)
                 .setTitle(R.string.spectrogram_spectrum_export_dialog_title)
