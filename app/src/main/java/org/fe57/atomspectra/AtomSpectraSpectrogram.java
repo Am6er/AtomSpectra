@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -520,6 +521,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         final EditText bgNameInput = new EditText(this);
         bgNameInput.setHint(R.string.spectrogram_spectrum_export_bg_name_hint);
         bgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_bg_name_default));
+        bgNameInput.setTextColor(Color.GREEN);
         bgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
         bgNameInput.setFilters(new InputFilter[]{filenameFilter});
 
