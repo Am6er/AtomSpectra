@@ -712,6 +712,8 @@ public class AtomSpectraShapeView extends View {
 				if (show_back)
 					for (int j = 0; j < step; j++)
 						back_r += back_yf[i * step + j];
+				if (show_back && step > 1 && x_zoom_factor == Constants.SCALE_MAX)
+					back_r /= 2;
 				if (logScale) {
 					if (r > minLogValue) fg_reduced_reversed[x_size - 1 - i] = Math.log10(r);
 					else fg_reduced_reversed[x_size - 1 - i] = Math.log10(minLogValue);
