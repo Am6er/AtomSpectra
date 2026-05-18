@@ -3,21 +3,31 @@ package org.fe57.atomspectra;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -43,6 +53,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static int fgRightBound = -1;
     private static int lastRowCount = 0;
     private static boolean previewVisible = true;
+
+    // exporting state
+    private static boolean isExportingSpectrum = false;
+    private static CancellationToken exportSpectrumCancellationToken = null;
+    private static AlertDialog spectrumExportingDialog = null;
 
     private GestureDetector gestureDetector;
     private ScaleGestureDetector scaleGestureDetector;
@@ -254,9 +269,17 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        checkSpectrumIsExporting();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mDataUpdateReceiver);
+        dismissSpectrumExportingDialog();
     }
 
     private void updateSpectrogram(boolean scrollToBottom) {
@@ -343,6 +366,13 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (toggleBtn != null) {
             toggleBtn.setImageResource(previewVisible ? R.drawable.ic_spg_spectrum_preview_close : R.drawable.ic_spg_spectrum_preview_show);
         }
+
+        ImageButton exportButton = findViewById(R.id.buttonExportSpectrum);
+        if (exportButton != null) {
+            boolean filenameIsSet = AtomSpectraSpectrogramData.instance.getSpectrogramFileName() != null;
+            boolean rowsAvailable = AtomSpectraSpectrogramData.instance.rowCount() > 0;
+            exportButton.setEnabled(!isExportingSpectrum && filenameIsSet && rowsAvailable);
+        }
     }
 
     @Override
@@ -426,9 +456,181 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         updateSpectrogram(false);
     }
 
+    public void onClick_exportSpectrum(View v) {
+        exportSpectrogramSelection();
+    }
+
     public float pxToDp(float px) {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         return px / displayMetrics.density;
+    }
+
+    private void exportSpectrogramSelection() {
+        if (isExportingSpectrum) {
+            String message = "ERROR: exportSpectrogramSelection called while spectrum is already exporting.";
+            AtomSpectraLog.addMessage(this, message);
+            ToastHelper.showToast(this, message);
+            return;
+        }
+
+        showSpectrumExportNameDialog();
+    }
+
+    private void showSpectrumExportNameDialog() {
+        String basePrefix = "";
+        Spectrum baseSpectrum = AtomSpectraSpectrogramData.instance.getBaseSpectrum();
+        if (baseSpectrum != null && !baseSpectrum.getSuffix().isEmpty()) {
+            basePrefix = baseSpectrum.getSuffix() + "-";
+        }
+
+        int paddingPx = (int) (16 * getResources().getDisplayMetrics().density);
+
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(paddingPx, paddingPx, paddingPx, 0);
+
+        InputFilter filenameFilter = (source, start, end, dest, dstart, dend) -> {
+            for (int i = start; i < end; i++) {
+                char c = source.charAt(i);
+                if ("/\\*?<>|:\"'".indexOf(c) >= 0) {
+                    ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_name_invalid_char));
+                    return "";
+                }
+            }
+            return null;
+        };
+
+        final CheckBox fgCheckBox = new CheckBox(this);
+        fgCheckBox.setChecked(true);
+
+        final EditText fgNameInput = new EditText(this);
+        fgNameInput.setHint(R.string.spectrogram_spectrum_export_fg_name_hint);
+        fgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_fg_name_default));
+        fgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        fgNameInput.setFilters(new InputFilter[]{filenameFilter});
+
+        LinearLayout fgRow = new LinearLayout(this);
+        fgRow.setOrientation(LinearLayout.HORIZONTAL);
+        fgRow.addView(fgCheckBox);
+        fgRow.addView(fgNameInput, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        container.addView(fgRow);
+
+        final CheckBox bgCheckBox = new CheckBox(this);
+        bgCheckBox.setChecked(true);
+
+        final EditText bgNameInput = new EditText(this);
+        bgNameInput.setHint(R.string.spectrogram_spectrum_export_bg_name_hint);
+        bgNameInput.setText(basePrefix + getString(R.string.spectrogram_spectrum_export_bg_name_default));
+        bgNameInput.setTextColor(Color.GREEN);
+        bgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        bgNameInput.setFilters(new InputFilter[]{filenameFilter});
+
+        LinearLayout bgRow = new LinearLayout(this);
+        bgRow.setOrientation(LinearLayout.HORIZONTAL);
+        bgRow.addView(bgCheckBox);
+        bgRow.addView(bgNameInput, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        container.addView(bgRow);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.spectrogram_spectrum_export_dialog_title)
+                .setMessage(getString(R.string.spectrogram_spectrum_export_dialog_message))
+                .setView(container)
+                .setPositiveButton(R.string.dialog_continue_button, (dialog, whichButton) -> {
+                    boolean exportFg = fgCheckBox.isChecked();
+                    boolean exportBg = bgCheckBox.isChecked();
+                    if (!exportFg && !exportBg) {
+                        ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_nothing_selected_error));
+                        return;
+                    }
+                    String bgName = bgNameInput.getText().toString().trim();
+                    String fgName = fgNameInput.getText().toString().trim();
+                    if ((exportBg && bgName.isEmpty()) || (exportFg && fgName.isEmpty())) {
+                        ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_name_empty_error));
+                        return;
+                    }
+
+                    exportSpectrumCancellationToken = new CancellationToken();
+                    showSpectrumExportingDialog();
+
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    new Thread(() -> {
+                        isExportingSpectrum = true;
+                        mainHandler.post(() -> {
+                            updateControlPanel();
+                        });
+                        try {
+                            if (exportBg) {
+                                exportSpectrum(bgLeftBound, bgRightBound, bgName, exportSpectrumCancellationToken);
+                            }
+                            if (exportFg && !exportSpectrumCancellationToken.isCancelled()) {
+                                exportSpectrum(fgLeftBound, fgRightBound, fgName, exportSpectrumCancellationToken);
+                            }
+                        } finally {
+                            isExportingSpectrum = false;
+                            mainHandler.post(() -> {
+                                dismissSpectrumExportingDialog();
+                                updateControlPanel();
+                            });
+                        }
+                    }).start();
+                })
+                .setNegativeButton(R.string.dialog_cancel_button, (dialog, whichButton) -> {})
+                .show();
+    }
+
+    private void showSpectrumExportingDialog() {
+        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+                .setTitle(R.string.spectrogram_spectrum_exporting_dialog_title)
+                .setMessage(getString(R.string.spectrogram_spectrum_exporting_dialog_default_message))
+                .setPositiveButton(getString(R.string.dialog_cancel_button), (dialog, whichButton) -> {
+                    if (exportSpectrumCancellationToken != null) {
+                        exportSpectrumCancellationToken.cancel();
+                    }
+                })
+                .setCancelable(false);
+
+        spectrumExportingDialog = alert.show();
+    }
+
+    private void dismissSpectrumExportingDialog() {
+        if (spectrumExportingDialog != null) {
+            spectrumExportingDialog.dismiss();
+            spectrumExportingDialog = null;
+        }
+    }
+
+    private void checkSpectrumIsExporting() {
+        if (isActive && isExportingSpectrum && spectrumExportingDialog == null) {
+            showSpectrumExportingDialog();
+        }
+    }
+
+    private void exportSpectrum(int leftBound, int rightBound, String spectrumName, CancellationToken cancellationToken) {
+        SpectrumFileAS spectrum = new SpectrumFileAS();
+        int fromDelta = Math.min(leftBound, rightBound);
+        fromDelta = Constants.MinMax(fromDelta, 0, AtomSpectraSpectrogramData.instance.rowCount() - 1);
+        int toDelta = Math.max(leftBound, rightBound);
+        toDelta = Constants.MinMax(toDelta, 0, AtomSpectraSpectrogramData.instance.rowCount() - 1);
+        try {
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            String spectrumFileName = spectrum.exportSpectrogramPartAsSpectrum(AtomSpectraSpectrogramData.instance.getSpectrogramFileName(), spectrumName, fromDelta, toDelta, this, progress -> {
+                mainHandler.post(() -> {
+                    if (isActive && spectrumExportingDialog != null) {
+                        spectrumExportingDialog.setMessage(progress);
+                    }
+                });
+            }, cancellationToken);
+            if (spectrumFileName == null && !cancellationToken.isCancelled()) {
+                throw new IllegalStateException("Spectrum name is null while operation was not cancelled");
+            }
+
+            if (spectrumFileName != null) {
+                ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_save_success, spectrumFileName));
+            } // otherwise cancelled
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
+            ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_save_error, spectrumName, e.getMessage()));
+        }
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {

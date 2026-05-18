@@ -3,6 +3,8 @@ package org.fe57.atomspectra;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -29,8 +31,12 @@ public class PrefHelper {
         return Constants.CONFIG.CONF_SENS_TABLE_ENERGY + i + ":";
     }
 
-    public static String getLocale(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
+    public static SharedPreferences getASSharedPreferences(@NonNull Context context) {
+        return context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
+    }
+
+    public static String getLocale(@NonNull Context context) {
+        SharedPreferences sharedPreferences = getASSharedPreferences(context);
         int r = sharedPreferences.getInt(Constants.CONFIG.CONF_LOCALE_ID, 0);
         r = r < Constants.LOCALES_ID.length ? r : (Constants.LOCALES_ID.length - 1);
         String lang = Locale.getDefault().getLanguage();
@@ -54,8 +60,8 @@ public class PrefHelper {
         return sensitivityTable;
     }
 
-    public static TreeMap<Float, Double> getSensitivityTableOrDefault(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
+    public static TreeMap<Float, Double> getSensitivityTableOrDefault(@NonNull Context context) {
+        SharedPreferences sharedPreferences = getASSharedPreferences(context);
         int binsCount = sharedPreferences.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0);
         if (binsCount > 0) {
             TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
@@ -72,8 +78,8 @@ public class PrefHelper {
         }
     }
 
-    public static void setSensitivityTable(Context context, TreeMap<Float, Double> sensitivityTable) {
-        SharedPreferences.Editor editor = context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE).edit();
+    public static void setSensitivityTable(@NonNull Context context, TreeMap<Float, Double> sensitivityTable) {
+        SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
         List<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
         editor.putInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, sensitivityTable.size());
         for (int i = 0; i < sortedEnergyList.size(); i++) {
@@ -84,5 +90,20 @@ public class PrefHelper {
         }
 
         editor.commit();
+    }
+
+    public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {
+        SharedPreferences sharedPreferences = getASSharedPreferences(context);
+        if (sharedPreferences == null) {
+            ToastHelper.showToast(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
+            return null;
+        }
+
+        String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
+        if (workingDir == null && notifyUserIfNotSet) {
+            ToastHelper.showToast(context, context.getString(R.string.error_working_dir_not_set));
+        }
+
+        return workingDir;
     }
 }

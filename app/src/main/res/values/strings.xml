@@ -317,6 +317,15 @@
     <string name="perm_no_gps">No GPS access, GPS data will be undefined</string>
 
     <string name="error_working_dir_not_set">Working directory is not set. Go to settings and configure working directory.</string>
+    <string name="error_working_dir_not_valid">Working directory \'$1%s\' is not valid. Go to settings and configure working directory.</string>
+    <string name="error_unable_to_delete_existing_file">Unable to delete existing file \'$1%s\'.</string>
+    <string name="error_unable_to_create_file">Unable to create file \'$1%s\'.</string>
+    <string name="error_unable_to_create_file_ex">Unable to create file \'$1%s\'. $2%s</string>
+    <string name="error_unable_to_save_spectrum">Unable to save spectrum. $1%s</string>
+    <string name="error_unable_to_save_delta_spectrum">Unable to save delta spectrum. $1%s</string>
+
+    <string name="file_atomspectra_spectrum_prefix">Spectrum</string>
+    <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
 
     <string name="ask_select_histogram">Select a spectrum</string>
     <string name="ask_select_background">Select a background spectrum</string>
@@ -407,6 +416,9 @@
     <string name="dialog_yes_button">Yes</string>
     <string name="dialog_no_button">No</string>
     <string name="dialog_continue_button">Continue</string>
+    <string name="dialog_cancel_button">Cancel</string>
+
+    <string name="dialog_confirm_exit_while_recording_message">Spectrum recording is in progress, exiting the program may result in data loss.</string>
 
     <string name="log_no_records">No records</string>
     <string name="log_recording_suspended">Recording suspended</string>
@@ -431,7 +443,7 @@
     <string name="log_spg_midnight_restart">Restarting spectrogram at midnight</string>
     <string name="log_spg_autosave_start">Spectrogram recording started</string>
     <string name="log_spg_autosave_completed">Spectrogram recording completed</string>
-    <string name="log_spg_autosave_start_error">ERROR: Unable to start spectrogram recording</string>
+    <string name="log_spg_autosave_start_error">ERROR: Unable to start spectrogram recording. $1%s</string>
     <string name="log_warning_raw_audio_support_not_available">WARNING: Raw audio support not available</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>
@@ -525,6 +537,24 @@
     <string name="spectrogram_view">View</string>
     <string name="spectrogram_row_count">Rows: %1$d</string>
     <string name="spectrogram_preview_toggle">Show or hide the spectrum preview</string>
+    <string name="spectrogram_spectrum_exporting_dialog_title">Exporting spectrum…</string>
+    <string name="spectrogram_spectrum_exporting_dialog_default_message">Exporting…</string>
+    <string name="spectrogram_spectrum_export_dialog_title">Export spectrums</string>
+    <string name="spectrogram_spectrum_export_dialog_message">Set names for the exported spectrums:</string>
+    <string name="spectrogram_spectrum_export_bg_name_hint">Background spectrum name</string>
+    <string name="spectrogram_spectrum_export_fg_name_hint">Foreground spectrum name</string>
+    <string name="spectrogram_spectrum_export_bg_name_default">background</string>
+    <string name="spectrogram_spectrum_export_fg_name_default">foreground</string>
+    <string name="spectrogram_spectrum_export_name_empty_error">Spectrum name cannot be empty</string>
+    <string name="spectrogram_spectrum_export_nothing_selected_error">Select at least one spectrum to export</string>
+    <string name="spectrogram_spectrum_export_name_invalid_char">Character not allowed in file names</string>
+    <string name="spectrogram_spectrum_export_save_success">File %1$s saved</string>
+    <string name="spectrogram_spectrum_export_save_error">ERROR: %1$s was not saved. %2$s</string>
+    <string name="spectrogram_spectrum_export_progress_loading_base">[%1$s] Loading base spectrum…</string>
+    <string name="spectrogram_spectrum_export_progress_seeking_deltas">[%1$s] Seeking deltas…</string>
+    <string name="spectrogram_spectrum_export_progress_seeking_deltas_percent">[%1$s] Seeking deltas (%2$d%%)…</string>
+    <string name="spectrogram_spectrum_export_progress_combining_deltas_percent">[%1$s] Combining deltas (%2$d%%)…</string>
+    <string name="spectrogram_spectrum_export_progress_saving_spectrum">[%1$s] Saving…</string>
 
     <string name="help_menu">Help</string>
     <string name="help">Atom Spectra Quick Help</string>

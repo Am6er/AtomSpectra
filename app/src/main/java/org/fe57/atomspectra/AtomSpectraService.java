@@ -46,7 +46,6 @@ import androidx.core.content.PermissionChecker;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.util.Pair;
 
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -217,7 +216,7 @@ public class AtomSpectraService extends Service {
     private static int spgInterval = 0;
     private static boolean spgMidnightReset = false;
     private Spectrum spgAutosaveSpectrum = null;
-    private Pair<OutputStreamWriter, Uri> spgAutosaveFile = null;
+    private Uri spgAutosaveFilePath = null;
     private Date spgAutosaveFileCreated = null;
 
     private static int display_mode = Constants.DISPLAY_MODE_DEFAULT;
@@ -1034,7 +1033,7 @@ public class AtomSpectraService extends Service {
         if (Locator == null) {
             Locator = new GPSLocator(getApplicationContext());
         }
-        if ((hasFeatureGPS || hasFeatureNetwork) && getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
+        if ((hasFeatureGPS || hasFeatureNetwork) && PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 final Context id = this;
                 if (PermissionChecker.checkSelfPermission(id, Manifest.permission.ACCESS_FINE_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
@@ -1058,7 +1057,7 @@ public class AtomSpectraService extends Service {
         ForegroundSpectrum.setSuffix(getStringOrDefaultLocale(R.string.hist_suffix));
         BackgroundSpectrum.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
         usbDevice = new AtomSpectraSerial(context);
-        sp = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        sp = PrefHelper.getASSharedPreferences(this);
         sp.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
         smooth_basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
 
@@ -1649,7 +1648,7 @@ public class AtomSpectraService extends Service {
         Log.d(TAG, "recording Stop");
         stopCapturingAudioSource();
         cancelUsbDataWatchdog();
-        closeSpectrogramFile();
+        completeSpectrogramRecording();
         usbDevice.Close();
         usbDevice.Destroy();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
@@ -1691,7 +1690,7 @@ public class AtomSpectraService extends Service {
             usbDevice.ClearHistogram();
         }
 
-        closeSpectrogramFile();
+        completeSpectrogramRecording();
         AtomSpectraSpectrogramData.instance.clear();
         notifySpectrogramUpdated();
 
@@ -1757,7 +1756,7 @@ public class AtomSpectraService extends Service {
             }
             resetRecordingSuspendedStatus(false);
             stopIntervalSearchAlarmTimer();
-            closeSpectrogramFile();
+            completeSpectrogramRecording();
             ForegroundSpectrum.updateComments();
         } else {
             startIntervalSearchAlarmTimer();
@@ -2791,37 +2790,23 @@ public class AtomSpectraService extends Service {
     }
 
     private void saveCurrentSpectrum(String suffix) {
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-        boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
-        boolean fileNameDate = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_DATE, Constants.OUTPUT_FILE_NAME_DATE_DEFAULT);
-        boolean fileNameTime = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_TIME, Constants.OUTPUT_FILE_NAME_TIME_DEFAULT);
-        String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
-        if (workingDir == null) {
-            showToastInMainLooper(R.string.error_working_dir_not_set, Toast.LENGTH_LONG);
-            return;
+        try {
+            Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, getStringOrDefaultLocale(R.string.file_atomspectra_spectrum_prefix), ForegroundSpectrum.getSpectrumDate(), suffix, ".txt", "text/plain", false);
+            OutputStreamWriter docStream = streamInfo.first;
+            Spectrum spectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
+            if (!addGPS) {
+                spectrum.setLocation(null).updateComments();
+            }
+
+            SpectrumFileAS saveFile = new SpectrumFileAS();
+            saveFile.addSpectrum(spectrum)
+                    .setChannels(spectrum.getDataArray().length)
+                    .setChannelCompression(1)
+                    .saveSpectrumAndCloseStream(docStream, this);
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
+            showToastInMainLooper(getStringOrDefaultLocale(R.string.hist_save_error, suffix), Toast.LENGTH_LONG);
         }
-        Pair<OutputStreamWriter, Uri> returnPair = SpectrumFile.prepareOutputStream(this, workingDir, ForegroundSpectrum.getSpectrumDate(), "Spectrum", fileNamePrefix, suffix, ".txt", "text/plain", fileNameDate, fileNameTime, false);
-        if (returnPair == null) {
-            showToastInMainLooper(getStringOrDefaultLocale(R.string.log_no_perm_to_save_spectrum, suffix), Toast.LENGTH_LONG);
-            return;
-        }
-
-        OutputStreamWriter docStream = returnPair.first;
-
-        Spectrum spectrum = new Spectrum(AtomSpectraService.ForegroundSpectrum);
-        Spectrum backSpectrum = new Spectrum(AtomSpectraService.BackgroundSpectrum);
-
-        if (!addGPS) {
-            spectrum.setLocation(null).updateComments();
-            backSpectrum.setLocation(null).updateComments();
-        }
-
-        SpectrumFileAS saveFile = new SpectrumFileAS();
-        saveFile.
-                addSpectrum(spectrum).
-                setChannels(spectrum.getDataArray().length).
-                setChannelCompression(1).
-                saveSpectrum(docStream, this);
     }
 
     private void handleSpectrogramRecording(Spectrum foregroundSpectrumCopy) {
@@ -2840,7 +2825,7 @@ public class AtomSpectraService extends Service {
                 new Thread(() -> createOrUpdateSpectrogramFile(foregroundSpectrumCopy)).start();
             }
         } else {
-            closeSpectrogramFile();
+            completeSpectrogramRecording();
         }
     }
 
@@ -2851,48 +2836,39 @@ public class AtomSpectraService extends Service {
     private void createOrUpdateSpectrogramFile(Spectrum foregroundSpectrumCopy) {
         synchronized (spgAutosaveSync) {
             // reset spectrogram file if midnight has passed
-            if (spgMidnightReset && spgAutosaveFile != null && spgAutosaveFileCreated != null) {
+            if (spgMidnightReset && spgAutosaveFilePath != null && spgAutosaveFileCreated != null) {
                 Date now = new Date();
                 if (now.getDate() != spgAutosaveFileCreated.getDate()) {
                     appendDeltaToSpectrogram(foregroundSpectrumCopy);
-                    closeSpectrogramFile();
+                    completeSpectrogramRecording();
                     showToastInMainLooper(R.string.log_spg_midnight_restart, Toast.LENGTH_LONG);
                 }
             }
 
             // spectrogram recording is starting or restarting
             if (spgAutosaveSpectrum == null) {
-                SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
-                boolean fileNamePrefix = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_PREFIX, Constants.OUTPUT_FILE_NAME_PREFIX_DEFAULT);
-
                 spgAutosaveSpectrum = foregroundSpectrumCopy;
                 spgAutosaveSpectrum.updateComments();
-                String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
-                if (workingDir == null) {
-                    showToastInMainLooper(R.string.error_working_dir_not_set, Toast.LENGTH_LONG);
-                    showToastInMainLooper(R.string.log_spg_autosave_start_error, Toast.LENGTH_LONG);
-                    return;
+
+                try {
+                    Pair<OutputStreamWriter, Uri> spgAutosaveFileStreamInfo = SpectrumFile.prepareOutputFileStream(this, "Spectrogram-" + spgAutosaveSpectrum.getSuffix(), System.currentTimeMillis(), "", ".txt", "text/plain", true, true, true, false);
+                    spgAutosaveFilePath = spgAutosaveFileStreamInfo.second;
+                    spgAutosaveFileCreated = new Date();
+                    OutputStreamWriter docStream = spgAutosaveFileStreamInfo.first;
+                    SpectrumFileAS saveFile = new SpectrumFileAS();
+                    saveFile.addSpectrum(spgAutosaveSpectrum)
+                            .setChannels(spgAutosaveSpectrum.getDataArray().length)
+                            .setChannelCompression(1)
+                            .saveSpectrumAndCloseStream(docStream, this);
+
+                    AtomSpectraSpectrogramData.instance.clear();
+                    AtomSpectraSpectrogramData.instance.setBaseSpectrum(spgAutosaveSpectrum, spgAutosaveFilePath);
+                    notifySpectrogramUpdated();
+                    this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_LONG);
+                } catch (Exception e) {
+                    AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
+                    showToastInMainLooper(getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()), Toast.LENGTH_LONG);
                 }
-                spgAutosaveFile = SpectrumFile.prepareOutputStream(this, workingDir, System.currentTimeMillis(), "Spectrogram" + '-' + spgAutosaveSpectrum.getSuffix(), fileNamePrefix, "", ".txt", "text/plain", true, true, false);
-                spgAutosaveFileCreated = new Date();
-
-                if (spgAutosaveFile == null) {
-                    showToastInMainLooper(R.string.log_spg_no_perm_to_save, Toast.LENGTH_LONG);
-                    return;
-                }
-
-                OutputStreamWriter docStream = spgAutosaveFile.first;
-                SpectrumFileAS saveFile = new SpectrumFileAS();
-                saveFile.
-                        addSpectrum(spgAutosaveSpectrum).
-                        setChannels(spgAutosaveSpectrum.getDataArray().length).
-                        setChannelCompression(1).
-                        saveSpectrum(docStream, this);
-
-                AtomSpectraSpectrogramData.instance.clear();
-                AtomSpectraSpectrogramData.instance.setBaseSpectrum(spgAutosaveSpectrum);
-                notifySpectrogramUpdated();
-                this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_LONG);
 
                 return;
             }
@@ -2922,35 +2898,29 @@ public class AtomSpectraService extends Service {
 
         OutputStreamWriter docStream;
         try {
-            docStream = new OutputStreamWriter(service_context.getContentResolver().openOutputStream(spgAutosaveFile.second, "wa"));
+            docStream = new OutputStreamWriter(service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa"));
             SpectrumFileAS saveFile = new SpectrumFileAS();
-            saveFile.
-                    addSpectrum(deltaSpectrum).
-                    setChannels(deltaSpectrum.getDataArray().length).
-                    setChannelCompression(1).
-                    saveDeltaSpectrum(docStream, this);
+            saveFile.addSpectrum(deltaSpectrum)
+                    .setChannels(deltaSpectrum.getDataArray().length)
+                    .setChannelCompression(1);
+            saveFile.saveDeltaSpectrumAndCloseStream(docStream);
         } catch (Exception e) {
-            this.showToastInMainLooper(String.format("!%s: %s", e.getMessage(), spgAutosaveFile.second), Toast.LENGTH_LONG);
+            this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_LONG);
+            AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
         }
 
         AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
         notifySpectrogramUpdated();
     }
 
-    private void closeSpectrogramFile() {
+    private void completeSpectrogramRecording() {
         synchronized (spgAutosaveSync) {
             spgAutosaveSpectrum = null;
-            if (spgAutosaveFile != null) {
-                try {
-                    spgAutosaveFile.first.close();
-                } catch (IOException e) {
-                    AtomSpectraLog.addMessage(service_context, String.format("Error closing spectrogram file: %s", e.getMessage()));
-                }
-
+            if (spgAutosaveFilePath != null) {
                 showToastInMainLooper(R.string.log_spg_autosave_completed, Toast.LENGTH_LONG);
             }
 
-            spgAutosaveFile = null;
+            spgAutosaveFilePath = null;
             spgAutosaveFileCreated = null;
         }
     }
@@ -2958,21 +2928,21 @@ public class AtomSpectraService extends Service {
     private void checkGPS() {
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences sharedPreferences = PrefHelper.getASSharedPreferences(this);
         addGPS = sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
 
         if ((hasFeatureGPS || hasFeatureNetwork) && addGPS) {
             if (PermissionChecker.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
                 Locator.startUsingGPS();
                 if (!Locator.hasGPS) {
-                    SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
+                    SharedPreferences.Editor editor = PrefHelper.getASSharedPreferences(this).edit();
                     editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
                     editor.apply();
                     sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
                 }
             } else {
                 Locator.stopUsingGPS();
-                SharedPreferences.Editor editor = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE).edit();
+                SharedPreferences.Editor editor = PrefHelper.getASSharedPreferences(this).edit();
                 editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
                 editor.apply();
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
@@ -3111,7 +3081,7 @@ public class AtomSpectraService extends Service {
         AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_recording_suspended));
 
         saveCurrentSpectrum("recording_suspended");
-        closeSpectrogramFile();
+        completeSpectrogramRecording();
         if (recordingSuspendInputType == INPUT_SERIAL) {
             skipUnreliableUSBData();
         }

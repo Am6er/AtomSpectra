@@ -317,6 +317,15 @@
     <string name="perm_no_gps">Нет доступа к GPS, GPS-данные будут отсутствовать</string>
 
     <string name="error_working_dir_not_set">Рабочая директория не установлена. Установите рабочую директорию в настройках.</string>
+    <string name="error_working_dir_not_valid">Рабочая директория \'$1%s\' некорректна. Установите рабочую директорию в настройках.</string>
+    <string name="error_unable_to_delete_existing_file">Не удалось удалить существующий файл \'$1%s\'.</string>
+    <string name="error_unable_to_create_file">Не удалось создать файл \'$1%s\'.</string>
+    <string name="error_unable_to_create_file_ex">Не удалось создать файл \'$1%s\'. $2%s</string>
+    <string name="error_unable_to_save_spectrum">Не удалось сохранить спектр. $1%s</string>
+    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить дельта-спектр. $1%s</string>
+
+    <string name="file_atomspectra_spectrum_prefix">Spectrum</string>
+    <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
 
     <string name="ask_select_histogram">Выбрать спектр</string>
     <string name="ask_select_background">Выбрать спектр фона</string>
@@ -407,6 +416,9 @@
     <string name="dialog_yes_button">Да</string>
     <string name="dialog_no_button">Нет</string>
     <string name="dialog_continue_button">Продолжить</string>
+    <string name="dialog_cancel_button">Отмена</string>
+
+    <string name="dialog_confirm_exit_while_recording_message">Запись спектра в процессе, завершение программы может привести к потере данных.</string>
 
     <string name="log_no_records">Нет записей</string>
     <string name="log_recording_suspended">Запись приостановлена</string>
@@ -431,7 +443,7 @@
     <string name="log_spg_midnight_restart">Перезапуск спектрограммы в полночь</string>
     <string name="log_spg_autosave_start">Запись спектрограммы включена</string>
     <string name="log_spg_autosave_completed">Запись спектрограммы завершена</string>
-    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы</string>
+    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы. $1%s</string>
     <string name="log_warning_raw_audio_support_not_available">Внимание: поддержка необработанного звука не доступна</string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>
@@ -525,6 +537,24 @@
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
     <string name="spectrogram_preview_toggle">Показать или скрыть предпросмотр спектра</string>
+    <string name="spectrogram_spectrum_exporting_dialog_title">Экспорт спектра…</string>
+    <string name="spectrogram_spectrum_exporting_dialog_default_message">Экспорт…</string>
+    <string name="spectrogram_spectrum_export_dialog_title">Экспорт спектров</string>
+    <string name="spectrogram_spectrum_export_dialog_message">Задайте имена экспортируемых спектров:</string>
+    <string name="spectrogram_spectrum_export_bg_name_hint">Имя фонового спектра</string>
+    <string name="spectrogram_spectrum_export_fg_name_hint">Имя основного спектра</string>
+    <string name="spectrogram_spectrum_export_bg_name_default">фон</string>
+    <string name="spectrogram_spectrum_export_fg_name_default">объект</string>
+    <string name="spectrogram_spectrum_export_name_empty_error">Имя спектра не может быть пустым</string>
+    <string name="spectrogram_spectrum_export_nothing_selected_error">Выберите хотя бы один спектр для экспорта</string>
+    <string name="spectrogram_spectrum_export_name_invalid_char">Символ недопустим в именах файлов</string>
+    <string name="spectrogram_spectrum_export_save_success">Файл %1$s сохранен</string>
+    <string name="spectrogram_spectrum_export_save_error">ОШИБКА: %1$s не сохранен. %2$s</string>
+    <string name="spectrogram_spectrum_export_progress_loading_base">[%1$s] Чтение базового спектра…</string>
+    <string name="spectrogram_spectrum_export_progress_seeking_deltas">[%1$s] Поиск дельт…</string>
+    <string name="spectrogram_spectrum_export_progress_seeking_deltas_percent">[%1$s] Поиск дельт (%2$d%%)…</string>
+    <string name="spectrogram_spectrum_export_progress_combining_deltas_percent">[%1$s] Объединение дельт (%2$d%%)…</string>
+    <string name="spectrogram_spectrum_export_progress_saving_spectrum">[%1$s] Сохранение…</string>
 
     <string name="help_menu">Помощь</string>
     <string name="help">Atom Spectra Краткая помощь</string>

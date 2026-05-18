@@ -255,7 +255,7 @@ public class AtomSpectraSensitivity extends Activity {
         textNumber.setGravity(Gravity.CENTER);
 
         TextView textEnergyBin = new TextView(this);
-        textEnergyBin.setLayoutParams(new TableRow.LayoutParams(dpToPx(150), TableRow.LayoutParams.MATCH_PARENT));
+        textEnergyBin.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 2.0f));
         textEnergyBin.setGravity(Gravity.CENTER);
         textEnergyBin.setText(energyBinText);
         textEnergyBin.setId(getEnergyBinTextId(rowIndex));

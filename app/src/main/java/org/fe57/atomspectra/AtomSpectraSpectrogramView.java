@@ -784,10 +784,17 @@ public class AtomSpectraSpectrogramView extends View {
 					paint.setStyle(Paint.Style.FILL);
 					paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
+					String currentDateLabel = "";
 					for (int tsBinIndex = rowBinStart; tsBinIndex <= rowBinEnd; tsBinIndex++) {
 						int originalRowIndex = getBinEndRow(tsBinIndex, spectrumBinning);
 						if (originalRowIndex >= this.timestamps.size()) {
 							originalRowIndex = this.timestamps.size() - 1;
+						}
+
+						if (tsBinIndex == rowBinStart) {
+							long rangeStartTimestamp = this.timestamps.get(originalRowIndex);
+							currentDateLabel = formatDate(new Date(rangeStartTimestamp)).split(" ")[0];
+							canvas.drawText(currentDateLabel, TIMESTAMP_MARGIN_LEFT_PX, TEXT_FONT_SIZE_PX, paint);
 						}
 
 						if (tsBinIndex != 0 && (tsBinIndex + 1) % TIMESTAMP_EACH_BINS != 0) {
@@ -806,8 +813,16 @@ public class AtomSpectraSpectrogramView extends View {
 
 						int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
 						int tickY = (tsBinIndex - rowBinStart) * POINT_SIZE_PX + PADDING_TOP_PX;
-						canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
-						canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + 2 * TEXT_FONT_SIZE_PX + dpToPx(2), paint);
+						if (dateLabel.equals(currentDateLabel)) {
+							// render time only
+							canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+						} else {
+							// render both date and time (either first date label or new date)
+							canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY, paint);
+							canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+							currentDateLabel = dateLabel;
+						}
+
 						canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
 					}
 

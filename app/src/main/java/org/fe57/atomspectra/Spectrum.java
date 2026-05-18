@@ -56,7 +56,7 @@ public class Spectrum {
         Changed = other.Changed;
     }
 
-    public Spectrum Clone(Spectrum other) {
+    public Spectrum ReinitializeFrom(Spectrum other) {
         this.DataArray = Arrays.copyOf(other.DataArray, other.DataArray.length);
         SpectrumCalibration = new Calibration(other.SpectrumCalibration);
         SpectrumTime = other.SpectrumTime;

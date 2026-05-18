@@ -44,7 +44,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SharedPreferences sp = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences sp = PrefHelper.getASSharedPreferences(this);
         setContentView(R.layout.activity_atom_spectra_find_isotope);
         ((EditText) findViewById(R.id.editWindow)).setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT)));
         ((EditText) findViewById(R.id.editTolerance)).setText(String.format(Locale.getDefault(), "%.2f", sp.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));
@@ -158,7 +158,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
     }
 
     public static void updateFoundIsotopes() {
-        SharedPreferences sp = AtomSpectra.getContext().getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences sp = PrefHelper.getASSharedPreferences(AtomSpectra.getContext());
 
         int window = sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT);
         window = Constants.MinMax(window, 5, 200);
@@ -286,7 +286,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 
     @SuppressLint("RtlHardcoded")
     public void onClickFindIsotopes(View view) {
-        SharedPreferences sp = getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences sp = PrefHelper.getASSharedPreferences(this);
         int window = sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT);
         try {
             Number val = NumberFormat.getIntegerInstance().parse(((EditText) findViewById(R.id.editWindow)).getText().toString());
