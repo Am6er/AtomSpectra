@@ -47,7 +47,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long total_impulse_length = 0;
 
     private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-    private static final boolean DEBUG_LOG_PACKETS = false;
+    private static final boolean DEBUG_LOG_PACKETS = true;
     private final HashMap<Integer, Integer> serialPacketErrorCrcByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorEscapingByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorMinLengthByCode = new HashMap<>();
