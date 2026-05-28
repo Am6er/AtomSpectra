@@ -47,9 +47,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long total_impulse_length = 0;
 
     private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-    private int serialPacketErrorCrc = 0;
-    private int serialPacketErrorEscaping = 0;
-    private int serialPacketErrorMinLength = 0;
+    private static final boolean DEBUG_LOG_PACKETS = false; // hangs the app if used for more then several seconds (need to implement async packet processing, currently it is handled by driver read thread)
+    private final HashMap<Integer, Integer> serialPacketErrorCrcByCode = new HashMap<>();
+    private final HashMap<Integer, Integer> serialPacketErrorEscapingByCode = new HashMap<>();
+    private final HashMap<Integer, Integer> serialPacketErrorMinLengthByCode = new HashMap<>();
     private long serialPacketErrorLastReportTime = 0;
 
     private static final short PACKET_BEGIN = 0xFF;
@@ -96,9 +97,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         inputDataHead = 0;
         inputDataEnd = 0;
         hasInputData = false;
-        serialPacketErrorCrc = 0;
-        serialPacketErrorEscaping = 0;
-        serialPacketErrorMinLength = 0;
+        serialPacketErrorCrcByCode.clear();
+        serialPacketErrorEscapingByCode.clear();
+        serialPacketErrorMinLengthByCode.clear();
         serialPacketErrorLastReportTime = 0;
         synchronized (syncCommand) {
             AnswerNumber = 0;
@@ -255,6 +256,19 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
     }
 
+    private static void incrementByCode(HashMap<Integer, Integer> map, int code) {
+        map.put(code, map.getOrDefault(code, 0) + 1);
+    }
+
+    private static String formatErrorsByCode(String label, HashMap<Integer, Integer> map) {
+        StringBuilder sb = new StringBuilder(label).append("(");
+        map.forEach((errCode, count) ->
+            sb.append(String.format("0x%02X:%d,", errCode, count)));
+        sb.setLength(sb.length() - 1);
+        sb.append(")");
+        return sb.toString();
+    }
+
     private void reportSerialPacketErrors() {
         long now = System.currentTimeMillis();
         if (serialPacketErrorLastReportTime == 0) {
@@ -264,32 +278,32 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
         long elapsedTime = now - serialPacketErrorLastReportTime;
         if (elapsedTime >= SERIAL_ERROR_REPORT_INTERVAL_MS) {
-            if (serialPacketErrorCrc > 0 || serialPacketErrorEscaping > 0 || serialPacketErrorMinLength > 0) {
+            if (!serialPacketErrorCrcByCode.isEmpty() || !serialPacketErrorEscapingByCode.isEmpty() || !serialPacketErrorMinLengthByCode.isEmpty()) {
                 StringBuilder sb = new StringBuilder("Serial errors (last ");
                 long elapsedMinutes = elapsedTime / 60000;
                 long elapsedSeconds = (elapsedTime % 60000) / 1000;
                 if (elapsedMinutes > 0) sb.append(elapsedMinutes).append("m ");
                 sb.append(elapsedSeconds).append("s): ");
                 boolean needComma = false;
-                if (serialPacketErrorCrc > 0) {
-                    sb.append(serialPacketErrorCrc).append(" CRC");
+                if (!serialPacketErrorCrcByCode.isEmpty()) {
+                    sb.append(formatErrorsByCode("CRC", serialPacketErrorCrcByCode));
                     needComma = true;
                 }
-                if (serialPacketErrorEscaping > 0) {
+                if (!serialPacketErrorEscapingByCode.isEmpty()) {
                     if (needComma) sb.append(", ");
-                    sb.append(serialPacketErrorEscaping).append(" escaping");
+                    sb.append(formatErrorsByCode("escaping", serialPacketErrorEscapingByCode));
                     needComma = true;
                 }
-                if (serialPacketErrorMinLength > 0) {
+                if (!serialPacketErrorMinLengthByCode.isEmpty()) {
                     if (needComma) sb.append(", ");
-                    sb.append(serialPacketErrorMinLength).append(" minimum length");
+                    sb.append(formatErrorsByCode("minimum length", serialPacketErrorMinLengthByCode));
                 }
                 AtomSpectraLog.addMessage(context, sb.toString());
             }
 
-            serialPacketErrorCrc = 0;
-            serialPacketErrorEscaping = 0;
-            serialPacketErrorMinLength = 0;
+            serialPacketErrorCrcByCode.clear();
+            serialPacketErrorEscapingByCode.clear();
+            serialPacketErrorMinLengthByCode.clear();
             serialPacketErrorLastReportTime = now;
         }
     }
@@ -340,7 +354,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         
         if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
-            serialPacketErrorEscaping++;
+            incrementByCode(serialPacketErrorEscapingByCode, inputData[packetBegin] & 0xFF);
             // searching for the next packet
             inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
             hasInputData = (inputDataHead != inputDataEnd);
@@ -349,7 +363,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
 
         if (numBytes < 3) {
-            serialPacketErrorMinLength++;
+            incrementByCode(serialPacketErrorMinLengthByCode, inputData[packetBegin] & 0xFF);
             // searching for the next packet
             inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
             hasInputData = (inputDataHead != inputDataEnd);
@@ -386,7 +400,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         hasInputData = (inputDataHead != inputDataEnd);
 
         if (crc != 0) {
-            serialPacketErrorCrc++;
+            incrementByCode(serialPacketErrorCrcByCode, res[0] & 0xFF);
             return searchPacket();
         }
 
@@ -404,9 +418,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             int code = newPacket[0] & 0xFF;
             switch (code) {
                 case CODE_HIST:
-                    if (newPacket.length % 4 != 1)
+                    if (newPacket.length % 4 != 1) {
                         return;
+                    }
+
                     int pos = (newPacket[1] & 0xFF) | ((newPacket[2] & 0xFF) << 8);
+                    if (DEBUG_LOG_PACKETS) {
+                        AtomSpectraLog.addMessage(context, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
+                    }
                     int bin;
                     for (int i = 3; i < newPacket.length - 2; i += 4) {
                         if (pos >= Constants.NUM_HIST_POINTS)
@@ -421,8 +440,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     break;
 
                 case CODE_SCOPE:
-                    if (newPacket.length % 2 != 1)
+                    if (newPacket.length % 2 != 1) {
                         break;
+                    }
+
+                    if (DEBUG_LOG_PACKETS) {
+                        AtomSpectraLog.addMessage(context, "Packet SCOPE code=0x02");
+                    }
                     long[] scope = new long[(newPacket.length - 3) >> 1];
                     for (int i = 1, j = 0; i < newPacket.length - 2; i += 2, j += 1) {
                         scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
@@ -442,8 +466,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
                         String answer = new String(answerPacket);
                         //fix some sort of error in Spectra Pro
-                        if (COMMAND_RESULT_OK2.equals(answer))
+                        if (COMMAND_RESULT_OK2.equals(answer)) {
                             answer = COMMAND_RESULT_OK;
+                        }
+                        if (DEBUG_LOG_PACKETS) {
+                            AtomSpectraLog.addMessage(context, "Packet TEXT code=0x03 text=" + answer.trim());
+                        }
                         intentText.putExtra(EXTRA_RESULT, answer);
                         intentText.putExtra(EXTRA_ID, Commands.getFirst().id);
                         intentText.putExtra(EXTRA_COMMAND, new String(Commands.getFirst().command));
@@ -455,8 +483,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     break;
 
                 case CODE_DATA:
-                    if (newPacket.length < (11 + 2))
+                    if (newPacket.length < (11 + 2)) {
                         break;
+                    }
+
                     total_time = (newPacket[1] & 0xFF) |
                             ((newPacket[2] & 0xFF) << 8) |
                             ((newPacket[3] & 0xFF) << 16) |
@@ -467,6 +497,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             ((newPacket[8] & 0xFF) << 8) |
                             ((newPacket[9] & 0xFF) << 16) |
                             ((newPacket[10] & 0xFF) << 24);
+                    if (DEBUG_LOG_PACKETS) {
+                        AtomSpectraLog.addMessage(context, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
+                    }
                     if (newPacket.length >= (15 + 2)) {
                         lost_impulses = (newPacket[11] & 0xFF) |
                                 ((newPacket[12] & 0xFF) << 8) |
