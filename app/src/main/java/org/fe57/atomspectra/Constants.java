@@ -16,11 +16,9 @@ public class Constants {
     public static final int SENSG_COMPENSATED_DEFAULT = 35;                                                              //spectrometer sensitivity for compensated dose rate
     public static final int BACKGND_CPS_DEFAULT = 0;                                                                     //spectrometer noise level
     public static final int VIEW_CHANNELS_DEFAULT = 1024;                                                                //number of channels to view on graph (128, 256, 512, 1024)
-    public static final int EXPORT_CHANNELS_DEFAULT = NUM_HIST_POINTS;                                                   //number of channels to export
-    public static final int LOAD_CHANNELS_DEFAULT = NUM_HIST_POINTS;                                                     //number of channels to load
     public static final int EXPORT_COMPRESSION_DEFAULT = 1;                                                              //number of channels in one export channel
     public static final int MIN_FRONT_POINTS_DEFAULT = 4;                                                                //low level of peak front
-    public static final int MAX_FRONT_POINTS_DEFAULT = 10;                                                               //high level of peak front
+    public static final int MAX_FRONT_POINTS_DEFAULT = 12;                                                               //high level of peak front
     public static final int NOISE_DISCRIMINATOR_DEFAULT = 512 >> (16 - ADC_EFF_BITS);                                   //noise discriminator
     public static final int WINDOW_OUTPUT_SIZE = 512;                                                                    //minimum number of points on the screen
     public static final boolean INVERSE_DEFAULT = false;                                                                 //inverse signal
@@ -83,8 +81,6 @@ public class Constants {
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
-        String CONF_SAVE_CHANNELS = "Save channels:";
-        String CONF_LOAD_CHANNELS = "Load channels:";
         String CONF_COMPRESSION = "Channel compression:";
         String CONF_MIN_POINTS = "Min front points:";
         String CONF_MAX_POINTS = "Max front points:";

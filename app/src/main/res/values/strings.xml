@@ -145,8 +145,6 @@
     <string name="medium_mode_sens">M:</string>
     <string name="slow_mode_sens">S:</string>
     <string name="doserateUpdatePeriod">Graph update frequency, s⁻¹:</string>
-    <string name="save_channels">Save channels: 32768</string>
-    <string name="load_channels">Load channels: 32768</string>
     <string name="max_factor">Maximum factor: 1</string>
     <string name="smoothness">Smoothness: 1</string>
     <string name="delta_spectrum">Diff time: 1 s</string>
@@ -201,8 +199,6 @@
     <string name="min_front_points_format">Min front points: <xliff:g id="min_points">%1$d</xliff:g></string>
     <string name="max_front_points_format">Max front points: <xliff:g id="max_points">%1$d</xliff:g></string>
     <string name="noise_discriminator_format">Noise discriminator: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
-    <string name="save_channels_format">Save channels: <xliff:g id="save_channels">%1$d</xliff:g></string>
-    <string name="load_channels_format">Load channels: <xliff:g id="load_channels">%1$d</xliff:g></string>
     <string name="max_factor_format">Maximum factor: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Smoothness: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="spectrum_change_delta_duration_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
@@ -770,8 +766,6 @@
         \tFiles:\n
         \t- <annotation foreground="parameter">Working directory</annotation> - choose the destination directory for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create directory <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
         \t- <annotation foreground="parameter">Add GPS coordinates to files</annotation> - add GPS information to output files (spectrum, background and .csv).\n
-        \t- <annotation foreground="parameter">Save channels</annotation> - how many channels from the spectrum to be exported. Note: own format stores all data.\n
-        \t- <annotation foreground="parameter">Load channels</annotation> - how many channels from the old spectrum file to be loaded. If there are more than 8192 channels they will be compressed into 8192 channels or less. Note: new own format has channel number itself.\n
         \t- <annotation foreground="parameter">Channel compression</annotation> - reduce export channels quantity by combining set value of channels into one channel.\n
         \t- <annotation foreground="parameter">Name</annotation> -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
         \n
