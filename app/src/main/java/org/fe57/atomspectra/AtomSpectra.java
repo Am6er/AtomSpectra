@@ -844,6 +844,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Log.d(TAG, "-XxX-  onStart");
         // ToastHelper.showToast(this, "On start");
         active = true;
+
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
     }
 
     //Update destination directory on Android 7.0
