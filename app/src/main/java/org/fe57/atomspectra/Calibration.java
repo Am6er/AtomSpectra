@@ -418,16 +418,6 @@ class Calibration {
     }
 
     //convert all spectrum channels to energy
-    double[] toEnergy(long[] spectrum, int adc_bits, int lastChannel) {
-        return toEnergy(linearChannel(spectrum, adc_bits), lastChannel);
-    }
-
-    //convert all spectrum channels to energy
-    double[] toEnergy(double[] spectrum, int adc_bits, int lastChannel) {
-        return toEnergy(linearChannel(spectrum, adc_bits), lastChannel);
-    }
-
-    //convert all spectrum channels to energy
     double[] toEnergy(long[] spectrum, Calibration otherCalibration, int lastChannel) {
         double[] energies = otherCalibration.toEnergy(spectrum, lastChannel);
         //f=ax+b to convert from other energy to our energy
@@ -501,16 +491,6 @@ class Calibration {
             }
         }
         return tmp;
-    }
-
-    //convert all spectrum channels to energy
-    double[] toEnergy(long[] spectrum, int adc_bits, Calibration otherCalibration, int lastChannel) {
-        return toEnergy(linearChannel(spectrum, adc_bits), otherCalibration, lastChannel);
-    }
-
-    //convert all spectrum channels to energy
-    double[] toEnergy(double[] spectrum, int adc_bits, Calibration otherCalibration, int lastChannel) {
-        return toEnergy(linearChannel(spectrum, adc_bits), otherCalibration, lastChannel);
     }
 
     //convert energy to channel
@@ -649,45 +629,4 @@ class Calibration {
         }
         return energies;
     }
-
-    //convert spectrum with another calibration data
-    public long[] toChannel(long[] spectrum, int adc_bits, Calibration otherCalibration, int lastChannel) {
-        return toChannel(linearChannel(spectrum, adc_bits), otherCalibration, lastChannel);
-    }
-
-    //convert spectrum with another calibration data
-    public double[] toChannel(double[] spectrum, int adc_bits, Calibration otherCalibration, int lastChannel) {
-        return toChannel(linearChannel(spectrum, adc_bits), otherCalibration, lastChannel);
-    }
-
-    public long[] linearChannel(long[] spectrum, int adc_bits) {
-        long[] tmp_spectrum = new long[num_hist_points];
-        long sum;
-        int num_data = 1 << (Constants.ADC_MAX - adc_bits);
-        for (int i = 0; i < num_hist_points; i+= num_data) {
-            sum = 0;
-            for (int j = i; j < i + num_data; j++)
-                sum += spectrum[j];
-            sum /= num_data;
-            for (int j = i; j < i + num_data; j++)
-                tmp_spectrum[j] = sum;
-        }
-        return tmp_spectrum;
-    }
-
-    public double[] linearChannel(double[] spectrum, int adc_bits) {
-        double[] tmp_spectrum = new double[num_hist_points];
-        double sum;
-        int num_data = 1 << (Constants.ADC_MAX - adc_bits);
-        for (int i = 0; i < num_hist_points; i+= num_data) {
-            sum = 0;
-            for (int j = i; j < i + num_data; j++)
-                sum += spectrum[j];
-            sum /= num_data;
-            for (int j = i; j < i + num_data; j++)
-                tmp_spectrum[j] = sum;
-        }
-        return tmp_spectrum;
-    }
-
 }

@@ -63,10 +63,10 @@ public class SpectrumFileAS extends SpectrumFile {
         }
         Calibration save_calibration = new Calibration();
         int hist_compress;
-        if (Channels % (1 << Constants.ADC_MAX) == 0)
-            hist_compress = Channels / (1 << Constants.ADC_MAX);
+        if (Channels % Constants.NUM_HIST_POINTS == 0)
+            hist_compress = Channels / Constants.NUM_HIST_POINTS;
         else
-            hist_compress = Channels / (1 << Constants.ADC_MAX) + 1;
+            hist_compress = Channels / Constants.NUM_HIST_POINTS + 1;
         if (hist_compress == 0)
             hist_compress = 1;
 

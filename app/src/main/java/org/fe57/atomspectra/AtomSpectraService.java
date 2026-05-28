@@ -64,7 +64,7 @@ public class AtomSpectraService extends Service {
 
     private static final int FOREGROUND_PROCESS_ID = 1;
 
-    private int frontCountsMin = 4, frontCountsMax = 8, histogramMinChannel = Constants.NOISE_DISCRIMINATOR_DEFAULT, adc_effective_bits = Constants.ADC_MAX;//34; // DPP discriminator parameter
+    private int frontCountsMin = 4, frontCountsMax = 8, histogramMinChannel = Constants.NOISE_DISCRIMINATOR_DEFAULT;
     private boolean inversion = false;
     private boolean pileup = true;
     private static int first_channel = 0;   //First channel to show
@@ -685,7 +685,6 @@ public class AtomSpectraService extends Service {
         SEARCH_SLOW = sp.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT);
         SEARCH_MEDIUM = sp.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT);
         dataFromAudioSourceUpdatePeriod = 1000 / sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
-        adc_effective_bits = Constants.MinMax(sp.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
         frontCountsMin = sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
         frontCountsMax = sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
         histogramMinChannel = sp.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
@@ -2130,7 +2129,7 @@ public class AtomSpectraService extends Service {
 
         // First we will pass the 2 bytes into one sample
         // It's an extra loop but avoids repeating the same sum many times later during the filter
-        int HighBitsShift = Math.max(0, 15 - Constants.ADC_MAX);
+        int HighBitsShift = Math.max(0, 15 - Constants.ADC_EFF_BITS);
         for (int i = 0, r = 0; i < AudioBytesRead - 2; i += 2, r++) {// Before the 8 we had the end of the previous data
             if (AudioBytes[i] < 0)
                 AudioData[r] = AudioBytes[i] + 256;
@@ -2310,11 +2309,11 @@ public class AtomSpectraService extends Service {
             double spChngBackgroundScale = (double) delta_current_time / (double) delta_current_back_time;
             double[] fgSource, bgSource;
             if (isCalibrated) {
-                fgSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_sp_change_fg, ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
-                bgSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_sp_change_bg, ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                fgSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_sp_change_fg, ForegroundSpectrum.getSpectrumCalibration()), lastCalibrationChannel);
+                bgSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(histogram_all_sp_change_bg, ForegroundSpectrum.getSpectrumCalibration()), lastCalibrationChannel);
             } else {
-                fgSource = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_sp_change_fg, ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
-                bgSource = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(histogram_all_sp_change_bg, ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                fgSource = makeSmooth(histogram_all_sp_change_fg, ForegroundSpectrum.getSpectrumCalibration());
+                bgSource = makeSmooth(histogram_all_sp_change_bg, ForegroundSpectrum.getSpectrumCalibration());
             }
             compressToOutput(fgSource, histogram_sp_change_fg, num_first_channel, num_scale_factor, num_values, compressGraph, 1.0);
             compressToOutput(bgSource, histogram_sp_change_bg, num_first_channel, num_scale_factor, num_values, compressGraph, spChngBackgroundScale);
@@ -2348,9 +2347,9 @@ public class AtomSpectraService extends Service {
 
             double[] fgSpectrumSource;
             if (isCalibrated) {
-                fgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits, lastCalibrationChannel);
+                fgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getSpectrumCalibration()), lastCalibrationChannel);
             } else {
-                fgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().linearChannel(makeSmooth(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getSpectrumCalibration()), adc_effective_bits);
+                fgSpectrumSource = makeSmooth(ForegroundSpectrum.getDataArray(), ForegroundSpectrum.getSpectrumCalibration());
             }
             compressToOutput(fgSpectrumSource, histogram, num_first_channel, num_scale_factor, num_values, compressGraph, 1.0);
             Arrays.fill(background_histogram, 0);
@@ -2359,9 +2358,9 @@ public class AtomSpectraService extends Service {
                 double backgroundScale = (double) ForegroundSpectrum.getSpectrumTime() / (double) BackgroundSpectrum.getSpectrumTime();
                 double[] bgSpectrumSource;
                 if (isCalibrated) {
-                    bgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                    bgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().toEnergy(makeSmooth(BackgroundSpectrum.getDataArray(), BackgroundSpectrum.getSpectrumCalibration()), BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                 } else {
-                    bgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), BackgroundSpectrum.getSpectrumCalibration()), adc_effective_bits, BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
+                    bgSpectrumSource = ForegroundSpectrum.getSpectrumCalibration().toChannel(makeSmooth(BackgroundSpectrum.getDataArray(), BackgroundSpectrum.getSpectrumCalibration()), BackgroundSpectrum.getSpectrumCalibration(), lastCalibrationChannel);
                 }
                 compressToOutput(bgSpectrumSource, background_histogram, num_first_channel, num_scale_factor, num_values, compressGraph, backgroundScale);
             }

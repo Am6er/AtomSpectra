@@ -109,7 +109,6 @@
     <string name="maxfront">Макс точек фронта: 10</string>
     <string name="minfront">Мин точек фронта: 5</string>
     <string name="noisediscriminator">Дискриминатор шума: 256</string>
-    <string name="ADCroundedto">Округление АЦП до: 12 бит</string>
     <string name="working_directory">Рабочая директория: </string>
     <string name="compress_graph">Спектр: Сумма</string>
 
@@ -202,7 +201,6 @@
     <string name="min_front_points_format">Мин точек фронта: <xliff:g id="min_points">%1$d</xliff:g></string>
     <string name="max_front_points_format">Макс точек фронта: <xliff:g id="max_points">%1$d</xliff:g></string>
     <string name="noise_discriminator_format">Дискриминатор шума: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
-    <string name="adc_rounded_format">Округление АЦП до: <xliff:g id="adc_high_bits">%1$d</xliff:g> бит</string>
     <string name="save_channels_format">Сохр. каналов: <xliff:g id="save_channels">%1$d</xliff:g></string>
     <string name="load_channels_format">Загр. каналов: <xliff:g id="load_channels">%1$d</xliff:g></string>
     <string name="max_factor_format">Макс. степень: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
@@ -738,7 +736,6 @@
         \t- <annotation foreground="parameter">Инвертировать вход</annotation> - выберите, если импульсы имеют отрицательную полярность.\n
         \t- <annotation foreground="parameter">Вход:</annotation> - выбор требуемого аудиовхода (Не работает с истинными USB-спектрометрами, например «<u>AtomSpectra Nano Pro</u>»). нажмите на текст для изменения источника звука.\n
         \t- <annotation foreground="parameter">Мин точек фронта</annotation> and <annotation foreground="parameter">Макс точек фронта</annotation> - минимальная и максимальная длина переднего фронта в отсчётах для регистрации импульса. Жёлтые точки на графике показывают требуемую минимальную ширину переднего фронта, зелёные точки показывают приемлемую ширину переднего фронта импульса между минимальным и максимальным значениями. Параметры по умолчанию подходят для всех приборов серии <u>AtomSpectra</u>.\n
-        \t- <annotation foreground="parameter">Округление АЦП к</annotation> - сколько старших бит АЦП будет использовано.\n
         \n
         \tСпектр:\n
         \t- <annotation foreground="parameter">Вывод</annotation> - сжать спектр и отображать в виде такого количества точек. Программа уменьшает 1024 канала спектра или мощности дозы до указанного количества точек и отображает на графике для ускорения вывода.\n

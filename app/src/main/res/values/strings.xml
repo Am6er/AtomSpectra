@@ -109,7 +109,6 @@
     <string name="maxfront">Max front points: 10</string>
     <string name="minfront">Min front points: 5</string>
     <string name="noisediscriminator">Noise discriminator: 256</string>
-    <string name="ADCroundedto">ADC is rounded to: 12 bits</string>
     <string name="working_directory">Working directory: </string>
     <string name="compress_graph">Spectrum: Sum</string>
 
@@ -202,7 +201,6 @@
     <string name="min_front_points_format">Min front points: <xliff:g id="min_points">%1$d</xliff:g></string>
     <string name="max_front_points_format">Max front points: <xliff:g id="max_points">%1$d</xliff:g></string>
     <string name="noise_discriminator_format">Noise discriminator: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
-    <string name="adc_rounded_format">ADC is rounded to: <xliff:g id="adc_high_bits">%1$d</xliff:g> bits</string>
     <string name="save_channels_format">Save channels: <xliff:g id="save_channels">%1$d</xliff:g></string>
     <string name="load_channels_format">Load channels: <xliff:g id="load_channels">%1$d</xliff:g></string>
     <string name="max_factor_format">Maximum factor: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
@@ -733,7 +731,6 @@
         \t- <annotation foreground="parameter">Invert input</annotation> - choose if pulse shape is negative.\n
         \t- <annotation foreground="parameter">Source:</annotation> - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
         \t- <annotation foreground="parameter">Min front points</annotation> and <annotation foreground="parameter">Max front points</annotation> - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
-        \t- <annotation foreground="parameter">ADC is rounded to</annotation> - number of upper ADC bits to be used.\n
         \n
         \tSpectrum:\n
         \t- <annotation foreground="parameter">Show as</annotation> - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n

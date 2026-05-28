@@ -170,39 +170,6 @@
 
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <Button
-                    android:id="@+id/decADCButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_adcRoundedTo_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/ADCText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:gravity="center"
-                    android:text="@string/ADCroundedto"
-                    android:textColor="#FFFFFFFF" />
-
-                <Button
-                    android:id="@+id/incADCButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_adcRoundedTo_plus"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
-
 <!-- End Audio Processing -->
 <!-- Spectrum -->
 

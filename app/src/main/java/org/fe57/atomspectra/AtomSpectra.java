@@ -4021,7 +4021,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT)));               //minimum front points
             fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)));               //maximum front points
             fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT)));                 //noise discriminator
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT)));                               //ADC bits
+            fw.append(String.format(Locale.US, "%d\n", Constants.ADC_EFF_BITS));                                                                                      //ADC bits
             fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SAVE_CHANNELS, Constants.EXPORT_CHANNELS_DEFAULT)));             //save channels
             fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_LOAD_CHANNELS, Constants.LOAD_CHANNELS_DEFAULT)));               //load channels
             fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));            //channel compression level
@@ -4088,7 +4088,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             int tempMin = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
             int tempMax = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
             int tempNoise = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, Constants.NUM_HIST_POINTS - 1);
-            int tempBits = Constants.MinMax(Integer.parseInt(fr.readLine()), Constants.ADC_MIN, Constants.ADC_MAX);
+            int tempBits = Constants.MinMax(Integer.parseInt(fr.readLine()), Constants.ADC_EFF_BITS, Constants.ADC_EFF_BITS); // no longer configurable
             int tempSave = Constants.MinMax(Integer.parseInt(fr.readLine()), 1024, Constants.NUM_HIST_POINTS);
             int tempLoad = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 65536);
             int tempCompression = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 64);
@@ -4123,8 +4123,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, tempSlow);                   //slow counts
             editor.putInt(Constants.CONFIG.CONF_MIN_POINTS, tempMin);                     //minimum front points
             editor.putInt(Constants.CONFIG.CONF_MAX_POINTS, tempMax);                     //maximum front points
-            editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminator
-            editor.putInt(Constants.CONFIG.CONF_ROUNDED, tempBits);                       //ADC bits
+            editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminatoreditor.putInt(Constants.CONFIG.CONF_ROUNDED, tempBits);                       //ADC bits
             editor.putInt(Constants.CONFIG.CONF_SAVE_CHANNELS, tempSave);                 //save channels
             editor.putInt(Constants.CONFIG.CONF_LOAD_CHANNELS, tempLoad);                 //load channels
             editor.putInt(Constants.CONFIG.CONF_COMPRESSION, tempCompression);            //channel compression level

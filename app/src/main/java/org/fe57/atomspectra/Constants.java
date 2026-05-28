@@ -10,10 +10,8 @@ public class Constants {
     public static final String ATOMSPECTRA_PREFERENCES = "AtomSpectra Preferences";
     public static final String PACKAGE_NAME = "org.fe57.atomspectra";
     public static final int SEARCH_FAST_DEFAULT = 100, SEARCH_MEDIUM_DEFAULT = 500, SEARCH_SLOW_DEFAULT = 2000;          //dose rate impulse count
-    public static final int ADC_MAX = 13;                                                                                //maximum ADC bit size (not more than 16)
-    public static final int ADC_DEFAULT = ADC_MAX;                                                                       //number of usable ADC high bits
-    public static final int ADC_MIN = 10;                                                                                //minimum ADC bit size (not less than 10)
-    public static final int NUM_HIST_POINTS = 1 << ADC_MAX;                                                              //size of histogram
+    public static final int ADC_EFF_BITS = 13;                                                                          //number of usable ADC high bits (8192 channels)
+    public static final int NUM_HIST_POINTS = 1 << ADC_EFF_BITS;                                                        //size of histogram
     public static final int SENSG_DEFAULT = 150;                                                                         //spectrometer sensitivity
     public static final int SENSG_COMPENSATED_DEFAULT = 35;                                                              //spectrometer sensitivity for compensated dose rate
     public static final int BACKGND_CPS_DEFAULT = 0;                                                                     //spectrometer noise level
@@ -23,15 +21,15 @@ public class Constants {
     public static final int EXPORT_COMPRESSION_DEFAULT = 1;                                                              //number of channels in one export channel
     public static final int MIN_FRONT_POINTS_DEFAULT = 4;                                                                //low level of peak front
     public static final int MAX_FRONT_POINTS_DEFAULT = 10;                                                               //high level of peak front
-    public static final int NOISE_DISCRIMINATOR_DEFAULT = 256 >> (16 - ADC_MAX);                                         //noise discriminator
+    public static final int NOISE_DISCRIMINATOR_DEFAULT = 512 >> (16 - ADC_EFF_BITS);                                   //noise discriminator
     public static final int WINDOW_OUTPUT_SIZE = 512;                                                                    //minimum number of points on the screen
     public static final boolean INVERSE_DEFAULT = false;                                                                 //inverse signal
     public static final boolean PILE_UP_DEFAULT = false;                                                                  //detect pile-up
     public static final boolean LOG_SCALE_DEFAULT = false;
     // !!! WARNING: all scale constants are fragile to change, code changes will be required
-    public static final int SCALE_DEFAULT = 16 - ADC_MAX;                                                                //default scale: 8192 channels on graph
-    public static final int SCALE_MIN = 16 - ADC_MAX;                                                                    //minimum scale factor
-    public static final int SCALE_MAX = 16 - ADC_MIN + 1;                                                                //maximum scale factor
+    public static final int SCALE_MIN = 16 - ADC_EFF_BITS;                                                               //minimum scale factor
+    public static final int SCALE_DEFAULT = SCALE_MIN;                                                                    //default scale: all channels
+    public static final int SCALE_MAX = SCALE_MIN + 4;                                                                    //maximum scale factor (32X)
     public static final int DISPLAY_MODE_SPECTRUM = 0;
     public static final int DISPLAY_MODE_SPECTRUM_CHANGE = 1;
     public static final int DISPLAY_MODE_SEARCH = 2;
@@ -91,7 +89,6 @@ public class Constants {
         String CONF_MIN_POINTS = "Min front points:";
         String CONF_MAX_POINTS = "Max front points:";
         String CONF_NOISE = "Noise discriminator:";
-        String CONF_ROUNDED = "ADC is rounded to:";
         String CONF_INVERSION = "Inversion:";
         String CONF_PILE_UP = "PileUp correction:";
         String CONF_SCALE_FACTOR = "ScaleFactor:";

@@ -28,8 +28,10 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedListener {
-    //    final static String LIST_ISOTOPE_CHANNELS = "Isotope channels";
-    private int compression = Constants.ADC_MAX;
+    private static final int MIN_COMPRESSION = Constants.ADC_EFF_BITS - 3;
+    private static final int MAX_COMPRESSION = Constants.ADC_EFF_BITS;
+
+    private int compression = MAX_COMPRESSION;
     private int poli_order = 5;
     private int library = 0;
     private final static double IRREG_COEFF = 1.5;
@@ -50,7 +52,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         ((EditText) findViewById(R.id.editTolerance)).setText(String.format(Locale.getDefault(), "%.2f", sp.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));
         ((EditText) findViewById(R.id.editThreshold)).setText(String.format(Locale.getDefault(), "%.2f", sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));
         ((Button) findViewById(R.id.showIsotopes)).setText(AtomSpectraIsotopes.showFoundIsotopes ? getString(R.string.show_no_isotopes) : getString(R.string.show_isotopes));
-        compression = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_COMPRESSION, Constants.ADC_MAX), Constants.ADC_MIN, Constants.ADC_MAX);
+        compression = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_COMPRESSION, MAX_COMPRESSION), MIN_COMPRESSION, MAX_COMPRESSION);
         poli_order = sp.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT);
         library = sp.getInt(Constants.SEARCH.PREF_LIBRARY, 0);
 
@@ -61,7 +63,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         spinner = findViewById(R.id.selectCompressionList);
         ArrayAdapter<CharSequence> adapter;
         //do not touch this case
-        switch (Constants.ADC_MAX) {
+        switch (MAX_COMPRESSION) {
             case 13:
                 adapter = ArrayAdapter.createFromResource(this, R.array.find_isotopes_bits_13, android.R.layout.simple_spinner_item);
                 break;
@@ -80,7 +82,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
-        spinner.setSelection(compression - Constants.ADC_MIN);
+        spinner.setSelection(compression - MIN_COMPRESSION);
 
         spinner = findViewById(R.id.selectOrderList);
         spinner.setOnItemSelectedListener(this);
@@ -170,19 +172,17 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         tolerance = (float) Math.rint(Constants.MinMax(tolerance * 100, 1, 5000)) / 100.0f;
         tolerance /= 100.0;
 
-        int adc_effective_bits = Constants.MinMax(sp.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
-
-        int compression = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_COMPRESSION, Constants.ADC_MAX), Constants.ADC_MIN, Constants.ADC_MAX);
+        int compression = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_COMPRESSION, MAX_COMPRESSION), MIN_COMPRESSION, MAX_COMPRESSION);
         int poli_order = sp.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT);
         int library = sp.getInt(Constants.SEARCH.PREF_LIBRARY, 0);
 
-        int num_lines = Constants.NUM_HIST_POINTS >> (Constants.ADC_MAX - compression);
-        int num_scale = 1 << (Constants.ADC_MAX - compression);
+        int num_lines = Constants.NUM_HIST_POINTS >> (Constants.ADC_EFF_BITS - compression);
+        int num_scale = 1 << (Constants.ADC_EFF_BITS - compression);
         long[] chan_raw = new long[num_lines];
 
         if (AtomSpectra.background_subtract) {
             double backgroundScale = (double) AtomSpectraService.ForegroundSpectrum.getSpectrumTime() / (double) AtomSpectraService.BackgroundSpectrum.getSpectrumTime();
-            long[] data = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraService.BackgroundSpectrum.getDataArray(), adc_effective_bits, AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration(), AtomSpectraService.lastCalibrationChannel);
+            long[] data = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraService.BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration(), AtomSpectraService.lastCalibrationChannel);
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
                     chan_raw[i] += StrictMath.max(0.0, AtomSpectraService.ForegroundSpectrum.getDataArray()[j] - data[j] * backgroundScale);

@@ -107,7 +107,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         setupInputSoundCheckbox();
         updateMinFrontPointsText();
         updateMaxFrontPointsText();
-        updateAdcMaxRoundingText();
         // --- end audio processing
 
         // --- spectrum
@@ -411,43 +410,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     private void saveMaxFrontPoints(int val) {
         saveIntPref(val, Constants.CONFIG.CONF_MAX_POINTS);
         updateMaxFrontPointsText();
-    }
-
-    // max adc rounding
-    private void updateAdcMaxRoundingText() {
-        TextView adcText = findViewById(R.id.ADCText);
-        adcText.setText(getString(R.string.adc_rounded_format, Constants.MinMax(sp.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX)));
-    }
-
-    public void onClick_adcRoundedTo_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
-
-        if (r > Constants.ADC_MIN) {
-            r--;
-            if (!AtomSpectraService.getFreeze())
-                stopRecording();
-        }
-
-        saveAdcRoundedTo(r);
-    }
-
-    public void onClick_adcRoundedTo_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = Constants.MinMax(settings.getInt(Constants.CONFIG.CONF_ROUNDED, Constants.ADC_DEFAULT), Constants.ADC_MIN, Constants.ADC_MAX);
-
-        if (r < Constants.ADC_MAX) {
-            r++;
-            if (!AtomSpectraService.getFreeze())
-                stopRecording();
-        }
-
-        saveAdcRoundedTo(r);
-    }
-
-    private void saveAdcRoundedTo(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_ROUNDED);
-        updateAdcMaxRoundingText();
     }
     // --- end audio processing section
 
