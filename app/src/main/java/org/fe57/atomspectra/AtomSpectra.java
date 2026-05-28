@@ -156,6 +156,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private boolean hasFeatureNetwork = false; // Network coordinates
     private boolean addGPS = false;
     private Intent inputServiceIntent = null;
+    private Uri pendingOpenFileUri = null;
     private SharedPreferences sharedPreferences = null;
 
     public static int reducedTo;
@@ -428,8 +429,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                         file = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                     }
                     if (file != null) {
-                        loadSpectrum(file, savedInstanceState == null);
-                        AtomSpectraService.isStarted = true;
+                        pendingOpenFileUri = file;
                         setIntent(new Intent());
                     }
                 }
@@ -437,8 +437,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 if (intent.getType().equals("text/plain")) {
                     Uri file = intent.getData();
                     if (file != null) {
-                        loadSpectrum(file, savedInstanceState == null);
-                        AtomSpectraService.isStarted = true;
+                        pendingOpenFileUri = file;
                         setIntent(new Intent());
                     }
                 }
@@ -842,8 +841,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Log.d(TAG, "-XxX-  onStart");
         // ToastHelper.showToast(this, "On start");
         active = true;
-
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
     }
 
     //Update destination directory on Android 7.0
@@ -1533,6 +1530,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             mAtomSpectraService = ((AtomSpectraService.LocalBinder) service).getService();
+            if (pendingOpenFileUri != null) {
+                loadSpectrum(pendingOpenFileUri, true);
+                pendingOpenFileUri = null;
+            }
         }
 
         @Override
@@ -4121,7 +4122,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, tempSlow);                   //slow counts
             editor.putInt(Constants.CONFIG.CONF_MIN_POINTS, tempMin);                     //minimum front points
             editor.putInt(Constants.CONFIG.CONF_MAX_POINTS, tempMax);                     //maximum front points
-            editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminatoreditor.putInt(Constants.CONFIG.CONF_ROUNDED, tempBits);                       //ADC bits
+            editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminator
             editor.putInt(Constants.CONFIG.CONF_COMPRESSION, tempCompression);            //channel compression level
             editor.putInt(Constants.SEARCH.PREF_WINDOW_SIZE, tempWindow);                 //windows search size
             editor.putFloat(Constants.SEARCH.PREF_THRESHOLD, tempThreshold);              //threshold
