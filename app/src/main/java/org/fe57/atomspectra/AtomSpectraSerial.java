@@ -47,7 +47,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long total_impulse_length = 0;
 
     private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-    private static final boolean DEBUG_LOG_PACKETS = true;
+    private static final boolean DEBUG_LOG_PACKETS = false; // hangs the app if used for more then several seconds (need to implement async packet processing, currently it is handled by driver read thread)
     private final HashMap<Integer, Integer> serialPacketErrorCrcByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorEscapingByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorMinLengthByCode = new HashMap<>();
@@ -418,11 +418,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             int code = newPacket[0] & 0xFF;
             switch (code) {
                 case CODE_HIST:
-                    if (newPacket.length % 4 != 1)
+                    if (newPacket.length % 4 != 1) {
                         return;
+                    }
+
                     int pos = (newPacket[1] & 0xFF) | ((newPacket[2] & 0xFF) << 8);
-                    if (DEBUG_LOG_PACKETS)
+                    if (DEBUG_LOG_PACKETS) {
                         AtomSpectraLog.addMessage(context, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
+                    }
                     int bin;
                     for (int i = 3; i < newPacket.length - 2; i += 4) {
                         if (pos >= Constants.NUM_HIST_POINTS)
@@ -437,10 +440,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     break;
 
                 case CODE_SCOPE:
-                    if (newPacket.length % 2 != 1)
+                    if (newPacket.length % 2 != 1) {
                         break;
-                    if (DEBUG_LOG_PACKETS)
+                    }
+
+                    if (DEBUG_LOG_PACKETS) {
                         AtomSpectraLog.addMessage(context, "Packet SCOPE code=0x02");
+                    }
                     long[] scope = new long[(newPacket.length - 3) >> 1];
                     for (int i = 1, j = 0; i < newPacket.length - 2; i += 2, j += 1) {
                         scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
@@ -460,10 +466,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
                         String answer = new String(answerPacket);
                         //fix some sort of error in Spectra Pro
-                        if (COMMAND_RESULT_OK2.equals(answer))
+                        if (COMMAND_RESULT_OK2.equals(answer)) {
                             answer = COMMAND_RESULT_OK;
-                        if (DEBUG_LOG_PACKETS)
+                        }
+                        if (DEBUG_LOG_PACKETS) {
                             AtomSpectraLog.addMessage(context, "Packet TEXT code=0x03 text=" + answer.trim());
+                        }
                         intentText.putExtra(EXTRA_RESULT, answer);
                         intentText.putExtra(EXTRA_ID, Commands.getFirst().id);
                         intentText.putExtra(EXTRA_COMMAND, new String(Commands.getFirst().command));
@@ -475,8 +483,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     break;
 
                 case CODE_DATA:
-                    if (newPacket.length < (11 + 2))
+                    if (newPacket.length < (11 + 2)) {
                         break;
+                    }
+
                     total_time = (newPacket[1] & 0xFF) |
                             ((newPacket[2] & 0xFF) << 8) |
                             ((newPacket[3] & 0xFF) << 16) |
@@ -487,8 +497,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             ((newPacket[8] & 0xFF) << 8) |
                             ((newPacket[9] & 0xFF) << 16) |
                             ((newPacket[10] & 0xFF) << 24);
-                    if (DEBUG_LOG_PACKETS)
+                    if (DEBUG_LOG_PACKETS) {
                         AtomSpectraLog.addMessage(context, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
+                    }
                     if (newPacket.length >= (15 + 2)) {
                         lost_impulses = (newPacket[11] & 0xFF) |
                                 ((newPacket[12] & 0xFF) << 8) |
