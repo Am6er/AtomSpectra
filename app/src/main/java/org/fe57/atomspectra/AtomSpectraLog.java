@@ -11,6 +11,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Annotation;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -37,6 +39,10 @@ public class AtomSpectraLog extends Activity {
     private static final LinkedList<String> log = new LinkedList<>();
     private static final int MAX_MESSAGES = 1000;
     private static boolean active = false;
+    private static long lastNotifyTime = 0;
+    private static final long NOTIFY_INTERVAL_MS = 250;
+    private static final Handler notifyHandler = new Handler(Looper.getMainLooper());
+    private static boolean notifyPending = false;
 
     public static void addMessage(Context context, String message) {
         synchronized (logSync) {
@@ -55,7 +61,9 @@ public class AtomSpectraLog extends Activity {
         synchronized (logSync) {
             log.clear();
         }
-
+        synchronized (AtomSpectraLog.class) {
+            lastNotifyTime = 0; // force immediate notification after clear
+        }
         notifyLogUpdated(context);
     }
 
@@ -71,9 +79,21 @@ public class AtomSpectraLog extends Activity {
         return stringBuilder.toString();
     }
 
-    private static void notifyLogUpdated(Context context) {
-        if (context != null) {
+    private static synchronized void notifyLogUpdated(Context context) {
+        if (context == null) return;
+        long now = System.currentTimeMillis();
+        long elapsed = now - lastNotifyTime;
+        if (elapsed >= NOTIFY_INTERVAL_MS) {
+            notifyPending = false;
+            lastNotifyTime = now;
             context.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
+        } else if (!notifyPending) {
+            notifyPending = true;
+            notifyHandler.postDelayed(() -> {
+                notifyPending = false;
+                lastNotifyTime = System.currentTimeMillis();
+                context.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
+            }, NOTIFY_INTERVAL_MS - elapsed);
         }
     }
 
