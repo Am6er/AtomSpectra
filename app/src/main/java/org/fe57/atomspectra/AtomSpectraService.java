@@ -1413,6 +1413,8 @@ public class AtomSpectraService extends Service {
 
                         restartUsbDataWatchdog();
 
+                        // TODO: ignored for now, but later may be used for stricter data reliability check
+                        boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
                         double new_time;
                         double old_time;
                         long[] new_histogram;

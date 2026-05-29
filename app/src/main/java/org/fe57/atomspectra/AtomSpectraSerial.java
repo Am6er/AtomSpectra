@@ -6,6 +6,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
+import android.os.Process;
 
 import androidx.annotation.NonNull;
 
@@ -16,12 +17,13 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.zip.CRC32;
 
 public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
-    private static final int CIRCULAR_BUFFER_SIZE = 640 * 1024;
+    private static final int CIRCULAR_BUFFER_SIZE = 128 * 1024; // ~2 seconds of data at max baud rate (600kbps / 8N1 = 60KB/s)
     private static final int SERIAL_MANAGER_READ_BUFFER_SIZE = 4 * 1024;
     private static final int SERIAL_MANAGER_READ_QUEUE_SIZE = 4;
     private static final int SERIAL_MANAGER_WRITE_TIMEOUT = 1000;
@@ -33,13 +35,16 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private SerialInputOutputManager Manager;
     private Context context;
     private byte[] inputData;
-    private int inputDataHead;
-    private int inputDataEnd;
-    private boolean hasInputData;
+    private volatile int inputDataHead;
+    private volatile int inputDataEnd;
+    private volatile boolean hasInputData;
     private final Object circularBufferSync = new Object();
+    private Thread processingThread = null;
     Handler handler;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
+    private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
+    private int histBinsMissing = Constants.NUM_HIST_POINTS;
     public int cps = 0;
     public int total_time = 0;
     public int cpu_load = 0;
@@ -47,7 +52,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long total_impulse_length = 0;
 
     private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-    private static final boolean DEBUG_LOG_PACKETS = false; // hangs the app if used for more then several seconds (need to implement async packet processing, currently it is handled by driver read thread)
+    private static final boolean DEBUG_LOG_PACKETS = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
     private final HashMap<Integer, Integer> serialPacketErrorCrcByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorEscapingByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorMinLengthByCode = new HashMap<>();
@@ -79,6 +84,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             "org.fe57.atomspectra.EXTRA_DATA_TYPE";
     public final static String EXTRA_RESULT =
             "org.fe57.atomspectra.EXTRA_DATA_PACKET";
+    public final static String EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE =
+            "org.fe57.atomspectra.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE";
 
     //Constructor
     public AtomSpectraSerial(Context context) {
@@ -97,6 +104,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         inputDataHead = 0;
         inputDataEnd = 0;
         hasInputData = false;
+        processingThread = null;
+        Arrays.fill(histBinsReceived, false);
+        histBinsMissing = Constants.NUM_HIST_POINTS;
         serialPacketErrorCrcByCode.clear();
         serialPacketErrorEscapingByCode.clear();
         serialPacketErrorMinLengthByCode.clear();
@@ -117,6 +127,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         if (Manager != null)
             Manager.stop();
+        stopProcessingThread();
         context = null;
         Manager = null;
         handler = null;
@@ -168,6 +179,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             Manager.setReadBufferSize(SERIAL_MANAGER_READ_BUFFER_SIZE);
             Manager.setReadQueue(SERIAL_MANAGER_READ_QUEUE_SIZE);
             Manager.start();
+            processingThread = new Thread(this::processBufferLoop, "AtomSpectra-Packet-Processor");
+            processingThread.setDaemon(true);
+            processingThread.start();
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB port setup failed: " + e.getMessage());
             Delete();
@@ -198,6 +212,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             AnswerNumber = 0;
         }
 
+        stopProcessingThread();
         Init();
     }
 
@@ -435,6 +450,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                                 ((newPacket[i + 2] & 0xFF) << 16) |
                                 ((newPacket[i + 3] & 0xFF) << 24);
                         histogram[pos] = bin;
+                        if (!histBinsReceived[pos]) {
+                            histBinsReceived[pos] = true;
+                            histBinsMissing--;
+                        }
                         pos++;
                     }
                     break;
@@ -524,6 +543,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_CP1S, cps);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME, total_time);
                     intent.putExtra(EXTRA_DATA_TYPE, CODE_DATA);
+                    intent.putExtra(EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, histBinsMissing == 0);
+                    Arrays.fill(histBinsReceived, false);
+                    histBinsMissing = Constants.NUM_HIST_POINTS;
                     context.sendBroadcast(intent);
                     break;
                 default:
@@ -710,24 +732,55 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return null;
     }
 
+    private void stopProcessingThread() {
+        if (processingThread != null) {
+            processingThread.interrupt();
+            try {
+                processingThread.join();
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            processingThread = null;
+        }
+    }
+
+    private void processBufferLoop() {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
+        while (true) {
+            synchronized (circularBufferSync) {
+                while (inputDataHead == inputDataEnd && !hasInputData) {
+                    try {
+                        circularBufferSync.wait();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            }
+            findPackets();
+        }
+    }
+
     @Override
     public void onNewData(byte[] data) {
-        // tmp log
-        // AtomSpectraLog.addMessage(context, "Data from USB: " + data.length + " bytes");
-        synchronized (circularBufferSync) {
-            for (int i = 0; i < data.length; i++) {
-                if (inputDataEnd == inputDataHead && hasInputData) {
-                    int bytesLost = data.length - i;
-                    AtomSpectraLog.addMessage(context, "Circular buffer overflow: " + bytesLost + " bytes lost");
-                    break;
-                }
-                inputData[inputDataEnd] = data[i];
-                inputDataEnd = (inputDataEnd + 1) % CIRCULAR_BUFFER_SIZE;
-                hasInputData = true;
+        int localEnd = inputDataEnd;
+        int bytesWritten = 0;
+        for (int i = 0; i < data.length; i++) {
+            if (localEnd == inputDataHead && hasInputData) {
+                int bytesLost = data.length - i;
+                AtomSpectraLog.addMessage(context, "Circular buffer overflow: " + bytesLost + " bytes lost");
+                break;
             }
-
-            findPackets();
-        }        
+            inputData[localEnd] = data[i];
+            localEnd = (localEnd + 1) % CIRCULAR_BUFFER_SIZE;
+            bytesWritten++;
+        }
+        if (bytesWritten > 0) {
+            inputDataEnd = localEnd; // single volatile write - establishes happens-before for all inputData[] writes above
+            hasInputData = true;
+            synchronized (circularBufferSync) {
+                circularBufferSync.notify();
+            }
+        }
     }
 
     @Override
