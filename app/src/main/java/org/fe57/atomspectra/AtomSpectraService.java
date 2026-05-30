@@ -1401,7 +1401,10 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_USB_DETACHED.equals(action)) {
-                onUSBDetached();
+                if (inputType == INPUT_SERIAL) {
+                    onUSBDetached();
+                }
+
                 return;
             }
             if (Constants.ACTION.ACTION_USB_HAS_DATA.equals(action)) {

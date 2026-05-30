@@ -37,7 +37,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     // circular buffer for incoming data
     // head == end means empty buffer, (end + 1) % size == head means full buffer
-    private byte[] inputData;
+    private final byte[] inputData = new byte[CIRCULAR_BUFFER_SIZE];
     private volatile int inputDataHead; // first meaningful byte in inputData
     private volatile int inputDataEnd; // first free byte in inputData
     
@@ -103,7 +103,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         Device = null;
         Connection = null;
         Port = null;
-        inputData = null;
         inputDataHead = 0;
         inputDataEnd = 0;
         processingThread = null;
@@ -173,7 +172,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         try {
             Port.open(Connection);
             Port.setParameters(600000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
-            inputData = new byte[CIRCULAR_BUFFER_SIZE];
             inputDataHead = 0;
             inputDataEnd = 0;
             Manager = new SerialInputOutputManager(Port, this);
@@ -208,7 +206,16 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
 
         synchronized (syncCommand) {
-            Commands.clear();
+            while (!Commands.isEmpty()) {
+                CommandCode failed = Commands.pop();
+                Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
+                intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_ERR);
+                intentText.putExtra(EXTRA_NUMBER, failed.Number);
+                intentText.putExtra(EXTRA_COMMAND, new String(failed.command));
+                intentText.putExtra(EXTRA_ID, failed.id);
+                context.sendBroadcast(intentText);
+                AtomSpectraLog.addMessage(context, "Serial command failed due Close() call: " + new String(failed.command));
+            }
             AnswerNumber = 0;
         }
 
@@ -321,7 +328,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     // main method to search packets from input stream
     // returns packet with leading code operation and trailing crc16 two-byte code
     private byte[] searchPacket(int tillInputDataEnd) {
-        if (inputData == null || inputDataHead == tillInputDataEnd) {
+        if (inputDataHead == tillInputDataEnd) {
             return null;
         }
 
@@ -475,7 +482,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
                 case CODE_TEXT:
                     synchronized (syncCommand) {
-                        Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                         int newLength = newPacket.length - 3;    //remove 0x03 code operation and trailing crc16 two-byte code
                         byte[] answerPacket = new byte[newLength];   //remove first code byte and last 0x0D,0x0A bytes
                         System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
@@ -484,9 +490,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         if (COMMAND_RESULT_OK2.equals(answer)) {
                             answer = COMMAND_RESULT_OK;
                         }
+                        if (Commands.isEmpty()) {
+                            AtomSpectraLog.addMessage(context, "Unexpected TEXT from device (no pending commands): " + answer.trim());
+                            break;
+                        }
                         if (DEBUG_LOG) {
                             AtomSpectraLog.addMessage(context, "Packet TEXT code=0x03 text=" + answer.trim());
                         }
+                        Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                         intentText.putExtra(EXTRA_RESULT, answer);
                         intentText.putExtra(EXTRA_ID, Commands.getFirst().id);
                         intentText.putExtra(EXTRA_COMMAND, new String(Commands.getFirst().command));
@@ -660,9 +671,15 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 }, CommandCode.DROP_TIMEOUT + 500);
             } catch (Exception e) {
                 AtomSpectraLog.addMessage(context, "USB write failed: " + e.getMessage());
-                Close();
-                Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
-                context.sendBroadcast(intent);
+                CommandCode failed = Commands.pop();
+                AnswerNumber = 0;
+                Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
+                intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_ERR);
+                intentText.putExtra(EXTRA_NUMBER, failed.Number);
+                intentText.putExtra(EXTRA_COMMAND, new String(failed.command));
+                intentText.putExtra(EXTRA_ID, failed.id);
+                context.sendBroadcast(intentText);
+                sendPacket();
                 return false;
             }
         }
@@ -804,12 +821,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     @Override
     public void onRunError(Exception e) {
         AtomSpectraLog.addMessage(context, "USB serial error: " + e.getMessage());
-        Close();
-        Context ctx = context;
-        if (ctx != null) {
-            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
-            ctx.sendBroadcast(intent);
-        }
     }
 
     public static UsbDevice scanForSpectraProDevice(UsbManager manager) {
