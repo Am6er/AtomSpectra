@@ -4273,7 +4273,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     private void updateVersionInMenu() {
         if (app_menu != null) {
-            String testSuffix = "_TEST3";
+            String testSuffix = "_TEST4";
             AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
             app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode + testSuffix);
         }
