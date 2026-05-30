@@ -1643,6 +1643,11 @@ public class AtomSpectraService extends Service {
         notify_cancel_all();
         canOpenAudio = false;
         isStarted = false;
+        try {
+            unregisterReceiver(broadcastReceiver);
+        } catch (IllegalArgumentException ignored) {
+            // receiver was not registered or already unregistered
+        }
 
         resetRecordingSuspendedStatus(true);
 
