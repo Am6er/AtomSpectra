@@ -1551,6 +1551,7 @@ public class AtomSpectraService extends Service {
                         final String[] dataArray = commandResult.split("\\s+");
                         if (dataArray.length != 40) {
                             showToastInMainLooper("Unable to read USB device metadata, unexpected register count: " + dataArray.length, Toast.LENGTH_LONG);
+                            return;
                         }
                         inputDeviceInfo = getUsbDeviceInfoText(dataArray[39]);
                         ForegroundSpectrum
