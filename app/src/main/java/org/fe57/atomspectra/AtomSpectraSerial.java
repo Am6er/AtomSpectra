@@ -150,7 +150,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         if (manager == null) {
             AtomSpectraLog.addMessage(context, "USB connection failed: UsbManager is not available");
-            Delete();
+            Close();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
             return false;
@@ -164,7 +164,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             }
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB connection failed: " + e.getMessage());
-            Delete();
+            Close();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
             return false;
@@ -185,7 +185,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             processingThread.start();
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB port setup failed: " + e.getMessage());
-            Delete();
+            Close();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
             return false;
@@ -193,8 +193,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return true;
     }
 
-    // delete all data except context
-    private void Delete() {
+    public void Close() {
         if (Manager != null) {
             Manager.stop();
         }
@@ -215,11 +214,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
         stopProcessingThread();
         Init();
-    }
-
-    // public method to remove data
-    public void Close() {
-        Delete();
     }
 
     // clear histogram
@@ -804,6 +798,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     @Override
     public void onRunError(Exception e) {
         AtomSpectraLog.addMessage(context, "USB serial error: " + e.getMessage());
+        Close();
+        Context ctx = context;
+        if (ctx != null) {
+            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
+            ctx.sendBroadcast(intent);
+        }
     }
 
     public static UsbDevice scanForSpectraProDevice(UsbManager manager) {
