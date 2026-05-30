@@ -361,7 +361,7 @@ class Calibration {
         coeff_e = (num_hist_points - 1) / (ApproximationList[lastChannel - 1] - ApproximationList[0]);
         double coeff;
         for (int i = 0; i < lastChannel; i++) {
-            energy_l = (ApproximationList[i] - ApproximationList[0]) * coeff_e;
+            energy_l = (i == lastChannel - 1) ? num_hist_points - 1 : (ApproximationList[i] - ApproximationList[0]) * coeff_e;
             energy_r = (ApproximationList[i + 1] - ApproximationList[0]) * coeff_e;
             coeff = spectrum[i] / (energy_r - energy_l);
             if (energy_r < 0)
@@ -393,7 +393,7 @@ class Calibration {
         coeff_e = (num_hist_points - 1) / (ApproximationList[lastChannel - 1] - ApproximationList[0]);
         double coeff;
         for (int i = 0; i < lastChannel; i++) {
-            energy_l = (ApproximationList[i] - ApproximationList[0]) * coeff_e;
+            energy_l = (i == lastChannel - 1) ? num_hist_points - 1 : (ApproximationList[i] - ApproximationList[0]) * coeff_e;
             energy_r = (ApproximationList[i + 1] - ApproximationList[0]) * coeff_e;
             coeff = spectrum[i] / (energy_r - energy_l);
             if (energy_r < 0)
