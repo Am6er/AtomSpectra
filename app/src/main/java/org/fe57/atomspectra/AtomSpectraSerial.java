@@ -55,7 +55,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long total_impulse_length = 0;
 
     private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-    private static final boolean DEBUG_LOG_PACKETS = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
+    private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
     private final HashMap<Integer, Integer> serialPacketErrorCrcByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorEscapingByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorMinLengthByCode = new HashMap<>();
@@ -321,7 +321,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     // main method to search packets from input stream
     // returns packet with leading code operation and trailing crc16 two-byte code
     private byte[] searchPacket(int tillInputDataEnd) {
-        if (inputData == null) {
+        if (inputData == null || inputDataHead == tillInputDataEnd) {
             return null;
         }
 
@@ -431,7 +431,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     }
 
                     int pos = (newPacket[1] & 0xFF) | ((newPacket[2] & 0xFF) << 8);
-                    if (DEBUG_LOG_PACKETS) {
+                    if (DEBUG_LOG) {
                         AtomSpectraLog.addMessage(context, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
                     }
 
@@ -457,7 +457,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         break;
                     }
 
-                    if (DEBUG_LOG_PACKETS) {
+                    if (DEBUG_LOG) {
                         AtomSpectraLog.addMessage(context, "Packet SCOPE code=0x02");
                     }
 
@@ -484,7 +484,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         if (COMMAND_RESULT_OK2.equals(answer)) {
                             answer = COMMAND_RESULT_OK;
                         }
-                        if (DEBUG_LOG_PACKETS) {
+                        if (DEBUG_LOG) {
                             AtomSpectraLog.addMessage(context, "Packet TEXT code=0x03 text=" + answer.trim());
                         }
                         intentText.putExtra(EXTRA_RESULT, answer);
@@ -514,7 +514,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             ((newPacket[9] & 0xFF) << 16) |
                             ((newPacket[10] & 0xFF) << 24);
 
-                    if (DEBUG_LOG_PACKETS) {
+                    if (DEBUG_LOG) {
                         AtomSpectraLog.addMessage(context, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
                     }
 
@@ -747,6 +747,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     // local thread method to perform read from circular buffer
     private void processBufferLoop() {
+        if (DEBUG_LOG) {
+            AtomSpectraLog.addMessage(context, "Packet processing thread started");
+        }
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
 
         int currentInputDataEnd = inputDataEnd;
@@ -759,6 +762,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     try {
                         circularBufferSync.wait();
                     } catch (InterruptedException e) {
+                        if (DEBUG_LOG) {
+                            AtomSpectraLog.addMessage(context, "Packet processing thread interrupted");
+                        }
                         return;
                     }
                 }
