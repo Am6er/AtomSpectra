@@ -33,7 +33,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private UsbDeviceConnection Connection;
     private UsbSerialPort Port;
     private SerialInputOutputManager Manager;
-    private Context context;
+    private volatile Context context;
 
     // circular buffer for incoming data
     // head == end means empty buffer, (end + 1) % size == head means full buffer
@@ -129,6 +129,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         if (Manager != null)
             Manager.stop();
         stopProcessingThread();
+        if (handler != null)
+            handler.removeCallbacksAndMessages(null);
         context = null;
         Manager = null;
         handler = null;
@@ -328,96 +330,96 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     // main method to search packets from input stream
     // returns packet with leading code operation and trailing crc16 two-byte code
     private byte[] searchPacket(int tillInputDataEnd) {
-        if (inputDataHead == tillInputDataEnd) {
-            return null;
-        }
-
-        // Remove data before first PACKET_BEGIN byte
-        while ((inputData[inputDataHead] & 0xFF) != PACKET_BEGIN) {
-            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
-            if (inputDataHead == tillInputDataEnd) { // empty buffer
+        while (true) {
+            if (inputDataHead == tillInputDataEnd) {
                 return null;
             }
-        }
 
-        int curPos = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE; // first byte after PACKET_BEGIN
-        if (curPos == tillInputDataEnd) { // no bytes after PACKET_BEGIN, wait for more data
-            return null;
-        }
-
-        if ((inputData[curPos] & 0xFF) != PACKET_START) { // first byte after PACKET_BEGIN is not PACKET_START, search for the next PACKET_BEGIN
-            inputDataHead = curPos;
-            return searchPacket(tillInputDataEnd);
-        }
-
-        // We have 0xFF, 0xFE as two first bytes
-        // Search for packet end
-        int packetEnd = -1;
-        byte lastCheckedByte = -1;
-        int numBytes = 0; // number of bytes in packet
-        int packetBegin = (curPos + 1) % CIRCULAR_BUFFER_SIZE; // first byte of packet
-        for (curPos = packetBegin; curPos != tillInputDataEnd; curPos = (curPos + 1) % CIRCULAR_BUFFER_SIZE) {
-            if ((inputData[curPos] & 0xFF) == PACKET_END) {
-                packetEnd = curPos;
-                break;
-            }
-
-            lastCheckedByte = inputData[curPos];
-            if ((lastCheckedByte & 0xFF) != PACKET_ESC) {
-                numBytes++;
-            }
-        }
-        if (packetEnd == -1) { // partial data: packet has begin and no end, wait for more data
-            return null;
-        }
-        
-        if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
-            incrementByCode(serialPacketErrorEscapingByCode, inputData[packetBegin] & 0xFF);
-            // searching for the next packet
-            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
-            return searchPacket(tillInputDataEnd);
-        }
-
-        if (numBytes < 3) {
-            incrementByCode(serialPacketErrorMinLengthByCode, inputData[packetBegin] & 0xFF);
-            // searching for the next packet
-            inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
-            return searchPacket(tillInputDataEnd);
-        }
-
-        // Have full packet. Get it and test it
-        byte d;
-        byte[] res = new byte[numBytes];  // with crc16
-        int bytesSaved = 0;
-        boolean isEscapedByte = false;
-        int crc = 0xFFFF;
-        for (int i = packetBegin; i != packetEnd; i = (i + 1) % CIRCULAR_BUFFER_SIZE) {
-            d = inputData[i];
-            if (isEscapedByte) {
-                d = (byte) (~d);
-                res[bytesSaved] = d;
-                bytesSaved++;
-                isEscapedByte = false;
-                crc = crc16(crc, d);
-            } else {
-                if ((d & 0xFF) == PACKET_ESC) {
-                    isEscapedByte = true;
-                } else {
-                    res[bytesSaved] = d;
-                    bytesSaved++;
-                    crc = crc16(crc, d);
+            // Remove data before first PACKET_BEGIN byte
+            while ((inputData[inputDataHead] & 0xFF) != PACKET_BEGIN) {
+                inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+                if (inputDataHead == tillInputDataEnd) { // empty buffer
+                    return null;
                 }
             }
-        }
-        
-        inputDataHead = (packetEnd + 1) % CIRCULAR_BUFFER_SIZE;
 
-        if (crc != 0) {
-            incrementByCode(serialPacketErrorCrcByCode, res[0] & 0xFF);
-            return searchPacket(tillInputDataEnd);
-        }
+            int curPos = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE; // first byte after PACKET_BEGIN
+            if (curPos == tillInputDataEnd) { // no bytes after PACKET_BEGIN, wait for more data
+                return null;
+            }
 
-        return res;
+            if ((inputData[curPos] & 0xFF) != PACKET_START) { // first byte after PACKET_BEGIN is not PACKET_START, search for the next PACKET_BEGIN
+                inputDataHead = curPos;
+                continue;
+            }
+
+            // We have 0xFF, 0xFE as two first bytes
+            // Search for packet end
+            int packetEnd = -1;
+            byte lastCheckedByte = -1;
+            int numBytes = 0; // number of bytes in packet
+            int packetBegin = (curPos + 1) % CIRCULAR_BUFFER_SIZE; // first byte of packet
+            for (curPos = packetBegin; curPos != tillInputDataEnd; curPos = (curPos + 1) % CIRCULAR_BUFFER_SIZE) {
+                if ((inputData[curPos] & 0xFF) == PACKET_END) {
+                    packetEnd = curPos;
+                    break;
+                }
+
+                lastCheckedByte = inputData[curPos];
+                if ((lastCheckedByte & 0xFF) != PACKET_ESC) {
+                    numBytes++;
+                }
+            }
+            if (packetEnd == -1) { // partial data: packet has begin and no end, wait for more data
+                return null;
+            }
+
+            if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
+                incrementByCode(serialPacketErrorEscapingByCode, inputData[packetBegin] & 0xFF);
+                inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+                continue;
+            }
+
+            if (numBytes < 3) {
+                incrementByCode(serialPacketErrorMinLengthByCode, inputData[packetBegin] & 0xFF);
+                inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
+                continue;
+            }
+
+            // Have full packet. Get it and test it
+            byte d;
+            byte[] res = new byte[numBytes];  // with crc16
+            int bytesSaved = 0;
+            boolean isEscapedByte = false;
+            int crc = 0xFFFF;
+            for (int i = packetBegin; i != packetEnd; i = (i + 1) % CIRCULAR_BUFFER_SIZE) {
+                d = inputData[i];
+                if (isEscapedByte) {
+                    d = (byte) (~d);
+                    res[bytesSaved] = d;
+                    bytesSaved++;
+                    isEscapedByte = false;
+                    crc = crc16(crc, d);
+                } else {
+                    if ((d & 0xFF) == PACKET_ESC) {
+                        isEscapedByte = true;
+                    } else {
+                        res[bytesSaved] = d;
+                        bytesSaved++;
+                        crc = crc16(crc, d);
+                    }
+                }
+            }
+
+            inputDataHead = (packetEnd + 1) % CIRCULAR_BUFFER_SIZE;
+
+            if (crc != 0) {
+                incrementByCode(serialPacketErrorCrcByCode, res[0] & 0xFF);
+                continue;
+            }
+
+            return res;
+        }
     }
 
     private void findPackets(int tillInputDataEnd) {
@@ -649,6 +651,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
                     @Override
                     public void run() {
+                        final Context ctx = context;
+                        if (ctx == null) return;
                         CommandCode code = null;
                         synchronized (syncCommand) {
                             if (!Commands.isEmpty() && Number == AnswerNumber) {
@@ -658,13 +662,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             }
                         }
                         if (code != null) {
-                            AtomSpectraLog.addMessage(context, "Serial command timed out: " + new String(code.command));
+                            AtomSpectraLog.addMessage(ctx, "Serial command timed out: " + new String(code.command));
                             Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                             intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_TIMEOUT);
                             intentText.putExtra(EXTRA_NUMBER, code.Number);
                             intentText.putExtra(EXTRA_COMMAND, new String(code.command));
                             intentText.putExtra(EXTRA_ID, code.id);
-                            context.sendBroadcast(intentText);
+                            ctx.sendBroadcast(intentText);
                         }
                         sendPacket(); //try to send next packet
                     }
