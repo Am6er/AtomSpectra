@@ -1401,7 +1401,10 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_USB_DETACHED.equals(action)) {
-                onUSBDetached();
+                if (inputType == INPUT_SERIAL) {
+                    onUSBDetached();
+                }
+
                 return;
             }
             if (Constants.ACTION.ACTION_USB_HAS_DATA.equals(action)) {
@@ -1413,6 +1416,8 @@ public class AtomSpectraService extends Service {
 
                         restartUsbDataWatchdog();
 
+                        // TODO: ignored for now, but later may be used for stricter data reliability check
+                        boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
                         double new_time;
                         double old_time;
                         long[] new_histogram;
@@ -1549,6 +1554,7 @@ public class AtomSpectraService extends Service {
                         final String[] dataArray = commandResult.split("\\s+");
                         if (dataArray.length != 40) {
                             showToastInMainLooper("Unable to read USB device metadata, unexpected register count: " + dataArray.length, Toast.LENGTH_LONG);
+                            return;
                         }
                         inputDeviceInfo = getUsbDeviceInfoText(dataArray[39]);
                         ForegroundSpectrum
@@ -1641,6 +1647,11 @@ public class AtomSpectraService extends Service {
         notify_cancel_all();
         canOpenAudio = false;
         isStarted = false;
+        try {
+            unregisterReceiver(broadcastReceiver);
+        } catch (IllegalArgumentException ignored) {
+            // receiver was not registered or already unregistered
+        }
 
         resetRecordingSuspendedStatus(true);
 
