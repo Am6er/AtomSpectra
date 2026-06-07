@@ -10,6 +10,7 @@
 
     <string name="settings">Atom Spectra Параметры</string>
     <string name="settings_audio_processing">Обработка аудио</string>
+    <string name="settings_usb_processing">Обработка USB</string>
     <string name="settings_spectrum">Спектр</string>
     <string name="settings_spectrum_change">Изменение спектра</string>
     <string name="settings_spectrogram">Спектрограмма</string>
@@ -78,6 +79,7 @@
     <string name="notify_close">Закрыть</string>
 
     <string name="enable_pileup">Включить анализ импульсов</string>
+    <string name="allow_partial_histogram_data">Разрешить частичные данные гистограммы</string>
     <string name="invert">Инвертировать вход</string>
     <string name="add_gps">Добавлять координаты GPS в файлы</string>
     <string name="update_isotopes">Автоматический поиск изотопов</string>

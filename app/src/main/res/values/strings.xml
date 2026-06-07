@@ -10,6 +10,7 @@
 
     <string name="settings">Atom Spectra Settings</string>
     <string name="settings_audio_processing">Audio Processing</string>
+    <string name="settings_usb_processing">USB Processing</string>
     <string name="settings_spectrum">Spectrum</string>
     <string name="settings_spectrum_change">Spectrum Change</string>
     <string name="settings_spectrogram">Spectrogram</string>
@@ -78,6 +79,7 @@
     <string name="notify_close">Close</string>
 
     <string name="enable_pileup">Enable pile-up correction</string>
+    <string name="allow_partial_histogram_data">Allow partial histogram data</string>
     <string name="invert">Invert input</string>
     <string name="add_gps">Add GPS coordinates to files</string>
     <string name="update_isotopes">Auto search isotopes</string>

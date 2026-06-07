@@ -712,6 +712,7 @@ public class AtomSpectraService extends Service {
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+        allowPartialHistogram = sp.getBoolean(Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM, Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT);
 
         boolean inputS = sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         int inputSID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
@@ -1416,8 +1417,10 @@ public class AtomSpectraService extends Service {
 
                         restartUsbDataWatchdog();
 
-                        // TODO: ignored for now, but later may be used for stricter data reliability check
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
+                        if (!allowPartialHistogram && !isHistogramComplete) {
+                            return;
+                        }
                         double new_time;
                         double old_time;
                         long[] new_histogram;
@@ -1465,11 +1468,12 @@ public class AtomSpectraService extends Service {
                                 }
                             }
 
-                            if (skip_next_usb_histograms > 0) {
+                            if (skip_next_usb_histograms > 0 && !isHistogramComplete) {
                                 skip_next_usb_histograms--;
                                 cpsInterval = 0;
                                 doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
+                                skip_next_usb_histograms = 0;
                                 cpsInterval = (int) interval_counts;
                                 doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
                                 isReliableData = true;

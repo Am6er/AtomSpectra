@@ -109,6 +109,10 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         updateMaxFrontPointsText();
         // --- end audio processing
 
+        // --- usb processing
+        setupAllowPartialHistogramCheckbox();
+        // --- end usb processing
+
         // --- spectrum
         updateReduceToText();
         updateNoiseDiscriminatorTextFromPrefs();
@@ -220,6 +224,14 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         pileUpCheckBox.setOnClickListener(v -> {
             saveBooleanPref(pileUpCheckBox.isChecked(), Constants.CONFIG.CONF_PILE_UP);
             stopRecording();
+        });
+    }
+
+    private void setupAllowPartialHistogramCheckbox() {
+        CheckBox checkAllowPartialHistogram = findViewById(R.id.CheckAllowPartialHistogram);
+        checkAllowPartialHistogram.setChecked(sp.getBoolean(Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM, Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT));
+        checkAllowPartialHistogram.setOnClickListener(v -> {
+            saveBooleanPref(checkAllowPartialHistogram.isChecked(), Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM);
         });
     }
 

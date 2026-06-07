@@ -171,6 +171,26 @@
             </LinearLayout>
 
 <!-- End Audio Processing -->
+<!-- USB Processing -->
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="@string/settings_usb_processing"
+                android:textColor="#00BCD4"
+                android:textSize="20sp" />
+
+            <CheckBox
+                android:id="@+id/CheckAllowPartialHistogram"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/allow_partial_histogram_data"
+                android:textColor="#FFFFFFFF" />
+
+<!-- End USB Processing -->
 <!-- Spectrum -->
 
             <TextView
