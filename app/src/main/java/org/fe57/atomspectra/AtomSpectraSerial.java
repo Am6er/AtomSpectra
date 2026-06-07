@@ -499,13 +499,22 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         if (DEBUG_LOG) {
                             AtomSpectraLog.addMessage(context, "Packet TEXT code=0x03 text=" + answer.trim());
                         }
+                        String commandStr = new String(Commands.getFirst().command);
                         Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
                         intentText.putExtra(EXTRA_RESULT, answer);
                         intentText.putExtra(EXTRA_ID, Commands.getFirst().id);
-                        intentText.putExtra(EXTRA_COMMAND, new String(Commands.getFirst().command));
+                        intentText.putExtra(EXTRA_COMMAND, commandStr);
                         intentText.putExtra(EXTRA_NUMBER, Commands.pop().Number);
                         AnswerNumber = 0; //data received
                         context.sendBroadcast(intentText);
+                        // -sta starts a new collection cycle, -rst clears the histogram on the device side
+                        // reset per-bin completeness tracking only on success so stale state from the
+                        // previous session cannot leak through if the command fails or times out
+                        if ((commandStr.equals("-sta") || commandStr.equals("-rst")) &&
+                                (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
+                            Arrays.fill(histBinsReceived, false);
+                            histBinsMissing = Constants.NUM_HIST_POINTS;
+                        }
                     }
 
                     sendPacket(); // send next packet
