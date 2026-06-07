@@ -209,8 +209,8 @@ public class AtomSpectraService extends Service {
     private static int cps = 0; // current cps value
     private static int cpsInterval = 0; // current cps value in user defined energy range
 
-    private final int USB_DATA_SKIP_SECONDS = 3;
-    private int skip_next_cps_int_usb_calc = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
+    private final int USB_DATA_SKIP_SECONDS = 2;
+    private int skip_next_usb_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
 
     private final Object spgAutosaveSync = new Object();
     private static int spgInterval = 0;
@@ -1465,8 +1465,8 @@ public class AtomSpectraService extends Service {
                                 }
                             }
 
-                            if (skip_next_cps_int_usb_calc > 0) {
-                                skip_next_cps_int_usb_calc--;
+                            if (skip_next_usb_histograms > 0) {
+                                skip_next_usb_histograms--;
                                 cpsInterval = 0;
                                 doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
@@ -1778,7 +1778,7 @@ public class AtomSpectraService extends Service {
                     cancelUsbDataWatchdog();
                     usbDevice.sendTextCommand("-sto", SERVICE_STO_ID);
                 } else {
-                    // HACK! when started, AtomSpectraSerial often sends wrong data for 1-2 seconds
+                    // HACK! when started, AtomSpectraSerial often sends wrong data for 1-2 seconds as it cannot fit full spectrum in time left before next data packet
                     // calculate spectrum based values (cps interval, dose rate etc.) only when data is more stable
                     skipUnreliableUSBData();
                     usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
@@ -2589,6 +2589,7 @@ public class AtomSpectraService extends Service {
                     usbDevice.Close();
                     SystemClock.sleep(USB_WAIT_DEVICE);
                     if (usbDevice.Open(device)) {
+                        skipUnreliableUSBData();
                         usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
                     } else {
                         showToastInMainLooper(R.string.log_usb_watchdog_unable_open_device, Toast.LENGTH_LONG);
@@ -2654,6 +2655,7 @@ public class AtomSpectraService extends Service {
             usbDevice.sendTextCommand("-mode 0", SERVICE_MODE_ID);
             synchronized (recordingSuspendedSync) {
                 if (isRecordingSuspended && recordingSuspendInputType == INPUT_SERIAL) {
+                    skipUnreliableUSBData();
                     usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
                     onUSBConnectionRestored();
                 } else {
@@ -3113,7 +3115,7 @@ public class AtomSpectraService extends Service {
     }
 
     private void skipUnreliableUSBData() {
-        skip_next_cps_int_usb_calc = USB_DATA_SKIP_SECONDS;
+        skip_next_usb_histograms = USB_DATA_SKIP_SECONDS;
     }
 
     private void refreshServiceNotification() {
