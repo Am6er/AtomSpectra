@@ -211,6 +211,7 @@ public class AtomSpectraService extends Service {
 
     private final int USB_DATA_SKIP_SECONDS = 2;
     private int skip_next_usb_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
+    private boolean allowPartialHistogram = Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT;
 
     private final Object spgAutosaveSync = new Object();
     private static int spgInterval = 0;
