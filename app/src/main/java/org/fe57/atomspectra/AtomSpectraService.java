@@ -212,6 +212,7 @@ public class AtomSpectraService extends Service {
     private final int USB_DATA_SKIP_SECONDS = 2;
     private int skip_next_usb_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
     private boolean allowPartialHistogram = Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT;
+    private int skippedIncompleteHistogramCount = 0;
 
     private final Object spgAutosaveSync = new Object();
     private static int spgInterval = 0;
@@ -236,6 +237,13 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.ACTION_RECORDING_SUSPENDED";
     public final static String ACTION_RECORDING_RESUMED =
             "org.fe57.atomspectra.ACTION_RECORDING_RESUMED";
+
+    // sent by AtomSpectraService each time an incomplete histogram is skipped (strict mode)
+    public final static String ACTION_HISTOGRAM_SKIPPED =
+            "org.fe57.atomspectra.ACTION_HISTOGRAM_SKIPPED";
+    // number of incomplete histograms skipped since recording started (int)
+    public final static String EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT";
 
 
     // --- AtomSpectraService data bundle parameters ---
@@ -1420,9 +1428,13 @@ public class AtomSpectraService extends Service {
 
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
                         if (!allowPartialHistogram && !isHistogramComplete) {
-                            // TODO: implement short non-disturbing user notification about skipping incomplete histogram
+                            skippedIncompleteHistogramCount++;
+                            sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
+                                    .setPackage(Constants.PACKAGE_NAME)
+                                    .putExtra(EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, skippedIncompleteHistogramCount));
                             return;
                         }
+                        skippedIncompleteHistogramCount = 0;
                         double new_time;
                         double old_time;
                         long[] new_histogram;
@@ -1726,6 +1738,7 @@ public class AtomSpectraService extends Service {
             histogram_all_queue.clear();
         }
         total_counts = 0;
+        skippedIncompleteHistogramCount = 0;
     }
 
     public static boolean getFreeze() {
@@ -1761,6 +1774,7 @@ public class AtomSpectraService extends Service {
         freeze_update_data = freeze;
 
         if (freeze) {
+            skippedIncompleteHistogramCount = 0;
             resetSearchWindow();
             resetSpectrumChangeWindow();
             synchronized (recordingSuspendedSync) {
@@ -3122,6 +3136,7 @@ public class AtomSpectraService extends Service {
 
     private void skipUnreliableUSBData() {
         skip_next_usb_histograms = USB_DATA_SKIP_SECONDS;
+        skippedIncompleteHistogramCount = 0;
     }
 
     private void refreshServiceNotification() {

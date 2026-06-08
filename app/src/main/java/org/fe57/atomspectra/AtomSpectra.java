@@ -165,6 +165,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     public static int channelCompression;
 
     private TextView statusLineTopText, statusLineMiddleText, statusLineBottomText;
+    private TextView briefNotification;
     private Button fmsButton;
     private final int[] searchFMSNextMode = {1, 2, 0};
     private final String[] searchFMSNames = {"F", "M", "S"};
@@ -258,6 +259,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         statusLineTopText = findViewById(R.id.statusLineTopText);
         statusLineMiddleText = findViewById(R.id.statusLineMiddleText);
         statusLineBottomText = findViewById(R.id.statusLineBottomText);
+        briefNotification = findViewById(R.id.briefNotification);
 
         mAtomSpectraShapeView = findViewById(R.id.shape_area);
         int coeff = StrictMath.max(seekChannel.getWidth() / 200, 1);
@@ -994,6 +996,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         intentFilter.addAction(Constants.ACTION.ACTION_GET_USB_PERMISSION);
         intentFilter.addAction(Constants.ACTION.ACTION_USB_HAS_ANSWER);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_CALIBRATION);
+        intentFilter.addAction(AtomSpectraService.ACTION_HISTOGRAM_SKIPPED);
         return intentFilter;
     }
 
@@ -1038,6 +1041,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             if (AtomSpectraService.ACTION_RECORDING_RESUMED.equals(action)) {
                 // ToastHelper.showToast(context,"resumed intent");
                 dismissRecordingSuspendedDialog();
+            }
+
+            if (AtomSpectraService.ACTION_HISTOGRAM_SKIPPED.equals(action)) {
+                int skipped = intent.getIntExtra(AtomSpectraService.EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, 0);
+                if (skipped > 0) {
+                    showBriefNotification(
+                            getString(R.string.histogram_updates_skipped, skipped),
+                            0xFFFFA500,
+                            1000);
+                }
             }
 
             if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action)) {
@@ -1439,6 +1452,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         }
 
     };
+
+    private void showBriefNotification(String text, int color, long durationMs) {
+        briefNotification.removeCallbacks(briefNotificationHideRunnable);
+        briefNotification.setText(text);
+        briefNotification.setTextColor(color);
+        briefNotification.setVisibility(View.VISIBLE);
+        briefNotification.postDelayed(briefNotificationHideRunnable, durationMs);
+    }
+
+    private final Runnable briefNotificationHideRunnable =
+            () -> briefNotification.setVisibility(View.GONE);
 
     private String formatDoseRateWithError(double dose_rate, long error95Percent) {
         if (dose_rate < 10) {
