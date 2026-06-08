@@ -1427,7 +1427,7 @@ public class AtomSpectraService extends Service {
                         restartUsbDataWatchdog();
 
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
-                        if (!allowPartialHistogram && !isHistogramComplete) {
+                        if (!allowPartialHistogram && !isHistogramComplete && skip_next_usb_histograms == 0) {
                             skippedIncompleteHistogramCount++;
                             sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
                                     .setPackage(Constants.PACKAGE_NAME)
@@ -1482,12 +1482,11 @@ public class AtomSpectraService extends Service {
                                 }
                             }
 
-                            if (skip_next_usb_histograms > 0 && !isHistogramComplete) {
+                            if (skip_next_usb_histograms > 0) {
                                 skip_next_usb_histograms--;
                                 cpsInterval = 0;
                                 doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
-                                skip_next_usb_histograms = 0;
                                 cpsInterval = (int) interval_counts;
                                 doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
                                 isReliableData = true;
