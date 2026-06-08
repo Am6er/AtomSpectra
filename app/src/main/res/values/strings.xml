@@ -79,7 +79,7 @@
     <string name="notify_close">Close</string>
 
     <string name="enable_pileup">Enable pile-up correction</string>
-    <string name="allow_partial_histogram_data">Allow partial histogram data</string>
+    <string name="allow_partial_histogram_data">Allow spectrum processing with partial data</string>
     <string name="invert">Invert input</string>
     <string name="add_gps">Add GPS coordinates to files</string>
     <string name="update_isotopes">Auto search isotopes</string>
@@ -141,7 +141,7 @@
     <string name="mode_axis_kev_button">keV</string>
     <string name="mode_axis_ch_button">ch.</string>
     <string name="sensg_text">Sens:</string>
-    <string name="sensg_compensated_text">Sens(сompensated):</string>
+    <string name="sensg_compensated_text">Sens(compensated):</string>
     <string name="background_cps_text">BckgCps:</string>
     <string name="fast_mode_sens">F:</string>
     <string name="medium_mode_sens">M:</string>
@@ -435,7 +435,7 @@
     <string name="log_serial_packet_error">Serial packet error %1$s at %2$s, counting errors for next %3$d min...</string>
     <string name="log_serial_errors_ongoing">Serial errors ongoing, total %1$s since %2$s, counting errors for next %3$d min...</string>
     <string name="log_serial_errors_resolved">No serial errors in the last %1$d min, total %2$s since %3$s</string>
-    <string name="histogram_updates_skipped">Spectrum updates skipped: %1$d</string>
+    <string name="histogram_updates_skipped">Spectrum updates skipped: %1$d. Allow processing of spectra with partial data in the settings if this message does not disappear.</string>
     <string name="log_start_recording">Start recording (%1$s)</string>
     <string name="log_stop_recording">Stop recording (%1$s)</string>
     <string name="log_no_perm_to_save_spectrum">No permission to save spectrum file (%1$s)</string>
@@ -539,8 +539,8 @@
     <string name="spectrogram_preview_toggle">Show or hide the spectrum preview</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Exporting spectrum…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Exporting…</string>
-    <string name="spectrogram_spectrum_export_dialog_title">Export spectrums</string>
-    <string name="spectrogram_spectrum_export_dialog_message">Set names for the exported spectrums:</string>
+    <string name="spectrogram_spectrum_export_dialog_title">Export spectra</string>
+    <string name="spectrogram_spectrum_export_dialog_message">Set names for the exported spectra:</string>
     <string name="spectrogram_spectrum_export_bg_name_hint">Background spectrum name</string>
     <string name="spectrogram_spectrum_export_fg_name_hint">Foreground spectrum name</string>
     <string name="spectrogram_spectrum_export_bg_name_default">background</string>
@@ -715,13 +715,13 @@
         \tNOTE: Device settings contain a sensitivity curve, most of the parameters in <annotation foreground="parameter">Atom Spectra Settings</annotation>, and search isotope parameters excluding library type.\n
         \n
     </string>
-    <string name="help_text_part8"><big><annotation foreground="caption">8. Storing and viewing spectrograms:</annotation></big>\n
+    <string name="help_text_part8"><big><annotation foreground="caption">8. Storing and viewing spectrogram data:</annotation></big>\n
         \tA delta is the difference between two subsequent states of the collected spectrum. A spectrogram is a list consisting of a sequence of deltas of the collected spectrum. Thus, a spectrogram allows one to study the dynamics of spectrum change over time.\n
         \t- To save a spectrogram with a specified time interval (delta duration), set the recording interval to a value greater than zero in the <annotation foreground="parameter">Save delta every N sec</annotation> parameter. A new spectrogram is started each time a spectrum recording begins. The spectrogram file name has the template Spectrogram-"spectrum-description"-"date_time-of-recording-start".txt\n
         \t- You can view the currently recording spectrogram using the <annotation foreground="parameter">View</annotation> command in the <annotation foreground="parameter">Spectrogram</annotation> submenu. The first line of the spectrogram appears once the first recording interval elapses.\n
         \t- You can view a previously recorded spectrogram using the command <annotation foreground="parameter">Load from…</annotation> in the submenu <annotation foreground="parameter">Spectrogram</annotation>.\n
-        \t- To record spectrograms 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation>, which allows you to limit the size of the recorded files.\n
-        \t- When saving spectrograms, full data on all 8192 spectrum channels is recorded. When displayed, the spectrogram data is compressed to 1024 channels.\n
+        \t- To record spectrogram data 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation>, which allows you to limit the size of the recorded files.\n
+        \t- When saving spectrogram data, full 8192 spectrum channels are recorded. When displayed, the spectrogram data is compressed to 1024 channels.\n
         \tNOTE: Using the spectrogram recording mode results in increased consumption of RAM.\n
         \n
     </string>
@@ -733,6 +733,9 @@
         \t- <annotation foreground="parameter">Invert input</annotation> - choose if pulse shape is negative.\n
         \t- <annotation foreground="parameter">Source:</annotation> - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
         \t- <annotation foreground="parameter">Min front points</annotation> and <annotation foreground="parameter">Max front points</annotation> - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
+        \n
+        \tUSB processing:\n
+        \t- <annotation foreground="parameter">Allow spectrum processing with partial data</annotation> - enable processing of spectra from the PRO device with partial packet loss. Use if you experience data transfer issues. Technical information: while collecting a spectrum, the USB PRO spectrometer continuously transmits data via the serial port. The data is transmitted in packets and includes a spectrum divided into a large number of fragments (for N channels each) and information about the acquisition time, count rate, etc. During prolonged operation, depending on the Android device load and other factors, some packets may be lost. This results in a spectrum being displayed at some point in time t, some of whose fragments were not received from the spectrometer. Typically, at time t+1, the lost portion of the spectrum is received from the device and displayed correctly. In most cases, minor fragment loss is unnoticeable to the user. This option enables processing of spectra with lost fragments. If this option is disabled, spectra with lost fragments are ignored (with a message indicating the number of ignored spectra) until the entire spectrum is transferred without loss in the next data transfer session.\n
         \n
         \tSpectrum:\n
         \t- <annotation foreground="parameter">Show as</annotation> - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
