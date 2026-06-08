@@ -44,7 +44,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
     private final Object circularBufferSync = new Object();
     private Thread processingThread = null;
-    Handler errorReportingHandler;
+    Handler asyncTasksHandler;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
@@ -88,7 +88,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 synchronized (errorReportingLock) {
                     errorsOccurredDuringLogSuppression = false;
                 }
-                errorReportingHandler.postDelayed(errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
+                asyncTasksHandler.postDelayed(errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
             } else {
                 AtomSpectraLog.addMessage(ctx, ctx.getString(R.string.log_serial_errors_resolved, SUPPRESSION_DURATION_MINUTES, summary, formatTime(startTime)));
                 resetErrorSuppression();
@@ -128,7 +128,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     //Constructor
     public AtomSpectraSerial(Context context) {
         this.context = context;
-        errorReportingHandler = new Handler(context.getMainLooper());
+        asyncTasksHandler = new Handler(context.getMainLooper());
         Manager = null;
         Init();
     }
@@ -166,10 +166,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         }
         Manager = null;
 
-        if (errorReportingHandler != null) {
-            errorReportingHandler.removeCallbacksAndMessages(null);
+        if (asyncTasksHandler != null) {
+            asyncTasksHandler.removeCallbacksAndMessages(null);
         }
-        errorReportingHandler = null;
+        asyncTasksHandler = null;
 
         context = null;
     }
@@ -359,8 +359,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             serialPacketErrorMinLengthByCode.clear();
         }
 
-        if (errorReportingHandler != null) {
-            errorReportingHandler.removeCallbacks(errorReportingRunnable);
+        if (asyncTasksHandler != null) {
+            asyncTasksHandler.removeCallbacks(errorReportingRunnable);
         }
     }
 
@@ -378,8 +378,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             String summary = formatErrorSummary();
             logMsg = context.getString(R.string.log_serial_packet_error, summary, formatTime(now), SUPPRESSION_DURATION_MINUTES);
         }
-        errorReportingHandler.removeCallbacks(errorReportingRunnable);
-        errorReportingHandler.postDelayed(errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
+        asyncTasksHandler.removeCallbacks(errorReportingRunnable);
+        asyncTasksHandler.postDelayed(errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
         AtomSpectraLog.addMessage(context, logMsg);
     }
 
@@ -714,7 +714,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             try {
                 AnswerNumber = cmd.Number;
                 Port.write(command_data, SERIAL_MANAGER_WRITE_TIMEOUT);
-                errorReportingHandler.postDelayed(new Runnable() {
+                asyncTasksHandler.postDelayed(new Runnable() {
                     final long Number = cmd.Number;
 
                     @Override
