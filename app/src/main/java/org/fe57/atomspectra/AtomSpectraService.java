@@ -1420,6 +1420,7 @@ public class AtomSpectraService extends Service {
 
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
                         if (!allowPartialHistogram && !isHistogramComplete) {
+                            // TODO: implement short non-disturbing user notification about skipping incomplete histogram
                             return;
                         }
                         double new_time;

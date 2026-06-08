@@ -7,6 +7,7 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
 import android.os.Process;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -43,7 +44,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     
     private final Object circularBufferSync = new Object();
     private Thread processingThread = null;
-    Handler handler;
+    Handler errorReportingHandler;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
@@ -54,12 +55,43 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long lost_impulses = 0;
     public long total_impulse_length = 0;
 
-    private static final long SERIAL_ERROR_REPORT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+    private static final long SUPPRESSION_DURATION_MINUTES = 2;
     private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
     private final HashMap<Integer, Integer> serialPacketErrorCrcByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorEscapingByCode = new HashMap<>();
     private final HashMap<Integer, Integer> serialPacketErrorMinLengthByCode = new HashMap<>();
-    private long serialPacketErrorLastReportTime = 0;
+
+    private final Object errorReportingLock = new Object();
+    private long errorDetectedEpisodeStartTime = 0;
+    private boolean errorLoggingSuppressed = false;
+    private boolean errorsOccurredDuringLogSuppression = false;
+
+    private final Runnable errorReportingRunnable = () -> {
+        final Context ctx = context;
+        if (ctx == null) {
+          return;
+        }
+
+        String summary;
+        long startTime;
+        boolean hadErrors;
+        synchronized (errorReportingLock) {
+            summary = formatErrorSummary();
+            startTime = errorDetectedEpisodeStartTime;
+            hadErrors = errorsOccurredDuringLogSuppression;
+        }
+
+        if (hadErrors) {
+            AtomSpectraLog.addMessage(ctx, ctx.getString(R.string.log_serial_errors_ongoing, summary, formatTime(startTime), SUPPRESSION_DURATION_MINUTES));
+            synchronized (errorReportingLock) {
+                errorsOccurredDuringLogSuppression = false;
+            }
+            errorReportingHandler.postDelayed(errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
+        } else {
+            AtomSpectraLog.addMessage(ctx, ctx.getString(R.string.log_serial_errors_resolved, SUPPRESSION_DURATION_MINUTES, summary, formatTime(startTime)));
+            resetErrorSuppression();
+        }
+    };
 
     private static final short PACKET_BEGIN = 0xFF;
     private static final short PACKET_START = 0xFE;
@@ -93,7 +125,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     //Constructor
     public AtomSpectraSerial(Context context) {
         this.context = context;
-        handler = new Handler(context.getMainLooper());
+        errorReportingHandler = new Handler(context.getMainLooper());
         Manager = null;
         Init();
     }
@@ -108,10 +140,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         processingThread = null;
         Arrays.fill(histBinsReceived, false);
         histBinsMissing = Constants.NUM_HIST_POINTS;
-        serialPacketErrorCrcByCode.clear();
-        serialPacketErrorEscapingByCode.clear();
-        serialPacketErrorMinLengthByCode.clear();
-        serialPacketErrorLastReportTime = 0;
+        resetErrorSuppression();
         synchronized (syncCommand) {
             AnswerNumber = 0;
             Commands.clear();
@@ -119,6 +148,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     public void Destroy() {
+        stopProcessingThread();
+
         if (Port != null && Port.isOpen()) {
             try {
                 Port.close();
@@ -126,14 +157,18 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 //nothing
             }
         }
-        if (Manager != null)
+
+        if (Manager != null) {
             Manager.stop();
-        stopProcessingThread();
-        if (handler != null)
-            handler.removeCallbacksAndMessages(null);
-        context = null;
+        }
         Manager = null;
-        handler = null;
+
+        if (errorReportingHandler != null) {
+            errorReportingHandler.removeCallbacksAndMessages(null);
+        }
+        errorReportingHandler = null;
+
+        context = null;
     }
 
     //Test if device is working
@@ -288,43 +323,59 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         return sb.toString();
     }
 
-    private void reportSerialPacketErrors() {
-        long now = System.currentTimeMillis();
-        if (serialPacketErrorLastReportTime == 0) {
-            serialPacketErrorLastReportTime = now;
-            return;
+    // Called under errorReportingLock
+    private String formatErrorSummary() {
+        StringBuilder sb = new StringBuilder();
+        if (!serialPacketErrorCrcByCode.isEmpty()) {
+            sb.append(formatErrorsByCode("CRC", serialPacketErrorCrcByCode));
         }
+        if (!serialPacketErrorEscapingByCode.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(formatErrorsByCode("escaping", serialPacketErrorEscapingByCode));
+        }
+        if (!serialPacketErrorMinLengthByCode.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(formatErrorsByCode("minimum length", serialPacketErrorMinLengthByCode));
+        }
+        return sb.toString();
+    }
 
-        long elapsedTime = now - serialPacketErrorLastReportTime;
-        if (elapsedTime >= SERIAL_ERROR_REPORT_INTERVAL_MS) {
-            if (!serialPacketErrorCrcByCode.isEmpty() || !serialPacketErrorEscapingByCode.isEmpty() || !serialPacketErrorMinLengthByCode.isEmpty()) {
-                StringBuilder sb = new StringBuilder("Serial errors (last ");
-                long elapsedMinutes = elapsedTime / 60000;
-                long elapsedSeconds = (elapsedTime % 60000) / 1000;
-                if (elapsedMinutes > 0) sb.append(elapsedMinutes).append("m ");
-                sb.append(elapsedSeconds).append("s): ");
-                boolean needComma = false;
-                if (!serialPacketErrorCrcByCode.isEmpty()) {
-                    sb.append(formatErrorsByCode("CRC", serialPacketErrorCrcByCode));
-                    needComma = true;
-                }
-                if (!serialPacketErrorEscapingByCode.isEmpty()) {
-                    if (needComma) sb.append(", ");
-                    sb.append(formatErrorsByCode("escaping", serialPacketErrorEscapingByCode));
-                    needComma = true;
-                }
-                if (!serialPacketErrorMinLengthByCode.isEmpty()) {
-                    if (needComma) sb.append(", ");
-                    sb.append(formatErrorsByCode("minimum length", serialPacketErrorMinLengthByCode));
-                }
-                AtomSpectraLog.addMessage(context, sb.toString());
-            }
+    private static String formatTime(long epochMs) {
+        return String.format("%tT", epochMs);
+    }
 
+    private void resetErrorSuppression() {
+        synchronized (errorReportingLock) {
+            errorLoggingSuppressed = false;
+            errorDetectedEpisodeStartTime = 0;
+            errorsOccurredDuringLogSuppression = false;
             serialPacketErrorCrcByCode.clear();
             serialPacketErrorEscapingByCode.clear();
             serialPacketErrorMinLengthByCode.clear();
-            serialPacketErrorLastReportTime = now;
         }
+
+        if (errorReportingHandler != null) { 
+            errorReportingHandler.removeCallbacks(errorReportingRunnable);
+        }
+    }
+
+    private void onPacketError(String type, int code, HashMap<Integer, Integer> map) {
+        long now = System.currentTimeMillis();
+        String logMsg;
+        synchronized (errorReportingLock) {
+            incrementByCode(map, code);
+            if (errorLoggingSuppressed) {
+                errorsOccurredDuringLogSuppression = true;
+                return;
+            }
+            errorDetectedEpisodeStartTime = now;
+            errorLoggingSuppressed = true;
+            String summary = formatErrorSummary();
+            logMsg = context.getString(R.string.log_serial_packet_error, summary, formatTime(now), SUPPRESSION_DURATION_MINUTES);
+        }
+        errorReportingHandler.removeCallbacks(errorReportingRunnable);
+        errorReportingHandler.postDelayed(errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
+        AtomSpectraLog.addMessage(context, logMsg);
     }
 
     // main method to search packets from input stream
@@ -375,13 +426,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             }
 
             if ((lastCheckedByte & 0xFF) == PACKET_ESC) {
-                incrementByCode(serialPacketErrorEscapingByCode, inputData[packetBegin] & 0xFF);
+                onPacketError("escaping", inputData[packetBegin] & 0xFF, serialPacketErrorEscapingByCode);
                 inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
                 continue;
             }
 
             if (numBytes < 3) {
-                incrementByCode(serialPacketErrorMinLengthByCode, inputData[packetBegin] & 0xFF);
+                onPacketError("minimum length", inputData[packetBegin] & 0xFF, serialPacketErrorMinLengthByCode);
                 inputDataHead = (inputDataHead + 1) % CIRCULAR_BUFFER_SIZE;
                 continue;
             }
@@ -414,7 +465,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             inputDataHead = (packetEnd + 1) % CIRCULAR_BUFFER_SIZE;
 
             if (crc != 0) {
-                incrementByCode(serialPacketErrorCrcByCode, res[0] & 0xFF);
+                onPacketError("CRC", res[0] & 0xFF, serialPacketErrorCrcByCode);
                 continue;
             }
 
@@ -426,7 +477,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         byte[] newPacket;
         while (true) {
             newPacket = searchPacket(tillInputDataEnd);
-            reportSerialPacketErrors();
             if (newPacket == null || newPacket.length == 0) {
                 return;
             }
@@ -514,6 +564,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                                 (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
                             Arrays.fill(histBinsReceived, false);
                             histBinsMissing = Constants.NUM_HIST_POINTS;
+                        }
+                        if ((commandStr.equals("-sta") || commandStr.equals("-sto")) &&
+                                (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
+                            resetErrorSuppression();
                         }
                     }
 
@@ -655,7 +709,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             try {
                 AnswerNumber = cmd.Number;
                 Port.write(command_data, SERIAL_MANAGER_WRITE_TIMEOUT);
-                handler.postDelayed(new Runnable() {
+                errorReportingHandler.postDelayed(new Runnable() {
                     final long Number = cmd.Number;
 
                     @Override

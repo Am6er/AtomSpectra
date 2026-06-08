@@ -432,6 +432,9 @@
     <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
     <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>
     <string name="log_usb_watchdog_device_not_found">USB data watchdog: USB device not found</string>
+    <string name="log_serial_packet_error">Serial packet error %1$s at %2$s, counting errors for next %3$d min...</string>
+    <string name="log_serial_errors_ongoing">Serial errors ongoing, total %1$s since %2$s, counting errors for next %3$d min...</string>
+    <string name="log_serial_errors_resolved">No serial errors in the last %1$d min, total %2$s since %3$s</string>
     <string name="log_start_recording">Start recording (%1$s)</string>
     <string name="log_stop_recording">Stop recording (%1$s)</string>
     <string name="log_no_perm_to_save_spectrum">No permission to save spectrum file (%1$s)</string>
