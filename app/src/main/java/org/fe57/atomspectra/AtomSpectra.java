@@ -1049,7 +1049,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                     showBriefNotification(
                             getString(R.string.histogram_updates_skipped, skipped),
                             0xFFFFA500,
-                            1000);
+                            1500);
                 }
             }
 

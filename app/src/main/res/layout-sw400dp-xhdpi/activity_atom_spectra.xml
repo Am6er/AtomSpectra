@@ -302,6 +302,7 @@
         android:layout_gravity="center"
         android:padding="8dp"
         android:textSize="16dp"
+        android:gravity="center_horizontal"
         android:textColor="@android:color/white"
         android:background="#80000000"
         android:visibility="gone" />
