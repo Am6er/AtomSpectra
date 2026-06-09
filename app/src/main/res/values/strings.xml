@@ -435,7 +435,7 @@
     <string name="log_serial_packet_error">Serial packet error %1$s at %2$s, counting errors for next %3$d min...</string>
     <string name="log_serial_errors_ongoing">Serial errors ongoing, total %1$s since %2$s, counting errors for next %3$d min...</string>
     <string name="log_serial_errors_resolved">No serial errors in the last %1$d min, total %2$s since %3$s</string>
-    <string name="histogram_updates_skipped">Spectrum updates skipped: %1$d.\nAllow processing of spectra with partial data in the settings if this message does not disappear.</string>
+    <string name="histogram_updates_skipped">Spectrum updates skipped: %1$d\nAllow processing of spectra with partial data in the settings if this message does not disappear</string>
     <string name="log_start_recording">Start recording (%1$s)</string>
     <string name="log_stop_recording">Stop recording (%1$s)</string>
     <string name="log_no_perm_to_save_spectrum">No permission to save spectrum file (%1$s)</string>

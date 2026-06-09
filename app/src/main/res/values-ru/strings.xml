@@ -435,7 +435,7 @@
     <string name="log_serial_packet_error">Ошибка пакета %1$s в %2$s, подсчет ошибок в течение следующих %3$d мин...</string>
     <string name="log_serial_errors_ongoing">Ошибки продолжаются, всего ошибок %1$s с %2$s, подсчет ошибок в течение следующих %3$d мин...</string>
     <string name="log_serial_errors_resolved">Ошибок нет за последние %1$d мин, всего ошибок %2$s с %3$s</string>
-    <string name="histogram_updates_skipped">Пропущено обновлений спектра: %1$d.\nРазрешите в настройках обработку спектров с частичными данными если данное сообщение не пропадает.</string>
+    <string name="histogram_updates_skipped">Пропущено обновлений спектра: %1$d\nРазрешите в настройках обработку спектров с частичными данными если данное сообщение не пропадает</string>
     <string name="log_start_recording">Начало записи (%1$s)</string>
     <string name="log_stop_recording">Остановка записи (%1$s)</string>
     <string name="log_no_perm_to_save_spectrum">Нет разрешения сохранить файл спектра (%1$s)</string>
