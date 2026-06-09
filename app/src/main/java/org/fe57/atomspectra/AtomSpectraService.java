@@ -210,7 +210,7 @@ public class AtomSpectraService extends Service {
     private static int cpsInterval = 0; // current cps value in user defined energy range
 
     private final int USB_DATA_SKIP_SECONDS = 2;
-    private int skip_next_usb_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
+    private int skip_usb_startup_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
     private boolean allowPartialHistogram = Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT;
     private int skippedIncompleteHistogramCount = 0;
 
@@ -1427,7 +1427,7 @@ public class AtomSpectraService extends Service {
                         restartUsbDataWatchdog();
 
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
-                        if (!allowPartialHistogram && !isHistogramComplete && skip_next_usb_histograms == 0) {
+                        if (!allowPartialHistogram && !isHistogramComplete) {
                             skippedIncompleteHistogramCount++;
                             if (skippedIncompleteHistogramCount >= 3) {
                                 sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
@@ -1484,11 +1484,12 @@ public class AtomSpectraService extends Service {
                                 }
                             }
 
-                            if (skip_next_usb_histograms > 0) {
-                                skip_next_usb_histograms--;
+                            if (skip_usb_startup_histograms > 0 && !isHistogramComplete) {
+                                skip_usb_startup_histograms--;
                                 cpsInterval = 0;
                                 doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
+                                skip_usb_startup_histograms = 0;
                                 cpsInterval = (int) interval_counts;
                                 doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
                                 isReliableData = true;
@@ -3136,7 +3137,7 @@ public class AtomSpectraService extends Service {
     }
 
     private void skipUnreliableUSBData() {
-        skip_next_usb_histograms = USB_DATA_SKIP_SECONDS;
+        skip_usb_startup_histograms = USB_DATA_SKIP_SECONDS;
         skippedIncompleteHistogramCount = 0;
     }
 
