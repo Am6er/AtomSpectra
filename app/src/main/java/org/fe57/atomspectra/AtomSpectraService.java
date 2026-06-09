@@ -1429,9 +1429,11 @@ public class AtomSpectraService extends Service {
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
                         if (!allowPartialHistogram && !isHistogramComplete && skip_next_usb_histograms == 0) {
                             skippedIncompleteHistogramCount++;
-                            sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
-                                    .setPackage(Constants.PACKAGE_NAME)
-                                    .putExtra(EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, skippedIncompleteHistogramCount));
+                            if (skippedIncompleteHistogramCount >= 3) {
+                                sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
+                                        .setPackage(Constants.PACKAGE_NAME)
+                                        .putExtra(EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, skippedIncompleteHistogramCount));
+                            }
                             return;
                         }
                         skippedIncompleteHistogramCount = 0;
