@@ -20,8 +20,8 @@
         <color name="colorStrokes2">#FFDEAD7F</color>
         <color name="colorBackground">#FF3DF048</color>
         <color name="colorIntervalBackground">#70505050</color> <!-- #88FFA000 --> <!-- #D0505050 -->
-        <color name="colorCursorBackground">#ff333333</color>
-        <color name="colorCursorText">#90ffffff</color>
+        <color name="colorCursorBackground">#80333333</color>
+        <color name="colorCursorText">#ffffff</color>
         <!--Isotope colours-->
         <!--Intensity-->
         <color name="colorIntensity1">#FF79B174</color>
