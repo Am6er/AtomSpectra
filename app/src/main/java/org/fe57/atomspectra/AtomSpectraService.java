@@ -210,7 +210,9 @@ public class AtomSpectraService extends Service {
     private static int cpsInterval = 0; // current cps value in user defined energy range
 
     private final int USB_DATA_SKIP_SECONDS = 2;
-    private int skip_next_usb_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
+    private int skip_usb_startup_histograms = 0; // 'hack' for usb devices to overcome issues with invalid data after reattach for the first few seconds
+    private boolean allowPartialHistogram = Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT;
+    private int skippedIncompleteHistogramCount = 0;
 
     private final Object spgAutosaveSync = new Object();
     private static int spgInterval = 0;
@@ -235,6 +237,13 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.ACTION_RECORDING_SUSPENDED";
     public final static String ACTION_RECORDING_RESUMED =
             "org.fe57.atomspectra.ACTION_RECORDING_RESUMED";
+
+    // sent by AtomSpectraService each time an incomplete histogram is skipped (strict mode)
+    public final static String ACTION_HISTOGRAM_SKIPPED =
+            "org.fe57.atomspectra.ACTION_HISTOGRAM_SKIPPED";
+    // number of incomplete histograms skipped since recording started (int)
+    public final static String EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT =
+            "org.fe57.atomspectra.EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT";
 
 
     // --- AtomSpectraService data bundle parameters ---
@@ -433,7 +442,7 @@ public class AtomSpectraService extends Service {
 //                for (AudioDeviceInfo device : addedDevices) {
 //                    debug_msg += "\n" + device.getProductName().toString() + "|source:" + device.isSource() + "|sink:" + device.isSink();
 //                }
-//                showToastInMainLooper(debug_msg, Toast.LENGTH_LONG);
+//                showToastInMainLooper(debug_msg, Toast.LENGTH_SHORT);
 
                 super.onAudioDevicesAdded(addedDevices);
                 HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
@@ -474,7 +483,7 @@ public class AtomSpectraService extends Service {
 //                for (AudioDeviceInfo device : removedDevices) {
 //                    debug_msg += "\n" + device.getProductName().toString() + "|source:" + device.isSource() + "|sink:" + device.isSink();
 //                }
-//                showToastInMainLooper(debug_msg, Toast.LENGTH_LONG);
+//                showToastInMainLooper(debug_msg, Toast.LENGTH_SHORT);
 
                 super.onAudioDevicesRemoved(removedDevices);
                 HashSet<String> prevState = new HashSet<>(activeInputDeviceList);
@@ -712,6 +721,7 @@ public class AtomSpectraService extends Service {
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
+        allowPartialHistogram = sp.getBoolean(Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM, Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT);
 
         boolean inputS = sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
         int inputSID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
@@ -835,7 +845,7 @@ public class AtomSpectraService extends Service {
             if (intervalSearchAlarmTimer != null) {
                 // TODO: localize
                 String message = "ERROR: trying to start interval search alarm timer while timer is already in progress";
-                showToastInMainLooper(message, Toast.LENGTH_LONG);
+                showToastInMainLooper(message, Toast.LENGTH_SHORT);
                 AtomSpectraLog.addMessage(service_context, message);
                 return;
             }
@@ -1104,12 +1114,12 @@ public class AtomSpectraService extends Service {
                 } catch (Exception ignored) {
                     intervalSearchAlarmAudioTrack = null;
                     AtomSpectraLog.addMessage(service_context, "Unable to configure output audio: " + ignored.getMessage());
-                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
+                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_SHORT);
                 }
                 if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_NO_STATIC_DATA) {
                     intervalSearchAlarmAudioTrack.release();
                     intervalSearchAlarmAudioTrack = null;
-                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_LONG);
+                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_SHORT);
                 }
             }
         }
@@ -1391,7 +1401,7 @@ public class AtomSpectraService extends Service {
                     usbDevice.Close();
                     SystemClock.sleep(USB_WAIT_DEVICE);
                     if (!usbManager.hasPermission(device)) {
-                        //showToastInMainLooper("Asking permissions", Toast.LENGTH_LONG);
+                        //showToastInMainLooper("Asking permissions", Toast.LENGTH_SHORT);
                         PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
                         usbManager.requestPermission(device, pi);
                     } else {
@@ -1416,8 +1426,17 @@ public class AtomSpectraService extends Service {
 
                         restartUsbDataWatchdog();
 
-                        // TODO: ignored for now, but later may be used for stricter data reliability check
                         boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
+                        if (!allowPartialHistogram && !isHistogramComplete) {
+                            skippedIncompleteHistogramCount++;
+                            if (skippedIncompleteHistogramCount >= 3) {
+                                sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
+                                        .setPackage(Constants.PACKAGE_NAME)
+                                        .putExtra(EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, skippedIncompleteHistogramCount));
+                            }
+                            return;
+                        }
+                        skippedIncompleteHistogramCount = 0;
                         double new_time;
                         double old_time;
                         long[] new_histogram;
@@ -1465,11 +1484,12 @@ public class AtomSpectraService extends Service {
                                 }
                             }
 
-                            if (skip_next_usb_histograms > 0) {
-                                skip_next_usb_histograms--;
+                            if (skip_usb_startup_histograms > 0 && !isHistogramComplete) {
+                                skip_usb_startup_histograms--;
                                 cpsInterval = 0;
                                 doseRateValue = new DoseRate();
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
+                                skip_usb_startup_histograms = 0;
                                 cpsInterval = (int) interval_counts;
                                 doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
                                 isReliableData = true;
@@ -1512,13 +1532,13 @@ public class AtomSpectraService extends Service {
                 // answer from USB device
                 if (SERVICE_INF_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // showToastInMainLooper("AtomSpectraService -inf answer: " + commandResult, Toast.LENGTH_LONG);
+                    // showToastInMainLooper("AtomSpectraService -inf answer: " + commandResult, Toast.LENGTH_SHORT);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-inf"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-inf"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-inf"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-inf"), Toast.LENGTH_SHORT);
                         return;
                     }
 
@@ -1541,19 +1561,19 @@ public class AtomSpectraService extends Service {
                 }
                 if (SERVICE_CAL_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // showToastInMainLooper("AtomSpectraService -cal answer: " + commandResult, Toast.LENGTH_LONG);
+                    // showToastInMainLooper("AtomSpectraService -cal answer: " + commandResult, Toast.LENGTH_SHORT);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-cal"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-cal"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-cal"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-cal"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (commandResult != null) {
                         final String[] dataArray = commandResult.split("\\s+");
                         if (dataArray.length != 40) {
-                            showToastInMainLooper("Unable to read USB device metadata, unexpected register count: " + dataArray.length, Toast.LENGTH_LONG);
+                            showToastInMainLooper("Unable to read USB device metadata, unexpected register count: " + dataArray.length, Toast.LENGTH_SHORT);
                             return;
                         }
                         inputDeviceInfo = getUsbDeviceInfoText(dataArray[39]);
@@ -1562,30 +1582,30 @@ public class AtomSpectraService extends Service {
                                 .updateComments();
                         AtomSpectraLog.addMessage(service_context, "Device info: " + inputDeviceInfo);
                     } else {
-                        showToastInMainLooper("Unable to read USB device metadata, null command result", Toast.LENGTH_LONG);
+                        showToastInMainLooper("Unable to read USB device metadata, null command result", Toast.LENGTH_SHORT);
                     }
                 }
                 if (SERVICE_MODE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // showToastInMainLooper("AtomSpectraService -mode 0 answer: " + commandResult, Toast.LENGTH_LONG);
+                    // showToastInMainLooper("AtomSpectraService -mode 0 answer: " + commandResult, Toast.LENGTH_SHORT);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-mode 0"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-mode 0"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-mode 0"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-mode 0"), Toast.LENGTH_SHORT);
                         return;
                     }
                 }
                 if (SERVICE_STT_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // showToastInMainLooper("AtomSpectraService -stt answer: " + commandResult, Toast.LENGTH_LONG);
+                    // showToastInMainLooper("AtomSpectraService -stt answer: " + commandResult, Toast.LENGTH_SHORT);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-stt"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-stt"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-stt"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-stt"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_OK_COLLECTING.equals(commandResult)) {
@@ -1599,17 +1619,17 @@ public class AtomSpectraService extends Service {
                 }
                 if (SERVICE_STA_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // showToastInMainLooper("AtomSpectraService -sta answer: " + commandResult, Toast.LENGTH_LONG);
+                    // showToastInMainLooper("AtomSpectraService -sta answer: " + commandResult, Toast.LENGTH_SHORT);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-sta"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-sta"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-sta"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-sta"), Toast.LENGTH_SHORT);
                         return;
                     }
 
@@ -1617,17 +1637,17 @@ public class AtomSpectraService extends Service {
                 }
                 if (SERVICE_STO_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                    // showToastInMainLooper("AtomSpectraService -sto answer: " + commandResult, Toast.LENGTH_LONG);
+                    // showToastInMainLooper("AtomSpectraService -sto answer: " + commandResult, Toast.LENGTH_SHORT);
                     if (AtomSpectraSerial.COMMAND_RESULT_ERR.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-sto"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_failed, "-sto"), Toast.LENGTH_SHORT);
                         return;
                     }
                     if (AtomSpectraSerial.COMMAND_RESULT_TIMEOUT.equals(commandResult)) {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-sto"), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_command_timeout, "-sto"), Toast.LENGTH_SHORT);
                         return;
                     }
                 }
@@ -1720,6 +1740,7 @@ public class AtomSpectraService extends Service {
             histogram_all_queue.clear();
         }
         total_counts = 0;
+        skippedIncompleteHistogramCount = 0;
     }
 
     public static boolean getFreeze() {
@@ -1755,6 +1776,7 @@ public class AtomSpectraService extends Service {
         freeze_update_data = freeze;
 
         if (freeze) {
+            skippedIncompleteHistogramCount = 0;
             resetSearchWindow();
             resetSpectrumChangeWindow();
             synchronized (recordingSuspendedSync) {
@@ -2531,7 +2553,7 @@ public class AtomSpectraService extends Service {
                     if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null) {
                         AudioSource = AUDIO_SOURCE_RAW;
                     } else {
-                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_warning_raw_audio_support_not_available), Toast.LENGTH_LONG);
+                        showToastInMainLooper(getStringOrDefaultLocale(R.string.log_warning_raw_audio_support_not_available), Toast.LENGTH_SHORT);
                     }
                 }
             }
@@ -2581,7 +2603,7 @@ public class AtomSpectraService extends Service {
                 return;
             }
 
-            showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_watchdog_no_data_triggered, usbDataWatchdogInterval), Toast.LENGTH_LONG);
+            showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_watchdog_no_data_triggered, usbDataWatchdogInterval), Toast.LENGTH_SHORT);
             UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
             UsbDevice device = AtomSpectraSerial.scanForSpectraProDevice(manager);
             if (device != null) {
@@ -2592,15 +2614,15 @@ public class AtomSpectraService extends Service {
                         skipUnreliableUSBData();
                         usbDevice.sendTextCommand("-sta", SERVICE_STA_ID);
                     } else {
-                        showToastInMainLooper(R.string.log_usb_watchdog_unable_open_device, Toast.LENGTH_LONG);
+                        showToastInMainLooper(R.string.log_usb_watchdog_unable_open_device, Toast.LENGTH_SHORT);
                         this.onUSBDetached();
                     }
                 } else {
-                    showToastInMainLooper(R.string.log_usb_watchdog_device_no_perm, Toast.LENGTH_LONG);
+                    showToastInMainLooper(R.string.log_usb_watchdog_device_no_perm, Toast.LENGTH_SHORT);
                     this.onUSBDetached();
                 }
             } else {
-                showToastInMainLooper(R.string.log_usb_watchdog_device_not_found, Toast.LENGTH_LONG);
+                showToastInMainLooper(R.string.log_usb_watchdog_device_not_found, Toast.LENGTH_SHORT);
                 this.onUSBDetached();
             }
         }
@@ -2639,7 +2661,7 @@ public class AtomSpectraService extends Service {
     private final void onUSBAttached(UsbDevice device) {
         synchronized (inputSync) {
             if (!freeze_update_data && inputType == INPUT_AUDIO) {
-                showToastInMainLooper(R.string.usb_attached_while_recording_audio, Toast.LENGTH_LONG);
+                showToastInMainLooper(R.string.usb_attached_while_recording_audio, Toast.LENGTH_SHORT);
                 return;
             }
 
@@ -2648,7 +2670,7 @@ public class AtomSpectraService extends Service {
         }
 
         if (usbDevice.isOpened() || usbDevice.Open(device)) {
-            showToastInMainLooper(R.string.action_usb_attached, Toast.LENGTH_LONG);
+            showToastInMainLooper(R.string.action_usb_attached, Toast.LENGTH_SHORT);
 
             usbDevice.sendTextCommand("-inf", SERVICE_INF_ID);
             usbDevice.sendTextCommand("-cal", SERVICE_CAL_ID);
@@ -2671,7 +2693,7 @@ public class AtomSpectraService extends Service {
     }
 
     private final void onUSBDetached() {
-        showToastInMainLooper(R.string.action_usb_detached, Toast.LENGTH_LONG);
+        showToastInMainLooper(R.string.action_usb_detached, Toast.LENGTH_SHORT);
 
         if (!freeze_update_data && inputType == INPUT_SERIAL) {
             onUSBConnectionLostDuringRecording();
@@ -2698,7 +2720,7 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        showToastInMainLooper(R.string.action_usb_no_access, Toast.LENGTH_LONG);
+        showToastInMainLooper(R.string.action_usb_no_access, Toast.LENGTH_SHORT);
     }
 
     /**
@@ -2817,7 +2839,7 @@ public class AtomSpectraService extends Service {
                     .saveSpectrumAndCloseStream(docStream, this);
         } catch (Exception e) {
             AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
-            showToastInMainLooper(getStringOrDefaultLocale(R.string.hist_save_error, suffix), Toast.LENGTH_LONG);
+            showToastInMainLooper(getStringOrDefaultLocale(R.string.hist_save_error, suffix), Toast.LENGTH_SHORT);
         }
     }
 
@@ -2853,7 +2875,7 @@ public class AtomSpectraService extends Service {
                 if (now.getDate() != spgAutosaveFileCreated.getDate()) {
                     appendDeltaToSpectrogram(foregroundSpectrumCopy);
                     completeSpectrogramRecording();
-                    showToastInMainLooper(R.string.log_spg_midnight_restart, Toast.LENGTH_LONG);
+                    showToastInMainLooper(R.string.log_spg_midnight_restart, Toast.LENGTH_SHORT);
                 }
             }
 
@@ -2876,10 +2898,10 @@ public class AtomSpectraService extends Service {
                     AtomSpectraSpectrogramData.instance.clear();
                     AtomSpectraSpectrogramData.instance.setBaseSpectrum(spgAutosaveSpectrum, spgAutosaveFilePath);
                     notifySpectrogramUpdated();
-                    this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_LONG);
+                    this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_SHORT);
                 } catch (Exception e) {
                     AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
-                    showToastInMainLooper(getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()), Toast.LENGTH_LONG);
+                    showToastInMainLooper(getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()), Toast.LENGTH_SHORT);
                 }
 
                 return;
@@ -2898,7 +2920,7 @@ public class AtomSpectraService extends Service {
 
         if (deltaSpectrum == null) {
             // TODO: localize
-            showToastInMainLooper("Unexpected: delta spectrum is null", Toast.LENGTH_LONG);
+            showToastInMainLooper("Unexpected: delta spectrum is null", Toast.LENGTH_SHORT);
             return;
         }
 
@@ -2917,7 +2939,7 @@ public class AtomSpectraService extends Service {
                     .setChannelCompression(1);
             saveFile.saveDeltaSpectrumAndCloseStream(docStream);
         } catch (Exception e) {
-            this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_LONG);
+            this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_SHORT);
             AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
         }
 
@@ -2929,7 +2951,7 @@ public class AtomSpectraService extends Service {
         synchronized (spgAutosaveSync) {
             spgAutosaveSpectrum = null;
             if (spgAutosaveFilePath != null) {
-                showToastInMainLooper(R.string.log_spg_autosave_completed, Toast.LENGTH_LONG);
+                showToastInMainLooper(R.string.log_spg_autosave_completed, Toast.LENGTH_SHORT);
             }
 
             spgAutosaveFilePath = null;
@@ -3115,7 +3137,8 @@ public class AtomSpectraService extends Service {
     }
 
     private void skipUnreliableUSBData() {
-        skip_next_usb_histograms = USB_DATA_SKIP_SECONDS;
+        skip_usb_startup_histograms = USB_DATA_SKIP_SECONDS;
+        skippedIncompleteHistogramCount = 0;
     }
 
     private void refreshServiceNotification() {

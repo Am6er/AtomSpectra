@@ -305,4 +305,16 @@
             android:textSize="14dp" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/briefNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="8dp"
+        android:textSize="16dp"
+        android:gravity="center_horizontal"
+        android:textColor="@android:color/white"
+        android:background="#80000000"
+        android:visibility="gone" />
+
 </FrameLayout>
