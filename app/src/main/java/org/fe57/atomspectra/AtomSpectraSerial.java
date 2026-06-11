@@ -562,16 +562,16 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         intentText.putExtra(EXTRA_NUMBER, Commands.pop().Number);
                         AnswerNumber = 0; //data received
                         context.sendBroadcast(intentText);
-                        // -sta starts a new collection cycle, -rst clears the histogram on the device side
-                        // reset per-bin completeness tracking only on success so stale state from the
-                        // previous session cannot leak through if the command fails or times out
+
                         if ((commandStr.equals("-sta") || commandStr.equals("-rst")) &&
                                 (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
                             Arrays.fill(histBinsReceived, false);
                             histBinsMissing = Constants.NUM_HIST_POINTS;
                         }
+
                         if ((commandStr.equals("-sta") || commandStr.equals("-sto")) &&
                                 (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
+                            // TODO: report errors if we are in counting (suppressing) state
                             resetErrorSuppression();
                         }
                     }
