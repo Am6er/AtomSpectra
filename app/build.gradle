@@ -7,7 +7,7 @@ android {
         applicationId "org.fe57.atomspectra"
         minSdkVersion 21
         targetSdk 34
-        versionCode 129
+        versionCode 130
         versionName '6.6.19'
     }
 
