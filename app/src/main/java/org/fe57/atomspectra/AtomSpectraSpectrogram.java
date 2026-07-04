@@ -190,14 +190,6 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     @Override
     public boolean onDoubleTap(MotionEvent e) {
-        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
-        if (spgView != null && !spgView.isTouchInContentArea(e.getX(), e.getY())) {
-            if (spgView.isTouchInColorBarArea(e.getX(), e.getY())) {
-                spgView.resetColorRange();
-                return true;
-            }
-            return false;
-        }
         // update scale
         switch (scale) {
             case AtomSpectraSpectrogramView.SCALE_LIN:

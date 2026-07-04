@@ -324,13 +324,7 @@ public class AtomSpectraSpectrogramView extends View {
 				&& y >= PADDING_TOP_PX;
 	}
 
-	public boolean isTouchInColorBarArea(float x, float y) {
-		int barTop = getHeight() - COLOR_BAR_HEIGHT_PX;
-		return x >= PADDING_RIGHT_PX
-				&& x <= getWidth() - PADDING_RIGHT_PX
-				&& y >= barTop
-				&& y <= getHeight();
-	}
+
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
@@ -467,7 +461,7 @@ public class AtomSpectraSpectrogramView extends View {
 		int barTop = getHeight() - COLOR_BAR_HEIGHT_PX;
 		float touchRadius = HANDLE_TOUCH_RADIUS_PX;
 
-		if (y < barTop - touchRadius || y > getHeight() + touchRadius) return HANDLE_NONE;
+		if (y < barTop - touchRadius || y > barTop + touchRadius) return HANDLE_NONE;
 		if (x < barLeft - touchRadius || x > barRight + touchRadius) return HANDLE_NONE;
 
 		float minHandleX = barLeft + colorBarMinFraction * barWidth;
@@ -490,14 +484,7 @@ public class AtomSpectraSpectrogramView extends View {
 		return Math.max(0f, Math.min(1f, (x - barLeft) / barWidth));
 	}
 
-	public void resetColorRange() {
-		colorBarMinFraction = 0f;
-		colorBarMaxFraction = 1f;
-		this.minValue = 0;
-		this.maxValue = this.spectrogramMaxCps;
-		renderSpectrogramToBitmap();
-		invalidate();
-	}
+
 
 	private boolean isLeftHandle(int handle) {
 		return handle == HANDLE_BG_LEFT || handle == HANDLE_FG_LEFT;
@@ -1080,20 +1067,20 @@ public class AtomSpectraSpectrogramView extends View {
 
 			float handleHalf = COLOR_BAR_HEIGHT_PX / 2f;
 
-			// min handle (left)
+			// min handle (left) — tip points down
 			Path minPath = new Path();
-			minPath.moveTo(minHandleX, barTop);
-			minPath.lineTo(minHandleX - handleHalf, barBottom);
-			minPath.lineTo(minHandleX + handleHalf, barBottom);
+			minPath.moveTo(minHandleX, barBottom);
+			minPath.lineTo(minHandleX - handleHalf, barTop);
+			minPath.lineTo(minHandleX + handleHalf, barTop);
 			minPath.close();
 			canvas.drawPath(minPath, handlePaint);
 			canvas.drawPath(minPath, outlinePaint);
 
-			// max handle (right)
+			// max handle (right) — tip points down
 			Path maxPath = new Path();
-			maxPath.moveTo(maxHandleX, barTop);
-			maxPath.lineTo(maxHandleX - handleHalf, barBottom);
-			maxPath.lineTo(maxHandleX + handleHalf, barBottom);
+			maxPath.moveTo(maxHandleX, barBottom);
+			maxPath.lineTo(maxHandleX - handleHalf, barTop);
+			maxPath.lineTo(maxHandleX + handleHalf, barTop);
 			maxPath.close();
 			canvas.drawPath(maxPath, handlePaint);
 			canvas.drawPath(maxPath, outlinePaint);
