@@ -191,6 +191,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private float HANDLE_TOUCH_RADIUS_DP = 40f;
 	private float PADDING_TOP_DP = HANDLE_SIZE_DP / 2f;
 	private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
+	private float COLOR_BAR_HEIGHT_DP = 16f;
+	private float COLOR_BAR_MARGIN_TOP_DP = 4f;
 
 	private int POINT_SIZE_PX = (int)POINT_SIZE_DP;
 	private int TIME_AXIS_WIDTH_PX = (int)TIME_AXIS_WIDTH_DP;
@@ -203,6 +205,8 @@ public class AtomSpectraSpectrogramView extends View {
 	private int HANDLE_TOUCH_RADIUS_PX = (int)HANDLE_TOUCH_RADIUS_DP;
 	private int PADDING_TOP_PX = (int)HANDLE_SIZE_DP / 2;
 	private int PADDING_RIGHT_PX = (int)HANDLE_SIZE_DP;
+	private int COLOR_BAR_HEIGHT_PX = (int)COLOR_BAR_HEIGHT_DP;
+	private int COLOR_BAR_MARGIN_TOP_PX = (int)COLOR_BAR_MARGIN_TOP_DP;
 
 	private int TIMESTAMP_EACH_BINS = 25;
 
@@ -212,6 +216,8 @@ public class AtomSpectraSpectrogramView extends View {
 	public static final int HANDLE_BG_RIGHT = 2;
 	public static final int HANDLE_FG_LEFT = 3;
 	public static final int HANDLE_FG_RIGHT = 4;
+	public static final int HANDLE_COLOR_BAR_MIN = 5;
+	public static final int HANDLE_COLOR_BAR_MAX = 6;
 
 	private static final int HANDLE_COLOR_BG = 0xFF44E044; // green
 	private static final int HANDLE_COLOR_FG = Color.WHITE;
@@ -223,6 +229,10 @@ public class AtomSpectraSpectrogramView extends View {
 	private HashMap<Integer, Integer> energyTicks = null;
 	private double maxValue = 0;
 	private double minValue = 0;
+	private double spectrogramMaxCps = 0;
+	private float colorBarMinFraction = 0f;
+	private float colorBarMaxFraction = 1f;
+	private int draggingColorBarHandle = HANDLE_NONE;
 	private int channelBinning = 1;
 	private int spectrumBinning = 1;
 	private String scale = SCALE_SQRT;
@@ -310,9 +320,11 @@ public class AtomSpectraSpectrogramView extends View {
 	public boolean isTouchInContentArea(float x, float y) {
 		return x >= TIME_AXIS_WIDTH_PX
 				&& x <= getWidth() - PADDING_RIGHT_PX
-				&& y <= getHeight() - CHANNEL_AXIS_HEIGHT_PX
-        && y >= PADDING_TOP_PX;
+				&& y <= getHeight() - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX
+				&& y >= PADDING_TOP_PX;
 	}
+
+
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
@@ -325,6 +337,12 @@ public class AtomSpectraSpectrogramView extends View {
 				lastTouchY = event.getY();
 				lastTouchX = event.getX();
 
+				int hitColorBarHandle = pickColorBarHandle(lastTouchX, lastTouchY);
+				if (hitColorBarHandle != HANDLE_NONE) {
+					draggingColorBarHandle = hitColorBarHandle;
+					return true;
+				}
+
 				int hitHandle = pickHandle(lastTouchX, lastTouchY);
 				if (hitHandle != HANDLE_NONE) {
 					draggingHandle = hitHandle;
@@ -335,12 +353,27 @@ public class AtomSpectraSpectrogramView extends View {
 					isDragging = true;
 					lockHorizontalMove = true;
 				}
-				if (!lockHorizontalMove && lastTouchY > getHeight() - CHANNEL_AXIS_HEIGHT_PX) {
+				if (!lockHorizontalMove && lastTouchY > getHeight() - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX) {
 					isDragging = true;
 					lockVerticalMove = true;
 				}
 				return true;
 			case MotionEvent.ACTION_MOVE:
+				if (draggingColorBarHandle != HANDLE_NONE) {
+					float fraction = touchXToColorBarFraction(event.getX());
+					if (draggingColorBarHandle == HANDLE_COLOR_BAR_MIN) {
+						colorBarMinFraction = Math.min(fraction, colorBarMaxFraction - 0.01f);
+						colorBarMinFraction = Math.max(0f, colorBarMinFraction);
+					} else {
+						colorBarMaxFraction = Math.max(fraction, colorBarMinFraction + 0.01f);
+						colorBarMaxFraction = Math.min(1f, colorBarMaxFraction);
+					}
+					this.minValue = colorBarMinFraction * this.spectrogramMaxCps;
+					this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
+					renderSpectrogramToBitmap();
+					invalidate();
+					return true;
+				}
 				if (draggingHandle != HANDLE_NONE) {
 					int row = touchYToBinStartRow(event.getY());
 					setHandleRow(draggingHandle, row);
@@ -371,6 +404,10 @@ public class AtomSpectraSpectrogramView extends View {
 				return true;
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
+				if (draggingColorBarHandle != HANDLE_NONE) {
+					draggingColorBarHandle = HANDLE_NONE;
+					return true;
+				}
 				if (draggingHandle != HANDLE_NONE) {
 					draggingHandle = HANDLE_NONE;
 					if (stateChangedListener != null) {
@@ -414,6 +451,40 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 		return bestHandle;
 	}
+
+	private int pickColorBarHandle(float x, float y) {
+		int barLeft = PADDING_RIGHT_PX;
+		int barRight = getWidth() - PADDING_RIGHT_PX;
+		int barWidth = barRight - barLeft;
+		if (barWidth <= 0) return HANDLE_NONE;
+
+		int barTop = getHeight() - COLOR_BAR_HEIGHT_PX;
+		float touchRadius = HANDLE_TOUCH_RADIUS_PX;
+
+		if (y < barTop - touchRadius || y > barTop + touchRadius) return HANDLE_NONE;
+		if (x < barLeft - touchRadius || x > barRight + touchRadius) return HANDLE_NONE;
+
+		float minHandleX = barLeft + colorBarMinFraction * barWidth;
+		float maxHandleX = barLeft + colorBarMaxFraction * barWidth;
+
+		float distMin = Math.abs(x - minHandleX);
+		float distMax = Math.abs(x - maxHandleX);
+
+		if (distMin <= touchRadius && distMin <= distMax) return HANDLE_COLOR_BAR_MIN;
+		if (distMax <= touchRadius) return HANDLE_COLOR_BAR_MAX;
+
+		return HANDLE_NONE;
+	}
+
+	private float touchXToColorBarFraction(float x) {
+		int barLeft = PADDING_RIGHT_PX;
+		int barRight = getWidth() - PADDING_RIGHT_PX;
+		int barWidth = barRight - barLeft;
+		if (barWidth <= 0) return 0f;
+		return Math.max(0f, Math.min(1f, (x - barLeft) / barWidth));
+	}
+
+
 
 	private boolean isLeftHandle(int handle) {
 		return handle == HANDLE_BG_LEFT || handle == HANDLE_FG_LEFT;
@@ -560,14 +631,16 @@ public class AtomSpectraSpectrogramView extends View {
 
 		this.spectrogramBinData = binnedSpectrogram;
 		this.timestamps = data.getTimestamps();
-		this.maxValue = 0;
+		this.spectrogramMaxCps = 0;
 		for (float[] deltas : this.spectrogramBinData) {
 			for (double value : deltas) {
-				if (value > this.maxValue) {
-					this.maxValue = value;
+				if (value > this.spectrogramMaxCps) {
+					this.spectrogramMaxCps = value;
 				}
 			}
 		}
+		this.minValue = colorBarMinFraction * this.spectrogramMaxCps;
+		this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
 
 		// calculate energy for each channel
 		double[] allEnergies = new double[channelBinsCount];
@@ -628,6 +701,8 @@ public class AtomSpectraSpectrogramView extends View {
 		HANDLE_TOUCH_RADIUS_PX = dpToPx(HANDLE_TOUCH_RADIUS_DP);
 		PADDING_TOP_PX = dpToPx(PADDING_TOP_DP);
 		PADDING_RIGHT_PX = dpToPx(PADDING_RIGHT_DP);
+		COLOR_BAR_HEIGHT_PX = dpToPx(COLOR_BAR_HEIGHT_DP);
+		COLOR_BAR_MARGIN_TOP_PX = dpToPx(COLOR_BAR_MARGIN_TOP_DP);
 	}
 
 	private void recycleBitmap() {
@@ -692,7 +767,7 @@ public class AtomSpectraSpectrogramView extends View {
 		}
 
 		int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
-		int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX - PADDING_TOP_PX;
+		int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX - PADDING_TOP_PX;
 
 		int rowBinsCount = spectrogramBinData.size();
 		int colBinsCount = spectrogramBinData.get(0).length;
@@ -897,6 +972,9 @@ public class AtomSpectraSpectrogramView extends View {
 			}
 		}
 
+		// render color bar below energy/channel axis
+		renderColorBar(viewWidth, viewHeight);
+
 		// render region handles + guide lines on top of everything
 		drawRegionHandles(viewWidth);
 
@@ -912,6 +990,100 @@ public class AtomSpectraSpectrogramView extends View {
 
 		if (this.autoScroll) {
 			verticalOffsetPx += rowBinHeightPx;
+		}
+	}
+
+	private void renderColorBar(int viewWidth, int viewHeight) {
+		synchronized (this.spectrogramBitmapSync) {
+			if (this.spectrogramBitmap == null) return;
+
+			Canvas canvas = new Canvas(this.spectrogramBitmap);
+
+			int barLeft = PADDING_RIGHT_PX;
+			int barRight = viewWidth - PADDING_RIGHT_PX;
+			int barWidth = barRight - barLeft;
+			if (barWidth <= 0) return;
+
+			int barTop = viewHeight - COLOR_BAR_HEIGHT_PX;
+			int barBottom = viewHeight;
+
+			int[] colors = IRON_PALETTE;
+			switch (palette) {
+				case PALETTE_GLOW:  colors = GLOW_PALETTE;   break;
+				case PALETTE_GRAY:  colors = GRAY_PALETTE;   break;
+				case PALETTE_LIME:  colors = LIME_PALETTE;   break;
+				case PALETTE_YELLOW: colors = YELLOW_PALETTE; break;
+			}
+
+			int minHandleX = barLeft + Math.round(colorBarMinFraction * barWidth);
+			int maxHandleX = barLeft + Math.round(colorBarMaxFraction * barWidth);
+
+			int[] barPixels = new int[barWidth * COLOR_BAR_HEIGHT_PX];
+			for (int x = 0; x < barWidth; x++) {
+				float fraction = (float) x / (barWidth - 1);
+				int color;
+				if (fraction < colorBarMinFraction) {
+					color = colors[0];
+				} else if (fraction > colorBarMaxFraction) {
+					color = colors[colors.length - 1];
+				} else {
+					float activeFraction;
+					if (colorBarMaxFraction > colorBarMinFraction) {
+						activeFraction = (fraction - colorBarMinFraction) / (colorBarMaxFraction - colorBarMinFraction);
+					} else {
+						activeFraction = 0;
+					}
+					long colorIndex = Math.round(activeFraction * (colors.length - 1));
+					switch (this.scale) {
+						case SCALE_LOG:
+							colorIndex = Math.round((Math.log(colorIndex + 1) / Math.log(colors.length)) * (colors.length - 1));
+							break;
+						case SCALE_SQRT:
+							colorIndex = Math.round((Math.sqrt(colorIndex) / Math.sqrt(colors.length)) * (colors.length - 1));
+							break;
+					}
+					if (colorIndex > colors.length - 1) colorIndex = colors.length - 1;
+					color = colors[(int) colorIndex];
+				}
+
+				for (int y = 0; y < COLOR_BAR_HEIGHT_PX; y++) {
+					barPixels[y * barWidth + x] = color;
+				}
+			}
+
+			this.spectrogramBitmap.setPixels(barPixels, 0, barWidth, barLeft, barTop, barWidth, COLOR_BAR_HEIGHT_PX);
+
+			// draw handles as small triangles pointing down into the bar
+			Paint handlePaint = new Paint();
+			handlePaint.setAntiAlias(true);
+			handlePaint.setStyle(Paint.Style.FILL);
+			handlePaint.setColor(Color.WHITE);
+
+			Paint outlinePaint = new Paint();
+			outlinePaint.setAntiAlias(true);
+			outlinePaint.setStyle(Paint.Style.STROKE);
+			outlinePaint.setStrokeWidth(dpToPx(1));
+			outlinePaint.setColor(Color.BLACK);
+
+			float handleHalf = COLOR_BAR_HEIGHT_PX / 2f;
+
+			// min handle (left) — tip points down
+			Path minPath = new Path();
+			minPath.moveTo(minHandleX, barBottom);
+			minPath.lineTo(minHandleX - handleHalf, barTop);
+			minPath.lineTo(minHandleX + handleHalf, barTop);
+			minPath.close();
+			canvas.drawPath(minPath, handlePaint);
+			canvas.drawPath(minPath, outlinePaint);
+
+			// max handle (right) — tip points down
+			Path maxPath = new Path();
+			maxPath.moveTo(maxHandleX, barBottom);
+			maxPath.lineTo(maxHandleX - handleHalf, barTop);
+			maxPath.lineTo(maxHandleX + handleHalf, barTop);
+			maxPath.close();
+			canvas.drawPath(maxPath, handlePaint);
+			canvas.drawPath(maxPath, outlinePaint);
 		}
 	}
 
