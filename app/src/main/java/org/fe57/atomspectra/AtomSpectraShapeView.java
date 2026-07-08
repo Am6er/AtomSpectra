@@ -41,12 +41,12 @@ public class AtomSpectraShapeView extends View {
 	private int render_mode = RENDER_MODE_SPECTRUM;
 	private Shape[] shapes = new Shape[0];
 
-	private static int margin_top;
-	private static int margin_bottom;
-	private static int margin_left;
-	private static int margin_right;
-	private static int width;
-	private static int height;
+	private int margin_top;
+	private int margin_bottom;
+	private int margin_left;
+	private int margin_right;
+	private int width;
+	private int height;
 
 	private final Paint squareColor = new Paint();
 	private final Paint textColor = new Paint();
