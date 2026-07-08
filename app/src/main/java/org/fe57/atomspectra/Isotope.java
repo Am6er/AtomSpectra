@@ -9,6 +9,7 @@ import androidx.core.util.Pair;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Objects;
 
 public class Isotope implements Comparable<Isotope>{
     public static final String NonElement = "ND-0";
@@ -435,8 +436,16 @@ public Isotope(@NonNull String name, double halfLife){
         return Addon.compareTo(i.Addon);
     }
 
-    public boolean equals(@NonNull Isotope i) {
-        return compareTo(i) == 0;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Isotope)) return false;
+        return compareTo((Isotope) o) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(Index, Weight, Addon);
     }
 
     public void setCoord(RectF rect) {
