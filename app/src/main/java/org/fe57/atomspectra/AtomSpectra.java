@@ -60,6 +60,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -4030,42 +4031,41 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private void saveDevice(String suffix) {
         try {
             Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, "Device", 0, suffix, ".txt", "text/plain", false);
-            OutputStreamWriter docStream = streamInfo.first;
             String deviceFileName = streamInfo.second.getPath();
 
-            OutputStreamWriter fw = docStream;
-            fw.append("DEVFORMAT: 2\n");      //Type of file
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensitivity
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));       //Sensitivity for compensated dose rate
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));                    //Background
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));                   //fast counts
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));               //medium counts
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));                   //slow counts
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT)));               //minimum front points
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)));               //maximum front points
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT)));                 //noise discriminator
-            fw.append(String.format(Locale.US, "%d\n", Constants.ADC_EFF_BITS));              // NO LONGER CONFIGURABLE                                                //ADC bits
-            fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //save channels
-            fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //load channels
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));            //channel compression level
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT)));                 //windows search size
-            fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
-            fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
-            fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT)));                               //order size
+            try (OutputStreamWriter fw = streamInfo.first) {
+                fw.append("DEVFORMAT: 2\n");      //Type of file
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensitivity
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));       //Sensitivity for compensated dose rate
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));                    //Background
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));                   //fast counts
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));               //medium counts
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));                   //slow counts
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT)));               //minimum front points
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)));               //maximum front points
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT)));                 //noise discriminator
+                fw.append(String.format(Locale.US, "%d\n", Constants.ADC_EFF_BITS));              // NO LONGER CONFIGURABLE                                                //ADC bits
+                fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //save channels
+                fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //load channels
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));            //channel compression level
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT)));                 //windows search size
+                fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
+                fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT)));                               //order size
 
-            TreeMap<Float, Double> sensitivityTable = PrefHelper.getSensitivityTableOrDefault(this);
-            fw.append(String.format(Locale.US, "%d\n", sensitivityTable.size()));
-            ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
-            for (int i = 0; i < sortedEnergyList.size(); i++) {
-                float energy = sortedEnergyList.get(i);
-                fw.append(String.format(Locale.US, "%f\n", energy));
+                TreeMap<Float, Double> sensitivityTable = PrefHelper.getSensitivityTableOrDefault(this);
+                fw.append(String.format(Locale.US, "%d\n", sensitivityTable.size()));
+                ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
+                for (int i = 0; i < sortedEnergyList.size(); i++) {
+                    float energy = sortedEnergyList.get(i);
+                    fw.append(String.format(Locale.US, "%f\n", energy));
+                }
+                for (int i = 0; i < sortedEnergyList.size(); i++) {
+                    float energy = sortedEnergyList.get(i);
+                    double sens = sensitivityTable.get(energy);
+                    fw.append(String.format(Locale.US, "%.6f\n", sens));
+                }
             }
-            for (int i = 0; i < sortedEnergyList.size(); i++) {
-                float energy = sortedEnergyList.get(i);
-                double sens = sensitivityTable.get(energy);
-                fw.append(String.format(Locale.US, "%.6f\n", sens));
-            }
-            fw.close();
             Log.d(TAG, deviceFileName + " saved successfully");
             ToastHelper.showToast(this, getString(R.string.device_save_success, deviceFileName));
         } catch (Exception e) {
@@ -4088,74 +4088,76 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         try {
             InputStream inputFile = getContentResolver().openInputStream(devFile);
             if (inputFile == null) {
-                throw new Exception();
+                throw new IOException("Unable to open device file: " + devFile);
             }
-            BufferedReader fr = new BufferedReader(new InputStreamReader(inputFile));
-            Log.d(TAG, filename + " loading started...");
-            String ident = fr.readLine();
-            boolean isV1 = ident.matches("^DEVFORMAT: 1$");
-            boolean isV2 = ident.matches("^DEVFORMAT: 2$");
-            if (!isV1 && !isV2) {
-                ToastHelper.showToast(this, getString(R.string.device_load_error));
-                return;
-            }
-            int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
-            int tempSensGCompensated = 0;
-            if (isV2) {
-                tempSensGCompensated = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
-            }
-            int tempBack = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
-            int tempFast = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
-            int tempMedium = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
-            int tempSlow = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
-            int tempMin = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
-            int tempMax = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
-            int tempNoise = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, Constants.NUM_HIST_POINTS - 1);
-            fr.readLine(); // ADC bits, no longer configurable
-            fr.readLine(); // save channels, no longer configurable
-            fr.readLine(); // load channels, no longer configurable
-            int tempCompression = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 64);
-            int tempWindow = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 200);                 //windows search size
-            float tempThreshold = Float.parseFloat(fr.readLine());
-            tempThreshold = (float) Math.rint(Constants.MinMax(tempThreshold * 100, 0, 1000000)) / 100.0f;
-            float tempTolerance = Float.parseFloat(fr.readLine());
-            tempTolerance = (float) Math.rint(Constants.MinMax(tempTolerance * 100, 1, 5000)) / 100.0f;                     //tolerance
-            int tempOrder = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, Constants.ORDER_MAX);
-            int tempSensTableSize = Integer.parseInt(fr.readLine());
-            float[] tempEArray = new float[tempSensTableSize];
-            for (int i = 0; i < tempSensTableSize; i++) {
-                tempEArray[i] = Float.parseFloat(fr.readLine());
-                if (tempEArray[i] < 0) {
-                    ToastHelper.showToast(this, "Negative energy in sensitivity table");
+            try (InputStream in = inputFile;
+                 BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
+                Log.d(TAG, filename + " loading started...");
+                String ident = fr.readLine();
+                boolean isV1 = ident.matches("^DEVFORMAT: 1$");
+                boolean isV2 = ident.matches("^DEVFORMAT: 2$");
+                if (!isV1 && !isV2) {
+                    ToastHelper.showToast(this, getString(R.string.device_load_error));
                     return;
                 }
+                int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
+                int tempSensGCompensated = 0;
+                if (isV2) {
+                    tempSensGCompensated = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
+                }
+                int tempBack = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
+                int tempFast = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
+                int tempMedium = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
+                int tempSlow = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
+                int tempMin = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
+                int tempMax = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
+                int tempNoise = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, Constants.NUM_HIST_POINTS - 1);
+                fr.readLine(); // ADC bits, no longer configurable
+                fr.readLine(); // save channels, no longer configurable
+                fr.readLine(); // load channels, no longer configurable
+                int tempCompression = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 64);
+                int tempWindow = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 200);                 //windows search size
+                float tempThreshold = Float.parseFloat(fr.readLine());
+                tempThreshold = (float) Math.rint(Constants.MinMax(tempThreshold * 100, 0, 1000000)) / 100.0f;
+                float tempTolerance = Float.parseFloat(fr.readLine());
+                tempTolerance = (float) Math.rint(Constants.MinMax(tempTolerance * 100, 1, 5000)) / 100.0f;                     //tolerance
+                int tempOrder = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, Constants.ORDER_MAX);
+                int tempSensTableSize = Integer.parseInt(fr.readLine());
+                float[] tempEArray = new float[tempSensTableSize];
+                for (int i = 0; i < tempSensTableSize; i++) {
+                    tempEArray[i] = Float.parseFloat(fr.readLine());
+                    if (tempEArray[i] < 0) {
+                        ToastHelper.showToast(this, "Negative energy in sensitivity table");
+                        return;
+                    }
+                }
+                TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
+                for (int i = 0; i < tempSensTableSize; i++) {
+                    double sens = Double.parseDouble(fr.readLine());
+                    sensitivityTable.put(tempEArray[i], sens);
+                }
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putInt(Constants.CONFIG.CONF_SENSG, tempSensG);                        //Sensitivity
+                if (isV2) {                                                                      //Sensitivity for compensated DR
+                    editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, tempSensGCompensated);
+                }
+                editor.putInt(Constants.CONFIG.CONF_BACKGROUND, tempBack);                    //Background
+                editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, tempFast);                   //fast counts
+                editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, tempMedium);               //medium counts
+                editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, tempSlow);                   //slow counts
+                editor.putInt(Constants.CONFIG.CONF_MIN_POINTS, tempMin);                     //minimum front points
+                editor.putInt(Constants.CONFIG.CONF_MAX_POINTS, tempMax);                     //maximum front points
+                editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminator
+                editor.putInt(Constants.CONFIG.CONF_COMPRESSION, tempCompression);            //channel compression level
+                editor.putInt(Constants.SEARCH.PREF_WINDOW_SIZE, tempWindow);                 //windows search size
+                editor.putFloat(Constants.SEARCH.PREF_THRESHOLD, tempThreshold);              //threshold
+                editor.putFloat(Constants.SEARCH.PREF_TOLERANCE, tempTolerance);              //tolerance
+                editor.putInt(Constants.SEARCH.PREF_ORDER, tempOrder);                        //order size
+                editor.commit();
+                PrefHelper.setSensitivityTable(this, sensitivityTable);
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+                ToastHelper.showToast(this, getString(R.string.device_load_success));
             }
-            TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
-            for (int i = 0; i < tempSensTableSize; i++) {
-                double sens = Double.parseDouble(fr.readLine());
-                sensitivityTable.put(tempEArray[i], sens);
-            }
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putInt(Constants.CONFIG.CONF_SENSG, tempSensG);                        //Sensitivity
-            if (isV2) {                                                                      //Sensitivity for compensated DR
-                editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, tempSensGCompensated);
-            }
-            editor.putInt(Constants.CONFIG.CONF_BACKGROUND, tempBack);                    //Background
-            editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, tempFast);                   //fast counts
-            editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, tempMedium);               //medium counts
-            editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, tempSlow);                   //slow counts
-            editor.putInt(Constants.CONFIG.CONF_MIN_POINTS, tempMin);                     //minimum front points
-            editor.putInt(Constants.CONFIG.CONF_MAX_POINTS, tempMax);                     //maximum front points
-            editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminator
-            editor.putInt(Constants.CONFIG.CONF_COMPRESSION, tempCompression);            //channel compression level
-            editor.putInt(Constants.SEARCH.PREF_WINDOW_SIZE, tempWindow);                 //windows search size
-            editor.putFloat(Constants.SEARCH.PREF_THRESHOLD, tempThreshold);              //threshold
-            editor.putFloat(Constants.SEARCH.PREF_TOLERANCE, tempTolerance);              //tolerance
-            editor.putInt(Constants.SEARCH.PREF_ORDER, tempOrder);                        //order size
-            editor.commit();
-            PrefHelper.setSensitivityTable(this, sensitivityTable);
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
-            ToastHelper.showToast(this, getString(R.string.device_load_success));
         } catch (Exception e) {
             ToastHelper.showToast(this, getString(R.string.device_load_error));
         }

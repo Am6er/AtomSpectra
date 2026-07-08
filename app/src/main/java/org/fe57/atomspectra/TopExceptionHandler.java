@@ -73,11 +73,9 @@ public class TopExceptionHandler implements Thread.UncaughtExceptionHandler {
         }
 
         if (docStream != null) {
-            try {
-                BufferedWriter trace = new BufferedWriter(new OutputStreamWriter(docStream));
+            try (BufferedWriter trace = new BufferedWriter(new OutputStreamWriter(docStream))) {
                 trace.append(report);
-                trace.close();
-            } catch (IOException ioe) {
+            } catch (IOException ignored) {
                 // ...
             }
         }
