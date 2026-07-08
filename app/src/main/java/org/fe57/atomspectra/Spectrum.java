@@ -15,7 +15,7 @@ public class Spectrum {
     private long SpectrumTime;                    //total amount of time collected, NOT seconds, count of Constant.UPDATE_PERIOD
     private long SpectrumDate;                    //last spectrum update date
     private Calibration SpectrumCalibration;      //spectrum calibration
-    private String Comments;                      //full comment string to save if exists
+    private @NonNull String Comments = "";        //full comment string to save if exists
     private @NonNull String Suffix = "";          //suffix to added to comment
     private long GPSDate;                         //last GPS update time
     private double Latitude;
@@ -327,6 +327,7 @@ public class Spectrum {
         return SpectrumDate;
     }
 
+    @NonNull
     public String getComments() {
         return Comments;
     }
