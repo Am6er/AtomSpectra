@@ -49,11 +49,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
     private int histBinsMissing = Constants.NUM_HIST_POINTS;
-    public int cps = 0;
-    public int total_time = 0;
-    public int cpu_load = 0;
-    public long lost_impulses = 0;
-    public long total_impulse_length = 0;
+    private volatile int cps = 0;
+    private volatile int total_time = 0;
+    private volatile int cpu_load = 0;
+    private volatile long lost_impulses = 0;
+    private volatile long total_impulse_length = 0;
 
     private static final long SUPPRESSION_DURATION_MINUTES = 2;
     private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
@@ -263,6 +263,14 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         Init();
     }
 
+    private void resetTelemetry() {
+        cps = 0;
+        total_time = 0;
+        cpu_load = 0;
+        lost_impulses = 0;
+        total_impulse_length = 0;
+    }
+
     // clear histogram
     public void ClearHistogram() {
         if (Port == null || !Port.isOpen()) {
@@ -273,11 +281,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             histogram[i] = 0;
         }
 
-        cps = 0;
-        total_time = 0;
-        cpu_load = 0;
-        lost_impulses = 0;
-        total_impulse_length = 0;
         sendTextCommand("-rst", SERIAL_ID);
     }
 
@@ -567,6 +570,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                                 (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
                             Arrays.fill(histBinsReceived, false);
                             histBinsMissing = Constants.NUM_HIST_POINTS;
+                        }
+
+                        if (commandStr.equals("-rst") &&
+                                (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
+                            resetTelemetry();
                         }
 
                         if ((commandStr.equals("-sta") || commandStr.equals("-sto")) &&
