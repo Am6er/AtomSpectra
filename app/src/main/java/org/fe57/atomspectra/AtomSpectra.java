@@ -1925,7 +1925,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 }
 
                 boolean getInside = false;
-                if (AtomSpectraShapeView.isOutOfFrame(e1.getX())) {
+                if (mAtomSpectraShapeView.isOutOfFrame(e1.getX())) {
                     hideSeekChannel();
                 } else {
                     if ((AtomSpectraService.newCalibration.getPointsCount() < Constants.MAX_CALIBRATION_POINTS)) {
@@ -2008,9 +2008,9 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                         seekChannel.setVisibility(SeekBar.VISIBLE);
                         if (showPlusMinusButtons || (cursor_x < AtomSpectraService.getFirstChannel())) {
                             if (XCalibrated) {
-                                cursor_x = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraShapeView.X2scale(e1.getX()));
+                                cursor_x = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(mAtomSpectraShapeView.X2scale(e1.getX()));
                             } else {
-                                cursor_x = (int) StrictMath.rint(AtomSpectraShapeView.X2scale(e1.getX()));
+                                cursor_x = (int) StrictMath.rint(mAtomSpectraShapeView.X2scale(e1.getX()));
                             }
                         }
                         showPlusMinusButtons = true;
