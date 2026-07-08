@@ -49,11 +49,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
     private int histBinsMissing = Constants.NUM_HIST_POINTS;
-    private volatile int cps = 0;
-    private volatile int total_time = 0;
-    private volatile int cpu_load = 0;
-    private volatile long lost_impulses = 0;
-    private volatile long total_impulse_length = 0;
+    private int cps = 0;
+    private int total_time = 0;
+    private int cpu_load = 0;
+    private long lost_impulses = 0;
+    private long total_impulse_length = 0;
 
     private static final long SUPPRESSION_DURATION_MINUTES = 2;
     private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
@@ -272,13 +272,12 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     // clear histogram
+    // The histogram array is owned by the packet-processing thread; the actual
+    // zeroing happens on that thread when the device acknowledges "-rst" (see CODE_TEXT
+    // handler), so this method only issues the command and never touches the array.
     public void ClearHistogram() {
         if (Port == null || !Port.isOpen()) {
             return;
-        }
-
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
-            histogram[i] = 0;
         }
 
         sendTextCommand("-rst", SERIAL_ID);
@@ -572,8 +571,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             histBinsMissing = Constants.NUM_HIST_POINTS;
                         }
 
-                        if (commandStr.equals("-rst") &&
-                                (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
+                        if (commandStr.equals("-rst") && (COMMAND_RESULT_OK.equals(answer))) {
+                            Arrays.fill(histogram, 0);
                             resetTelemetry();
                         }
 
