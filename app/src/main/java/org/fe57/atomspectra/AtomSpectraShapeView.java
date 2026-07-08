@@ -1053,8 +1053,8 @@ public class AtomSpectraShapeView extends View {
 			double[] reversed = new double[size];
 			for (int i = 0; i < size; i++) {
 				double r = pulse_data[i];
-				if (reversed[i] > y_max) y_max = r;
-				if (reversed[i] < y_min) y_min = r;
+				if (r > y_max) y_max = r;
+				if (r < y_min) y_min = r;
 				reversed[(size - 1) - i] = r;
 			}
 
