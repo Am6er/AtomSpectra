@@ -30,7 +30,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
         Spectrum spectrum;
         Calibration exportCalibration;
         double[] coeffs;
-        int num_channels = Channels / channelCompression;
+        int num_channels;
         int count;
         try (OutputStreamWriter fw = docStream) {
             validateSaveState();
@@ -53,6 +53,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                 time_count = (int) (spectrum.getRealSpectrumTime());
                 dateBegin.add(Calendar.SECOND, -time_count);
                 tmp = spectrum.getDataArray();
+                num_channels = tmp.length / channelCompression;
                 calc_pulses = 0;
                 for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
                     for (int l = 0; l < channelCompression; l++) {
@@ -133,7 +134,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                 fw.append(String.format(Locale.US, "        <NumberOfSamples>%d</NumberOfSamples>\n", 0));
                 fw.append("        <Spectrum>\n");
 
-                for (int k = 0; k < Channels - channelCompression + 1; k += channelCompression) {
+                for (int k = 0; k < tmp.length - channelCompression + 1; k += channelCompression) {
                     calc_pulses = 0;
                     for (int l = 0; l < channelCompression; l++)
                         calc_pulses += tmp[k + l];
@@ -146,6 +147,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                 if (backgroundSpectrum != null && (!backgroundSpectrum.isEmpty())) {
                     time_count = (int) (backgroundSpectrum.getRealSpectrumTime());
                     tmp = backgroundSpectrum.getDataArray();
+                    num_channels = tmp.length / channelCompression;
                     calc_pulses = 0;
                     for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
                         for (int l = 0; l < channelCompression; l++) {
@@ -179,7 +181,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                     fw.append(String.format(Locale.US, "        <NumberOfSamples>%d</NumberOfSamples>\n", 0));
                     fw.append("        <Spectrum>\n");
 
-                    for (int k = 0; k < Channels - channelCompression + 1; k += channelCompression) {
+                    for (int k = 0; k < tmp.length - channelCompression + 1; k += channelCompression) {
                         calc_pulses = 0;
                         for (int l = 0; l < channelCompression; l++)
                             calc_pulses += tmp[k + l];

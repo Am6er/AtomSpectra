@@ -161,8 +161,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private SharedPreferences sharedPreferences = null;
 
     public static int reducedTo;
-    public static int saveChannels;
-    public static int loadChannels;
     public static int channelCompression;
 
     private TextView statusLineTopText, statusLineMiddleText, statusLineBottomText;
@@ -3586,7 +3584,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Log.d(TAG, filename);
 
         SpectrumFileAS spectrumFile = new SpectrumFileAS();
-        spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
         try {
             spectrumFile.loadSpectrum(histFile, this);
             Spectrum spectrum = spectrumFile.getSpectrum(0);
@@ -3631,7 +3628,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Log.d(TAG, filename);
 
         SpectrumFileAS spectrumFile = new SpectrumFileAS();
-        spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
         try {
             spectrumFile.loadSpectrum(histFile, this);
             Spectrum spectrum = spectrumFile.getSpectrum(0);
@@ -3698,7 +3694,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         Log.d(TAG, filename);
 
         SpectrumFileAS spectrumFile = new SpectrumFileAS();
-        spectrumFile.setChannels(Constants.NUM_HIST_POINTS);
         AtomSpectraSpectrogramData.instance.clear();
 
         loadingSpectrogramCancellationToken = new CancellationToken();
@@ -3747,7 +3742,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.addSpectrum(spectrum)
-                    .setChannels(spectrum.getDataArray().length)
                     .setChannelCompression(1);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             AtomSpectraService.ForegroundSpectrum.setChanged(false);
@@ -3865,7 +3859,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.
                     addSpectrum(spectrum).
-                    setChannels(spectrum.getDataArray().length).
                     setChannelCompression(1);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.background_save_success));
@@ -3890,7 +3883,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileCSV saveFile = new SpectrumFileCSV();
             saveFile.
                     addSpectrum(spectrum).
-                    setChannels(saveChannels).
                     setChannelCompression(channelCompression);
             saveFile.setAddEnergy(with_energy);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
@@ -3918,7 +3910,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileBqMoni saveFile = new SpectrumFileBqMoni();
             saveFile.addSpectrum(spectrum)
                     .setBackgroundSpectrum(backSpectrum)
-                    .setChannels(saveChannels)
                     .setChannelCompression(channelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
@@ -3941,7 +3932,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
             SpectrumFileSPE saveFile = new SpectrumFileSPE();
             saveFile.addSpectrum(spectrum)
-                    .setChannels(saveChannels)
                     .setChannelCompression(channelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
@@ -3968,7 +3958,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileN42 saveFile = new SpectrumFileN42();
             saveFile.addSpectrum(spectrum)
                     .setBackgroundSpectrum(backSpectrum)
-                    .setChannels(saveChannels)
                     .setChannelCompression(channelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
