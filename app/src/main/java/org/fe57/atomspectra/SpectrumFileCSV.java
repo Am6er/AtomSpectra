@@ -33,41 +33,41 @@ public class SpectrumFileCSV extends SpectrumFile {
 
     @Override
     public void saveSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream, Context context) throws IOException {
-        validateSaveState();
+        try (OutputStreamWriter fw = docStream) {
+            validateSaveState();
 
-        Spectrum spectrum = spectrumList.get(0);
-        final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
-        OutputStreamWriter fw = docStream;
-        int calc_pulses;
-        int num_channels = Channels / channelCompression;
-        long[] tmp = spectrum.getDataArray();
-        fw.append(String.format(Locale.US, "\"Comments:\";\"%s\"\n", spectrum.getComments()));                                                                                          //version 2
-        fw.append(String.format(Locale.US, "\"Date:\";\"%s\"\n", dateZoneFormat.format(new Date(spectrum.getSpectrumDate()))));                                                         //version 2
-        fw.append(String.format(Locale.US, "\"GPS date:\";\"%s\"\n", dateZoneFormat.format(new Date(spectrum.getGPSDate()))));                                                          //version 2
-        fw.append(String.format(Locale.US, "\"Latitude:\";\"%s\"\n", GPSLocator.getFormattedLatitude(spectrum.getLatitude()).replaceAll("\"", "\"\"")));              //version 2
-        fw.append(String.format(Locale.US, "\"Longitude:\";\"%s\"\n", GPSLocator.getFormattedLongitude(spectrum.getLongitude()).replaceAll("\"", "\"\"")));           //version 2
+            Spectrum spectrum = spectrumList.get(0);
+            final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
+            int calc_pulses;
+            int num_channels = Channels / channelCompression;
+            long[] tmp = spectrum.getDataArray();
+            fw.append(String.format(Locale.US, "\"Comments:\";\"%s\"\n", spectrum.getComments()));                                                                                          //version 2
+            fw.append(String.format(Locale.US, "\"Date:\";\"%s\"\n", dateZoneFormat.format(new Date(spectrum.getSpectrumDate()))));                                                         //version 2
+            fw.append(String.format(Locale.US, "\"GPS date:\";\"%s\"\n", dateZoneFormat.format(new Date(spectrum.getGPSDate()))));                                                          //version 2
+            fw.append(String.format(Locale.US, "\"Latitude:\";\"%s\"\n", GPSLocator.getFormattedLatitude(spectrum.getLatitude()).replaceAll("\"", "\"\"")));              //version 2
+            fw.append(String.format(Locale.US, "\"Longitude:\";\"%s\"\n", GPSLocator.getFormattedLongitude(spectrum.getLongitude()).replaceAll("\"", "\"\"")));           //version 2
 
-        if (addEnergy) {
-            fw.append("\"Channel\";\"Energy\";\"Counts\"\n");
-            for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
-                fw.append(String.format(Locale.US, "%5d;", k / channelCompression));
-                fw.append(String.format(Locale.US, "%8.3f;", spectrum.getSpectrumCalibration().toEnergy(k)));
-                calc_pulses = 0;
-                for (int l = 0; l < channelCompression; l++)
-                    calc_pulses += tmp[k + l];
-                fw.append(String.format(Locale.US, "%10d\n", calc_pulses));
-            }
-        } else {
-            fw.append("\"Channel\";\"Counts\"\n");
-            for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
-                fw.append(String.format(Locale.US, "%5d;", k / channelCompression));
-                calc_pulses = 0;
-                for (int l = 0; l < channelCompression; l++)
-                    calc_pulses += tmp[k + l];
-                fw.append(String.format(Locale.US, "%10d\n", calc_pulses));
+            if (addEnergy) {
+                fw.append("\"Channel\";\"Energy\";\"Counts\"\n");
+                for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
+                    fw.append(String.format(Locale.US, "%5d;", k / channelCompression));
+                    fw.append(String.format(Locale.US, "%8.3f;", spectrum.getSpectrumCalibration().toEnergy(k)));
+                    calc_pulses = 0;
+                    for (int l = 0; l < channelCompression; l++)
+                        calc_pulses += tmp[k + l];
+                    fw.append(String.format(Locale.US, "%10d\n", calc_pulses));
+                }
+            } else {
+                fw.append("\"Channel\";\"Counts\"\n");
+                for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
+                    fw.append(String.format(Locale.US, "%5d;", k / channelCompression));
+                    calc_pulses = 0;
+                    for (int l = 0; l < channelCompression; l++)
+                        calc_pulses += tmp[k + l];
+                    fw.append(String.format(Locale.US, "%10d\n", calc_pulses));
+                }
             }
         }
-        fw.close();
     }
 
     private void validateSaveState() throws IllegalStateException {

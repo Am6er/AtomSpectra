@@ -46,6 +46,8 @@ import androidx.core.content.PermissionChecker;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.util.Pair;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -2930,13 +2932,17 @@ public class AtomSpectraService extends Service {
         deltaSpectrum.updateComments();
         spgAutosaveSpectrum = foregroundSpectrumCopy;
 
-        OutputStreamWriter docStream;
-        try {
-            docStream = new OutputStreamWriter(service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa"));
+        try {        
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.addSpectrum(deltaSpectrum)
                     .setChannels(deltaSpectrum.getDataArray().length)
                     .setChannelCompression(1);
+
+            OutputStream out = service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa");
+            if (out == null) {
+                throw new IOException("Unable to open spectrogram file for append: " + spgAutosaveFilePath);
+            }
+            OutputStreamWriter docStream = new OutputStreamWriter(out);
             saveFile.saveDeltaSpectrumAndCloseStream(docStream);
         } catch (Exception e) {
             this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_SHORT);

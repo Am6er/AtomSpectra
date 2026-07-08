@@ -22,20 +22,18 @@ public class SpectrumFileAS extends SpectrumFile {
         validateLoadState();
 
         InputStream inputFile = context.getContentResolver().openInputStream(spectrumFilePath);
-        BufferedReader fr = new BufferedReader(new InputStreamReader(inputFile));
-        try {
+        if (inputFile == null) {
+            throw new IOException("Unable to open spectrum file: " + spectrumFilePath);
+        }
+        try (InputStream in = inputFile;
+             BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
             String version = fr.readLine();
             if (!version.matches("^[+-]?\\d+(\\.(\\d+)?)?$")) {
                 loadSpectrumV3(fr, version);
             } else {
                 loadSpectrumV1(fr, version);
             }
-        } catch (InvalidParameterException e) {
-            fr.close();
-            throw e;
         }
-
-        fr.close();
     }
 
     // old spectrum data
@@ -289,42 +287,45 @@ public class SpectrumFileAS extends SpectrumFile {
 
     @Override
     public void saveSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream, Context context) throws IOException, IllegalStateException {
-        validateSaveState();
-        Spectrum spectrum = spectrumList.get(0);
-        OutputStreamWriter fw = docStream;
-        long[] tmp = spectrum.getDataArray();
-        double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+        try (OutputStreamWriter fw = docStream) {
+            validateSaveState();
+            Spectrum spectrum = spectrumList.get(0);
+            long[] tmp = spectrum.getDataArray();
+            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
 
-        fw.append("FORMAT: 3\n");
-        fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));                           //version 2
-        if (spectrum.getSpectrumDate() == 0) {
-            fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));                         //version 2
-        } else {
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));                   //version 2
+            fw.append("FORMAT: 3\n");
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));                           //version 2
+            if (spectrum.getSpectrumDate() == 0) {
+                fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));                         //version 2
+            } else {
+                fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));                   //version 2
+            }
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getGPSDate()));                            //version 2
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));                           //version 2
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));                          //version 2
+            fw.append(spectrum.getSuffix()).append("\n");                                                         //version 3
+            fw.append(spectrum.getDeviceInfo()).append("\n");                                                    //version 3
+            fw.append(String.format(Locale.US, "%f\n", time));
+            fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
+            fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
+            for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
+                fw.append(String.format(Locale.US, "%.12g\n", coeff));
+            }
+            for (long l : tmp) {
+                fw.append(String.format(Locale.US, "%d\n", l));
+            }
         }
-        fw.append(String.format(Locale.US, "%s\n", spectrum.getGPSDate()));                            //version 2
-        fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));                           //version 2
-        fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));                          //version 2
-        fw.append(spectrum.getSuffix()).append("\n");                                                         //version 3
-        fw.append(spectrum.getDeviceInfo()).append("\n");                                                    //version 3
-        fw.append(String.format(Locale.US, "%f\n", time));
-        fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
-        fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
-        for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
-            fw.append(String.format(Locale.US, "%.12g\n", coeff));
-        }
-        for (long l : tmp) {
-            fw.append(String.format(Locale.US, "%d\n", l));
-        }
-        fw.close();
     }
 
     public void loadSpectrogram(@NonNull Uri spectrogramFilePath, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) throws InvalidParameterException, IOException {
         validateLoadState();
 
         InputStream histFile = context.getContentResolver().openInputStream(spectrogramFilePath);
-        BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
-        try {
+        if (histFile == null) {
+            throw new IOException("Unable to open spectrogram file: " + spectrogramFilePath);
+        }
+        try (InputStream in = histFile;
+             BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
             String versionStr = fr.readLine();
             loadSpectrumV3(fr, versionStr);
             target.clear();
@@ -350,9 +351,6 @@ public class SpectrumFileAS extends SpectrumFile {
                     onDeltasLoaded.accept(target.rowCount());
                 }
             }
-        } catch (InvalidParameterException e) {
-            fr.close();
-            throw e;
         }
     }
 
@@ -364,17 +362,23 @@ public class SpectrumFileAS extends SpectrumFile {
         }
 
         InputStream histFile = context.getContentResolver().openInputStream(spectrogramFilePath);
-        BufferedReader fr = new BufferedReader(new InputStreamReader(histFile));
-        try {
+        if (histFile == null) {
+            throw new IOException("Unable to open spectrogram file: " + spectrogramFilePath);
+        }
+
+        Spectrum baseSpectrum;
+        long[] combinedSpectrum = new long[Constants.NUM_HIST_POINTS];
+        double combinedDuration = 0;
+        long lastDeltaDate = 0;
+
+        try (InputStream in = histFile;
+             BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
             // load base spectrum
             String versionStr = fr.readLine();
             onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_loading_base, spectrumName));
             loadSpectrumV3(fr, versionStr);
-            Spectrum baseSpectrum = this.spectrumList.get(0);
+            baseSpectrum = this.spectrumList.get(0);
             // TODO: validate channel count
-            long[] combinedSpectrum = new long[Constants.NUM_HIST_POINTS];
-            double combinedDuration = 0;
-            long lastDeltaDate = 0;
             int deltaIndex = 0;
             // load deltas
             onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas, spectrumName));
@@ -415,61 +419,57 @@ public class SpectrumFileAS extends SpectrumFile {
 
                 deltaIndex++;
             }
-            fr.close();
-
-            if (!cancellationToken.isCancelled()) {
-                onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_saving_spectrum, spectrumName));
-                Spectrum spectrumToSave = new Spectrum(baseSpectrum);
-                spectrumToSave.setRealSpectrumTime(combinedDuration);
-                spectrumToSave.setSuffix(spectrumName);
-                spectrumToSave.setLocation(0, 0, 0);
-                spectrumToSave.setSpectrumDate(lastDeltaDate);
-                spectrumToSave.setSpectrumOnly(combinedSpectrum);
-                spectrumToSave.updateComments();
-
-                Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(context, context.getString(R.string.file_atomspectra_spectrum_prefix), 0, spectrumName, ".txt", "text/plain", false);
-                OutputStreamWriter docStream = streamInfo.first;
-                String spectrumFileName = streamInfo.second.getPath();
-
-                SpectrumFileAS saveFile = new SpectrumFileAS();
-                saveFile.addSpectrum(spectrumToSave)
-                        .setChannels(spectrumToSave.getDataArray().length)
-                        .setChannelCompression(1);
-                saveFile.saveSpectrumAndCloseStream(docStream, context);
-
-                return spectrumFileName;
-            }
-
-            return null;
-        } catch (InvalidParameterException e) {
-            fr.close();
-            throw e;
         }
+
+        if (cancellationToken.isCancelled()) {
+            return null;
+        }
+
+        onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_saving_spectrum, spectrumName));
+        Spectrum spectrumToSave = new Spectrum(baseSpectrum);
+        spectrumToSave.setRealSpectrumTime(combinedDuration);
+        spectrumToSave.setSuffix(spectrumName);
+        spectrumToSave.setLocation(0, 0, 0);
+        spectrumToSave.setSpectrumDate(lastDeltaDate);
+        spectrumToSave.setSpectrumOnly(combinedSpectrum);
+        spectrumToSave.updateComments();
+
+        Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(context, context.getString(R.string.file_atomspectra_spectrum_prefix), 0, spectrumName, ".txt", "text/plain", false);
+        OutputStreamWriter docStream = streamInfo.first;
+        String spectrumFileName = streamInfo.second.getPath();
+
+        SpectrumFileAS saveFile = new SpectrumFileAS();
+        saveFile.addSpectrum(spectrumToSave)
+                .setChannels(spectrumToSave.getDataArray().length)
+                .setChannelCompression(1);
+        saveFile.saveSpectrumAndCloseStream(docStream, context);
+
+        return spectrumFileName;
     }
 
     public void saveDeltaSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream) throws IOException {
-        validateSaveState();
+        try (OutputStreamWriter fw = docStream) {
+            validateSaveState();
 
-        Spectrum spectrum = spectrumList.get(0);
-        OutputStreamWriter fw = docStream;
-        long[] tmp = spectrum.getDataArray();
-        double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+            Spectrum spectrum = spectrumList.get(0);
+            long[] tmp = spectrum.getDataArray();
+            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
 
-        if (spectrum.getSpectrumDate() == 0) {
-            fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));
-        } else {
-            fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));
+            if (spectrum.getSpectrumDate() == 0) {
+                fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));
+            } else {
+                fw.append(String.format(Locale.US, "%s\n", spectrum.getSpectrumDate()));
+            }
+
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));
+            fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));
+            fw.append(String.format(Locale.US, "%f\n", time));
+
+            for (long l : tmp) {
+                fw.append(String.format(Locale.US, "%d\t", l));
+            }
+            fw.append("\n");
         }
-
-        fw.append(String.format(Locale.US, "%s\n", spectrum.getLatitude()));
-        fw.append(String.format(Locale.US, "%s\n", spectrum.getLongitude()));
-        fw.append(String.format(Locale.US, "%f\n", time));
-
-        for (long l : tmp) {
-            fw.append(String.format(Locale.US, "%d\t", l));
-        }
-        fw.append("\n");
-        fw.close();
     }
 
     private SpectrumDelta readNextDelta(BufferedReader buffer, int channelBinning) throws InvalidParameterException, IOException {

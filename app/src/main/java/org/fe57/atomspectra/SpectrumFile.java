@@ -14,6 +14,7 @@ import androidx.documentfile.provider.DocumentFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
@@ -151,8 +152,12 @@ public abstract class SpectrumFile {
             if (spectrumFile == null) {
                 throw new IllegalStateException(context.getString(R.string.error_unable_to_create_file, fileName));
             }
+            OutputStream out = context.getContentResolver().openOutputStream(spectrumFile.getUri());
+            if (out == null) {
+                throw new IllegalStateException(context.getString(R.string.error_unable_to_create_file_ex, fileName, "null output stream"));
+            }
             try {
-                docStream = new OutputStreamWriter(context.getContentResolver().openOutputStream(spectrumFile.getUri()));
+                docStream = new OutputStreamWriter(out);
             } catch (Exception e) {
                 throw new IllegalStateException(context.getString(R.string.error_unable_to_create_file_ex, fileName, e.getMessage()));
             }
