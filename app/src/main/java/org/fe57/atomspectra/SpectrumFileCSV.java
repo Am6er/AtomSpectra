@@ -50,21 +50,21 @@ public class SpectrumFileCSV extends SpectrumFile {
         if (addEnergy) {
             fw.append("\"Channel\";\"Energy\";\"Counts\"\n");
             for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
-                fw.append(String.format(Locale.getDefault(), "%5d;", k / channelCompression));
-                fw.append(String.format(Locale.getDefault(), "%8.3f;", spectrum.getSpectrumCalibration().toEnergy(k)));
+                fw.append(String.format(Locale.US, "%5d;", k / channelCompression));
+                fw.append(String.format(Locale.US, "%8.3f;", spectrum.getSpectrumCalibration().toEnergy(k)));
                 calc_pulses = 0;
                 for (int l = 0; l < channelCompression; l++)
                     calc_pulses += tmp[k + l];
-                fw.append(String.format(Locale.getDefault(), "%10d\n", calc_pulses));
+                fw.append(String.format(Locale.US, "%10d\n", calc_pulses));
             }
         } else {
             fw.append("\"Channel\";\"Counts\"\n");
             for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
-                fw.append(String.format(Locale.getDefault(), "%5d;", k / channelCompression));
+                fw.append(String.format(Locale.US, "%5d;", k / channelCompression));
                 calc_pulses = 0;
                 for (int l = 0; l < channelCompression; l++)
                     calc_pulses += tmp[k + l];
-                fw.append(String.format(Locale.getDefault(), "%10d\n", calc_pulses));
+                fw.append(String.format(Locale.US, "%10d\n", calc_pulses));
             }
         }
         fw.close();
