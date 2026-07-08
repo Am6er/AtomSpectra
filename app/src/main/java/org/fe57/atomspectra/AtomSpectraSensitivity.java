@@ -273,7 +273,7 @@ public class AtomSpectraSensitivity extends Activity {
         btnEditlayoutParams.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
         btnEditRow.setLayoutParams(btnEditlayoutParams);
         btnEditRow.setText(R.string.sensitivity_edit_row);
-        btnEditRow.setId(getDelRowBtnId(rowIndex));
+        btnEditRow.setId(getEditRowBtnId(rowIndex));
         btnEditRow.setEnabled(!isUpperBoundRow);
         btnEditRow.setTextSize(16);
         btnEditRow.setOnClickListener(this::onEditButton);
@@ -283,7 +283,7 @@ public class AtomSpectraSensitivity extends Activity {
         btnRemovelayoutParams.setMargins(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
         btnRemoveRow.setLayoutParams(btnRemovelayoutParams);
         btnRemoveRow.setText(R.string.sensitivity_remove_row);
-        btnRemoveRow.setId(getEditRowBtnId(rowIndex));
+        btnRemoveRow.setId(getDelRowBtnId(rowIndex));
         btnRemoveRow.setEnabled(!isUpperBoundRow && sensitivityTable.size() > 1);
         btnRemoveRow.setTextSize(16);
         btnRemoveRow.setOnClickListener(this::onRemoveButton);
