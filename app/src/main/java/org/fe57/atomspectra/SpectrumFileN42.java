@@ -49,7 +49,7 @@ public class SpectrumFileN42 extends SpectrumFile {
         fw.append("    </RadInstrumentVersion>\n");
         fw.append("    <RadInstrumentVersion>\n");
         fw.append("      <RadInstrumentComponentName>Software</RadInstrumentComponentName>\n");
-        fw.append("      <RadInstrumentComponentVersion>").append(context.getApplicationContext().getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName).append("</RadInstrumentComponentVersion>\n");
+        fw.append("      <RadInstrumentComponentVersion>").append(xmlEscape(context.getApplicationContext().getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName)).append("</RadInstrumentComponentVersion>\n");
         fw.append("    </RadInstrumentVersion>\n");
         fw.append("  </RadInstrumentInformation>\n");
 
