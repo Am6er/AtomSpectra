@@ -150,7 +150,7 @@
     <string name="max_factor">Макс. степень: 1</string>
     <string name="smoothness">Сглаживание: 1</string>
     <string name="delta_spectrum">Дельта-время: 1 с</string>
-    <string name="channel_compression">Сжатие каналов: 1</string>
+    <string name="channel_compression">Сжатие каналов (экспорт): 1</string>
     <string name="isotopes">Atom Spectra Изотопы</string>
     <string name="isotopes_get">Показать изотопы</string>
     <string name="select_isotopes">Ряды распада:</string>
@@ -204,7 +204,7 @@
     <string name="max_factor_format">Макс. степень: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Сглаживание: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="spectrum_change_delta_duration_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
-    <string name="channel_compression_format">Сжатие каналов: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="channel_compression_format">Сжатие каналов (экспорт): <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
     <string name="delta_time_format">время: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> с</string>
     <string name="dose_rate_interval_prefix">инт.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
@@ -780,7 +780,7 @@
         \tФайлы:\n
         \t- <annotation foreground="parameter">Рабочая директория:</annotation> - выбрать конечный каталог для всех файлов. Если он отображает <u>...</u> на Android 8 и выше, там Вам будет задан вопрос о выборе месте сохранения. Или Вы можете нажать на <u>...</u> (или на отображаемое имя) для выбора вручную места сохранения. На Android до 8 данный параметр нельзя сменить. Если он всё ещё показывает <u>...</u>, пожалуйста создайте папку <u>AtomSpectra</u> в корне первого накопителя (обычно накопителя телефона) самостоятельно и перезапустите программу.\n
         \t- <annotation foreground="parameter">Добавить координаты GPS в файлы</annotation> - добавить информацию GPS в выходные файлы (спектр, фон, спектрограмма и .csv).\n
-        \t- <annotation foreground="parameter">Сжатие каналов</annotation> - уменьшить количество экспортируемых каналов путём объединения нескольких каналов в один.\n
+        \t- <annotation foreground="parameter">Сжатие каналов (экспорт)</annotation> - уменьшить количество экспортируемых каналов путём объединения нескольких каналов в один.\n
         \t- <annotation foreground="parameter">Имя</annotation> - именование выходных файлов. Префикс - тип файла, дата - дата записи, время - время записи, суффикс - пользовательский текст.\n
         \n
         \tПрочее:\n
