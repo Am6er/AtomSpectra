@@ -370,9 +370,8 @@ public class Spectrum {
         return DeviceInfo;
     }
 
-    private final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
-
     private String prepareCommentString(Date date, long counts, double cps, double time, long gpsTime, double latitude, double longitude, String deviceInfo) {
+        SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
         String res = "";
         if (date != null)
             res += dateZoneFormat.format(date) + " ";
