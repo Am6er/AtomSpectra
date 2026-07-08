@@ -23,7 +23,7 @@ public class LocaleContextWrapper extends ContextWrapper {
         } else {
             sysLocale = getSystemLocaleLegacy(config);
         }
-        if (!language.isEmpty() && !sysLocale.getLanguage().equals(language)) {
+        if (language != null && !language.isEmpty() && !sysLocale.getLanguage().equals(language)) {
             Locale locale = new Locale(language);
             Locale.setDefault(locale);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
