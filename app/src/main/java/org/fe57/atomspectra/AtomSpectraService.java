@@ -2918,26 +2918,23 @@ public class AtomSpectraService extends Service {
     }
 
     private void appendDeltaToSpectrogram(Spectrum foregroundSpectrumCopy) {
-        Spectrum deltaSpectrum = new Spectrum(foregroundSpectrumCopy).convertToDeltaSpectrum(spgAutosaveSpectrum);
+        try {
+            Spectrum deltaSpectrum = new Spectrum(foregroundSpectrumCopy).convertToDeltaSpectrum(spgAutosaveSpectrum);
+            spgAutosaveSpectrum = foregroundSpectrumCopy;
 
-        if (deltaSpectrum == null) {
-            // TODO: localize
-            showToastInMainLooper("Unexpected: delta spectrum is null", Toast.LENGTH_SHORT);
-            return;
-        }
+            // store to memory
+            AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
+            notifySpectrogramUpdated();
 
-        if (!addGPS) {
-            deltaSpectrum.setLocation(null);
-        }
-        deltaSpectrum.updateComments();
-        spgAutosaveSpectrum = foregroundSpectrumCopy;
-
-        try {        
+            // store to file system
+            if (!addGPS) {
+                deltaSpectrum.setLocation(null);
+            }
+            deltaSpectrum.updateComments();
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.addSpectrum(deltaSpectrum)
                     .setChannels(deltaSpectrum.getDataArray().length)
                     .setChannelCompression(1);
-
             OutputStream out = service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa");
             if (out == null) {
                 throw new IOException("Unable to open spectrogram file for append: " + spgAutosaveFilePath);
@@ -2948,9 +2945,6 @@ public class AtomSpectraService extends Service {
             this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_SHORT);
             AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
         }
-
-        AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
-        notifySpectrogramUpdated();
     }
 
     private void completeSpectrogramRecording() {
