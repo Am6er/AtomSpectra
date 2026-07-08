@@ -1,7 +1,7 @@
 package org.fe57.atomspectra;
 
 public class CancellationToken {
-    private boolean isCancelled = false;
+    private volatile boolean isCancelled = false;
 
     public void cancel() {
         isCancelled = true;
