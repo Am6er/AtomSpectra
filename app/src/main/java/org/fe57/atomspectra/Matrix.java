@@ -41,11 +41,12 @@ public class Matrix {
         //calculate the inverse matrix
         //forward steps
         double reduce;
+        final double EPSILON = 1e-10;
         for (int i = 0; i < array_size; i++) {
-            if (A[i][i] == 0) {
+            if (Math.abs(A[i][i]) < EPSILON) {
                 int non_zero = -1;
                 for (int j = i + 1; j < array_size; j++) {
-                    if (A[j][i] != 0.0) {
+                    if (Math.abs(A[j][i]) >= EPSILON) {
                         non_zero = j;
                         break;
                     }
