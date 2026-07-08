@@ -249,10 +249,10 @@ public class GPSLocator implements LocationListener {
     public String getFormattedLongitude () {
         double longitude = location != null ? location.getLongitude() : 0;
         try {
-            int longSeconds = (int) Math.round(getLongitude() * 3600000);
-            int longDegrees = longSeconds / 3600000;
+            long longSeconds = Math.round(getLongitude() * 3600000);
+            long longDegrees = longSeconds / 3600000;
             longSeconds = Math.abs(longSeconds % 3600000);
-            int longMinutes = longSeconds / 60000;
+            long longMinutes = longSeconds / 60000;
             longSeconds %= 60000;
             String longDegree = longDegrees >= 0 ? "E" : "W";
 
@@ -264,10 +264,10 @@ public class GPSLocator implements LocationListener {
 
     public static String getFormattedLongitude (double longitude) {
         try {
-            int longSeconds = (int) Math.round(longitude * 3600000);
-            int longDegrees = longSeconds / 3600000;
+            long longSeconds = Math.round(longitude * 3600000);
+            long longDegrees = longSeconds / 3600000;
             longSeconds = Math.abs(longSeconds % 3600000);
-            int longMinutes = longSeconds / 60000;
+            long longMinutes = longSeconds / 60000;
             longSeconds %= 60000;
             String longDegree = longDegrees >= 0 ? "E" : "W";
 
