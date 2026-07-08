@@ -66,8 +66,8 @@ public class AtomSpectraShapeView extends View {
 
 	private String x_units = "";
 	private boolean x_is_calibrated = true;
-	private static float x_max_value = 1.0f;
-	private static float x_min_value = 0.0f;
+	private float x_max_value = 1.0f;
+	private float x_min_value = 0.0f;
 
 	private float cursor_X = -1;
 	public static int isotopeFound = -1;
@@ -91,11 +91,11 @@ public class AtomSpectraShapeView extends View {
 		super(context, attrs, defStyle);
 	}
 
-	public static double X2scale(double X) {
+	public double X2scale(double X) {
 		return (x_max_value - x_min_value) * (X - margin_left) / width + x_min_value;
 	}
 
-	public static boolean isOutOfFrame(float x) {
+	public boolean isOutOfFrame(float x) {
 		return (x < margin_left) || (x > (margin_left + width));
 	}
 
