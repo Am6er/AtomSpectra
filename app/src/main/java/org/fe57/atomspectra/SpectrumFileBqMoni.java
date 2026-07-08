@@ -154,7 +154,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                         calc_pulses += tmp[k + l];
                     }
                 }
-                exportCalibration = AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration();
+                exportCalibration = backgroundSpectrum.getSpectrumCalibration();
                 if (exportCalibration == null) {
                     fw.close();
                     throw new InvalidParameterException("Spectrum calibration is null");
