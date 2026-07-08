@@ -196,7 +196,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                 fw.append("      </PulseCollection>\n");
                 fw.append("    </ResultData>\n");
             }
-            
+
             fw.append("  </ResultDataList>\n");
             fw.append("</ResultDataFile>\n");
         }
