@@ -112,8 +112,10 @@ public class Spectrum {
 
     //add data from another spectrum to current
     public Spectrum addSpectrum(long[] data) {
-        if (DataArray.length != data.length)
-            return null;
+        if (DataArray.length != data.length) {
+            throw new IllegalArgumentException(
+                    "Data length mismatch: expected " + DataArray.length + ", got " + data.length);
+        }
         for(int i = 0; i < DataArray.length; i++)
             DataArray[i] += data[i];
         SpectrumDate = System.currentTimeMillis();
@@ -122,8 +124,10 @@ public class Spectrum {
     }
 
     public Spectrum addSpectrum(Spectrum spectrum) {
-        if (DataArray.length != spectrum.DataArray.length)
-            return null;
+        if (DataArray.length != spectrum.DataArray.length) {
+            throw new IllegalArgumentException(
+                    "Spectrum length mismatch: expected " + DataArray.length + ", got " + spectrum.DataArray.length);
+        }
         for(int i = 0; i < DataArray.length; i++)
             DataArray[i] += spectrum.DataArray[i];
         SpectrumTime += spectrum.SpectrumTime;
@@ -133,8 +137,10 @@ public class Spectrum {
     }
 
     public Spectrum convertToDeltaSpectrum(Spectrum baseSpectrum) {
-        if (DataArray.length != baseSpectrum.DataArray.length)
-            return null;
+        if (DataArray.length != baseSpectrum.DataArray.length) {
+            throw new IllegalArgumentException(
+                    "Spectrum length mismatch: expected " + DataArray.length + ", got " + baseSpectrum.DataArray.length);
+        }
 
         for (int i = 0; i < DataArray.length; i++) {
             DataArray[i] -= baseSpectrum.DataArray[i];
@@ -155,8 +161,10 @@ public class Spectrum {
 
     //add data from another spectrum to current without data update
     public Spectrum addSpectrumOnly(long[] data) {
-        if (DataArray.length != data.length)
-            return null;
+        if (DataArray.length != data.length) {
+            throw new IllegalArgumentException(
+                    "Data length mismatch: expected " + DataArray.length + ", got " + data.length);
+        }
         for(int i = 0; i < DataArray.length; i++)
             DataArray[i] += data[i];
         return this;
@@ -164,8 +172,10 @@ public class Spectrum {
 
     //add data from another spectrum to current without data update
     public Spectrum addSpectrumOnly(Spectrum spectrum) {
-        if (DataArray.length != spectrum.DataArray.length)
-            return null;
+        if (DataArray.length != spectrum.DataArray.length) {
+            throw new IllegalArgumentException(
+                    "Spectrum length mismatch: expected " + DataArray.length + ", got " + spectrum.DataArray.length);
+        }
         for(int i = 0; i < DataArray.length; i++)
             DataArray[i] += spectrum.DataArray[i];
         return this;
