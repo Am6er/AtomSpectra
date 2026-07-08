@@ -1,99 +1,35 @@
 package org.fe57.atomspectra;
 
 public class Matrix {
-    public double[][] array = null;
+    public final double[][] array;
 
-    //create non-matrix
-    public Matrix() {
-    }
-
-    //create matrix
     public Matrix(int rows, int cols) {
-        if (rows < 1 || cols < 1)
-            array = null;
+        if (rows < 1 || cols < 1) {
+            throw new IllegalArgumentException(
+                    "Matrix dimensions must be positive: rows=" + rows + ", cols=" + cols);
+        }
         array = new double[rows][cols];
     }
 
     public Matrix(Matrix matrix) {
-        if (matrix.array == null)
-            return;
         array = new double[matrix.array.length][matrix.array[0].length];
         for (int i = 0; i < array.length; i++)
             System.arraycopy(matrix.array[i], 0, array[i], 0, array[0].length);
     }
 
-    public boolean isEmpty() {
-        return array == null;
-    }
-
-    //Get identity matrix with ones at the main diagonal line
-    public static Matrix Identity(int rows, int cols) {
-        if (rows < 1 || cols < 1)
-            return new Matrix();
-        Matrix out = new Matrix(rows, cols);
-        for (int i = 0; i < Math.min(rows, cols); i++)
-            out.array[i][i] = 1.0;
-        return out;
-    }
-
-    //Get zero matrix
-    public static Matrix Zero(int rows, int cols) {
-        if (rows < 1 || cols < 1)
-            return new Matrix();
-        return new Matrix(rows, cols);
-    }
-
-    //C=this+other
-    public Matrix Add(Matrix other) {
-        if (array == null)
-            return new Matrix(0, 0);
-        if (array.length != other.array.length)
-            return new Matrix(0, 0);
-        if (array[0].length != other.array[0].length)
-            return new Matrix(0, 0);
-        Matrix tmp = new Matrix(this);
-        for (int i = 0; i < array.length; i++) {
-            for (int j = 0; j < array[0].length; j++)
-                tmp.array[i][j] += other.array[i][j];
-        }
-        return tmp;
-    }
-
-    //C=this-other
-    public Matrix Sub(Matrix other) {
-        if (array == null)
-            return new Matrix(0, 0);
-        if (array.length != other.array.length)
-            return new Matrix(0, 0);
-        if (array[0].length != other.array[0].length)
-            return new Matrix(0, 0);
-        Matrix tmp = new Matrix(this);
-        for (int i = 0; i < array.length; i++) {
-            for (int j = 0; j < array[0].length; j++)
-                tmp.array[i][j] -= other.array[i][j];
-        }
-        return tmp;
-    }
-
     //C=this^T
     public Matrix Transpose() {
-        if (array == null)
-            return new Matrix(0, 0);
-        double[][] tmp = new double[array[0].length][array.length];
+        Matrix out = new Matrix(array[0].length, array.length);
         for (int i = 0; i < array.length; i++)
             for (int j = 0; j < array[0].length; j++)
-                tmp[j][i] = array[i][j];
-        Matrix out = new Matrix();
-        out.array = tmp;
+                out.array[j][i] = array[i][j];
         return out;
     }
 
     //C=this^(-1)
     public Matrix Inverse() {
-        if (array == null)
-            return new Matrix(0, 0);
         if (array.length != array[0].length)
-            return new Matrix(0, 0);
+            throw new IllegalArgumentException("Matrix must be square to invert");
         //I'll use 2 matrices: (A|E) not combined together
         int array_size = array.length;
         double[][] A = new double[array_size][array_size];
@@ -114,10 +50,8 @@ public class Matrix {
                         break;
                     }
                 }
-                //I can't calculate the inverse matrix
-                if (non_zero == -1) {
-                    return new Matrix();
-                }
+                if (non_zero == -1)
+                    throw new ArithmeticException("Matrix is singular");
                 double swap;
                 //swap two lines
                 for (int j = 0; j < array_size; j++) {
@@ -155,20 +89,16 @@ public class Matrix {
                 }
             }
         }
-        //prepare output
-        Matrix out = new Matrix();
-        out.array = E;
+        Matrix out = new Matrix(array_size, array_size);
+        for (int i = 0; i < array_size; i++)
+            System.arraycopy(E[i], 0, out.array[i], 0, array_size);
         return out;
     }
 
     //C=this*matrix
     public Matrix Times(Matrix matrix) {
-        if (array == null)
-            return new Matrix(0, 0);
-        if (matrix.array == null)
-            return new Matrix(0, 0);
         if (array[0].length != matrix.array.length)
-            return new Matrix(0, 0);
+            throw new IllegalArgumentException("Incompatible matrix dimensions for multiplication");
 
         Matrix out = new Matrix(array.length, matrix.array[0].length);
         for (int i = 0; i < array.length; i++) {
