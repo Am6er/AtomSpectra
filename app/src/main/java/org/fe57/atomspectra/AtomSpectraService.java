@@ -2920,13 +2920,11 @@ public class AtomSpectraService extends Service {
     private void appendDeltaToSpectrogram(Spectrum foregroundSpectrumCopy) {
         try {
             Spectrum deltaSpectrum = new Spectrum(foregroundSpectrumCopy).convertToDeltaSpectrum(spgAutosaveSpectrum);
-            spgAutosaveSpectrum = foregroundSpectrumCopy;
 
-            // store to memory
-            AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
-            notifySpectrogramUpdated();
-
-            // store to file system
+            // Persist to the file system first. The in-memory spectrogram and the
+            // baseline are only advanced if the write succeeds, so a failed write
+            // leaves the baseline intact and the missed interval is folded into the
+            // next delta instead of being permanently lost from the file.
             if (!addGPS) {
                 deltaSpectrum.setLocation(null);
             }
@@ -2941,6 +2939,11 @@ public class AtomSpectraService extends Service {
             }
             OutputStreamWriter docStream = new OutputStreamWriter(out);
             saveFile.saveDeltaSpectrumAndCloseStream(docStream);
+
+            // Write succeeded: commit to memory and advance the baseline.
+            AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
+            notifySpectrogramUpdated();
+            spgAutosaveSpectrum = foregroundSpectrumCopy;
         } catch (Exception e) {
             this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_SHORT);
             AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
