@@ -198,10 +198,11 @@ public class SpectrumFileBqMoni extends SpectrumFile {
             fw.append("        <Pulses />\n");
             fw.append("      </PulseCollection>\n");
             fw.append("    </ResultData>\n");
-            fw.append("  </ResultDataList>\n");
-            fw.append("</ResultDataFile>\n");
-            fw.close();
         }
+        
+        fw.append("  </ResultDataList>\n");
+        fw.append("</ResultDataFile>\n");
+        fw.close();
     }
 
     private void validateSaveState() throws IllegalStateException {
