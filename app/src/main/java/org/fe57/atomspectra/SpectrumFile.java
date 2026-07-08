@@ -12,6 +12,7 @@ import androidx.core.util.Pair;
 import androidx.documentfile.provider.DocumentFile;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -67,7 +68,7 @@ public abstract class SpectrumFile {
         return spectrumList.get(id);
     }
 
-    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean removeExistingFile) {
+    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean removeExistingFile) throws FileNotFoundException {
         SharedPreferences sharedPreferences = PrefHelper.getASSharedPreferences(context);
         boolean addPrefixToFileName = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_PREFIX, Constants.OUTPUT_FILE_NAME_USE_PREFIX_DEFAULT);
         boolean addDateToFileName = sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_FILE_NAME_ADD_DATE, Constants.OUTPUT_FILE_NAME_ADD_DATE_DEFAULT);
@@ -76,7 +77,7 @@ public abstract class SpectrumFile {
         return prepareOutputFileStream(context, fileNamePrefix, fileNameDate, fileNameSuffix, extension, mimeType, addPrefixToFileName, addDateToFileName, addTimeToFileName, removeExistingFile);
     }
 
-    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, @NonNull String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean addPrefixToFileName, boolean addDateToFileName, boolean addTimeToFileName, boolean removeExistingFile) {
+    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, @NonNull String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean addPrefixToFileName, boolean addDateToFileName, boolean addTimeToFileName, boolean removeExistingFile) throws FileNotFoundException {
         SharedPreferences sharedPreferences = PrefHelper.getASSharedPreferences(context);
         String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
         if (workingDir == null) {
@@ -86,7 +87,7 @@ public abstract class SpectrumFile {
         return prepareOutputFileStream(context, workingDir, fileNamePrefix, fileNameDate, fileNameSuffix, extension, mimeType, addPrefixToFileName, addDateToFileName, addTimeToFileName, removeExistingFile);
     }
 
-    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, @NonNull String workingDir, @NonNull String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean addPrefixToFileName, boolean addDateToFileName, boolean addTimeToFileName, boolean removeExistingFile) {
+    public static Pair<OutputStreamWriter, Uri> prepareOutputFileStream(@NonNull Context context, @NonNull String workingDir, @NonNull String fileNamePrefix, long fileNameDate, String fileNameSuffix, @NonNull String extension, @NonNull String mimeType, boolean addPrefixToFileName, boolean addDateToFileName, boolean addTimeToFileName, boolean removeExistingFile) throws FileNotFoundException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH-mm-ss", Locale.US);
         // make file name from current date-time
