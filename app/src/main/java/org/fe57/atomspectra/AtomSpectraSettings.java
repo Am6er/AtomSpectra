@@ -154,7 +154,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         // --- files section
         updateWorkingDirText();
         setupEnableGPSCheckbox();
-        updateSpectrumChannelCompressionText();
+        updateExportChannelCompressionText();
         updateFilenamePatternText();
         // --- end files section
 
@@ -1256,14 +1256,14 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
 
     // export channel compression
-    private void updateSpectrumChannelCompressionText() {
+    private void updateExportChannelCompressionText() {
         TextView compressChannelsText = findViewById(R.id.compressChannelsText);
-        compressChannelsText.setText(getString(R.string.channel_compression_format, sp.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));
+        compressChannelsText.setText(getString(R.string.channel_compression_format, sp.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));
     }
 
     public void onClick_compression_minus(View v) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
+        int r = settings.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
 
         if (r > 2) {
             r = r / 2;
@@ -1271,12 +1271,12 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             r = 1;
         }
 
-        saveSpectrumChannelCompression(r);
+        saveExportChannelCompression(r);
     }
 
     public void onClick_compression_plus(View v) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
+        int r = settings.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
 
         if (r < 32) {
             r = r * 2;
@@ -1284,7 +1284,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             r = 64;
         }
 
-        saveSpectrumChannelCompression(r);
+        saveExportChannelCompression(r);
     }
 
     public void onClick_compression_channels(View v) {
@@ -1300,7 +1300,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
         alert.setPositiveButton("Ok", (dialog, whichButton) -> {
             SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-            int r = settings.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
+            int r = settings.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
             alert.setTitle("Channel compression " + r);
             String value = input.getText().toString();
             int intValue = r;
@@ -1310,7 +1310,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
                 System.out.println("Could not parse " + nfe);
             }
             intValue = StrictMath.max(1, StrictMath.min(64, intValue));
-            saveSpectrumChannelCompression(intValue);
+            saveExportChannelCompression(intValue);
         });
         alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
         });
@@ -1318,10 +1318,10 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         alert.show();
     }
 
-    private void saveSpectrumChannelCompression(int val) {
-        AtomSpectra.channelCompression = val;
-        saveIntPref(val, Constants.CONFIG.CONF_COMPRESSION);
-        updateSpectrumChannelCompressionText();
+    private void saveExportChannelCompression(int val) {
+        AtomSpectra.exportChannelCompression = val;
+        saveIntPref(val, Constants.CONFIG.CONF_EXPORT_COMPRESSION);
+        updateExportChannelCompressionText();
     }
 
     // filename pattern

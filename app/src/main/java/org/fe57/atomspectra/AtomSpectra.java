@@ -161,7 +161,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private SharedPreferences sharedPreferences = null;
 
     public static int reducedTo;
-    public static int channelCompression;
+    public static int exportChannelCompression;
 
     private TextView statusLineTopText, statusLineMiddleText, statusLineBottomText;
     private TextView briefNotification;
@@ -368,7 +368,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         reducedTo = sharedPreferences.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
-        channelCompression = sharedPreferences.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
+        exportChannelCompression = sharedPreferences.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT);
         searchFMSNames[0] = getString(R.string.mode_fast_button);
         searchFMSNames[1] = getString(R.string.mode_medium_button);
         searchFMSNames[2] = getString(R.string.mode_slow_button);
@@ -3883,7 +3883,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileCSV saveFile = new SpectrumFileCSV();
             saveFile.
                     addSpectrum(spectrum).
-                    setChannelCompression(channelCompression);
+                    setChannelCompression(exportChannelCompression);
             saveFile.setAddEnergy(with_energy);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
@@ -3910,7 +3910,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileBqMoni saveFile = new SpectrumFileBqMoni();
             saveFile.addSpectrum(spectrum)
                     .setBackgroundSpectrum(backSpectrum)
-                    .setChannelCompression(channelCompression);
+                    .setChannelCompression(exportChannelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
@@ -3932,7 +3932,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
             SpectrumFileSPE saveFile = new SpectrumFileSPE();
             saveFile.addSpectrum(spectrum)
-                    .setChannelCompression(channelCompression);
+                    .setChannelCompression(exportChannelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
@@ -3958,7 +3958,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             SpectrumFileN42 saveFile = new SpectrumFileN42();
             saveFile.addSpectrum(spectrum)
                     .setBackgroundSpectrum(backSpectrum)
-                    .setChannelCompression(channelCompression);
+                    .setChannelCompression(exportChannelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
@@ -4036,7 +4036,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 fw.append(String.format(Locale.US, "%d\n", Constants.ADC_EFF_BITS));              // NO LONGER CONFIGURABLE                                                //ADC bits
                 fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //save channels
                 fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //load channels
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));            //channel compression level
+                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));            //channel compression level
                 fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT)));                 //windows search size
                 fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
                 fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
@@ -4137,7 +4137,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 editor.putInt(Constants.CONFIG.CONF_MIN_POINTS, tempMin);                     //minimum front points
                 editor.putInt(Constants.CONFIG.CONF_MAX_POINTS, tempMax);                     //maximum front points
                 editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminator
-                editor.putInt(Constants.CONFIG.CONF_COMPRESSION, tempCompression);            //channel compression level
+                editor.putInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, tempCompression);            //channel compression level
                 editor.putInt(Constants.SEARCH.PREF_WINDOW_SIZE, tempWindow);                 //windows search size
                 editor.putFloat(Constants.SEARCH.PREF_THRESHOLD, tempThreshold);              //threshold
                 editor.putFloat(Constants.SEARCH.PREF_TOLERANCE, tempTolerance);              //tolerance

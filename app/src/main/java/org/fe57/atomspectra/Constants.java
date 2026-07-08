@@ -82,7 +82,7 @@ public class Constants {
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
-        String CONF_COMPRESSION = "Channel compression:";
+        String CONF_EXPORT_COMPRESSION = "Channel compression:";
         String CONF_MIN_POINTS = "Min front points:";
         String CONF_MAX_POINTS = "Max front points:";
         String CONF_NOISE = "Noise discriminator:";

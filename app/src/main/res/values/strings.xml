@@ -150,7 +150,7 @@
     <string name="max_factor">Maximum factor: 1</string>
     <string name="smoothness">Smoothness: 1</string>
     <string name="delta_spectrum">Diff time: 1 s</string>
-    <string name="channel_compression">Channel compression: 1</string>
+    <string name="channel_compression">Channel compression (export): 1</string>
     <string name="isotopes">Atom Spectra Isotopes</string>
     <string name="isotopes_get">Show Isotopes</string>
     <string name="select_isotopes">Decay chains:</string>
@@ -204,7 +204,7 @@
     <string name="max_factor_format">Maximum factor: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Smoothness: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="spectrum_change_delta_duration_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
-    <string name="channel_compression_format">Channel compression: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="channel_compression_format">Channel compression (export): <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
     <string name="delta_time_format">time: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
     <string name="dose_rate_interval_prefix">int.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
@@ -775,7 +775,7 @@
         \tFiles:\n
         \t- <annotation foreground="parameter">Working directory</annotation> - choose the destination directory for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create directory <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
         \t- <annotation foreground="parameter">Add GPS coordinates to files</annotation> - add GPS information to output files (spectrum, background and .csv).\n
-        \t- <annotation foreground="parameter">Channel compression</annotation> - reduce export channels quantity by combining set value of channels into one channel.\n
+        \t- <annotation foreground="parameter">Channel compression (export)</annotation> - reduce export channels quantity by combining set value of channels into one channel.\n
         \t- <annotation foreground="parameter">Name</annotation> -  the output files naming. Prefix - file type, date - recording date, time - recording time, suffix - custom text.\n
         \n
         \tMiscellaneous:\n
