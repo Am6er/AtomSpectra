@@ -60,13 +60,8 @@ public class SpectrumFileAS extends SpectrumFile {
             throw new InvalidParameterException(String.format("Unsupported polinom factor value: %d", poliFactor));
         }
         Calibration save_calibration = new Calibration();
-        int hist_compress;
-        if (Channels % Constants.NUM_HIST_POINTS == 0)
-            hist_compress = Channels / Constants.NUM_HIST_POINTS;
-        else
-            hist_compress = Channels / Constants.NUM_HIST_POINTS + 1;
-        if (hist_compress == 0)
-            hist_compress = 1;
+        // V1 files carry no channel count, so they are assumed to hold exactly NUM_HIST_POINTS channels.
+        int hist_compress = 1;
 
         double cal, cal_E;
         for (int i = 0; i <= poliFactor; i++) {
@@ -208,7 +203,7 @@ public class SpectrumFileAS extends SpectrumFile {
         }
 
         Calibration save_calibration = new Calibration();
-        int num_points = StrictMath.min(channelCount, Channels);
+        int num_points = StrictMath.min(channelCount, Constants.NUM_HIST_POINTS);
         int compactness = num_points / Constants.NUM_HIST_POINTS;
         if (num_points % Constants.NUM_HIST_POINTS != 0) {
             compactness++;
@@ -440,7 +435,6 @@ public class SpectrumFileAS extends SpectrumFile {
 
         SpectrumFileAS saveFile = new SpectrumFileAS();
         saveFile.addSpectrum(spectrumToSave)
-                .setChannels(spectrumToSave.getDataArray().length)
                 .setChannelCompression(1);
         saveFile.saveSpectrumAndCloseStream(docStream, context);
 

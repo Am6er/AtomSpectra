@@ -30,7 +30,6 @@ import java.util.Locale;
 public abstract class SpectrumFile {
     protected final ArrayList<Spectrum> spectrumList = new ArrayList<>();
     protected Spectrum backgroundSpectrum = null;
-    protected int Channels = Constants.NUM_HIST_POINTS; // how many channels need to save or load
     protected int channelCompression = 1;
     private static final String TAG = SpectrumFile.class.getSimpleName();
 
@@ -46,15 +45,6 @@ public abstract class SpectrumFile {
 
     public final int spectrumCount() {
         return spectrumList.size();
-    }
-
-    public final SpectrumFile setChannels(int channels) {
-        Channels = channels;
-        return this;
-    }
-
-    public final int getChannels() {
-        return Channels;
     }
 
     public final SpectrumFile setChannelCompression(int channelCompression) {

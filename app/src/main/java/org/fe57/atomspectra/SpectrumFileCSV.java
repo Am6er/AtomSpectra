@@ -39,8 +39,8 @@ public class SpectrumFileCSV extends SpectrumFile {
             Spectrum spectrum = spectrumList.get(0);
             final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
             int calc_pulses;
-            int num_channels = Channels / channelCompression;
             long[] tmp = spectrum.getDataArray();
+            int num_channels = tmp.length / channelCompression;
             fw.append(String.format(Locale.US, "\"Comments:\";\"%s\"\n", spectrum.getComments()));                                                                                          //version 2
             fw.append(String.format(Locale.US, "\"Date:\";\"%s\"\n", dateZoneFormat.format(new Date(spectrum.getSpectrumDate()))));                                                         //version 2
             fw.append(String.format(Locale.US, "\"GPS date:\";\"%s\"\n", dateZoneFormat.format(new Date(spectrum.getGPSDate()))));                                                          //version 2

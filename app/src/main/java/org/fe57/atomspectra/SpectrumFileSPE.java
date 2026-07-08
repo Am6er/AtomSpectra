@@ -37,7 +37,7 @@ public class SpectrumFileSPE extends SpectrumFile {
             long counts = 0;
             long calc_pulses;
             long[] tmp = spectrumList.get(0).getDataArray();
-            int num_channels = Channels / channelCompression;
+            int num_channels = tmp.length / channelCompression;
             for (int k = 0; k < num_channels * channelCompression; k += channelCompression) {
                 for (int l = 0; l < channelCompression; l++) {
                     counts += tmp[k + l];
@@ -72,7 +72,7 @@ public class SpectrumFileSPE extends SpectrumFile {
                     "$STATUS_OF_HEALTH:\n" +
                     "\n");
             fw.append(String.format(Locale.US, "$DATA:\n%d %d\n", 0, num_channels - 1));
-            for (int k = 0; k < Channels - channelCompression + 1; k += channelCompression) {
+            for (int k = 0; k < tmp.length - channelCompression + 1; k += channelCompression) {
                 calc_pulses = 0;
                 for (int l = 0; l < channelCompression; l++)
                     calc_pulses += tmp[k + l];

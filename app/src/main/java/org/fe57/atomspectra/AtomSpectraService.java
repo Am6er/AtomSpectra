@@ -2836,7 +2836,6 @@ public class AtomSpectraService extends Service {
 
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.addSpectrum(spectrum)
-                    .setChannels(spectrum.getDataArray().length)
                     .setChannelCompression(1)
                     .saveSpectrumAndCloseStream(docStream, this);
         } catch (Exception e) {
@@ -2893,7 +2892,6 @@ public class AtomSpectraService extends Service {
                     OutputStreamWriter docStream = spgAutosaveFileStreamInfo.first;
                     SpectrumFileAS saveFile = new SpectrumFileAS();
                     saveFile.addSpectrum(spgAutosaveSpectrum)
-                            .setChannels(spgAutosaveSpectrum.getDataArray().length)
                             .setChannelCompression(1)
                             .saveSpectrumAndCloseStream(docStream, this);
 
@@ -2931,7 +2929,6 @@ public class AtomSpectraService extends Service {
             deltaSpectrum.updateComments();
             SpectrumFileAS saveFile = new SpectrumFileAS();
             saveFile.addSpectrum(deltaSpectrum)
-                    .setChannels(deltaSpectrum.getDataArray().length)
                     .setChannelCompression(1);
             OutputStream out = service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa");
             if (out == null) {

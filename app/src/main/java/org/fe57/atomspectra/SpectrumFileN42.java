@@ -73,7 +73,7 @@ public class SpectrumFileN42 extends SpectrumFile {
                 long counts = 0;
                 long calc_pulses;
                 long[] tmp = spectrum.getDataArray();
-                for (int k = 0; k < Channels - channelCompression + 1; k += channelCompression) {
+                for (int k = 0; k < tmp.length - channelCompression + 1; k += channelCompression) {
                     for (int l = 0; l < channelCompression; l++)
                         counts += tmp[k + l];
                 }
@@ -117,7 +117,7 @@ public class SpectrumFileN42 extends SpectrumFile {
                 fw.append("      <ChannelData compressionCode=\"None\">\n");
                 fw.append("        ");
 
-                for (int k = 0; k < Channels - channelCompression + 1; k += channelCompression) {
+                for (int k = 0; k < tmp.length - channelCompression + 1; k += channelCompression) {
                     calc_pulses = 0;
                     for (int l = 0; l < channelCompression; l++)
                         calc_pulses += tmp[k + l];
@@ -200,7 +200,7 @@ public class SpectrumFileN42 extends SpectrumFile {
                 fw.append("      <ChannelData compressionCode=\"None\">\n");
                 fw.append("        ");
 
-                for (int k = 0; k < Channels - channelCompression + 1; k += channelCompression) {
+                for (int k = 0; k < tmp.length - channelCompression + 1; k += channelCompression) {
                     calc_pulses = 0;
                     for (int l = 0; l < channelCompression; l++) {
                         calc_pulses += tmp[k + l];
