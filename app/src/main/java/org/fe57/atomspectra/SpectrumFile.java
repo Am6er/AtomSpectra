@@ -173,6 +173,17 @@ public abstract class SpectrumFile {
         return new Pair<>(docStream, Uri.fromFile(new File(spectrumFileName)));
     }
 
+    protected static String xmlEscape(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
+    }
+
     //abstract methods
 
     //load spectrum from external source

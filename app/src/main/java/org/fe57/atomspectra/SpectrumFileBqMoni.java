@@ -74,7 +74,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
             }
             fw.append("    <ResultData>\n");
             fw.append("      <SampleInfo>\n");
-            fw.append("        <Name>").append(spectrum.getSuffix()).append("</Name>\n");
+            fw.append("        <Name>").append(xmlEscape(spectrum.getSuffix())).append("</Name>\n");
             fw.append("        <Location />\n");
             fw.append(String.format(Locale.US, "        <Time>%04d-%02d-%02dT%02d:%02d:%02d.%03d%+03d:%02d</Time>\n",
                     dateBegin.get(Calendar.YEAR),
