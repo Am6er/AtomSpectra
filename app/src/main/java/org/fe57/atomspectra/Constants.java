@@ -12,9 +12,6 @@ public class Constants {
     public static final int SEARCH_FAST_DEFAULT = 100, SEARCH_MEDIUM_DEFAULT = 500, SEARCH_SLOW_DEFAULT = 2000;          //dose rate impulse count
     public static final int ADC_EFF_BITS = 13;                                                                          //number of usable ADC high bits (8192 channels)
     public static final int NUM_HIST_POINTS = 1 << ADC_EFF_BITS;                                                        //size of histogram
-    public static final int SENSG_DEFAULT = 150;                                                                         //spectrometer sensitivity
-    public static final int SENSG_COMPENSATED_DEFAULT = 35;                                                              //spectrometer sensitivity for compensated dose rate
-    public static final int BACKGND_CPS_DEFAULT = 0;                                                                     //spectrometer noise level
     public static final int VIEW_CHANNELS_DEFAULT = 1024;                                                                //number of channels to view on graph (128, 256, 512, 1024)
     public static final int EXPORT_COMPRESSION_DEFAULT = 1;                                                              //number of channels in one export channel
     public static final int MIN_FRONT_POINTS_DEFAULT = 4;                                                                //low level of peak front
@@ -101,12 +98,18 @@ public class Constants {
         String CONF_CALIBRATED = "Xcalibrated:";
         String CONF_DISPLAY_DOSE = "display_dose:";
         String CONF_SEARCH_MODE = "searchfsm";
-        String CONF_SENSG = "sensg";
-        String CONF_SENSG_COMPENSATED = "sensg_compensated";
-        String CONF_BACKGROUND = "backgcnt";
-        String CONF_SEARCH_FAST = "search_fast";
-        String CONF_SEARCH_SLOW = "search_slow";
-        String CONF_SEARCH_MEDIUM = "search_medium";
+
+        // sensitivity profiles (single custom slot)
+        String CONF_SENSITIVITY_PROFILE = "sensitivity_profile";        // active profile id
+        String CONF_CUSTOM_PROFILE_NAME = "custom_profile_name";
+        String CONF_NONCOMP_PSV = "noncomp_psv";                      // custom non-compensated pSv/count (double bits)
+        String CONF_SEARCH_COMP_FAST = "search_comp_fast";
+        String CONF_SEARCH_COMP_MEDIUM = "search_comp_medium";
+        String CONF_SEARCH_COMP_SLOW = "search_comp_slow";
+        String CONF_SEARCH_NONCOMP_FAST = "search_noncomp_fast";
+        String CONF_SEARCH_NONCOMP_MEDIUM = "search_noncomp_medium";
+        String CONF_SEARCH_NONCOMP_SLOW = "search_noncomp_slow";
+        
         String CONF_DOSE_UPDATE = "doserate_update_freq";
         String CONF_SENS_TABLE_SIZE = "CalSize";
         String CONF_SENS_TABLE_VALUE = "CalSense";

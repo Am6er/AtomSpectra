@@ -170,6 +170,47 @@
 
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:weightSum="1">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/doserateUpdatePeriod"
+                    android:textColor="@android:color/white" />
+
+                <Button
+                    android:id="@+id/increaseFreq"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_decreaseFreq"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/updateFreqLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:text="1"
+                    android:textColor="@android:color/white"
+                    tools:ignore="HardcodedText" />
+
+                <Button
+                    android:id="@+id/decreaseFreq"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_increaseFreq"
+                    android:text="@string/plus" />
+
+            </LinearLayout>
+
 <!-- End Audio Processing -->
 <!-- USB Processing -->
 
@@ -472,215 +513,6 @@
             </LinearLayout>
 
 <!-- End Spectrogram -->
-<!-- Dose Rate -->
-
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:gravity="center"
-                android:text="@string/settings_dose_rate"
-                android:textColor="#00BCD4"
-                android:textSize="20sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:weightSum="4">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:singleLine="true"
-                    android:text="@string/sensg_text"
-                    android:textColor="@android:color/white" />
-
-                <EditText
-                    android:id="@+id/SensG"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:imeOptions="actionDone"
-                    android:inputType="number"
-                    android:minWidth="60dp"
-                    android:text="150"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    tools:ignore="HardcodedText" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:singleLine="true"
-                    android:text="@string/background_cps_text"
-                    android:textColor="@android:color/white" />
-
-                <EditText
-                    android:id="@+id/BckgCnt"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:imeOptions="actionDone"
-                    android:inputType="number"
-                    android:minWidth="60dp"
-                    android:text="0"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    tools:ignore="HardcodedText" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:weightSum="3">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2"
-                    android:gravity="center"
-                    android:singleLine="true"
-                    android:text="@string/sensg_compensated_text"
-                    android:textColor="@android:color/white" />
-
-                <EditText
-                    android:id="@+id/SensGCompensated"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:imeOptions="actionDone"
-                    android:inputType="number"
-                    android:minWidth="60dp"
-                    android:text="35"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    tools:ignore="HardcodedText" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:weightSum="6">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/fast_mode_sens"
-                    android:textColor="@android:color/white" />
-
-                <EditText
-                    android:id="@+id/FastSens"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:imeOptions="actionDone"
-                    android:inputType="number"
-                    android:minWidth="56dp"
-                    android:text="25"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    tools:ignore="HardcodedText" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/medium_mode_sens"
-                    android:textColor="@android:color/white" />
-
-                <EditText
-                    android:id="@+id/MediumSens"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:imeOptions="actionDone"
-                    android:inputType="number"
-                    android:minWidth="56dp"
-                    android:text="35"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    tools:ignore="HardcodedText" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/slow_mode_sens"
-                    android:textColor="@android:color/white" />
-
-                <EditText
-                    android:id="@+id/SlowSens"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:imeOptions="actionDone"
-                    android:inputType="number"
-                    android:minWidth="56dp"
-                    android:text="70"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    tools:ignore="HardcodedText" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:weightSum="1">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/doserateUpdatePeriod"
-                    android:textColor="@android:color/white" />
-
-                <Button
-                    android:id="@+id/increaseFreq"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_decreaseFreq"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/updateFreqLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginRight="10dp"
-                    android:text="1"
-                    android:textColor="@android:color/white"
-                    tools:ignore="HardcodedText" />
-
-                <Button
-                    android:id="@+id/decreaseFreq"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_increaseFreq"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
-
-<!-- End Dose Rate -->
 <!-- Interval Search -->
 
             <TextView

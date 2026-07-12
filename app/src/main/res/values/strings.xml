@@ -14,7 +14,6 @@
     <string name="settings_spectrum">Spectrum</string>
     <string name="settings_spectrum_change">Spectrum Change</string>
     <string name="settings_spectrogram">Spectrogram</string>
-    <string name="settings_dose_rate">Dose Rate</string>
     <string name="settings_interval_search">Interval Search</string>
     <string name="settings_atomswift_integration">AtomSwift Integration</string>
     <string name="settings_search_isotopes">Search Isotopes</string>
@@ -99,7 +98,6 @@
     <string name="use_raw_audio_source">Use raw audio source</string>
     <string name="no_audio_available">Can\'t use audio input!</string>
     <string name="no_usb_available">Can\'t use USB input!</string>
-    <string name="sensitivity_reset_data">Reset</string>
     <string name="sensitivity_add_row">Add Row</string>
     <string name="sensitivity_remove_row">DEL</string>
     <string name="sensitivity_edit_row">EDIT</string>
@@ -140,12 +138,6 @@
     <string name="mode_search_button">Search</string>
     <string name="mode_axis_kev_button">keV</string>
     <string name="mode_axis_ch_button">ch.</string>
-    <string name="sensg_text">Sens:</string>
-    <string name="sensg_compensated_text">Sens(compensated):</string>
-    <string name="background_cps_text">BckgCps:</string>
-    <string name="fast_mode_sens">F:</string>
-    <string name="medium_mode_sens">M:</string>
-    <string name="slow_mode_sens">S:</string>
     <string name="doserateUpdatePeriod">Graph update frequency, s⁻¹:</string>
     <string name="max_factor">Maximum factor: 1</string>
     <string name="smoothness">Smoothness: 1</string>
@@ -166,8 +158,6 @@
     <string name="calibration_revert_memory">Retrieve from the program</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Device</string>
-    <string name="calibration_save_device">Save device…</string>
-    <string name="calibration_load_device">Load device…</string>
     <string name="calibration_load_device_energy">Load with calibration…</string>
     <string name="calibration_sensivity">Set sensitivity…</string>
     <string name="calibration_channel">Last: 8192</string>
@@ -181,11 +171,6 @@
     <string name="detector_sensitivity">Device Sensitivity</string>
     <string name="sens_energy_kev">E, keV</string>
     <string name="sens_sensitivity">Sensitivity</string>
-    <string name="sens_hint_energy">Energy</string>
-    <string name="sens_hint_sensitivity">Sensitivity</string>
-    <string name="sens_reset_dialog_title">Reset Confirmation</string>
-    <string name="sens_reset_dialog_message">Reset configuration to default? All current changes will be lost.</string>
-    <string name="sens_reset_dialog_reset_btn">Reset</string>
     <string name="sens_add_row_dialog_title">Add Row</string>
     <string name="sens_add_row_dialog_message">Enter energy value:</string>
     <string name="sens_add_row_dialog_add_btn">Add</string>
@@ -196,6 +181,32 @@
     <string name="sens_delete_row_dialog_delete_btn">Delete</string>
     <string name="sens_edit_row_dialog_title">Edit Row</string>
     <string name="sens_edit_row_dialog_message">Enter sensitivity value for row %1$d:</string>
+
+    <string name="profile_selector_label">Profile:</string>
+    <string name="section_non_compensated">Non-compensated</string>
+    <string name="section_compensated">Compensated</string>
+    <string name="section_compensated_curve">Sensitivity curve</string>
+    <string name="sens_unit_psv_per_count">pSv/count</string>
+    <string name="search_targets_header">Search windows (counts)</string>
+    <string name="search_target_fast">Fast</string>
+    <string name="search_target_medium">Medium</string>
+    <string name="search_target_slow">Slow</string>
+    <string name="profile_customize">Customize</string>
+    <string name="profile_customize_confirm">This will overwrite your custom profile with the %1$s values.</string>
+    <string name="profile_load">Load</string>
+    <string name="profile_save">Save</string>
+    <string name="profile_reset_to">Reset to…</string>
+    <string name="profile_custom_name_default">Custom</string>
+    <string name="profile_saved">Profile saved</string>
+    <string name="profile_save_error">Failed to save profile</string>
+    <string name="profile_loaded">Profile loaded</string>
+    <string name="profile_load_error">Failed to load profile: %1$s</string>
+    <string name="ask_select_profile_file">Select profile file</string>
+    <string name="profile_err_noncomp_positive">Non-compensated sensitivity must be a positive number</string>
+    <string name="profile_err_targets_positive">Search window size must be positive whole numbers</string>
+    <string name="profile_err_no_bins">The sensitivity curve needs at least one band</string>
+    <string name="profile_err_bin_nonnegative">Sensitivity value must be zero or greater</string>
+    <string name="profile_err_edge_positive">Energy must be a positive number</string>
 
     <string name="reduced_to_format">Show as: <xliff:g id="channel_number">%1$d</xliff:g> ch.</string>
     <string name="min_front_points_format">Min front points: <xliff:g id="min_points">%1$d</xliff:g></string>
@@ -297,11 +308,9 @@
     <string name="perm_no_read_spectrogram">No permission to read a spectrogram</string>
     <string name="perm_no_read_background">No permission to read a background</string>
     <string name="perm_no_read_calibration">No permission to read a calibration file</string>
-    <string name="perm_no_read_device">No permission to read a device file</string>
     <string name="perm_no_write_directory">Can\'t create folder /AtomSpectra on external storage, move to own directory</string>
     <string name="perm_no_write_histogram">No permission to write a spectrum</string>
     <string name="perm_no_write_background">No permission to write a background</string>
-    <string name="perm_no_write_device">No permission to write a device file</string>
     <string name="perm_no_write_bqmoni">No permission to export a spectrum to Becquerel Monitor</string>
     <string name="perm_no_write_spe">No permission to export a spectrum to a SPE file</string>
     <string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
@@ -329,7 +338,6 @@
     <string name="ask_select_calibration">Select a calibration file</string>
     <string name="ask_select_device_file">Select a device file</string>
     <string name="ask_spectrum_suffix">File suffix for a spectrum</string>
-    <string name="ask_device_suffix">File suffix to a device file</string>
     <string name="ask_export_bqmoni">File suffix to export data to Becquerel Monitor</string>
     <string name="ask_export_spe">File suffix to export data to SPE</string>
     <string name="ask_export_N42">File suffix to export data to N42</string>
@@ -366,16 +374,12 @@
     <string name="strange_file_name">A strange file name</string>
     <string name="hist_load_success">Spectrum loaded successfully</string>
     <string name="hist_load_error">Spectrum loading failed!</string>
-    <string name="device_load_success">Device data loaded successfully</string>
-    <string name="device_load_error">Device data loading failed!</string>
     <string name="cal_load_success">Calibration loaded successfully</string>
     <string name="cal_load_error">Calibration loading failed!</string>
     <string name="cal_applied">Calibration applied</string>
     <string name="storage_required">Storage is required</string>
     <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> saved successfully</string>
     <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving failed!</string>
-    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> saved successfully</string>
-    <string name="device_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving failed!</string>
     <string name="background_load_success">Background loaded successfully</string>
     <string name="background_load_error">Background loading failed!</string>
     <string name="background_delete_error">Can\'t delete a background file</string>
@@ -631,21 +635,19 @@
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. <annotation foreground="parameter">Search</annotation> mode - dose rate/energy range count rate calculation and output:</annotation></big>\n
         The program calculates three values - non-compensated dose rate, compensated dose rate, count rate in a given range (interval) of energies. Non-compensated - linear conversion of the overall count rate into dose rate using a coefficient. Compensated - calculation of dose rate taking into account the energy of the registered photons, the detector sensitivity curve and the coefficient.\n
-        \t- The <annotation foreground="parameter">F/M/S</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count values for averaging for each type can be set in the <annotation foreground="parameter">Settings</annotation>. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
+        \t- The <annotation foreground="parameter">F/M/S</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count target for each mode is set per profile in <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>, with independent values for the compensated and non-compensated dose rates. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
         \t- To switch between value types, press the <annotation foreground="parameter">D/I</annotation> button. <annotation foreground="parameter">D</annotation> means \'dose rate history\'. <annotation foreground="parameter">I</annotation> means \'interval count rate history\'.\n
         \t- For all value types, the text field <annotation foreground="parameter">cps</annotation> displays the number of count during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \n
         Non-compensated dose rate (mode <annotation foreground="parameter">D</annotation>, green plot):\n
-        \t- In this mode, the count rate across the entire spectrum is converted into dose rate using a coefficient specified in the settings. The conversion is linear, without taking into account the energy of the detected photons or dead time.\n
-        \t- You need to set a <annotation foreground="parameter">Sens</annotation> parameter (cps at 1 uSv/h) in <annotation foreground="parameter">Settings</annotation> to convert the counts to the non-compensated dose rate.\n
-        \t- Additionally you can set a <annotation foreground="parameter">BckgCps</annotation> parameter to be subtracted from cps in non-compensated dose rate calculation.\n
+        \t- In this mode, the total count rate across the entire spectrum is converted into dose rate. The conversion is linear, without taking into account the energy of the detected photons or dead time.\n
+        \t- You need to set the non-compensated <annotation foreground="parameter">Sensitivity</annotation> as a single absolute value in <annotation foreground="parameter">pSv/count</annotation> in <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. The dose rate equals the total counts multiplied by this value over the averaging window, converted to μSv/h.\n
         \t- The text field <annotation foreground="parameter">dr(n)</annotation> displays the non-compensated dose rate value.\n
         \n
         Compensated dose rate (mode <annotation foreground="parameter">D</annotation>, purple plot):\n
-        \t- In this mode, the dose rate is calculated based on the individual contribution of individual energy ranges of the spectrum.\n
-        \t- The coefficients that determine the relative contribution of individual energy ranges to the dose rate calculation are specified in the table available through the <annotation foreground="parameter">Sensitivity...</annotation> menu item in the <annotation foreground="parameter">Device</annotation> submenu.\n
-        \t- For the calculation, it is also necessary to set the <annotation foreground="parameter">Sens(compensated)</annotation> parameter (cps at 1 μSv/h). When calculating the dose rate, the count rate in each energy range is multiplied by the coefficient from the table and divided by the <annotation foreground="parameter">Sens(compensated)</annotation> coefficient. The dose rate value is determined as the sum over all energy ranges.\n
-        \t- By default, the coefficients in the table are defined for the <u>AtomSpectra Nano8</u> spectrometer based on CsI(Tl) but it can be applied for another spectrometers for a rough estimate of the dose rate by means of <annotation foreground="parameter">Sens(compensated)</annotation> parameter. The curve is fitted to 1 at 661.62keV Cs-137 line.\n
+        \t- In this mode, the dose rate is calculated from the individual contribution of separate energy ranges of the spectrum.\n
+        \t- The compensated <annotation foreground="parameter">Sensitivity curve</annotation> assigns an absolute <annotation foreground="parameter">pSv/count</annotation> value to each energy band; it is configured in the <annotation foreground="parameter">Compensated</annotation> section of <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. The counts in each band are multiplied by that band\'s value, summed over all bands and converted to μSv/h.\n
+        \t- Sensitivity is organized into profiles: the built-in <u>nano-3</u>, <u>nano-8</u> and <u>nano-15</u> (read-only), and an editable <u>Custom</u> profile. Each profile carries its own energy bands, compensated curve, non-compensated value and F/M/S targets. Press <annotation foreground="parameter">Customize</annotation> to start editing from a built-in, or use <annotation foreground="parameter">Load</annotation>/<annotation foreground="parameter">Save</annotation> to exchange the Custom profile with a profile file.\n
         \t- The text field <annotation foreground="parameter">dr(c)</annotation> displays the compensated dose rate value.\n
         \n
         Interval search (mode <annotation foreground="parameter">I</annotation>):\n
@@ -711,8 +713,7 @@
         \t- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file. Also you may load it to the main spectrum and then move it the background. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
         \t- You can stop spectrum update by selecting <annotation foreground="parameter">Pause recording</annotation> in a main menu or on a shortcut bar. After selecting it changes to <annotation foreground="parameter">Continue recording</annotation>. All impulses received from audio during pause will be lost.\n
         \t- Each saved file can be sent to another program, user or via internet by means of another program with <annotation foreground="parameter">Share a file</annotation> menu item.\n
-        \t- Device settings can be stored using <annotation foreground="parameter">Save device…</annotation> in <annotation foreground="parameter">Device</annotation> submenu in a \'<i>.txt</i>\' format. Device data is stored in an own format file named \'<i>Device-suffix.txt</i>\', where \'suffix\' can be set or be a date if empty. Stored device settings can be loaded into the program using <annotation foreground="parameter">Load device…</annotation> in <annotation foreground="parameter">Device</annotation> submenu.\n
-        \tNOTE: Device settings contain a sensitivity curve, most of the parameters in <annotation foreground="parameter">Atom Spectra Settings</annotation>, and search isotope parameters excluding library type.\n
+        \t- The editable <annotation foreground="parameter">Custom</annotation> sensitivity profile can be stored to and loaded from a profile file with the <annotation foreground="parameter">Save</annotation>/<annotation foreground="parameter">Load</annotation> buttons in <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. A profile file holds one profile: its sensitivity curve, non-compensated coefficient and F/M/S values.\n
         \n
     </string>
     <string name="help_text_part8"><big><annotation foreground="caption">8. Storing and viewing spectrogram data:</annotation></big>\n
@@ -733,6 +734,7 @@
         \t- <annotation foreground="parameter">Invert input</annotation> - choose if pulse shape is negative.\n
         \t- <annotation foreground="parameter">Source:</annotation> - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
         \t- <annotation foreground="parameter">Min front points</annotation> and <annotation foreground="parameter">Max front points</annotation> - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
+        \t- <annotation foreground="parameter">Graph update frequency, s⁻¹</annotation> - how often the program updates the dose rate and spectrum data per second.\n
         \n
         \tUSB processing:\n
         \t- <annotation foreground="parameter">Allow spectrum processing with partial data</annotation> - enable processing of spectra from the PRO device with partial packet loss. Use if you experience data transfer issues. Technical information: while collecting a spectrum, the USB PRO spectrometer continuously transmits data via the serial port. The data is transmitted in packets and includes a spectrum divided into a large number of fragments (for N channels each) and information about the acquisition time, count rate, etc. During prolonged operation, depending on the Android device load and other factors, some packets may be lost. This results in a spectrum being displayed at some point in time t, some of whose fragments were not received from the spectrometer. Typically, at time t+1, the lost portion of the spectrum is received from the device and displayed correctly. In most cases, minor fragment loss is unnoticeable to the user. This option enables processing of spectra with lost fragments. If this option is disabled, spectra with lost fragments are ignored (with a message indicating the number of ignored spectra) until the entire spectrum is transferred without loss in the next data transfer session.\n
@@ -750,13 +752,6 @@
         \tSpectrogram:\n
         \t- <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> - with the spectrogram recording enabled, a new spectrogram file will be created every day at midnight.\n
         \t- <annotation foreground="parameter">Save delta every N s</annotation> - enables spectrogram recording while collecting spectrum data, value defines spectrum delta duration in seconds.\n
-        \n
-        \tDose rate:\n
-        \t- <annotation foreground="parameter">Sens</annotation> - calibration value for dose rate calculation. The value must be adjusted yourself to show the right dose rate value.\n
-        \t- <annotation foreground="parameter">Sens(compensated)</annotation> - calibration value for compensated dose rate calculation. The value must be adjusted yourself to show the right compensated dose rate value.\n
-        \t- <annotation foreground="parameter">BckgCps</annotation> - noise count subtracted from a simple dose rate calculation.\n
-        \t- <annotation foreground="parameter">F</annotation>, <annotation foreground="parameter">M</annotation>, <annotation foreground="parameter">S</annotation> - number of counts in sliding window for fast, medium and slow dose rate averaging.\n
-        \t- <annotation foreground="parameter">Graph update frequency, s⁻¹</annotation> - how often the program updates the dose rate and spectrum data per second.\n
         \n
         \tInterval search:\n
         \t- <annotation foreground="parameter">Enable sound alarm</annotation> - enable audio notification of a statistically significant change in the count rate relative to the reference level.\n
