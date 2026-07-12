@@ -49,6 +49,9 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
     private int histBinsMissing = Constants.NUM_HIST_POINTS;
+    // start pos of the last CODE_HIST chunk; used to detect the start of a new histogram
+    // sweep so per-sweep completeness cannot leak across a DATA packet lost to a CRC error
+    private int lastHistStartPos = -1;
     private int cps = 0;
     private int total_time = 0;
     private int cpu_load = 0;
@@ -141,8 +144,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         inputDataHead = 0;
         inputDataEnd = 0;
         processingThread = null;
-        Arrays.fill(histBinsReceived, false);
-        histBinsMissing = Constants.NUM_HIST_POINTS;
+        resetHistogramCompleteness();
         resetErrorSuppression();
         synchronized (syncCommand) {
             AnswerNumber = 0;
@@ -269,6 +271,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         cpu_load = 0;
         lost_impulses = 0;
         total_impulse_length = 0;
+    }
+
+    // marks the whole spectrum as not-yet-received for a fresh acquisition sweep
+    private void resetHistogramCompleteness() {
+        Arrays.fill(histBinsReceived, false);
+        histBinsMissing = Constants.NUM_HIST_POINTS;
+        lastHistStartPos = -1;
     }
 
     // clear histogram
@@ -501,6 +510,16 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         AtomSpectraLog.addMessage(context, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
                     }
 
+                    // The device emits each sweep as chunks with strictly ascending pos (chunk
+                    // size may vary, but the order is guaranteed); when pos steps back a new sweep
+                    // has begun. Reset completeness here (not only on the DATA packet) so that a
+                    // DATA packet lost to a CRC error cannot leave stale received-flags that
+                    // mislabel a partially-refreshed frame as complete.
+                    if (pos <= lastHistStartPos) {
+                        resetHistogramCompleteness();
+                    }
+                    lastHistStartPos = pos;
+
                     int bin;
                     for (int i = 3; i < newPacket.length - 2; i += 4) {
                         if (pos >= Constants.NUM_HIST_POINTS)
@@ -567,8 +586,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 
                         if ((commandStr.equals("-sta") || commandStr.equals("-rst")) &&
                                 (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
-                            Arrays.fill(histBinsReceived, false);
-                            histBinsMissing = Constants.NUM_HIST_POINTS;
+                            resetHistogramCompleteness();
                         }
 
                         if (commandStr.equals("-rst") && (COMMAND_RESULT_OK.equals(answer))) {
@@ -633,8 +651,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME, total_time);
                     intent.putExtra(EXTRA_DATA_TYPE, CODE_DATA);
                     intent.putExtra(EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, histBinsMissing == 0);
-                    Arrays.fill(histBinsReceived, false);
-                    histBinsMissing = Constants.NUM_HIST_POINTS;
+                    resetHistogramCompleteness();
                     context.sendBroadcast(intent);
                     break;
                 default:
