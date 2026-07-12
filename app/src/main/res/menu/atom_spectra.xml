@@ -315,23 +315,6 @@
         android:title="@string/calibration_device">
         <menu>
             <item
-                android:id="@+id/action_load_device"
-                android:icon="@drawable/menu_archive"
-                android:orderInCategory="600"
-                android:title="@string/calibration_load_device" />
-            <item
-                android:id="@+id/action_load_device_cal"
-                android:enabled="false"
-                android:icon="@drawable/menu_archive"
-                android:orderInCategory="601"
-                android:title="@string/calibration_load_device_energy"
-                android:visible="false" />
-            <item
-                android:id="@+id/action_save_device"
-                android:icon="@drawable/menu_save"
-                android:orderInCategory="602"
-                android:title="@string/calibration_save_device" />
-            <item
                 android:id="@+id/action_edit_sensivity"
                 android:icon="@drawable/menu_edit"
                 android:orderInCategory="603"

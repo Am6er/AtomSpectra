@@ -45,7 +45,6 @@ import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
-import java.text.NumberFormat;
 import java.util.Locale;
 
 public class AtomSpectraSettings extends Activity  implements OnGestureListener, OnRequestPermissionsResultCallback {
@@ -59,7 +58,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     private GestureDetector gestureDetector;
     private TextView countsTextField;
-    private EditText SensG, SensGCompensated, BackgroundCount, slowSens, mediumSens, fastSens;
     private SharedPreferences sp;
     private TextView doseRateFreqLabel;
     private TextView workingDirText;
@@ -107,6 +105,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         setupInputSoundCheckbox();
         updateMinFrontPointsText();
         updateMaxFrontPointsText();
+        setupDoseUpdateFrequency();
         // --- end audio processing
 
         // --- usb processing
@@ -129,10 +128,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         setupSpgMidnightResetCheckbox();
         updateSpgDeltaDurationText();
         // --- end spectrogram
-
-        // --- dose rate
-        setupDoseRateSection();
-        // --- end dose rate
 
         // --- interval search section
         setupEnableSearchAlarmCheckbox();
@@ -769,55 +764,11 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
     }
     // --- end spectrogram section
 
-    // --- dose rate section
-    private void setupDoseRateSection() {
+    // --- dose update frequency (audio processing) ---
+    private void setupDoseUpdateFrequency() {
         doseRateFreqLabel = findViewById(R.id.updateFreqLabel);
-        SensG = findViewById(R.id.SensG);
-        SensGCompensated = findViewById(R.id.SensGCompensated);
-        BackgroundCount = findViewById(R.id.BckgCnt);
-        slowSens = findViewById(R.id.SlowSens);
-        mediumSens = findViewById(R.id.MediumSens);
-        fastSens = findViewById(R.id.FastSens);
-        slowSens.setOnEditorActionListener(doseRateEditorActionListener);
-        mediumSens.setOnEditorActionListener(doseRateEditorActionListener);
-        fastSens.setOnEditorActionListener(doseRateEditorActionListener);
-        SensG.setOnEditorActionListener(doseRateEditorActionListener);
-        SensGCompensated.setOnEditorActionListener(doseRateEditorActionListener);
-        BackgroundCount.setOnEditorActionListener(doseRateEditorActionListener);
-        slowSens.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));
-        fastSens.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));
-        mediumSens.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));
-        SensG.setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));
-        SensGCompensated.setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));
-        BackgroundCount.setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, 1)));
+        doseRateFreqLabel.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
     }
-
-    private final EditText.OnEditorActionListener doseRateEditorActionListener = new TextView.OnEditorActionListener() {
-        @Override
-        public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-            if (i == EditorInfo.IME_ACTION_DONE) {
-                try {
-                    Number sensNumber = NumberFormat.getNumberInstance().parse(SensG.getText().toString());
-                    Number sensCompensatedNumber = NumberFormat.getNumberInstance().parse(SensGCompensated.getText().toString());
-                    Number backgroundNumber = NumberFormat.getNumberInstance().parse(BackgroundCount.getText().toString());
-                    if (sensNumber != null && sensCompensatedNumber != null && backgroundNumber != null) {
-                        SharedPreferences.Editor editor = sp.edit();
-                        editor.putInt(Constants.CONFIG.CONF_SENSG, sensNumber.intValue());
-                        editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, sensCompensatedNumber.intValue());
-                        editor.putInt(Constants.CONFIG.CONF_BACKGROUND, backgroundNumber.intValue());
-                        editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, Integer.parseInt(slowSens.getText().toString()));
-                        editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, Integer.parseInt(fastSens.getText().toString()));
-                        editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Integer.parseInt(mediumSens.getText().toString()));
-                        editor.apply();
-                    }
-                } catch (Exception e) {
-                    //
-                }
-            }
-            return false;
-        }
-    };
 
     public void onClick_increaseFreq(View v) {
         int freq = sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);

@@ -135,77 +135,13 @@ public class AtomSpectraService extends Service {
 
     // dose rate
     private static DoseRate doseRateValue = new DoseRate();
-    public static final float[] EnergyBinsDefault = new float[]{
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            100f,
-            200f,
-            300f,
-            400f,
-            600f,
-            800f,
-            1200f,
-            1800f,
-            2400f,
-            3000f
-    }; // energy bins in keV
-    private static float[] EnergyBins = Arrays.copyOf(EnergyBinsDefault, EnergyBinsDefault.length);
-    public static final double[] EnergySensitivityDefault = new double[]{
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0.145, //    0 - 100
-            0.169, //  100 - 200
-            0.258, //  200 - 300
-            0.392, //  300 - 400
-            0.683, //  400 - 600
-            1.000, //  600 - 800
-            1.610, //  800 - 1200
-            2.465, // 1200 - 1800
-            3.271, // 1800 - 2400
-            3.930  // 2400 - 3000
-    }; // photon energy relative to Cs-137 energy (1.0 for 662 keV)
-    private static double[] EnergySensitivity = Arrays.copyOf(EnergySensitivityDefault, EnergySensitivityDefault.length);
+    // Energy binning and per-bin sensitivity now come from the active SensitivityProfile (pSv/count).
+    // Scratch buffers below are sized to SensitivityProfile.MAX_BINS; only the first N bins are used.
 
     // audio counts processing
     public static int counts_from_audio = 0; // number of counts detected from audio source during UPDATE_PERIOD
     public static int interval_counts_from_audio = 0; // number of counts in user defined energy range detected from audio source during UPDATE_PERIOD
-    public static int[] binned_counts_from_audio = new int[EnergyBinsDefault.length]; // number of counts by energy bins detected from audio source during UPDATE_PERIOD
+    public static int[] binned_counts_from_audio = new int[SensitivityProfile.MAX_BINS]; // number of counts by energy bins detected from audio source during UPDATE_PERIOD
 
     public static long total_counts = 0; // number of counts collected in current spectrum (either from audio or USB)
     private static int cps = 0; // current cps value
@@ -378,18 +314,18 @@ public class AtomSpectraService extends Service {
     private static final int CHANNEL_CONFIG = android.media.AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = android.media.AudioFormat.ENCODING_PCM_16BIT;
 
-    private static double SensG;
-    private static double SensGCompensated;
-    private static double backgroundCps;
-    private static int SEARCH_FAST = 25, SEARCH_MEDIUM = 35, SEARCH_SLOW = 70;
+    // active dose-rate sensitivity profile: the custom profile loaded from preferences, or a built-in
+    // constant. Sensitivities are absolute pSv/count. Binning edges and per-bin values are read
+    // directly from this profile (see getEnergyBinIndex and doseRateSearch).
+    private static SensitivityProfile activeProfile = SensitivityProfile.builtInById(SensitivityProfile.ID_DEFAULT);
 
-    private static int SearchFSM = 0; //0 - fast, 1 - medium, 2 - slow
+    private static int SearchFSM = 0; //0 - fast, 1 - medium, 2 - slow (shared selector for both dose rates)
 
     private int dataFromAudioSourceUpdatePeriod = 1000; // ms
 
     private static final int[] cpsArray = new int[1000 / Constants.UPDATE_PERIOD]; // number of counts during last second, measured approximately each 0.1 sec
     private static final int[] cpsArrayInterval = new int[1000 / Constants.UPDATE_PERIOD]; // same as above but for user selected energy range
-    private static final int[][] cpsArrayEnergyBins = new int[1000 / Constants.UPDATE_PERIOD][EnergyBins.length]; // same as above but counts stored separate for each energy bin
+    private static final int[][] cpsArrayEnergyBins = new int[1000 / Constants.UPDATE_PERIOD][SensitivityProfile.MAX_BINS]; // same as above but counts stored separate for each energy bin
     private static long audioCaptureTimer = 0;
     private static long audioCaptureOldTimer = 0;
     private static long captureAudioTaskInterval = 0;
@@ -662,39 +598,10 @@ public class AtomSpectraService extends Service {
     private final SharedPreferences.OnSharedPreferenceChangeListener onSharedPreferenceChangeListener = (sharedPreferences, s) -> loadSettings();
 
     private void loadSettings() {
-        try {
-            SensG = sp.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT);
-        } catch (Exception e) {
-            SensG = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT);
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_SENSG, (int) SensG);
-            editor.apply();
-        }
-
-        try {
-            SensGCompensated = sp.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
-        } catch (Exception e) {
-            SensGCompensated = (int) sp.getFloat(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT);
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, (int) SensGCompensated);
-            editor.apply();
-        }
-
-        try {
-            backgroundCps = sp.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT);
-        } catch (Exception e) {
-            backgroundCps = (int) sp.getFloat(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT);
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putInt(Constants.CONFIG.CONF_BACKGROUND, (int) backgroundCps);
-            editor.apply();
-        }
-
+        // dose-rate sensitivity (pSv/count) comes from the active profile, loaded further below
         smooth_basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
         delta_time = sp.getInt(Constants.CONFIG.CONF_SPECTRUM_CHANGE_DIFF_TIME, Constants.DEFAULT_DELTA_TIME);
         SearchFSM = sp.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0);
-        SEARCH_FAST = sp.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT);
-        SEARCH_SLOW = sp.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT);
-        SEARCH_MEDIUM = sp.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT);
         dataFromAudioSourceUpdatePeriod = 1000 / sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
         frontCountsMin = sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
         frontCountsMax = sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
@@ -741,20 +648,7 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        TreeMap<Float, Double> sensitivityTable = PrefHelper.getSensitivityTableOrDefault(service_context);
-        ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
-        Arrays.fill(EnergyBins, 0);
-        Arrays.fill(EnergySensitivity, 0);
-        int baseBin = EnergyBins.length - sortedEnergyList.size();
-        if (baseBin < 0) {
-            baseBin = 0;
-        }
-        for (int i = 0; i < sortedEnergyList.size(); i++) {
-            float energy = sortedEnergyList.get(i);
-            double sens = sensitivityTable.get(energy);
-            EnergyBins[i + baseBin] = energy;
-            EnergySensitivity[i + baseBin] = sens;
-        }
+        activeProfile = PrefHelper.getActiveSensitivityProfile(service_context);
 
         // post read actions
         setAlarmAudioTrackDevice();
@@ -1469,7 +1363,7 @@ public class AtomSpectraService extends Service {
 
                         if (new_histogram != null && new_time > old_time) {
                             int counts = 0, interval_counts = 0;
-                            int[] binned_counts = new int[EnergyBins.length];
+                            int[] binned_counts = new int[SensitivityProfile.MAX_BINS];
                             for (int i = 0; i < StrictMath.min(Constants.NUM_HIST_POINTS, new_histogram.length); i++) {
                                 total_counts += new_histogram[i];
                                 int value = 0;
@@ -1493,7 +1387,7 @@ public class AtomSpectraService extends Service {
                             } else if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
                                 skip_usb_startup_histograms = 0;
                                 cpsInterval = (int) interval_counts;
-                                doseRateValue = doseRateSearch(counts, interval_counts, binned_counts, new_time - old_time);
+                                doseRateValue = doseRateSearch(interval_counts, binned_counts, new_time - old_time);
                                 isReliableData = true;
                             } else {
                                 cpsInterval = 0;
@@ -1824,9 +1718,11 @@ public class AtomSpectraService extends Service {
     // when new data arrives either from audio or USB we preserve it in historical sliding time window
     // used to calculate dose rate
     public final static int SEARCH_WINDOW_SIZE = 240;
-    private static final LinkedList<Integer> windowCounts = new LinkedList<>();
-    private static final LinkedList<Integer> windowIntervalCounts = new LinkedList<>();
+    // per-sample energy-binned counts; also the total-count source since total == sum of bins
+    // (every detected event is assigned to a bin, see getEnergyBinIndex)
     private static final LinkedList<int[]> windowBinnedCounts = new LinkedList<>();
+    // per-sample interval counts (channel-range subset) as a single-bin array
+    private static final LinkedList<int[]> windowIntervalCounts = new LinkedList<>();
     private static final LinkedList<Double> windowDeltaTime = new LinkedList<>();
 
     private static final LinkedList<Double> doseHistory = new LinkedList<>();
@@ -1840,17 +1736,16 @@ public class AtomSpectraService extends Service {
         Arrays.fill(cpsArray, 0);
         Arrays.fill(cpsArrayInterval, 0);
         for (int i = 0; i < cpsArrayEnergyBins.length; i++) {
-            cpsArrayEnergyBins[i] = new int[EnergyBins.length];
+            cpsArrayEnergyBins[i] = new int[SensitivityProfile.MAX_BINS];
         }
         cps = 0;
         cpsInterval = 0;
     }
 
     private static void resetSearchWindow() {
-        synchronized (windowCounts) {
+        synchronized (windowBinnedCounts) {
             windowDeltaTime.clear();
             windowBinnedCounts.clear();
-            windowCounts.clear();
             windowIntervalCounts.clear();
         }
     }
@@ -1871,12 +1766,12 @@ public class AtomSpectraService extends Service {
     }
 
     // called each [0.1, 0.2, 0.5, 1] sec for audio, each 1 sec for USB
-    private DoseRate doseRateSearch(int counts, int interval_counts, int[] binned_counts, double delta_time) {
+    private DoseRate doseRateSearch(int interval_counts, int[] binned_counts, double delta_time) {
         if (delta_time == 0) {
             return doseRateValue;
         }
 
-        synchronized (windowCounts) {
+        synchronized (windowBinnedCounts) {
             windowDeltaTime.addLast(delta_time);
             if (windowDeltaTime.size() > SEARCH_WINDOW_SIZE) {
                 windowDeltaTime.removeFirst();
@@ -1887,12 +1782,7 @@ public class AtomSpectraService extends Service {
                 windowBinnedCounts.removeFirst();
             }
 
-            windowCounts.addLast(counts);
-            if (windowCounts.size() > SEARCH_WINDOW_SIZE) {
-                windowCounts.removeFirst();
-            }
-
-            windowIntervalCounts.addLast(interval_counts);
+            windowIntervalCounts.addLast(new int[]{interval_counts});
             if (windowIntervalCounts.size() > SEARCH_WINDOW_SIZE) {
                 windowIntervalCounts.removeFirst();
             }
@@ -1904,72 +1794,44 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        int counts_search_window = 0;
-        double min_period = 1;   // in seconds
+        // shared active mode selects the minimum integration period; count targets differ per dose rate
+        double min_period;
         switch (SearchFSM) {
-            case 0:
-                counts_search_window = SEARCH_FAST;
-                min_period = 0.2;
-                break;
             case 1:
-                counts_search_window = SEARCH_MEDIUM;
                 min_period = 1;
                 break;
             case 2:
-                counts_search_window = SEARCH_SLOW;
                 min_period = 2;
                 break;
-        }
-        int total_counts = 0;
-        int total_interval_counts = 0;
-        double total_time = 0;
-        double total_interval_time = 0;
-        int[] total_binned_counts = new int[EnergyBins.length];
-        synchronized (windowCounts) {
-            int start = windowCounts.size() > 0 ? windowCounts.size() - 1 : 0;
-            for (int i = start; i >= 0; i--) {
-                if (total_counts < counts_search_window || total_time < min_period) {
-                    total_counts += windowCounts.get(i);
-                    total_time += windowDeltaTime.get(i);
-                    for (int bin = 0; bin < EnergyBins.length; bin++) {
-                        total_binned_counts[bin] += windowBinnedCounts.get(i)[bin];
-                    }
-                }
-
-                if (total_interval_counts < counts_search_window || total_interval_time < min_period) {
-                    total_interval_counts += windowIntervalCounts.get(i);
-                    total_interval_time += windowDeltaTime.get(i);
-                }
-
-                if ((total_counts >= counts_search_window) && (total_time >= min_period)
-                        && (total_interval_counts >= counts_search_window) && (total_interval_time >= min_period))
-                    break;
-            }
+            default:
+                min_period = 0.2;
+                break;
         }
 
-        if (total_time < min_period) {
+        SensitivityProfile profile = activeProfile;
+        int bins = Math.min(profile.binEdges.length, SensitivityProfile.MAX_BINS);
+
+        WindowSum nonComp = accumulateWindow(windowBinnedCounts, profile.searchTargetNonComp(SearchFSM), min_period);
+        if (nonComp.time < min_period) {
             return doseRateValue;
         }
+        WindowSum comp = accumulateWindow(windowBinnedCounts, profile.searchTargetComp(SearchFSM), min_period);
+        WindowSum interval = accumulateWindow(windowIntervalCounts, profile.searchTargetNonComp(SearchFSM), min_period);
 
+        // compensated dose rate: sum over energy bins of counts * pSv/count, converted to uSv/h
         double comp_dose_rate = 0;
         double comp_dose_rate_error_sum_of_squares = 0;
-        for (int bin = 0; bin < EnergyBins.length; bin++) {
-            int bin_counts = total_binned_counts[bin];
-            double bin_cps = bin_counts / total_time;
-            double bin_sens = EnergySensitivity[bin];
-            double bin_dose_rate = 0;
-            if (SensGCompensated > 0) {
-                bin_dose_rate = bin_cps * bin_sens / SensGCompensated;
-            }
+        for (int bin = 0; bin < bins; bin++) {
+            int bin_counts = comp.binned[bin];
+            double bin_psv = profile.compPsvPerCount[bin];
+            double bin_dose_rate = bin_counts * bin_psv / comp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
             comp_dose_rate += bin_dose_rate;
             if (bin_counts > 0) {
                 double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
                 comp_dose_rate_error_sum_of_squares += bin_dose_rate_error * bin_dose_rate_error;
             } else {
-                // experiment, if zero counts in bin we assume that bin has no more than single count
-                // so the error is no more than dose rate for single count in interval
-                double single_count_cps = 1.0 / total_time;
-                double upper_dose_rate_bound = single_count_cps * bin_sens / SensGCompensated;
+                // no counts in bin: bound the error by the dose rate of a single count
+                double upper_dose_rate_bound = bin_psv / comp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
                 comp_dose_rate_error_sum_of_squares += upper_dose_rate_bound * upper_dose_rate_bound;
             }
         }
@@ -1978,14 +1840,15 @@ public class AtomSpectraService extends Service {
             comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_sum_of_squares) / comp_dose_rate * 100.0;
         }
 
+        // non-compensated dose rate: total counts * pSv/count, converted to uSv/h
         double dose_rate = 0;
-        if (SensG > 0) {
-            dose_rate = StrictMath.max(0.0, (total_counts / total_time - backgroundCps) / SensG);
+        if (profile.nonCompPsvPerCount > 0) {
+            dose_rate = nonComp.counts * profile.nonCompPsvPerCount / nonComp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
         }
-        double dose_rate_error = total_counts > 0 ? Math.sqrt(total_counts) / total_counts * 100.0 : 0;
+        double dose_rate_error = nonComp.counts > 0 ? Math.sqrt(nonComp.counts) / nonComp.counts * 100.0 : 0;
 
-        double interval_cps = (total_interval_counts / total_interval_time);
-        double interval_cps_error = total_interval_counts > 0 ? Math.sqrt(total_interval_counts) / total_interval_counts * 100.0 : 0;
+        double interval_cps = interval.time > 0 ? (interval.counts / interval.time) : 0;
+        double interval_cps_error = interval.counts > 0 ? Math.sqrt(interval.counts) / interval.counts * 100.0 : 0;
         if (intervalSearchAlarmEnabled) {
             intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
         }
@@ -2020,21 +1883,46 @@ public class AtomSpectraService extends Service {
         return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_cps, interval_cps_error);
     }
 
+    private static final class WindowSum {
+        int counts;
+        double time;
+        final int[] binned = new int[SensitivityProfile.MAX_BINS];
+    }
+
+    // Sum the most-recent samples until both the count target and the minimum period are reached.
+    // Each sample is an array of per-bin counts (a single-element array for the interval source);
+    // counts is the sum across the sample's bins - for the energy-binned source this equals the
+    // total count, since every detected event is assigned to a bin (see getEnergyBinIndex).
+    private WindowSum accumulateWindow(LinkedList<int[]> source, int target, double minPeriod) {
+        WindowSum s = new WindowSum();
+        synchronized (windowBinnedCounts) {
+            for (int i = source.size() - 1; i >= 0; i--) {
+                int[] sample = source.get(i);
+                int n = Math.min(sample.length, s.binned.length);
+                for (int bin = 0; bin < n; bin++) {
+                    s.binned[bin] += sample[bin];
+                    s.counts += sample[bin];
+                }
+                s.time += windowDeltaTime.get(i);
+                if (s.counts >= target && s.time >= minPeriod) {
+                    break;
+                }
+            }
+        }
+        return s;
+    }
+
     private static int getEnergyBinIndex(double energy) {
-        if (energy <= EnergyBins[0]) {
-            return 0;
+        float[] edges = activeProfile.binEdges;
+        if (edges.length == 0) {
+            return -1;
         }
-
-        if (energy >= EnergyBins[EnergyBins.length - 1]) {
-            return EnergyBins.length - 1;
+        for (int i = 0; i < edges.length; i++) {
+            if (energy <= edges[i]) {
+                return i;
+            }
         }
-
-        int energy_bin = 1;
-        while ((energy_bin < (EnergyBins.length - 1)) && (energy > EnergyBins[energy_bin])) {
-            energy_bin++;
-        }
-
-        return energy_bin;
+        return edges.length - 1; // above the last edge: top band
     }
 
     // this function is used to release sound input
@@ -2226,7 +2114,7 @@ public class AtomSpectraService extends Service {
             cpsPos = cpsPos < (1000 / Constants.UPDATE_PERIOD - 1) ? (cpsPos + 1) : 0;
             cpsArray[cpsPos] = counts_from_audio;
             cpsArrayInterval[cpsPos] = interval_counts_from_audio;
-            System.arraycopy(binned_counts_from_audio, 0, cpsArrayEnergyBins[cpsPos], 0, EnergyBins.length);
+            System.arraycopy(binned_counts_from_audio, 0, cpsArrayEnergyBins[cpsPos], 0, SensitivityProfile.MAX_BINS);
             counts_from_audio = 0;
             interval_counts_from_audio = 0;
             Arrays.fill(binned_counts_from_audio, 0);
@@ -2465,12 +2353,12 @@ public class AtomSpectraService extends Service {
         int elapsed_periods = elapsed_time / Constants.UPDATE_PERIOD;
         int counts = 0;
         int interval_counts = 0;
-        int[] binned_counts = new int[EnergyBins.length];
+        int[] binned_counts = new int[SensitivityProfile.MAX_BINS];
         int periodCpsPos = cpsPos;
         while (elapsed_periods > 0) {
             counts += cpsArray[periodCpsPos];
             interval_counts += cpsArrayInterval[periodCpsPos];
-            for (int bin = 0; bin < EnergyBins.length; bin++) {
+            for (int bin = 0; bin < SensitivityProfile.MAX_BINS; bin++) {
                 binned_counts[bin] += cpsArrayEnergyBins[periodCpsPos][bin];
             }
             periodCpsPos--;
@@ -2481,7 +2369,6 @@ public class AtomSpectraService extends Service {
             elapsed_periods--;
         }
         doseRateValue = doseRateSearch(
-                counts,
                 interval_counts,
                 binned_counts,
                 (double) elapsed_time / 1000.0);

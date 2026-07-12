@@ -46,50 +46,183 @@ public class PrefHelper {
         return lang;
     }
 
-    public static TreeMap<Float, Double> getDefaultSensitivityTable() {
-        TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
-        for (int i = 0; i < AtomSpectraService.EnergyBinsDefault.length; i++) {
-            float energy = AtomSpectraService.EnergyBinsDefault[i];
-            double sens = AtomSpectraService.EnergySensitivityDefault[i];
+    // --- Sensitivity profiles -----------------------------------------------------------------
 
-            if (energy != 0 && sens != 0) {
-                sensitivityTable.put(energy, sens);
-            }
-        }
-
-        return sensitivityTable;
+    /** Active sensitivity profile id, migrating a legacy install to a custom profile on first access. */
+    public static String getActiveSensitivityProfileId(@NonNull Context context) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        maybeMigrateLegacySensitivityPrefs(context);
+        return sp.getString(Constants.CONFIG.CONF_SENSITIVITY_PROFILE, SensitivityProfile.ID_DEFAULT);
     }
 
-    public static TreeMap<Float, Double> getSensitivityTableOrDefault(@NonNull Context context) {
-        SharedPreferences sharedPreferences = getASSharedPreferences(context);
-        int binsCount = sharedPreferences.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0);
-        if (binsCount > 0) {
-            TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
-            for (int i = 0; i < binsCount; i++) {
-                float energy = sharedPreferences.getFloat(PrefHelper.configSensTableEnergy(i), 0.0f);
-                double sens = Double.longBitsToDouble(sharedPreferences.getLong(PrefHelper.configSensTableValue(i), 0));
-
-                sensitivityTable.put(energy, sens);
-            }
-
-            return sensitivityTable;
-        } else {
-            return getDefaultSensitivityTable();
+    /** The active sensitivity profile (a copy - safe to mutate). */
+    public static SensitivityProfile getActiveSensitivityProfile(@NonNull Context context) {
+        String id = getActiveSensitivityProfileId(context);
+        if (SensitivityProfile.ID_CUSTOM.equals(id)) {
+            return getCustomSensitivityProfile(context);
         }
+        return SensitivityProfile.builtInById(id);
     }
 
-    public static void setSensitivityTable(@NonNull Context context, TreeMap<Float, Double> sensitivityTable) {
+    public static void setActiveSensitivityProfile(@NonNull Context context, String id) {
+        getASSharedPreferences(context).edit()
+                .putString(Constants.CONFIG.CONF_SENSITIVITY_PROFILE, id)
+                .apply();
+    }
+
+    /** All custom sensitivity profiles. Single slot for now; list-shaped so it can grow later. */
+    public static List<SensitivityProfile> getCustomSensitivityProfiles(@NonNull Context context) {
+        List<SensitivityProfile> profiles = new ArrayList<>();
+        profiles.add(getCustomSensitivityProfile(context));
+        return profiles;
+    }
+
+    /** The (single) custom sensitivity profile assembled from preferences. */
+    public static SensitivityProfile getCustomSensitivityProfile(@NonNull Context context) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        SensitivityProfile profile = new SensitivityProfile();
+        profile.name = sp.getString(Constants.CONFIG.CONF_CUSTOM_PROFILE_NAME, "Custom");
+        profile.readOnly = false;
+        profile.setCompCurveFromMap(readSensitivityCurve(sp));
+        profile.nonCompPsvPerCount = Double.longBitsToDouble(
+                sp.getLong(Constants.CONFIG.CONF_NONCOMP_PSV, Double.doubleToRawLongBits(1.0)));
+        profile.compFast = sp.getInt(Constants.CONFIG.CONF_SEARCH_COMP_FAST, Constants.SEARCH_FAST_DEFAULT);
+        profile.compMedium = sp.getInt(Constants.CONFIG.CONF_SEARCH_COMP_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT);
+        profile.compSlow = sp.getInt(Constants.CONFIG.CONF_SEARCH_COMP_SLOW, Constants.SEARCH_SLOW_DEFAULT);
+        profile.nonCompFast = sp.getInt(Constants.CONFIG.CONF_SEARCH_NONCOMP_FAST, Constants.SEARCH_FAST_DEFAULT);
+        profile.nonCompMedium = sp.getInt(Constants.CONFIG.CONF_SEARCH_NONCOMP_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT);
+        profile.nonCompSlow = sp.getInt(Constants.CONFIG.CONF_SEARCH_NONCOMP_SLOW, Constants.SEARCH_SLOW_DEFAULT);
+        return profile;
+    }
+
+    /** Persist the custom sensitivity profile (does not change the active profile). */
+    public static void setCustomSensitivityProfile(@NonNull Context context, @NonNull SensitivityProfile profile) {
         SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
-        List<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
-        editor.putInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, sensitivityTable.size());
-        for (int i = 0; i < sortedEnergyList.size(); i++) {
-            float energy = sortedEnergyList.get(i);
-            double sens = sensitivityTable.get(energy);
-            editor.putFloat(PrefHelper.configSensTableEnergy(i), energy);
-            editor.putLong(PrefHelper.configSensTableValue(i), Double.doubleToRawLongBits(sens));
+        editor.putString(Constants.CONFIG.CONF_CUSTOM_PROFILE_NAME, profile.name);
+        editor.putLong(Constants.CONFIG.CONF_NONCOMP_PSV, Double.doubleToRawLongBits(profile.nonCompPsvPerCount));
+        editor.putInt(Constants.CONFIG.CONF_SEARCH_COMP_FAST, profile.compFast);
+        editor.putInt(Constants.CONFIG.CONF_SEARCH_COMP_MEDIUM, profile.compMedium);
+        editor.putInt(Constants.CONFIG.CONF_SEARCH_COMP_SLOW, profile.compSlow);
+        editor.putInt(Constants.CONFIG.CONF_SEARCH_NONCOMP_FAST, profile.nonCompFast);
+        editor.putInt(Constants.CONFIG.CONF_SEARCH_NONCOMP_MEDIUM, profile.nonCompMedium);
+        editor.putInt(Constants.CONFIG.CONF_SEARCH_NONCOMP_SLOW, profile.nonCompSlow);
+        writeSensitivityCurve(editor, profile.compCurveAsMap());
+        editor.apply();
+    }
+
+    /** Clone any profile into the custom slot and make it active. */
+    public static void cloneToCustomSensitivityProfile(@NonNull Context context, @NonNull SensitivityProfile source, String newName) {
+        setCustomSensitivityProfile(context, source.editableCopy(newName));
+        setActiveSensitivityProfile(context, SensitivityProfile.ID_CUSTOM);
+    }
+
+    private static TreeMap<Float, Double> readSensitivityCurve(@NonNull SharedPreferences sp) {
+        TreeMap<Float, Double> curve = new TreeMap<>();
+        int binsCount = sp.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0);
+        for (int i = 0; i < binsCount; i++) {
+            float energy = sp.getFloat(configSensTableEnergy(i), 0.0f);
+            double psv = Double.longBitsToDouble(sp.getLong(configSensTableValue(i), 0));
+            curve.put(energy, psv);
+        }
+        if (curve.isEmpty()) {
+            curve.put(3000f, 1.0); // safety fallback: single placeholder band
+        }
+        return curve;
+    }
+
+    private static void writeSensitivityCurve(@NonNull SharedPreferences.Editor editor, @NonNull TreeMap<Float, Double> curve) {
+        List<Float> edges = new ArrayList<>(curve.keySet());
+        editor.putInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, edges.size());
+        for (int i = 0; i < edges.size(); i++) {
+            float energy = edges.get(i);
+            editor.putFloat(configSensTableEnergy(i), energy);
+            editor.putLong(configSensTableValue(i), Double.doubleToRawLongBits(curve.get(energy)));
+        }
+    }
+
+    /**
+     * One-time conversion of a pre-profile install into the custom sensitivity profile. Starts from the
+     * nano-8 built-in and overrides only the values actually present in the old preferences:
+     * comp pSv/count = rel / (SensGCompensated * PSV_PER_COUNT_TO_USV_H);
+     * nonComp pSv/count = 1 / (SensG * PSV_PER_COUNT_TO_USV_H); old f/m/s copied into both triples.
+     */
+    private static void maybeMigrateLegacySensitivityPrefs(@NonNull Context context) {
+        // legacy pref keys, kept only here for the one-time migration
+        final String OLD_SENSG = "sensg";
+        final String OLD_SENSG_COMPENSATED = "sensg_compensated";
+        final String OLD_BACKGROUND = "backgcnt";
+        final String OLD_SEARCH_FAST = "search_fast";
+        final String OLD_SEARCH_MEDIUM = "search_medium";
+        final String OLD_SEARCH_SLOW = "search_slow";
+
+        SharedPreferences sp = getASSharedPreferences(context);
+        if (sp.contains(Constants.CONFIG.CONF_SENSITIVITY_PROFILE)) {
+            return; // already on the profile scheme
+        }
+        boolean hasLegacy = sp.contains(OLD_SENSG) || sp.contains(OLD_SENSG_COMPENSATED)
+                || sp.contains(OLD_BACKGROUND) || sp.contains(OLD_SEARCH_FAST)
+                || sp.contains(OLD_SEARCH_MEDIUM) || sp.contains(OLD_SEARCH_SLOW)
+                || sp.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0) > 0;
+        if (!hasLegacy) {
+            return; // fresh install: defaults to the built-in profile
         }
 
-        editor.commit();
+        SensitivityProfile custom = SensitivityProfile.NANO8.editableCopy("Custom");
+
+        if (sp.contains(OLD_SENSG)) {
+            int sensG = readLegacyInt(sp, OLD_SENSG);
+            custom.nonCompPsvPerCount = sensG > 0 ? 1.0 / (sensG * SensitivityProfile.PSV_PER_COUNT_TO_USV_H) : 0.0;
+        }
+        if (sp.contains(OLD_SEARCH_FAST)) {
+            int v = readLegacyInt(sp, OLD_SEARCH_FAST);
+            custom.compFast = v;
+            custom.nonCompFast = v;
+        }
+        if (sp.contains(OLD_SEARCH_MEDIUM)) {
+            int v = readLegacyInt(sp, OLD_SEARCH_MEDIUM);
+            custom.compMedium = v;
+            custom.nonCompMedium = v;
+        }
+        if (sp.contains(OLD_SEARCH_SLOW)) {
+            int v = readLegacyInt(sp, OLD_SEARCH_SLOW);
+            custom.compSlow = v;
+            custom.nonCompSlow = v;
+        }
+        // convert the compensated curve only when both the stored table and its coefficient exist
+        if (sp.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0) > 0 && sp.contains(OLD_SENSG_COMPENSATED)) {
+            int sensGComp = readLegacyInt(sp, OLD_SENSG_COMPENSATED);
+            double divisor = sensGComp * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
+            if (divisor > 0) {
+                TreeMap<Float, Double> absoluteCurve = new TreeMap<>();
+                int binsCount = sp.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0);
+                for (int i = 0; i < binsCount; i++) {
+                    float energy = sp.getFloat(configSensTableEnergy(i), 0.0f);
+                    double rel = Double.longBitsToDouble(sp.getLong(configSensTableValue(i), 0));
+                    absoluteCurve.put(energy, rel / divisor);
+                }
+                custom.setCompCurveFromMap(absoluteCurve);
+            }
+        }
+
+        setCustomSensitivityProfile(context, custom); // overwrites CONF_SENS_TABLE_* with absolute values
+
+        SharedPreferences.Editor editor = sp.edit();
+        editor.remove(OLD_SENSG);
+        editor.remove(OLD_SENSG_COMPENSATED);
+        editor.remove(OLD_BACKGROUND);
+        editor.remove(OLD_SEARCH_FAST);
+        editor.remove(OLD_SEARCH_MEDIUM);
+        editor.remove(OLD_SEARCH_SLOW);
+        editor.putString(Constants.CONFIG.CONF_SENSITIVITY_PROFILE, SensitivityProfile.ID_CUSTOM);
+        editor.apply();
+    }
+
+    private static int readLegacyInt(@NonNull SharedPreferences sp, String key) {
+        try {
+            return sp.getInt(key, 0);
+        } catch (ClassCastException e) {
+            return (int) sp.getFloat(key, 0);
+        }
     }
 
     public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {

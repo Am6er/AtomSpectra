@@ -91,8 +91,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     public static final int REQUEST_EXPORT_SPE = 11;
     public static final int REQUEST_EXPORT_N42 = 12;
     public static final int REQUEST_FINE_GPS = 13;
-    public static final int REQUEST_READ_DEVICE = 14;
-    public static final int REQUEST_WRITE_DEVICE = 15;
     public static final int REQUEST_ADD_HIST = 16;
     public static final int REQUEST_READ_SPG = 17;
 
@@ -147,8 +145,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private final int SELECT_SAVE_EXPORT_SPE_DIR_CODE = 310;
     private final int SELECT_SAVE_EXPORT_N42_DIR_CODE = 311;
     private final int SELECT_LOAD_BACK_DIR_CODE = 312;
-    private final int SELECT_LOAD_DEVICE_CODE = 313;
-    private final int SELECT_SAVE_DEVICE_DIR_CODE = 314;
     private final int ADD_HIST_CODE = 315;
     private final int LOAD_SPG_CODE = 316;
     private boolean isPinchMode = false;
@@ -797,39 +793,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                     ToastHelper.showToast(this, getString(R.string.perm_no_gps));
                 }
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
-                break;
-            case REQUEST_READ_DEVICE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Intent loadIntent = new Intent()
-                            .setType("*/*")
-                            .setAction(Intent.ACTION_GET_CONTENT);
-                    startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), SELECT_LOAD_DEVICE_CODE);
-                } else
-                    ToastHelper.showToast(this, getString(R.string.perm_no_read_device));
-                break;
-            case REQUEST_WRITE_DEVICE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    try {
-                        final AlertDialog.Builder alert = new AlertDialog.Builder(this);
-                        alert.setTitle(getString(R.string.ask_device_suffix));
-                        alert.setMessage(getString(R.string.ask_suffix_text));
-
-                        final EditText input = new EditText(this);
-                        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-                        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                        alert.setView(input);
-                        alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                            String value = input.getText().toString();
-                            saveDevice(value);
-                        });
-                        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                        });
-                        alert.show();
-                    } catch (Exception e) {
-                        Log.d(TAG, "saving spectrum file FAIL");
-                    }
-                } else
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_device));
                 break;
             default:
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -2831,78 +2794,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 }
             }
             return true;
-        } else if (item.getItemId() == R.id.action_save_device) {
-            Log.d(TAG, "saving device file");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                String dirName = PrefHelper.getWorkingDir(this, false);
-                if (dirName == null) {
-                    requestDirectory(SELECT_SAVE_DEVICE_DIR_CODE);
-                } else {
-                    final DocumentFile dir = DocumentFile.fromTreeUri(this, Uri.parse(dirName));
-                    if ((dir != null) && dir.isDirectory()) {
-                        try {
-                            final AlertDialog.Builder alert = new AlertDialog.Builder(this);
-                            alert.setTitle(getString(R.string.ask_device_suffix));
-                            alert.setMessage(getString(R.string.ask_suffix_text));
-
-                            final EditText input = new EditText(this);
-                            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-                            input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                            alert.setView(input);
-                            alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                                String value = input.getText().toString();
-                                saveDevice(value);
-                            });
-                            alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                            });
-                            alert.show();
-                        } catch (Exception e) {
-                            Log.d(TAG, "saving file FAIL");
-                        }
-                    } else {
-                        requestDirectory(SELECT_SAVE_DEVICE_DIR_CODE);
-                    }
-                }
-            } else {
-                if (checkPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, getString(R.string.perm_ask_write_title), getString(R.string.perm_ask_write_text), REQUEST_WRITE_HIST)) {
-                    try {
-                        final AlertDialog.Builder alert = new AlertDialog.Builder(this);
-                        alert.setTitle(getString(R.string.ask_device_suffix));
-                        alert.setMessage(getString(R.string.ask_suffix_text));
-
-                        final EditText input = new EditText(this);
-                        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-                        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                        alert.setView(input);
-                        alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                            String value = input.getText().toString();
-                            saveDevice(value);
-                        });
-                        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                        });
-                        alert.show();
-                    } catch (Exception e) {
-                        Log.d(TAG, "saving file FAIL");
-                    }
-                }
-            }
-            return true;
-        } else if (item.getItemId() == R.id.action_load_device) {
-            Log.d(TAG, "loading device file");
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_READ_HIST)) {
-                    Intent loadIntent = new Intent()
-                            .setType("*/*")
-                            .setAction(Intent.ACTION_GET_CONTENT);
-                    startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_device_file)), SELECT_LOAD_DEVICE_CODE);
-                }
-            } else {
-                Intent loadIntent = new Intent()
-                        .setType("*/*")
-                        .setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_device_file)), SELECT_LOAD_DEVICE_CODE);
-            }
-            return true;
         } else if (item.getItemId() == R.id.action_clear_spectrum) {
             onClickDeleteSpc(findViewById(R.id.clearSpectrumButton));
             return true;
@@ -3199,10 +3090,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             selectedFile = data.getData(); //The uri with the location of the file
             if (selectedFile != null)
                 loadCalibrationFromSpectrum(selectedFile);
-        } else if (requestCode == SELECT_LOAD_DEVICE_CODE && resultCode == RESULT_OK) {
-            selectedFile = data.getData(); //The uri with the location of the file
-            if (selectedFile != null)
-                loadDevice(selectedFile);
         } else if (requestCode == SHARE_FILE_CODE && resultCode == RESULT_OK) {
             selectedFile = data.getData();
             if (selectedFile != null)
@@ -3525,47 +3412,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                     }
                 } else {
                     ToastHelper.showToast(this, getString(R.string.perm_no_write_N42));
-                }
-            } catch (Exception e) {
-                Log.d(TAG, "saving file FAIL");
-            }
-        } else if (requestCode == SELECT_SAVE_DEVICE_DIR_CODE && resultCode == RESULT_OK && (data != null)) {
-            try {
-                final Uri dirUri = data.getData();
-                if (dirUri != null) {
-                    final DocumentFile dir = DocumentFile.fromTreeUri(this, dirUri);
-                    if ((dir != null) && dir.isDirectory()) {
-                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                        Uri uri = data.getData();
-                        if (uri != null) {
-                            editor.putString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, dirUri.toString());
-                            final int takeFlags = data.getFlags()
-                                    & (Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-// Check for the freshest data.
-                            getContentResolver().takePersistableUriPermission(uri, takeFlags);
-                        }
-                        editor.commit();
-                        final AlertDialog.Builder alert = new AlertDialog.Builder(this);
-                        alert.setTitle(getString(R.string.ask_device_suffix));
-                        alert.setMessage(getString(R.string.ask_suffix_text));
-
-                        final EditText input = new EditText(this);
-                        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-                        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                        alert.setView(input);
-                        alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                            String value = input.getText().toString();
-                            saveDevice(value);
-                        });
-                        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                        });
-                        alert.show();
-                    } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_device));
-                    }
-                } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_device));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -4017,141 +3863,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     }
 
     //Save device data
-    private void saveDevice(String suffix) {
-        try {
-            Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, "Device", 0, suffix, ".txt", "text/plain", false);
-            String deviceFileName = streamInfo.second.getPath();
-
-            try (OutputStreamWriter fw = streamInfo.first) {
-                fw.append("DEVFORMAT: 2\n");      //Type of file
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG, Constants.SENSG_DEFAULT)));                               //Sensitivity
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, Constants.SENSG_COMPENSATED_DEFAULT)));       //Sensitivity for compensated dose rate
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_BACKGROUND, Constants.BACKGND_CPS_DEFAULT)));                    //Background
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_FAST, Constants.SEARCH_FAST_DEFAULT)));                   //fast counts
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, Constants.SEARCH_MEDIUM_DEFAULT)));               //medium counts
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_SEARCH_SLOW, Constants.SEARCH_SLOW_DEFAULT)));                   //slow counts
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT)));               //minimum front points
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)));               //maximum front points
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT)));                 //noise discriminator
-                fw.append(String.format(Locale.US, "%d\n", Constants.ADC_EFF_BITS));              // NO LONGER CONFIGURABLE                                                //ADC bits
-                fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //save channels
-                fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));           // NO LONGER CONFIGURABLE                                                //load channels
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, Constants.EXPORT_COMPRESSION_DEFAULT)));            //channel compression level
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT)));                 //windows search size
-                fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));                     //threshold
-                fw.append(String.format(Locale.US, "%f\n", sharedPreferences.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));                     //tolerance
-                fw.append(String.format(Locale.US, "%d\n", sharedPreferences.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT)));                               //order size
-
-                TreeMap<Float, Double> sensitivityTable = PrefHelper.getSensitivityTableOrDefault(this);
-                fw.append(String.format(Locale.US, "%d\n", sensitivityTable.size()));
-                ArrayList<Float> sortedEnergyList = new ArrayList<>(sensitivityTable.keySet());
-                for (int i = 0; i < sortedEnergyList.size(); i++) {
-                    float energy = sortedEnergyList.get(i);
-                    fw.append(String.format(Locale.US, "%f\n", energy));
-                }
-                for (int i = 0; i < sortedEnergyList.size(); i++) {
-                    float energy = sortedEnergyList.get(i);
-                    double sens = sensitivityTable.get(energy);
-                    fw.append(String.format(Locale.US, "%.6f\n", sens));
-                }
-            }
-            Log.d(TAG, deviceFileName + " saved successfully");
-            ToastHelper.showToast(this, getString(R.string.device_save_success, deviceFileName));
-        } catch (Exception e) {
-            AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.device_save_error, suffix));
-        }
-    }
-
-    //Load device data
-    @SuppressLint("ApplySharedPref")
-    private void loadDevice(Uri devFile) {
-        final String filename = devFile.getPath();
-        if (filename == null) {
-            Log.d(TAG, "Null filename");
-            ToastHelper.showToast(this, getString(R.string.strange_file_name));
-            return;
-        }
-        Log.d(TAG, filename);
-
-        try {
-            InputStream inputFile = getContentResolver().openInputStream(devFile);
-            if (inputFile == null) {
-                throw new IOException("Unable to open device file: " + devFile);
-            }
-            try (InputStream in = inputFile;
-                 BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
-                Log.d(TAG, filename + " loading started...");
-                String ident = fr.readLine();
-                boolean isV1 = ident.matches("^DEVFORMAT: 1$");
-                boolean isV2 = ident.matches("^DEVFORMAT: 2$");
-                if (!isV1 && !isV2) {
-                    ToastHelper.showToast(this, getString(R.string.device_load_error));
-                    return;
-                }
-                int tempSensG = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
-                int tempSensGCompensated = 0;
-                if (isV2) {
-                    tempSensGCompensated = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 1000000);
-                }
-                int tempBack = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, 100000);
-                int tempFast = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
-                int tempMedium = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
-                int tempSlow = Constants.MinMax(Integer.parseInt(fr.readLine()), 10, 100000);
-                int tempMin = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
-                int tempMax = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, 50);
-                int tempNoise = Constants.MinMax(Integer.parseInt(fr.readLine()), 0, Constants.NUM_HIST_POINTS - 1);
-                fr.readLine(); // ADC bits, no longer configurable
-                fr.readLine(); // save channels, no longer configurable
-                fr.readLine(); // load channels, no longer configurable
-                int tempCompression = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 64);
-                int tempWindow = Constants.MinMax(Integer.parseInt(fr.readLine()), 1, 200);                 //windows search size
-                float tempThreshold = Float.parseFloat(fr.readLine());
-                tempThreshold = (float) Math.rint(Constants.MinMax(tempThreshold * 100, 0, 1000000)) / 100.0f;
-                float tempTolerance = Float.parseFloat(fr.readLine());
-                tempTolerance = (float) Math.rint(Constants.MinMax(tempTolerance * 100, 1, 5000)) / 100.0f;                     //tolerance
-                int tempOrder = Constants.MinMax(Integer.parseInt(fr.readLine()), 2, Constants.ORDER_MAX);
-                int tempSensTableSize = Integer.parseInt(fr.readLine());
-                float[] tempEArray = new float[tempSensTableSize];
-                for (int i = 0; i < tempSensTableSize; i++) {
-                    tempEArray[i] = Float.parseFloat(fr.readLine());
-                    if (tempEArray[i] < 0) {
-                        ToastHelper.showToast(this, "Negative energy in sensitivity table");
-                        return;
-                    }
-                }
-                TreeMap<Float, Double> sensitivityTable = new TreeMap<>();
-                for (int i = 0; i < tempSensTableSize; i++) {
-                    double sens = Double.parseDouble(fr.readLine());
-                    sensitivityTable.put(tempEArray[i], sens);
-                }
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putInt(Constants.CONFIG.CONF_SENSG, tempSensG);                        //Sensitivity
-                if (isV2) {                                                                      //Sensitivity for compensated DR
-                    editor.putInt(Constants.CONFIG.CONF_SENSG_COMPENSATED, tempSensGCompensated);
-                }
-                editor.putInt(Constants.CONFIG.CONF_BACKGROUND, tempBack);                    //Background
-                editor.putInt(Constants.CONFIG.CONF_SEARCH_FAST, tempFast);                   //fast counts
-                editor.putInt(Constants.CONFIG.CONF_SEARCH_MEDIUM, tempMedium);               //medium counts
-                editor.putInt(Constants.CONFIG.CONF_SEARCH_SLOW, tempSlow);                   //slow counts
-                editor.putInt(Constants.CONFIG.CONF_MIN_POINTS, tempMin);                     //minimum front points
-                editor.putInt(Constants.CONFIG.CONF_MAX_POINTS, tempMax);                     //maximum front points
-                editor.putInt(Constants.CONFIG.CONF_NOISE, tempNoise);                        //noise discriminator
-                editor.putInt(Constants.CONFIG.CONF_EXPORT_COMPRESSION, tempCompression);            //channel compression level
-                editor.putInt(Constants.SEARCH.PREF_WINDOW_SIZE, tempWindow);                 //windows search size
-                editor.putFloat(Constants.SEARCH.PREF_THRESHOLD, tempThreshold);              //threshold
-                editor.putFloat(Constants.SEARCH.PREF_TOLERANCE, tempTolerance);              //tolerance
-                editor.putInt(Constants.SEARCH.PREF_ORDER, tempOrder);                        //order size
-                editor.commit();
-                PrefHelper.setSensitivityTable(this, sensitivityTable);
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
-                ToastHelper.showToast(this, getString(R.string.device_load_success));
-            }
-        } catch (Exception e) {
-            ToastHelper.showToast(this, getString(R.string.device_load_error));
-        }
-    }
-
     public void onAddCalibrationPoint(View view) {
 //		final Button button = (Button) view;
         if (AtomSpectraService.newCalibration.getPointsCount() >= Constants.MAX_CALIBRATION_POINTS) {
