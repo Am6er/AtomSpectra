@@ -308,11 +308,9 @@
     <string name="perm_no_read_spectrogram">Нет разрешения на чтение спектрограммы</string>
     <string name="perm_no_read_background">Нет разрешения на чтение фона</string>
     <string name="perm_no_read_calibration">Нет разрешения на чтение калибровки из файла</string>
-    <string name="perm_no_read_device">Нет разрешения на чтение файла устройства</string>
     <string name="perm_no_write_directory">Не могу создать каталог /AtomSpectra на внешнем носителе, перемещаюсь во внутренний каталог</string>
     <string name="perm_no_write_histogram">Нет разрешения на запись спектра</string>
     <string name="perm_no_write_background">Нет разрешения на запись фона</string>
-    <string name="perm_no_write_device">Нет разрешения на запись файла устройства</string>
     <string name="perm_no_write_bqmoni">Нет разрешения на экспорт спектра в Beсquerel Monitor</string>
     <string name="perm_no_write_spe">Нет разрешения на экспорт спектра в SPE</string>
     <string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
@@ -340,7 +338,6 @@
     <string name="ask_select_calibration">Выбрать файл калибровки</string>
     <string name="ask_select_device_file">Выбрать файл устройства</string>
     <string name="ask_spectrum_suffix">Выберите суффикс для спектра</string>
-    <string name="ask_device_suffix">Выберите суффикс для файла устройства</string>
     <string name="ask_export_bqmoni">Суффикс для экспорта в Becquerel Monitor</string>
     <string name="ask_export_spe">Суффикс для экспорта в SPE</string>
     <string name="ask_export_N42">Суффикс для экспорта в N42</string>
@@ -377,16 +374,12 @@
     <string name="strange_file_name">Странное имя файла</string>
     <string name="hist_load_success">Спектр успешно загружен</string>
     <string name="hist_load_error">Загрузка спектра НЕУДАЧНА!</string>
-    <string name="device_load_success">Данные устройства успешно загружены</string>
-    <string name="device_load_error">Заугрузка даннных устойства НЕУДАЧНА!</string>
     <string name="cal_load_success">Калибровка загружена</string>
     <string name="cal_load_error">Загрузка калибровки НЕУДАЧНА!</string>
     <string name="cal_applied">Калибровка принята</string>
     <string name="storage_required">Требуется носитель</string>
     <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно сохранён</string>
     <string name="hist_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
-    <string name="device_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно сохранён</string>
-    <string name="device_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
     <string name="background_load_success">Фон успешно загружен</string>
     <string name="background_load_error">Загрузка фона НЕУДАЧНА!</string>
     <string name="background_delete_error">Не могу удалить файл фона</string>
