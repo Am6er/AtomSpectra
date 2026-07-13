@@ -61,8 +61,8 @@ public class SensitivityProfile {
 
     // Non-compensated pSv/count scalar, per detector.
     private static final double NANO3_NONCOMP_PSV = 1.634;
-    private static final double NANO8_NONCOMP_PSV = 0.725;
-    private static final double NANO15_NONCOMP_PSV = 0.447;
+    private static final double NANO8_NONCOMP_PSV = 0.754;
+    private static final double NANO15_NONCOMP_PSV = 0.441;
 
     public static final SensitivityProfile NANO3 = builtIn(ID_NANO3, NANO3_BIN_EDGES, NANO3_COMP_PSV, NANO3_NONCOMP_PSV,
             256, 625, 1600, 36, 100, 256);
