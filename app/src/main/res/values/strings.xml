@@ -191,8 +191,6 @@
     <string name="search_target_fast">Fast</string>
     <string name="search_target_medium">Medium</string>
     <string name="search_target_slow">Slow</string>
-    <string name="profile_customize">Customize</string>
-    <string name="profile_customize_confirm">This will overwrite your custom profile with the %1$s values.</string>
     <string name="profile_load">Load</string>
     <string name="profile_save">Save</string>
     <string name="profile_reset_to">Reset to…</string>
@@ -649,7 +647,7 @@
         Compensated dose rate (mode <annotation foreground="parameter">D</annotation>, purple plot):\n
         \t- In this mode, the dose rate is calculated from the individual contribution of separate energy ranges of the spectrum.\n
         \t- The compensated <annotation foreground="parameter">Sensitivity curve</annotation> assigns an absolute <annotation foreground="parameter">pSv/count</annotation> value to each energy band; it is configured in the <annotation foreground="parameter">Compensated</annotation> section of <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. The counts in each band are multiplied by that band\'s value, summed over all bands and converted to μSv/h.\n
-        \t- Sensitivity is organized into profiles: the built-in <u>nano-3</u>, <u>nano-8</u> and <u>nano-15</u> (read-only), and an editable <u>Custom</u> profile. Each profile carries its own energy bands, compensated curve, non-compensated value and F/M/S targets. Press <annotation foreground="parameter">Customize</annotation> to start editing from a built-in, or use <annotation foreground="parameter">Load</annotation>/<annotation foreground="parameter">Save</annotation> to exchange the Custom profile with a profile file.\n
+        \t- Sensitivity is organized into profiles: the built-in <u>nano-3</u>, <u>nano-8</u> and <u>nano-15</u> (read-only), and an editable <u>Custom</u> profile. Each profile carries its own energy bands, compensated curve, non-compensated value and F/M/S targets. Use <annotation foreground="parameter">Reset to…</annotation> to copy a built-in into Custom, or <annotation foreground="parameter">Load</annotation>/<annotation foreground="parameter">Save</annotation> to exchange the Custom profile with a profile file.\n
         \t- The text field <annotation foreground="parameter">dr(c)</annotation> displays the compensated dose rate value.\n
         \n
         Interval search (mode <annotation foreground="parameter">I</annotation>):\n
