@@ -336,7 +336,7 @@ public class AtomSpectraSensitivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
                 .addCategory(Intent.CATEGORY_OPENABLE)
                 .setType("text/plain")
-                .putExtra(Intent.EXTRA_TITLE, sanitizeFileName(customWorking.name) + ".txt");
+                .putExtra(Intent.EXTRA_TITLE, "Sensitivity-" + sanitizeFileName(customWorking.name) + ".txt");
         try {
             startActivityForResult(intent, REQUEST_SAVE_PROFILE);
         } catch (Exception e) {
