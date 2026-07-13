@@ -191,15 +191,18 @@ public class PrefHelper {
         // convert the compensated curve only when both the stored table and its coefficient exist
         if (sp.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0) > 0 && sp.contains(OLD_SENSG_COMPENSATED)) {
             int sensGComp = readLegacyInt(sp, OLD_SENSG_COMPENSATED);
-            double divisor = sensGComp * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
-            if (divisor > 0) {
+            if (sensGComp > 0) {
+                double pSvPerCount = (1.0 / SensitivityProfile.PSV_PER_COUNT_TO_USV_H) / sensGComp;
                 TreeMap<Float, Double> absoluteCurve = new TreeMap<>();
                 int binsCount = sp.getInt(Constants.CONFIG.CONF_SENS_TABLE_SIZE, 0);
                 for (int i = 0; i < binsCount; i++) {
                     float energy = sp.getFloat(configSensTableEnergy(i), 0.0f);
-                    double rel = Double.longBitsToDouble(sp.getLong(configSensTableValue(i), 0));
-                    absoluteCurve.put(energy, rel / divisor);
+                    if (energy > 0) {
+                        double rel = Double.longBitsToDouble(sp.getLong(configSensTableValue(i), 0));
+                        absoluteCurve.put(energy, rel * pSvPerCount);
+                    }
                 }
+
                 custom.setCompCurveFromMap(absoluteCurve);
             }
         }
