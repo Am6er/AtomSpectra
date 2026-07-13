@@ -65,11 +65,11 @@ public class SensitivityProfile {
     private static final double NANO15_NONCOMP_PSV = 0.441;
 
     public static final SensitivityProfile NANO3 = builtIn(ID_NANO3, NANO3_BIN_EDGES, NANO3_COMP_PSV, NANO3_NONCOMP_PSV,
-            256, 625, 1600, 36, 100, 256);
+            160, 360, 800, 25, 64, 160);
     public static final SensitivityProfile NANO8 = builtIn(ID_NANO8, NANO8_BIN_EDGES, NANO8_COMP_PSV, NANO8_NONCOMP_PSV,
-            324, 900, 2500, 49, 121, 324);
+            240, 540, 1200, 44, 100, 240);
     public static final SensitivityProfile NANO15 = builtIn(ID_NANO15, NANO15_BIN_EDGES, NANO15_COMP_PSV, NANO15_NONCOMP_PSV,
-            625, 1600, 3600, 64, 256, 625);
+            360, 800, 1800, 64, 160, 360);
     public static final SensitivityProfile[] BUILTINS = {NANO3, NANO8, NANO15};
 
     private static SensitivityProfile builtIn(String id, float[] binEdges, double[] compPsvPerCount, double nonCompPsvPerCount,
