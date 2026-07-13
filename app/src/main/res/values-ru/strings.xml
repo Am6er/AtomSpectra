@@ -195,6 +195,7 @@
     <string name="profile_save">Сохранить</string>
     <string name="profile_reset_to">Сбросить к…</string>
     <string name="profile_custom_name_default">Пользовательский</string>
+    <string name="sensitivity_apply">Применить</string>
     <string name="profile_saved">Профиль сохранён</string>
     <string name="profile_save_error">Не удалось сохранить профиль</string>
     <string name="profile_loaded">Профиль загружен</string>
