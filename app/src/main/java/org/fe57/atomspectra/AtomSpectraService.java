@@ -241,6 +241,9 @@ public class AtomSpectraService extends Service {
     // error in compensated dose rate (1 sigma percent)
     public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR =
             "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR";
+    // compensated dose rate measurement duration (seconds)
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_C_TIME =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_C_TIME";
     // compensated dose rate history array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY";
@@ -250,6 +253,9 @@ public class AtomSpectraService extends Service {
     // error in non-compensated dose rate (1 sigma percent)
     public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR =
             "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR";
+    // non-compensated dose rate measurement duration (seconds)
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_DR_N_TIME =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_DR_N_TIME";
     // non-compensated dose rate history array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY";
@@ -259,6 +265,9 @@ public class AtomSpectraService extends Service {
     // error in interval cps (1 sigma percent)
     public final static String EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR =
             "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR";
+    // interval cps measurement duration (seconds)
+    public final static String EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_TIME =
+            "org.fe57.atomspectra.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_TIME";
     // TODO: add alarm levels and baseline info
     // interval cps history array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY =
@@ -1880,7 +1889,10 @@ public class AtomSpectraService extends Service {
             }
         }
 
-        return new DoseRate(comp_dose_rate, comp_dose_rate_error, dose_rate, dose_rate_error, interval_cps, interval_cps_error);
+        return new DoseRate(
+                comp_dose_rate, comp_dose_rate_error, comp.time,
+                dose_rate, dose_rate_error, nonComp.time,
+                interval_cps, interval_cps_error, interval.time);
     }
 
     private static final class WindowSum {
@@ -2165,10 +2177,13 @@ public class AtomSpectraService extends Service {
         // search data
         mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_C, doseRateValue.compensated);
         mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR, doseRateValue.compensatedErrorPercent);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_C_TIME, doseRateValue.compensatedTimeSeconds);
         mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_N, doseRateValue.nonCompensated);
         mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR, doseRateValue.nonCompensatedErrorPercent);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_DR_N_TIME, doseRateValue.nonCompensatedTimeSeconds);
         mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_INT_CPS, doseRateValue.intervalCps);
         mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR, doseRateValue.intervalCpsErrorPercent);
+        mBundle.putDouble(EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_TIME, doseRateValue.intervalCpsTimeSeconds);
         mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_C_HISTORY, searchHistoryToArray(doseCompensatedHistory));
         mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_DR_N_HISTORY, searchHistoryToArray(doseHistory));
         mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY, searchHistoryToArray(doseIntervalHistory));
@@ -3109,33 +3124,45 @@ public class AtomSpectraService extends Service {
     private static class DoseRate {
         public final double compensated; // uSv/h
         public final double compensatedErrorPercent; // 1 sigma %
+        public final double compensatedTimeSeconds; // integration duration
         public final double nonCompensated; // uSv/h
         public final double nonCompensatedErrorPercent; // 1 sigma %
+        public final double nonCompensatedTimeSeconds; // integration duration
         public final double intervalCps; // cps
         public final double intervalCpsErrorPercent; // 1 sigma %
+        public final double intervalCpsTimeSeconds; // integration duration
 
         private DoseRate() {
             this.compensated = 0;
             this.compensatedErrorPercent = 0;
+            this.compensatedTimeSeconds = 0;
             this.nonCompensated = 0;
             this.nonCompensatedErrorPercent = 0;
+            this.nonCompensatedTimeSeconds = 0;
             this.intervalCps = 0;
             this.intervalCpsErrorPercent = 0;
+            this.intervalCpsTimeSeconds = 0;
         }
 
         private DoseRate(
                 double compensated,
                 double compensatedErrorPercent,
+                double compensatedTimeSeconds,
                 double nonCompensated,
                 double nonCompensatedErrorPercent,
+                double nonCompensatedTimeSeconds,
                 double intervalCps,
-                double intervalCpsErrorPercent) {
+                double intervalCpsErrorPercent,
+                double intervalCpsTimeSeconds) {
             this.compensated = compensated;
             this.compensatedErrorPercent = compensatedErrorPercent;
+            this.compensatedTimeSeconds = compensatedTimeSeconds;
             this.nonCompensated = nonCompensated;
             this.nonCompensatedErrorPercent = nonCompensatedErrorPercent;
+            this.nonCompensatedTimeSeconds = nonCompensatedTimeSeconds;
             this.intervalCps = intervalCps;
             this.intervalCpsErrorPercent = intervalCpsErrorPercent;
+            this.intervalCpsTimeSeconds = intervalCpsTimeSeconds;
         }
     }
 

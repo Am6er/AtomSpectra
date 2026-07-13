@@ -233,6 +233,8 @@
     <string name="dose_rate_1kcps_format"><xliff:g id="cps">%1$.3f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10kcps_format"><xliff:g id="cps">%1$.2f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_measurement_time_format"> [<xliff:g id="measurement_time">%1$d</xliff:g> s]</string>
+    <string name="dose_rate_measurement_time_format_fractional"> [<xliff:g id="measurement_time">%1$.1f</xliff:g> s]</string>
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
