@@ -45,7 +45,7 @@ import java.util.TreeMap;
 /**
  * Dose-rate / sensitivity configuration screen. Owns everything dose-related: the active profile
  * selector, the non-compensated sensitivity + search windows, and the compensated curve + search
- * windows. Built-in profiles are read-only (with a "Customize" action); the custom profile is
+ * windows. Built-in profiles are read-only; the custom profile is
  * editable and can be loaded from / saved to a profile file.
  * <p>
  * Edits are held in memory and only persisted on OK; switching profile repopulates the view.
@@ -241,7 +241,6 @@ public class AtomSpectraSensitivity extends Activity {
         Button addButton = findViewById(R.id.buttonSensAdd);
         addButton.setEnabled(editable && curve.size() < SensitivityProfile.MAX_BINS);
 
-        findViewById(R.id.builtInActions).setVisibility(editable ? View.GONE : View.VISIBLE);
         findViewById(R.id.customActions).setVisibility(editable ? View.VISIBLE : View.GONE);
     }
 
@@ -305,18 +304,6 @@ public class AtomSpectraSensitivity extends Activity {
         finish();
     }
 
-    /** Built-in mode: clone the shown built-in into the custom profile and switch to editing it. */
-    public void onCustomizeButton(View v) {
-        final String sourceName = workingProfile.name;
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.profile_customize)
-                .setMessage(getString(R.string.profile_customize_confirm, sourceName))
-                .setPositiveButton(R.string.profile_customize, (d, w) -> cloneIntoCustom(workingProfile))
-                .setNegativeButton(android.R.string.cancel, (d, w) -> {
-                })
-                .show();
-    }
-
     /** Custom mode: reset the custom profile to a chosen built-in's values. */
     public void onResetToButton(View v) {
         final String[] names = {SensitivityProfile.ID_NANO3, SensitivityProfile.ID_NANO8, SensitivityProfile.ID_NANO15};
@@ -349,7 +336,7 @@ public class AtomSpectraSensitivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
                 .addCategory(Intent.CATEGORY_OPENABLE)
                 .setType("text/plain")
-                .putExtra(Intent.EXTRA_TITLE, sanitizeFileName(customWorking.name) + ".txt");
+                .putExtra(Intent.EXTRA_TITLE, "Sensitivity-" + sanitizeFileName(customWorking.name) + ".txt");
         try {
             startActivityForResult(intent, REQUEST_SAVE_PROFILE);
         } catch (Exception e) {
@@ -553,10 +540,13 @@ public class AtomSpectraSensitivity extends Activity {
 
     @NonNull
     private TableRow getTableRow(int rowIndex, String rowNumberText, String energyBinText, String binSensText, boolean isUpperBoundRow) {
+        int textSize = 16;
+        int buttonTextSize = 16;
+
         TextView textNumber = new TextView(this);
         textNumber.setText(rowNumberText);
         textNumber.setLayoutParams(new TableRow.LayoutParams(dpToPx(40), TableRow.LayoutParams.MATCH_PARENT));
-        textNumber.setTextSize(18);
+        textNumber.setTextSize(textSize);
         textNumber.setGravity(Gravity.CENTER);
 
         TextView textEnergyBin = new TextView(this);
@@ -564,14 +554,14 @@ public class AtomSpectraSensitivity extends Activity {
         textEnergyBin.setGravity(Gravity.CENTER);
         textEnergyBin.setText(energyBinText);
         textEnergyBin.setId(getEnergyBinTextId(rowIndex));
-        textEnergyBin.setTextSize(18);
+        textEnergyBin.setTextSize(textSize);
 
         TextView textSensitivity = new TextView(this);
         textSensitivity.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 1.0f));
         textSensitivity.setGravity(Gravity.CENTER);
         textSensitivity.setText(binSensText);
         textSensitivity.setId(getSensInputId(rowIndex));
-        textSensitivity.setTextSize(18);
+        textSensitivity.setTextSize(textSize);
 
         Button btnEditRow = new Button(this);
         TableRow.LayoutParams btnEditlayoutParams = new TableRow.LayoutParams(dpToPx(64), dpToPx(40));
@@ -580,7 +570,7 @@ public class AtomSpectraSensitivity extends Activity {
         btnEditRow.setText(R.string.sensitivity_edit_row);
         btnEditRow.setId(getEditRowBtnId(rowIndex));
         btnEditRow.setEnabled(editable && !isUpperBoundRow);
-        btnEditRow.setTextSize(16);
+        btnEditRow.setTextSize(buttonTextSize);
         btnEditRow.setOnClickListener(this::onEditButton);
 
         Button btnRemoveRow = new Button(this);
@@ -590,7 +580,7 @@ public class AtomSpectraSensitivity extends Activity {
         btnRemoveRow.setText(R.string.sensitivity_remove_row);
         btnRemoveRow.setId(getDelRowBtnId(rowIndex));
         btnRemoveRow.setEnabled(editable && !isUpperBoundRow && curve.size() > 1);
-        btnRemoveRow.setTextSize(16);
+        btnRemoveRow.setTextSize(buttonTextSize);
         btnRemoveRow.setOnClickListener(this::onRemoveButton);
 
         TableRow newRow = new TableRow(this);

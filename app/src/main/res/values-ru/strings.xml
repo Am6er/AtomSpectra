@@ -191,8 +191,6 @@
     <string name="search_target_fast">Быстро</string>
     <string name="search_target_medium">Средне</string>
     <string name="search_target_slow">Медленно</string>
-    <string name="profile_customize">Настроить</string>
-    <string name="profile_customize_confirm">Пользовательский профиль будет перезаписан значениями %1$s.</string>
     <string name="profile_load">Загрузить</string>
     <string name="profile_save">Сохранить</string>
     <string name="profile_reset_to">Сбросить к…</string>
@@ -233,6 +231,8 @@
     <string name="dose_rate_1kcps_format"><xliff:g id="cps">%1$.3f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_10kcps_format"><xliff:g id="cps">%1$.2f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="dose_rate_100kcps_format"><xliff:g id="cps">%1$.1f</xliff:g> kcps ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
+    <string name="dose_rate_measurement_time_format"> [<xliff:g id="measurement_time">%1$d</xliff:g> s]</string>
+    <string name="dose_rate_measurement_time_format_fractional"> [<xliff:g id="measurement_time">%1$.1f</xliff:g> s]</string>
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
@@ -650,7 +650,7 @@
         Компенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, пурпурный график):\n
         \t- В данном режиме производится расчет мощности дозы исходя из индивидуального вклада отдельных энергетических диапазонов спектра.\n
         \t- Компенсированная <annotation foreground="parameter">кривая чувствительности</annotation> задаёт каждому энергетическому диапазону абсолютное значение в <annotation foreground="parameter">пЗв/имп</annotation> и настраивается в секции <annotation foreground="parameter">Компенсированная</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Число импульсов в каждом диапазоне умножается на значение этого диапазона, суммируется по всем диапазонам и пересчитывается в мкЗв/ч.\n
-        \t- Существуют профили настроек чувствительности: встроенные <u>nano-3</u>, <u>nano-8</u> и <u>nano-15</u> (только для чтения) и редактируемый профиль <u>Пользовательский</u>. Каждый профиль содержит собственные энергетические диапазоны, компенсированную кривую, некомпенсированное значение и окна Б/С/М. Нажмите <annotation foreground="parameter">Настроить</annotation> в одном из встроенных профилей, чтобы начать редактирование, либо используйте <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> для сохранения/загрузки пользовательского профиля в/из файла.\n
+        \t- Существуют профили настроек чувствительности: встроенные <u>nano-3</u>, <u>nano-8</u> и <u>nano-15</u> (только для чтения) и редактируемый профиль <u>Пользовательский</u>. Каждый профиль содержит собственные энергетические диапазоны, компенсированную кривую, некомпенсированное значение и окна Б/С/М. Используйте <annotation foreground="parameter">Сбросить к…</annotation>, чтобы скопировать встроенный профиль в пользовательский, либо <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> для сохранения/загрузки пользовательского профиля в/из файла.\n
         \t- Текстовое поле <annotation foreground="parameter">мд(к)</annotation> отображает компенсированное значение мощности дозы.\n
         \n
         Поиск в интервале (режим <annotation foreground="parameter">И</annotation>):\n
