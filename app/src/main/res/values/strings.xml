@@ -195,6 +195,7 @@
     <string name="profile_save">Save</string>
     <string name="profile_reset_to">Reset to…</string>
     <string name="profile_custom_name_default">Custom</string>
+    <string name="sensitivity_apply">Apply</string>
     <string name="profile_saved">Profile saved</string>
     <string name="profile_save_error">Failed to save profile</string>
     <string name="profile_loaded">Profile loaded</string>
