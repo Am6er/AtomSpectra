@@ -1072,9 +1072,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             if (isIntervalMode) {
                                 double search_int_cps = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS);
                                 double search_int_cps_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_ERROR);
+                                double search_int_cps_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_TIME);
                                 error95Percent = Math.round(search_int_cps_error * 2);
 
-                                statusLineMiddleText.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent)));
+                                statusLineMiddleText.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent, search_int_cps_time)));
                                 statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_INTERVAL_CPS);
                                 if (!isAlarmMode) {
                                     statusLineBottomText.setText(R.string.interval_search_sound_disabled_label);
@@ -1083,14 +1084,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             } else {
                                 double dose_rate_c = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
                                 double dose_rate_c_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C_ERROR);
+                                double dose_rate_c_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C_TIME);
                                 long error95PercentC = Math.round(dose_rate_c_error * 2);
                                 double dose_rate_n = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N);
                                 double dose_rate_n_error = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N_ERROR);
+                                double dose_rate_n_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N_TIME);
                                 long error95PercentN = Math.round(dose_rate_n_error * 2);
 
-                                statusLineMiddleText.setText(getString(R.string.dose_rate_noncompensated_prefix, formatDoseRateWithError(dose_rate_n, error95PercentN)));
+                                statusLineMiddleText.setText(getString(R.string.dose_rate_noncompensated_prefix, formatDoseRateWithError(dose_rate_n, error95PercentN, dose_rate_n_time)));
                                 statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_NON_COMPENSATED_DOSE);
-                                statusLineBottomText.setText(getString(R.string.dose_rate_compensated_prefix, formatDoseRateWithError(dose_rate_c, error95PercentC)));
+                                statusLineBottomText.setText(getString(R.string.dose_rate_compensated_prefix, formatDoseRateWithError(dose_rate_c, error95PercentC, dose_rate_c_time)));
                                 statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_COMPENSATED_DOSE);
                             }
                             break;
@@ -1426,36 +1429,47 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private final Runnable briefNotificationHideRunnable =
             () -> briefNotification.setVisibility(View.GONE);
 
-    private String formatDoseRateWithError(double dose_rate, long error95Percent) {
+    private String formatDoseRateWithError(double dose_rate, long error95Percent, double measurementTimeSeconds) {
+        String formatted;
         if (dose_rate < 10) {
-            return getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent);
+            formatted = getString(R.string.dose_rate_1uSv_format, dose_rate, error95Percent);
         } else if (dose_rate < 100) {
-            return getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent);
+            formatted = getString(R.string.dose_rate_10uSv_format, dose_rate, error95Percent);
         } else if (dose_rate < 1000) {
-            return getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent);
+            formatted = getString(R.string.dose_rate_100uSv_format, dose_rate, error95Percent);
         } else if (dose_rate < 10000) {
-            return getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent);
+            formatted = getString(R.string.dose_rate_1mSv_format, dose_rate / 1000.0, error95Percent);
         } else if (dose_rate < 100000) {
-            return getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent);
+            formatted = getString(R.string.dose_rate_10mSv_format, dose_rate / 1000.0, error95Percent);
         } else { // > 100 mSv/h
-            return getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent);
+            formatted = getString(R.string.dose_rate_100mSv_format, dose_rate / 1000.0, error95Percent);
         }
+        return formatted + formatMeasurementTime(measurementTimeSeconds);
     }
 
-    private String formatCpsWithError(double search_int_cps, long error95Percent) {
+    private String formatCpsWithError(double search_int_cps, long error95Percent, double measurementTimeSeconds) {
+        String formatted;
         if (search_int_cps < 10) {
-            return getString(R.string.dose_rate_1cps_format, search_int_cps, error95Percent);
+            formatted = getString(R.string.dose_rate_1cps_format, search_int_cps, error95Percent);
         } else if (search_int_cps < 100) {
-            return getString(R.string.dose_rate_10cps_format, search_int_cps, error95Percent);
+            formatted = getString(R.string.dose_rate_10cps_format, search_int_cps, error95Percent);
         } else if (search_int_cps < 1000) {
-            return getString(R.string.dose_rate_100cps_format, search_int_cps, error95Percent);
+            formatted = getString(R.string.dose_rate_100cps_format, search_int_cps, error95Percent);
         } else if (search_int_cps < 10000) {
-            return getString(R.string.dose_rate_1kcps_format, search_int_cps / 1000.0, error95Percent);
+            formatted = getString(R.string.dose_rate_1kcps_format, search_int_cps / 1000.0, error95Percent);
         } else if (search_int_cps < 100000) {
-            return getString(R.string.dose_rate_10kcps_format, search_int_cps / 1000.0, error95Percent);
+            formatted = getString(R.string.dose_rate_10kcps_format, search_int_cps / 1000.0, error95Percent);
         } else { // > 100k cps
-            return getString(R.string.dose_rate_100kcps_format, search_int_cps / 1000.0, error95Percent);
+            formatted = getString(R.string.dose_rate_100kcps_format, search_int_cps / 1000.0, error95Percent);
         }
+        return formatted + formatMeasurementTime(measurementTimeSeconds);
+    }
+
+    private String formatMeasurementTime(double measurementTimeSeconds) {
+        if (measurementTimeSeconds >= 1) {
+            return getString(R.string.dose_rate_measurement_time_format, (int) Math.round(measurementTimeSeconds));
+        }
+        return getString(R.string.dose_rate_measurement_time_format_fractional, measurementTimeSeconds);
     }
 
     @Override
