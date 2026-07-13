@@ -12,38 +12,81 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="@string/detector_sensitivity"
-        android:textSize="24sp"
+        android:textSize="24dp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
-        android:id="@+id/profileRow"
+        android:id="@+id/profileSection"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="4dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textSenseCaption">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/profileRow"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/profile_selector_label"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <Spinner
-            android:id="@+id/spinnerProfile"
-            android:layout_width="0dp"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile_selector_label"
+                android:textSize="18dp"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerProfile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- Custom-profile actions: Load / Save / Reset -->
+        <LinearLayout
+            android:id="@+id/customActions"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1" />
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/buttonProfileLoad"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:onClick="onLoadProfileButton"
+                android:text="@string/profile_load"
+                android:textSize="16dp" />
+
+            <Button
+                android:id="@+id/buttonProfileSave"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:onClick="onSaveProfileButton"
+                android:text="@string/profile_save"
+                android:textSize="16dp" />
+
+            <Button
+                android:id="@+id/buttonProfileReset"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:onClick="onResetToButton"
+                android:text="@string/profile_reset_to"
+                android:textSize="16dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <View
@@ -56,7 +99,7 @@
         android:foreground="@drawable/divider"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/profileRow" />
+        app:layout_constraintTop_toBottomOf="@+id/profileSection" />
 
     <ScrollView
         android:id="@+id/scrollSense"
@@ -81,45 +124,15 @@
                 android:layout_marginTop="6dp"
                 android:text="@string/section_non_compensated"
                 android:textColor="@color/colorHeader"
-                android:textSize="18sp"
+                android:textSize="18dp"
                 android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/sens_sensitivity"
-                    android:textSize="18sp" />
-
-                <EditText
-                    android:id="@+id/editNonCompSens"
-                    android:layout_width="120dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:inputType="numberDecimal"
-                    android:singleLine="true" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="@string/sens_unit_psv_per_count"
-                    android:textSize="16sp" />
-            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/search_targets_header"
-                android:textSize="16sp" />
+                android:textSize="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -137,7 +150,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="@string/search_target_fast"
-                        android:textSize="16sp" />
+                        android:textSize="16dp" />
 
                     <EditText
                         android:id="@+id/editNonCompFast"
@@ -159,7 +172,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="@string/search_target_medium"
-                        android:textSize="16sp" />
+                        android:textSize="16dp" />
 
                     <EditText
                         android:id="@+id/editNonCompMedium"
@@ -181,7 +194,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="@string/search_target_slow"
-                        android:textSize="16sp" />
+                        android:textSize="16dp" />
 
                     <EditText
                         android:id="@+id/editNonCompSlow"
@@ -191,6 +204,36 @@
                         android:inputType="number"
                         android:singleLine="true" />
                 </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/sens_sensitivity"
+                    android:textSize="16dp" />
+
+                <EditText
+                    android:id="@+id/editNonCompSens"
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:inputType="numberDecimal"
+                    android:singleLine="true" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/sens_unit_psv_per_count"
+                    android:textSize="16dp" />
             </LinearLayout>
 
             <View
@@ -206,7 +249,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/section_compensated"
                 android:textColor="@color/colorHeader"
-                android:textSize="18sp"
+                android:textSize="18dp"
                 android:textStyle="bold" />
 
             <TextView
@@ -214,7 +257,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/search_targets_header"
-                android:textSize="16sp" />
+                android:textSize="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -232,7 +275,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="@string/search_target_fast"
-                        android:textSize="16sp" />
+                        android:textSize="16dp" />
 
                     <EditText
                         android:id="@+id/editCompFast"
@@ -254,7 +297,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="@string/search_target_medium"
-                        android:textSize="16sp" />
+                        android:textSize="16dp" />
 
                     <EditText
                         android:id="@+id/editCompMedium"
@@ -276,7 +319,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="@string/search_target_slow"
-                        android:textSize="16sp" />
+                        android:textSize="16dp" />
 
                     <EditText
                         android:id="@+id/editCompSlow"
@@ -293,7 +336,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="@string/section_compensated_curve"
-                android:textSize="16sp" />
+                android:textSize="16dp" />
 
             <!-- Compensated curve table header -->
             <TableLayout
@@ -311,7 +354,7 @@
                         android:gravity="center"
                         android:text="N"
                         android:textColor="@color/colorHeader"
-                        android:textSize="18sp"
+                        android:textSize="16dp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -321,7 +364,7 @@
                         android:gravity="center"
                         android:text="@string/sens_energy_kev"
                         android:textColor="@color/colorHeader"
-                        android:textSize="18sp"
+                        android:textSize="16dp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -331,7 +374,7 @@
                         android:gravity="center"
                         android:text="@string/sens_unit_psv_per_count"
                         android:textColor="@color/colorHeader"
-                        android:textSize="18sp"
+                        android:textSize="16dp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -339,7 +382,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:textColor="@color/colorHeader"
-                        android:textSize="18sp"
+                        android:textSize="16dp"
                         android:textStyle="bold" />
                 </TableRow>
             </TableLayout>
@@ -351,12 +394,15 @@
 
             <Button
                 android:id="@+id/buttonSensAdd"
-                style="@android:style/ButtonBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_width="136dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
                 android:onClick="onAddButton"
-                android:text="@string/sensitivity_add_row" />
+                android:text="@string/sensitivity_add_row"
+                android:textSize="16dp" />
         </LinearLayout>
     </ScrollView>
 
@@ -373,58 +419,6 @@
             android:layout_width="match_parent"
             android:layout_height="2dp"
             android:background="@color/colorDivider" />
-
-        <!-- Contextual action row: Customize (built-in) OR Load/Save/Reset (custom) -->
-        <LinearLayout
-            android:id="@+id/builtInActions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/buttonCustomize"
-                style="@android:style/ButtonBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:onClick="onCustomizeButton"
-                android:text="@string/profile_customize" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/customActions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/buttonProfileLoad"
-                style="@android:style/ButtonBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="onLoadProfileButton"
-                android:text="@string/profile_load" />
-
-            <Button
-                android:id="@+id/buttonProfileSave"
-                style="@android:style/ButtonBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="onSaveProfileButton"
-                android:text="@string/profile_save" />
-
-            <Button
-                android:id="@+id/buttonProfileReset"
-                style="@android:style/ButtonBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="onResetToButton"
-                android:text="@string/profile_reset_to" />
-        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
