@@ -168,15 +168,15 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/statusLineLastUpdatedText"
+                android:id="@+id/statusLine1Text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:text="upd: --:--:--"
+                android:text=""
                 android:textColor="#FFFFFFFF"
                 android:textSize="18dp" />
 
             <TextView
-                android:id="@+id/statusLineTopText"
+                android:id="@+id/statusLine2Text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:text="cps: 0 (0)"
@@ -192,7 +192,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/statusLineMiddleText"
+                android:id="@+id/statusLine3Text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -201,7 +201,7 @@
                 android:textSize="18dp" />
 
             <TextView
-                android:id="@+id/statusLineBottomText"
+                android:id="@+id/statusLine4Text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

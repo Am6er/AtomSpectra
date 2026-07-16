@@ -1,6 +1,9 @@
 package org.fe57.atomspectra;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Locale;
 
@@ -38,6 +41,11 @@ public class AtomSpectraShapeView extends View {
 	private final int RENDER_MODE_OSCILLOSCOPE = 3;
 	private final int RENDER_MODE_REFERENCE_PULSE = 4;
 
+	public static final int X_AXIS_KEV = 0;
+	public static final int X_AXIS_CHANNEL = 1;
+	public static final int X_AXIS_POINTS = 2;
+	public static final int X_AXIS_TIME = 3;
+
 	private int render_mode = RENDER_MODE_SPECTRUM;
 	private Shape[] shapes = new Shape[0];
 
@@ -65,7 +73,10 @@ public class AtomSpectraShapeView extends View {
 	private float y_zoom = 1.0f;
 
 	private String x_units = "";
-	private boolean x_is_calibrated = true;
+	private int x_axis_type = X_AXIS_KEV;
+	private long[] searchHistoryTimestampsMs = null;
+	private int[] searchHistoryGapAfterIndices = new int[0];
+	private final SimpleDateFormat searchHistoryTimeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
 	private float x_max_value = 1.0f;
 	private float x_min_value = 0.0f;
 
@@ -274,7 +285,7 @@ public class AtomSpectraShapeView extends View {
 
 			// render selected interval
 			if (this.render_mode == RENDER_MODE_SPECTRUM && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
-				if (x_is_calibrated &&
+				if (isXAxisEnergyScale() &&
 						AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) < x_max_value &&
 						AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) > x_min_value) {
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -285,7 +296,7 @@ public class AtomSpectraShapeView extends View {
 					squareColor.setStyle(Style.FILL);
 					canvas.drawRect(margin_left + (float) StrictMath.max(0, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + (float) StrictMath.min(width, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
 				}
-				if (!x_is_calibrated &&
+				if (!isXAxisEnergyScale() &&
 						AtomSpectraService.leftChannelInterval < x_max_value &&
 						AtomSpectraService.rightChannelInterval > x_min_value) {
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -357,7 +368,7 @@ public class AtomSpectraShapeView extends View {
 				textColor.setTextAlign(Align.CENTER);
 				for (int i = 0; i < nx + 1; i += 2) {
 					if (i == nx) textColor.setTextAlign(Align.RIGHT);
-					canvas.drawText(String.format(Locale.getDefault(), "%d%s", (int) ((x_max_value - x_min_value) * i / nx + x_min_value), (i < nx) ? "" : (x_units)), margin_left + i * dwx + (i == nx ? margin_right : 0), viewHeight - ht_px / 4, textColor);
+					canvas.drawText(formatXAxisTickLabel(i, nx), margin_left + i * dwx + (i == nx ? margin_right : 0), viewHeight - ht_px / 4, textColor);
 				}
 
 				// draw isotope lines on main window
@@ -365,7 +376,7 @@ public class AtomSpectraShapeView extends View {
 					float x_pos;
 					for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
 						if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
-							if (x_is_calibrated) {
+							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
 							} else { //in "ch."
 								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
@@ -384,7 +395,7 @@ public class AtomSpectraShapeView extends View {
 					}
 					if (AtomSpectraIsotopes.showFoundIsotopes) {
 						for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
-							if (x_is_calibrated) {
+							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
 							} else { //in "ch."
 								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
@@ -422,6 +433,10 @@ public class AtomSpectraShapeView extends View {
 					}
 				}
 
+				if (this.render_mode == RENDER_MODE_SEARCH) {
+					drawSearchTimeGapMarkers(canvas, getSearchHistoryGapMarkerXs((int) x_max_value));
+				}
+
 				LinkedList<Float> lastX = new LinkedList<>();
 				LinkedList<Float> lastXEnd = new LinkedList<>();
 				LinkedList<Float> lastY = new LinkedList<>();
@@ -445,7 +460,7 @@ public class AtomSpectraShapeView extends View {
 					textColor.setTextAlign(Align.LEFT);
 					for (int i = 0; i < AtomSpectraIsotopes.checkedIsotopeLine.length; i++) {
 						if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
-							if (x_is_calibrated) {
+							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
 								isotopeLabel = String.format("%.2f", x_pos);
 							} else { //in "ch."
@@ -506,7 +521,7 @@ public class AtomSpectraShapeView extends View {
 					if (AtomSpectraIsotopes.showFoundIsotopes) {
 						textColor.setColor(Isotope.getColorForFound());
 						for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
-							if (x_is_calibrated) {
+							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
 								isotopeLabel = String.format("%.2f", x_pos);
 							} else { //in "ch."
@@ -645,13 +660,12 @@ public class AtomSpectraShapeView extends View {
 			double[] back,  // background drawing
 			boolean show_back, // show background
 			boolean subtract_back, // subtract background from main hist
-			boolean calibrated, // if show energies
+			boolean calibrated, // true: keV axis, false: channel axis
 			int x_size, // number of abscissa point to be drawn
 			boolean logarithmic, // Y-scale type, linear or logarithmic
 			boolean bar_mode, // how to draw, lines or bars
 			float x_min, // minimum value for X-scale
 			float x_max, // maximum value for X-scale
-			String x_units, // measurement units, "ch." or "keV", also probably "eV", "MeV"
 			float y_zoom_factor,
 			int x_zoom_factor,
 			float cursor_position_x, // xMin..xMax, disabled when outside this interval
@@ -677,8 +691,7 @@ public class AtomSpectraShapeView extends View {
 			x_max_value = x_max;
 			x_min_value = x_min;
 			logScale = logarithmic;
-			x_is_calibrated = calibrated;
-			this.x_units = ", " + x_units;
+			setXAxisType(calibrated ? X_AXIS_KEV : X_AXIS_CHANNEL);
 
 			double[] fg_yf = new double[size];
 			double[] back_yf = new double[size];
@@ -742,7 +755,7 @@ public class AtomSpectraShapeView extends View {
 				x_zoom = 1;
 			isotopeFound = -1;
 			double cursor_X_Energy; //use energy to search the nearest isotope
-			if (x_is_calibrated)
+			if (isXAxisEnergyScale())
 				cursor_X_Energy = cursor_X;
 			else
 				cursor_X_Energy = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy((int) cursor_X);
@@ -809,10 +822,13 @@ public class AtomSpectraShapeView extends View {
 			double[] alarm_high,
 			double[] alarm_low,
 			double[] baseline,
+			long[] history_timestamps_ms,
 			boolean show_alarm_level,
 			float y_zoom_factor
 	) {
 		synchronized (renderSync) {
+			setSearchHistoryTimestampsMs(history_timestamps_ms);
+
 			int size = search_values.length;
 			if (size == 0) {
 				String message = "Empty array provided to render search plot";
@@ -824,7 +840,7 @@ public class AtomSpectraShapeView extends View {
 			this.is_interval_search = true;
 			x_max_value = size;
 			x_min_value = 0;
-			x_units = ", " + getResources().getString(R.string.graph_show_points);
+			setXAxisType(X_AXIS_TIME);
 			y_zoom = y_zoom_factor;
 			y_max = Constants.DOSE_SCALE * Constants.DOSE_OVERHEAD;
 			y_min = 0;
@@ -886,9 +902,12 @@ public class AtomSpectraShapeView extends View {
 	public void showDoseSearch(
 			double[] non_compensated_values,
 			double[] compensated_values,
+			long[] history_timestamps_ms,
 			float y_zoom_factor
 	) {
 		synchronized (renderSync) {
+			setSearchHistoryTimestampsMs(history_timestamps_ms);
+
 			int size = Math.min(non_compensated_values.length, compensated_values.length);
 			if (size == 0) {
 				String message = "Empty array provided to render search plot";
@@ -901,7 +920,7 @@ public class AtomSpectraShapeView extends View {
 			this.is_interval_search = false;
 			x_max_value = size;
 			x_min_value = 0;
-			x_units = ", " + getResources().getString(R.string.graph_show_points);
+			setXAxisType(X_AXIS_TIME);
 			y_zoom = y_zoom_factor;
 			y_max = Constants.DOSE_SCALE * Constants.DOSE_OVERHEAD;
 			y_min = 0;
@@ -964,7 +983,7 @@ public class AtomSpectraShapeView extends View {
 
 			x_max_value = x_max;
 			x_min_value = x_min;
-			x_units = ", " + getResources().getString(R.string.graph_show_channel);
+			setXAxisType(X_AXIS_CHANNEL);
 
 			double[] cal_yf = new double[size];
 			double[] cal_reduced_reversed = new double[x_size];
@@ -1011,7 +1030,7 @@ public class AtomSpectraShapeView extends View {
 			this.render_mode = RENDER_MODE_OSCILLOSCOPE;
 			x_max_value = size;
 			x_min_value = 0;
-			x_units = ", " + getResources().getString(R.string.graph_show_points);
+			setXAxisType(X_AXIS_POINTS);
 			y_zoom = y_zoom_factor;
 			y_max = Constants.NUM_HIST_POINTS / 2.0 - 1;
 			y_min = -(Constants.NUM_HIST_POINTS / 2.0);
@@ -1044,6 +1063,7 @@ public class AtomSpectraShapeView extends View {
 
 			x_max_value = size;
 			x_min_value = 0;
+			setXAxisType(X_AXIS_POINTS);
 			frontCountsMin = front_min;
 			frontCountsMax = front_max;
 			y_zoom = 1;
@@ -1062,6 +1082,179 @@ public class AtomSpectraShapeView extends View {
 			this.shapes = new Shape[]{pulse_shape};
 		}
 		invalidate();
+	}
+
+	private void setSearchHistoryTimestampsMs(long[] historyTimestampsMs) {
+		if (historyTimestampsMs == null || historyTimestampsMs.length == 0) {
+			searchHistoryTimestampsMs = null;
+			searchHistoryGapAfterIndices = new int[0];
+			return;
+		}
+		searchHistoryTimestampsMs = Arrays.copyOf(historyTimestampsMs, historyTimestampsMs.length);
+		updateSearchHistoryGaps();
+	}
+
+	private void updateSearchHistoryGaps() {
+		if (searchHistoryTimestampsMs == null || searchHistoryTimestampsMs.length < 2) {
+			searchHistoryGapAfterIndices = new int[0];
+			return;
+		}
+
+		int size = searchHistoryTimestampsMs.length;
+		int firstFilledIndex = -1;
+		int lastFilledIndex = -1;
+		for (int i = 0; i < size; i++) {
+			if (searchHistoryTimestampsMs[i] != 0) {
+				if (firstFilledIndex < 0) {
+					firstFilledIndex = i;
+				}
+				lastFilledIndex = i;
+			}
+		}
+
+		if (firstFilledIndex < 0 || lastFilledIndex - firstFilledIndex < 1) {
+			searchHistoryGapAfterIndices = new int[0];
+			return;
+		}
+
+		ArrayList<Integer> gapAfterIndices = new ArrayList<>();
+		for (int i = firstFilledIndex; i < lastFilledIndex; i++) {
+			long olderTimestampMs = searchHistoryTimestampsMs[i];
+			long newerTimestampMs = searchHistoryTimestampsMs[i + 1];
+			if (olderTimestampMs == 0 || newerTimestampMs == 0) {
+				continue;
+			}
+			if (newerTimestampMs - olderTimestampMs > Constants.SEARCH_HISTORY_TIME_GAP_THRESHOLD_MS) {
+				gapAfterIndices.add(i);
+			}
+		}
+
+		searchHistoryGapAfterIndices = new int[gapAfterIndices.size()];
+		for (int i = 0; i < gapAfterIndices.size(); i++) {
+			searchHistoryGapAfterIndices[i] = gapAfterIndices.get(i);
+		}
+	}
+
+	private float[] getSearchHistoryGapMarkerXs(int historySize) {
+		if (searchHistoryGapAfterIndices.length == 0 || historySize < 2) {
+			return new float[0];
+		}
+
+		float[] gapMarkerXs = new float[searchHistoryGapAfterIndices.length];
+		for (int i = 0; i < searchHistoryGapAfterIndices.length; i++) {
+			int historyIndex = searchHistoryGapAfterIndices[i];
+			int reversedOlderIndex = historySize - 1 - historyIndex;
+			int reversedNewerIndex = historySize - 2 - historyIndex;
+			gapMarkerXs[i] = (getX(reversedOlderIndex, historySize, 1) + getX(reversedNewerIndex, historySize, 1)) / 2.0f;
+		}
+		return gapMarkerXs;
+	}
+
+	private void drawSearchTimeGapMarkers(Canvas canvas, float[] gapMarkerXs) {
+		if (gapMarkerXs.length == 0) {
+			return;
+		}
+
+		float axisY = margin_top + height;
+		float slashHalfWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics());
+		float slashRisePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7, getResources().getDisplayMetrics());
+		float slashDropPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
+		float gapBetweenSlashesPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
+		float gapHalfWidthPx = gapBetweenSlashesPx / 2.0f;
+		float plotLeft = margin_left;
+		float plotRight = margin_left + width;
+
+		for (float gapMarkerX : gapMarkerXs) {
+			if (gapMarkerX < plotLeft || gapMarkerX > plotRight) {
+				continue;
+			}
+			drawSearchTimeGapAxisBreak(canvas, gapMarkerX, axisY, gapHalfWidthPx);
+			drawSearchTimeGapSlash(canvas, gapMarkerX - gapHalfWidthPx - slashHalfWidthPx, axisY, slashHalfWidthPx, slashRisePx, slashDropPx);
+			drawSearchTimeGapSlash(canvas, gapMarkerX + gapHalfWidthPx + slashHalfWidthPx, axisY, slashHalfWidthPx, slashRisePx, slashDropPx);
+		}
+	}
+
+	private void drawSearchTimeGapAxisBreak(Canvas canvas, float centerX, float axisY, float breakHalfWidthPx) {
+		Style savedStyle = squareColor.getStyle();
+		int savedColor = squareColor.getColor();
+		float savedStrokeWidth = squareColor.getStrokeWidth();
+
+		squareColor.setStyle(Style.FILL);
+		squareColor.setColor(Color.BLACK);
+		canvas.drawRect(
+				centerX - breakHalfWidthPx,
+				axisY - savedStrokeWidth,
+				centerX + breakHalfWidthPx,
+				axisY + savedStrokeWidth,
+				squareColor
+		);
+
+		squareColor.setStyle(savedStyle);
+		squareColor.setColor(savedColor);
+		squareColor.setStrokeWidth(savedStrokeWidth);
+	}
+
+	private void drawSearchTimeGapSlash(
+			Canvas canvas,
+			float centerX,
+			float axisY,
+			float halfWidthPx,
+			float risePx,
+			float dropPx
+	) {
+		canvas.drawLine(centerX - halfWidthPx, axisY + dropPx, centerX + halfWidthPx, axisY - risePx, squareColor);
+	}
+
+	private void setXAxisType(int axisType) {
+		x_axis_type = axisType;
+		switch (axisType) {
+			case X_AXIS_CHANNEL:
+				x_units = ", " + getResources().getString(R.string.graph_show_channel);
+				break;
+			case X_AXIS_POINTS:
+				x_units = ", " + getResources().getString(R.string.graph_show_points);
+				break;
+			case X_AXIS_TIME:
+				x_units = "";
+				break;
+			case X_AXIS_KEV:
+			default:
+				x_units = ", " + getResources().getString(R.string.graph_show_kev);
+				break;
+		}
+	}
+
+	private boolean isXAxisEnergyScale() {
+		return x_axis_type == X_AXIS_KEV;
+	}
+
+	private String formatXAxisTickLabel(int tickIndex, int tickCount) {
+		switch (x_axis_type) {
+			case X_AXIS_TIME:
+				return formatSearchHistoryTimeTickLabel(tickIndex, tickCount);
+			case X_AXIS_KEV:
+			case X_AXIS_CHANNEL:
+			case X_AXIS_POINTS:
+			default:
+				return String.format(Locale.getDefault(), "%d%s",
+						(int) ((x_max_value - x_min_value) * tickIndex / tickCount + x_min_value),
+						(tickIndex < tickCount) ? "" : x_units);
+		}
+	}
+
+	private String formatSearchHistoryTimeTickLabel(int tickIndex, int tickCount) {
+		if (searchHistoryTimestampsMs == null || searchHistoryTimestampsMs.length == 0) {
+			return "";
+		}
+
+		int coord = (int) ((x_max_value - x_min_value) * tickIndex / tickCount + x_min_value);
+		int index = Math.min(coord, searchHistoryTimestampsMs.length - 1);
+		long timestampMs = searchHistoryTimestampsMs[index];
+		if (timestampMs == 0) {
+			return "";
+		}
+
+		return searchHistoryTimeFormat.format(new Date(timestampMs));
 	}
 
 	private double[] getReversed(double[] values) {

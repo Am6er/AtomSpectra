@@ -283,6 +283,9 @@ public class AtomSpectraService extends Service {
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY";
     public final static String EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY";
+    // local time history array (epoch ms)
+    public final static String EXTRA_DATA_ARRAY_LONG_SEARCH_HISTORY_TIMESTAMPS =
+            "org.fe57.atomspectra.EXTRA_DATA_ARRAY_LONG_SEARCH_HISTORY_TIMESTAMPS";
 
     // +++ spectra pro data +++
     public final static String EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS =
@@ -1743,6 +1746,7 @@ public class AtomSpectraService extends Service {
     private static final LinkedList<Double> doseIntervalHighAlarmHistory = new LinkedList<>();
     private static final LinkedList<Double> doseIntervalLowAlarmHistory = new LinkedList<>();
     private static final LinkedList<Double> doseIntervalBaselineHistory = new LinkedList<>();
+    private static final LinkedList<Long> searchHistoryTimestamps = new LinkedList<>();
 
     private static void resetCpsData() {
         Arrays.fill(cpsArray, 0);
@@ -1772,6 +1776,7 @@ public class AtomSpectraService extends Service {
             doseIntervalHighAlarmHistory.clear();
             doseIntervalLowAlarmHistory.clear();
             doseIntervalBaselineHistory.clear();
+            searchHistoryTimestamps.clear();
         }
 
         doseRateValue = new DoseRate();
@@ -1866,6 +1871,12 @@ public class AtomSpectraService extends Service {
         }
 
         synchronized (doseHistory) {
+            long sampleTimestamp = System.currentTimeMillis();
+            searchHistoryTimestamps.addLast(sampleTimestamp);
+            if (searchHistoryTimestamps.size() > SEARCH_WINDOW_SIZE) {
+                searchHistoryTimestamps.removeFirst();
+            }
+
             doseHistory.addLast(dose_rate);
             if (doseHistory.size() > SEARCH_WINDOW_SIZE) {
                 doseHistory.removeFirst();
@@ -2193,6 +2204,7 @@ public class AtomSpectraService extends Service {
         mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HIGH_ALARM_HISTORY, searchHistoryToArray(doseIntervalHighAlarmHistory));
         mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_LOW_ALARM_HISTORY, searchHistoryToArray(doseIntervalLowAlarmHistory));
         mBundle.putDoubleArray(EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_BASELINE_HISTORY, searchHistoryToArray(doseIntervalBaselineHistory));
+        mBundle.putLongArray(EXTRA_DATA_ARRAY_LONG_SEARCH_HISTORY_TIMESTAMPS, searchHistoryToLongArray(searchHistoryTimestamps));
 
         // current cps
         mBundle.putInt(EXTRA_DATA_INT_CP1S, cps);
@@ -2319,15 +2331,36 @@ public class AtomSpectraService extends Service {
         }
     }
 
+    private static int searchHistoryArrayStartIndex(int historySize) {
+        return StrictMath.max(SEARCH_WINDOW_SIZE - historySize, 0);
+    }
+
     private double[] searchHistoryToArray(LinkedList<Double> history) {
         double[] histData = new double[SEARCH_WINDOW_SIZE];
-        int num_data = StrictMath.max(SEARCH_WINDOW_SIZE - history.size(), 0);
+        int index = searchHistoryArrayStartIndex(history.size());
         synchronized (doseHistory) {
             for (double v : history) {
-                if (num_data >= SEARCH_WINDOW_SIZE)
+                if (index >= SEARCH_WINDOW_SIZE) {
                     break;
-                histData[num_data] = v;
-                num_data++;
+                }
+                histData[index] = v;
+                index++;
+            }
+        }
+
+        return histData;
+    }
+
+    private long[] searchHistoryToLongArray(LinkedList<Long> history) {
+        long[] histData = new long[SEARCH_WINDOW_SIZE];
+        int index = searchHistoryArrayStartIndex(history.size());
+        synchronized (doseHistory) {
+            for (long v : history) {
+                if (index >= SEARCH_WINDOW_SIZE) {
+                    break;
+                }
+                histData[index] = v;
+                index++;
             }
         }
 
