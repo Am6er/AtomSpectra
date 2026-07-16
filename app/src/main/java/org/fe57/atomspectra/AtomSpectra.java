@@ -159,14 +159,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     public static int reducedTo;
     public static int exportChannelCompression;
 
-    private TextView statusLineLastUpdatedText, statusLineTopText, statusLineMiddleText, statusLineBottomText;
+    private TextView statusLine1Text, statusLine2Text, statusLine3Text, statusLine4Text;
     private TextView briefNotification;
     private Button fmsButton;
     private final int[] searchFMSNextMode = {1, 2, 0};
     private final String[] searchFMSNames = {"F", "M", "S"};
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH-mm-ss", Locale.US);
-    private final SimpleDateFormat statusLastUpdatedFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
     //	private final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US);
     private final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
     private final int mutabilityFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
@@ -252,10 +251,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         }
 
         fmsButton = findViewById(R.id.fmsButton);
-        statusLineLastUpdatedText = findViewById(R.id.statusLineLastUpdatedText);
-        statusLineTopText = findViewById(R.id.statusLineTopText);
-        statusLineMiddleText = findViewById(R.id.statusLineMiddleText);
-        statusLineBottomText = findViewById(R.id.statusLineBottomText);
+        statusLine1Text = findViewById(R.id.statusLine1Text);
+        statusLine2Text = findViewById(R.id.statusLine2Text);
+        statusLine3Text = findViewById(R.id.statusLine3Text);
+        statusLine4Text = findViewById(R.id.statusLine4Text);
         briefNotification = findViewById(R.id.briefNotification);
 
         mAtomSpectraShapeView = findViewById(R.id.shape_area);
@@ -1029,12 +1028,12 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             double total_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME);
                             long total_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_TOTAL_FG_COUNTS);
 
-                            statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
-                            statusLineMiddleText.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
-                            statusLineBottomText.setText(getString(R.string.total_time_format, total_time));
-                            statusLineTopText.setTextColor(Color.WHITE);
-                            statusLineMiddleText.setTextColor(Color.WHITE);
-                            statusLineBottomText.setTextColor(Color.WHITE);
+                            statusLine2Text.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+                            statusLine3Text.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
+                            statusLine4Text.setText(getString(R.string.total_time_format, total_time));
+                            statusLine2Text.setTextColor(Color.WHITE);
+                            statusLine3Text.setTextColor(Color.WHITE);
+                            statusLine4Text.setTextColor(Color.WHITE);
                             break;
                         case Constants.DISPLAY_MODE_SPECTRUM_CHANGE:
                             long delta_counts = mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_SP_CHNG_FG_TOTAL_COUNTS);
@@ -1045,16 +1044,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             double delta_cps = delta_time > 0 ? delta_counts / (double) delta_time : 0.0;
                             double delta_back_cps = delta_back_time > 0 ? delta_back_counts / (double) delta_back_time : 0.0;
 
-                            statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
-                            statusLineMiddleText.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
-                            statusLineBottomText.setText(getString(R.string.delta_time_format, delta_time, delta_back_time));
-                            statusLineTopText.setTextColor(Color.WHITE);
-                            statusLineMiddleText.setTextColor(Color.WHITE);
-                            statusLineBottomText.setTextColor(Color.WHITE);
+                            statusLine2Text.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+                            statusLine3Text.setText(getString(R.string.cps_delta_show, delta_cps, delta_back_cps));
+                            statusLine4Text.setText(getString(R.string.delta_time_format, delta_time, delta_back_time));
+                            statusLine2Text.setTextColor(Color.WHITE);
+                            statusLine3Text.setTextColor(Color.WHITE);
+                            statusLine4Text.setTextColor(Color.WHITE);
                             break;
                         case Constants.DISPLAY_MODE_SEARCH:
-                            statusLineTopText.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
-                            statusLineTopText.setTextColor(Color.WHITE);
+                            statusLine2Text.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
+                            statusLine2Text.setTextColor(Color.WHITE);
 
                             long error95Percent = 0;
                             boolean isAlarmMode = AtomSpectraService.intervalSearchAlarmEnabled;
@@ -1063,11 +1062,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             if (isAlarmMode && isIntervalMode) {
                                 error95Percent = Math.round(2 * baseline.getBaselineError());
                                 if (baseline.isStable()) {
-                                    statusLineBottomText.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
-                                    statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_ALARM_CPS);
+                                    statusLine4Text.setText(getString(R.string.cps_alarm_levels, baseline.getAlarmLevelHigh(), baseline.getAlarmLevelLow()));
+                                    statusLine4Text.setTextColor(AtomSpectraShapeView.COLOR_ALARM_CPS);
                                 } else {
-                                    statusLineBottomText.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
-                                    statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_BASELINE_CPS);
+                                    statusLine4Text.setText(getString(R.string.cps_alarm_baseline_timer, baseline.getRemainingTime(), baseline.getBaseline(), error95Percent));
+                                    statusLine4Text.setTextColor(AtomSpectraShapeView.COLOR_BASELINE_CPS);
                                 }
                             }
 
@@ -1077,11 +1076,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 double search_int_cps_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_INT_CPS_TIME);
                                 error95Percent = Math.round(search_int_cps_error * 2);
 
-                                statusLineMiddleText.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent, search_int_cps_time)));
-                                statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_INTERVAL_CPS);
+                                statusLine3Text.setText(getString(R.string.dose_rate_interval_prefix, formatCpsWithError(search_int_cps, error95Percent, search_int_cps_time)));
+                                statusLine3Text.setTextColor(AtomSpectraShapeView.COLOR_INTERVAL_CPS);
                                 if (!isAlarmMode) {
-                                    statusLineBottomText.setText(R.string.interval_search_sound_disabled_label);
-                                    statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_ALARM_CPS);
+                                    statusLine4Text.setText(R.string.interval_search_sound_disabled_label);
+                                    statusLine4Text.setTextColor(AtomSpectraShapeView.COLOR_ALARM_CPS);
                                 }
                             } else {
                                 double dose_rate_c = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_C);
@@ -1093,10 +1092,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                 double dose_rate_n_time = mBundle.getDouble(AtomSpectraService.EXTRA_DATA_DOUBLE_SEARCH_DR_N_TIME);
                                 long error95PercentN = Math.round(dose_rate_n_error * 2);
 
-                                statusLineMiddleText.setText(getString(R.string.dose_rate_noncompensated_prefix, formatDoseRateWithError(dose_rate_n, error95PercentN, dose_rate_n_time)));
-                                statusLineMiddleText.setTextColor(AtomSpectraShapeView.COLOR_NON_COMPENSATED_DOSE);
-                                statusLineBottomText.setText(getString(R.string.dose_rate_compensated_prefix, formatDoseRateWithError(dose_rate_c, error95PercentC, dose_rate_c_time)));
-                                statusLineBottomText.setTextColor(AtomSpectraShapeView.COLOR_COMPENSATED_DOSE);
+                                statusLine3Text.setText(getString(R.string.dose_rate_noncompensated_prefix, formatDoseRateWithError(dose_rate_n, error95PercentN, dose_rate_n_time)));
+                                statusLine3Text.setTextColor(AtomSpectraShapeView.COLOR_NON_COMPENSATED_DOSE);
+                                statusLine4Text.setText(getString(R.string.dose_rate_compensated_prefix, formatDoseRateWithError(dose_rate_c, error95PercentC, dose_rate_c_time)));
+                                statusLine4Text.setTextColor(AtomSpectraShapeView.COLOR_COMPENSATED_DOSE);
                             }
                             break;
                         case Constants.DISPLAY_MODE_SPECTROGRAM:
@@ -1104,8 +1103,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             // nothing to do so far
                             break;
                     }
-
-                    updateStatusLineLastUpdated(mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_FG_SPECTRUM_UPDATED_AT, 0));
 
                     showCursorInfo(false);
 
@@ -1153,7 +1150,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                             barMode,
                                             (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getEnergyFromEnergyChannel(num_first_channel, AtomSpectraService.lastCalibrationChannel),
                                             (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getEnergyFromEnergyChannel(num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)), AtomSpectraService.lastCalibrationChannel),
-                                            getString(R.string.graph_show_kev),
                                             zoom_factor,
                                             num_scale_factor,
                                             (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(cursor_x),
@@ -1171,7 +1167,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                             barMode,
                                             num_first_channel,
                                             num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)),
-                                            getString(R.string.graph_show_channel),
                                             zoom_factor,
                                             num_scale_factor,
                                             (float) cursor_x,
@@ -1202,7 +1197,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                         barMode,
                                         (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getEnergyFromEnergyChannel(num_first_channel, AtomSpectraService.lastCalibrationChannel),
                                         (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().getEnergyFromEnergyChannel(num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)), AtomSpectraService.lastCalibrationChannel),
-                                        getString(R.string.graph_show_kev),
                                         zoom_factor,
                                         num_scale_factor,
                                         (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(cursor_x),
@@ -1220,7 +1214,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                         barMode,
                                         num_first_channel,
                                         num_first_channel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - num_scale_factor)),
-                                        getString(R.string.graph_show_channel),
                                         zoom_factor,
                                         num_scale_factor,
                                         (float) cursor_x,
@@ -1229,6 +1222,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             break;
                         case Constants.DISPLAY_MODE_SEARCH:
                             // ToastHelper.ShowToast(context, "search mode");
+                            long[] searchHistoryTimestamps = mBundle.getLongArray(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SEARCH_HISTORY_TIMESTAMPS);
+                            if (searchHistoryTimestamps == null) {
+                                searchHistoryTimestamps = new long[AtomSpectraService.SEARCH_WINDOW_SIZE];
+                            }
+
                             switch (DisplayDose) {
                                 case Constants.DISPLAY_DOSE_INTERVAL:
                                     double[] interval_search_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_SEARCH_INT_CPS_HISTORY);
@@ -1254,6 +1252,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                             alarmLevelHigh,
                                             alarmLevelLow,
                                             alarmBaseline,
+                                            searchHistoryTimestamps,
                                             sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false),
                                             zoom_factor
                                     );
@@ -1273,6 +1272,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                                     mAtomSpectraShapeView.showDoseSearch(
                                             non_compensated_data,
                                             compensated_data,
+                                            searchHistoryTimestamps,
                                             zoom_factor
                                     );
                                     break;
@@ -1421,17 +1421,6 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         }
 
     };
-
-    private void updateStatusLineLastUpdated(long spectrumUpdatedAt) {
-        if (spectrumUpdatedAt > 0) {
-            statusLineLastUpdatedText.setText(
-                    getString(R.string.status_last_updated_format,
-                            statusLastUpdatedFormat.format(new Date(spectrumUpdatedAt))));
-        } else {
-            statusLineLastUpdatedText.setText(R.string.status_last_updated_placeholder);
-        }
-        statusLineLastUpdatedText.setTextColor(Color.WHITE);
-    }
 
     private void showBriefNotification(String text, int color, long durationMs) {
         briefNotification.removeCallbacks(briefNotificationHideRunnable);

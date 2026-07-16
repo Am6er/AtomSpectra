@@ -37,6 +37,7 @@ public class Constants {
     public static final double DOSE_OVERHEAD = 1.05;                                                                     //maximum to be shown
     public static final int CURSOR_TIMEOUT = 7000;                                                                       //timeout of buttons in ms
     public static final int WINDOW_SEARCH_DEFAULT = 60;                                                                  //window search size
+    public static final long SEARCH_HISTORY_TIME_GAP_THRESHOLD_MS = 3000L;                                               //search history pause/resume gap threshold
     public static final float TOLERANCE_DEFAULT = 5.0f;                                                                  //tolerance default
     public static final float THRESHOLD_DEFAULT = 0.5f;                                                                  //threshold default
     public static final int ORDER_DEFAULT = 5;                                                                           //order size
