@@ -1157,9 +1157,8 @@ public class AtomSpectraShapeView extends View {
 
 		float axisY = margin_top + height;
 		float slashHalfWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics());
-		float slashRisePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 7, getResources().getDisplayMetrics());
-		float slashDropPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
-		float gapBetweenSlashesPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
+		float slashHalfHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
+		float gapBetweenSlashesPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
 		float gapHalfWidthPx = gapBetweenSlashesPx / 2.0f;
 		float plotLeft = margin_left;
 		float plotRight = margin_left + width;
@@ -1169,9 +1168,16 @@ public class AtomSpectraShapeView extends View {
 				continue;
 			}
 			drawSearchTimeGapAxisBreak(canvas, gapMarkerX, axisY, gapHalfWidthPx);
-			drawSearchTimeGapSlash(canvas, gapMarkerX - gapHalfWidthPx - slashHalfWidthPx, axisY, slashHalfWidthPx, slashRisePx, slashDropPx);
-			drawSearchTimeGapSlash(canvas, gapMarkerX + gapHalfWidthPx + slashHalfWidthPx, axisY, slashHalfWidthPx, slashRisePx, slashDropPx);
+			drawSearchTimeGapSlash(canvas, gapMarkerX - gapHalfWidthPx - slashHalfWidthPx, axisY, slashHalfWidthPx, slashHalfHeightPx);
+			drawSearchTimeGapSlash(canvas, gapMarkerX + gapHalfWidthPx + slashHalfWidthPx, axisY, slashHalfWidthPx, slashHalfHeightPx);
 		}
+	}
+
+	private int getAxisStrokeColor() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			return getResources().getColor(R.color.colorStrokes, null);
+		}
+		return getResources().getColor(R.color.colorStrokes);
 	}
 
 	private void drawSearchTimeGapAxisBreak(Canvas canvas, float centerX, float axisY, float breakHalfWidthPx) {
@@ -1199,10 +1205,26 @@ public class AtomSpectraShapeView extends View {
 			float centerX,
 			float axisY,
 			float halfWidthPx,
-			float risePx,
-			float dropPx
+			float halfHeightPx
 	) {
-		canvas.drawLine(centerX - halfWidthPx, axisY + dropPx, centerX + halfWidthPx, axisY - risePx, squareColor);
+		Style savedStyle = squareColor.getStyle();
+		int savedColor = squareColor.getColor();
+		float savedStrokeWidth = squareColor.getStrokeWidth();
+
+		squareColor.setStyle(Style.STROKE);
+		squareColor.setColor(getAxisStrokeColor());
+		squareColor.setStrokeWidth(2);
+		canvas.drawLine(
+				centerX - halfWidthPx,
+				axisY + halfHeightPx,
+				centerX + halfWidthPx,
+				axisY - halfHeightPx,
+				squareColor
+		);
+
+		squareColor.setStyle(savedStyle);
+		squareColor.setColor(savedColor);
+		squareColor.setStrokeWidth(savedStrokeWidth);
 	}
 
 	private void setXAxisType(int axisType) {
