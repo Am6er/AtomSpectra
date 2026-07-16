@@ -1156,10 +1156,8 @@ public class AtomSpectraShapeView extends View {
 		}
 
 		float axisY = margin_top + height;
-		float slashHalfWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3, getResources().getDisplayMetrics());
-		float slashHalfHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
-		float gapBetweenSlashesPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
-		float gapHalfWidthPx = gapBetweenSlashesPx / 2.0f;
+		float slashHalfWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, getResources().getDisplayMetrics());
+		float slashHalfHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5, getResources().getDisplayMetrics());
 		float plotLeft = margin_left;
 		float plotRight = margin_left + width;
 
@@ -1167,9 +1165,9 @@ public class AtomSpectraShapeView extends View {
 			if (gapMarkerX < plotLeft || gapMarkerX > plotRight) {
 				continue;
 			}
-			drawSearchTimeGapAxisBreak(canvas, gapMarkerX, axisY, gapHalfWidthPx);
-			drawSearchTimeGapSlash(canvas, gapMarkerX - gapHalfWidthPx - slashHalfWidthPx, axisY, slashHalfWidthPx, slashHalfHeightPx);
-			drawSearchTimeGapSlash(canvas, gapMarkerX + gapHalfWidthPx + slashHalfWidthPx, axisY, slashHalfWidthPx, slashHalfHeightPx);
+			drawSearchTimeGapAxisBreak(canvas, gapMarkerX, axisY, slashHalfWidthPx);
+			drawSearchTimeGapSlash(canvas, gapMarkerX - slashHalfWidthPx, axisY, slashHalfWidthPx, slashHalfHeightPx);
+			drawSearchTimeGapSlash(canvas, gapMarkerX + slashHalfWidthPx, axisY, slashHalfWidthPx, slashHalfHeightPx);
 		}
 	}
 
