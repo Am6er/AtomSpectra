@@ -201,6 +201,9 @@ public class AtomSpectraService extends Service {
     // time in seconds in the foreground spectrum
     public final static String EXTRA_DATA_INT_FG_TOTAL_TIME =
             "org.fe57.atomspectra.EXTRA_DATA_INT_FG_TOTAL_TIME";
+    // last foreground spectrum data update (epoch millis)
+    public final static String EXTRA_DATA_LONG_FG_SPECTRUM_UPDATED_AT =
+            "org.fe57.atomspectra.EXTRA_DATA_LONG_FG_SPECTRUM_UPDATED_AT";
     // foreground spectrum counts array
     public final static String EXTRA_DATA_ARRAY_DOUBLE_FG =
             "org.fe57.atomspectra.EXTRA_DATA_ARRAY_DOUBLE_FG";
@@ -2270,6 +2273,7 @@ public class AtomSpectraService extends Service {
         // spectrum data
         mBundle.putLong(EXTRA_DATA_LONG_TOTAL_FG_COUNTS, total_counts);
         mBundle.putDouble(EXTRA_DATA_INT_FG_TOTAL_TIME, ForegroundSpectrum.getRealSpectrumTime());
+        mBundle.putLong(EXTRA_DATA_LONG_FG_SPECTRUM_UPDATED_AT, ForegroundSpectrum.getSpectrumDate());
 
         if (num_scale_factor < Constants.SCALE_MIN || num_scale_factor > Constants.SCALE_MAX) {
             AtomSpectraLog.addMessage(service_context, String.format("ERROR: unexpected scale factor: %d", num_scale_factor));

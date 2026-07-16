@@ -159,13 +159,14 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     public static int reducedTo;
     public static int exportChannelCompression;
 
-    private TextView statusLineTopText, statusLineMiddleText, statusLineBottomText;
+    private TextView statusLineLastUpdatedText, statusLineTopText, statusLineMiddleText, statusLineBottomText;
     private TextView briefNotification;
     private Button fmsButton;
     private final int[] searchFMSNextMode = {1, 2, 0};
     private final String[] searchFMSNames = {"F", "M", "S"};
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH-mm-ss", Locale.US);
+    private final SimpleDateFormat statusLastUpdatedFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
     //	private final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US);
     private final SimpleDateFormat dateZoneFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss Z", Locale.US);
     private final int mutabilityFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
@@ -251,6 +252,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         }
 
         fmsButton = findViewById(R.id.fmsButton);
+        statusLineLastUpdatedText = findViewById(R.id.statusLineLastUpdatedText);
         statusLineTopText = findViewById(R.id.statusLineTopText);
         statusLineMiddleText = findViewById(R.id.statusLineMiddleText);
         statusLineBottomText = findViewById(R.id.statusLineBottomText);
@@ -1103,6 +1105,8 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             break;
                     }
 
+                    updateStatusLineLastUpdated(mBundle.getLong(AtomSpectraService.EXTRA_DATA_LONG_FG_SPECTRUM_UPDATED_AT, 0));
+
                     showCursorInfo(false);
 
                     // main data
@@ -1417,6 +1421,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         }
 
     };
+
+    private void updateStatusLineLastUpdated(long spectrumUpdatedAt) {
+        if (spectrumUpdatedAt > 0) {
+            statusLineLastUpdatedText.setText(
+                    getString(R.string.status_last_updated_format,
+                            statusLastUpdatedFormat.format(new Date(spectrumUpdatedAt))));
+        } else {
+            statusLineLastUpdatedText.setText(R.string.status_last_updated_placeholder);
+        }
+        statusLineLastUpdatedText.setTextColor(Color.WHITE);
+    }
 
     private void showBriefNotification(String text, int color, long durationMs) {
         briefNotification.removeCallbacks(briefNotificationHideRunnable);

@@ -235,6 +235,8 @@
     <string name="dose_rate_measurement_time_format"> [<xliff:g id="measurement_time">%1$d</xliff:g> s]</string>
     <string name="dose_rate_measurement_time_format_fractional"> [<xliff:g id="measurement_time">%1$.1f</xliff:g> s]</string>
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
+    <string name="status_last_updated_format">upd: <xliff:g id="time">%1$s</xliff:g></string>
+    <string name="status_last_updated_placeholder">upd: --:--:--</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">~cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
@@ -604,12 +606,14 @@
         \t- Данные фона в программе можно очистить.\n
         \t- Можно сгладить спектр командой <annotation foreground="parameter">Сгладить</annotation> в подменю <annotation foreground="parameter">Спектр</annotation>.\n
         \t- Можно редактировать и смотреть описания для спектра и фона при выводе курсора. Эти описания используются как суффиксы при сохранении. Для их изменения используется <annotation foreground="parameter">Ввести описание</annotation> в подменю <annotation foreground="parameter">Спектр</annotation> или <annotation foreground="parameter">Фон</annotation>.\n
+        \t- Текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \t- Текстовое поле <annotation foreground="parameter">~cps</annotation> отображает среднее количество импульсов в секунду по всему диапазону энергий за все время набора.\n
         \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает общее время набора спектра.\n
         \n
         \tРежим <annotation foreground="parameter">Изменение</annotation> спектра:\n
         \t- В данном режиме отображается изменение состояния спектра в режиме скользящего временного окна. Размер скользящего окна можно выбрать в диапазоне от 1 до 300 с в параметре <annotation foreground="parameter">Дельта-время</annotation> в <annotation foreground="parameter">Настройках</annotation>. В этом режиме отображается два спектра с разной длительностью скользящего окна: n секунд и 4n секунд (например, 30/120). Цвет спектра короткого окна (n) в этом режиме пурпурный, длинного (4n) - зеленый. Строки отображения общего времени набора и скорости счета основного спектра сменяются на отображение размеров окон и скоростей счета в рамках этих окон (короткое/длинное).\n
+        \t- Текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \t- Текстовое поле <annotation foreground="parameter">~cps</annotation> отображает среднее количество импульсов в секунду по всему диапазону энергий в каждом из окон.\n
         \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает текущий размер скользящих окон в секундах.\n
@@ -641,6 +645,7 @@
         Программа выполняет расчёт трех значений - некомпенсированная мощность дозы, компенсированная мощность дозы, скорость счета в заданном диапазоне (интервале) энергий. Некомпенсированная - линейный пересчет общей скорости счета в мощность дозы с использованием коэффициента. Компенсированная - расчет мощности дозы с учетом энергии регистриремых гамма квантов, кривой чувствительности детектора и коэффициента.\n
         \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Окна поиска (в импульсах) для каждого режима задаются в профиле в <annotation foreground="parameter">Устройство</annotation> - <annotation foreground="parameter">Чувствительность</annotation> отдельно для компенсированной и некомпенсированной мощности дозы. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
         \t- Для переключения между типами данных, отображаемыми на графике, нажмите на кнопку <annotation foreground="parameter">Д/И</annotation>. <annotation foreground="parameter">Д</annotation> означает «история мощности дозы». <annotation foreground="parameter">И</annotation> означает «история скорости счета в интервале».\n
+        \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \n
         Некомпенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, зеленый график):\n
