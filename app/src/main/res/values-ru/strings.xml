@@ -543,6 +543,15 @@
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
+    <string name="spectrogram_gap_label">пропуск: %1$s</string>
+    <string name="spectrogram_gap_duration_days_hours">%1$dд %2$dч</string>
+    <string name="spectrogram_gap_duration_days">%1$dд</string>
+    <string name="spectrogram_gap_duration_hours_minutes">%1$dч %2$dм</string>
+    <string name="spectrogram_gap_duration_hours">%1$dч</string>
+    <string name="spectrogram_gap_duration_minutes_seconds">%1$dм %2$dс</string>
+    <string name="spectrogram_gap_duration_minutes">%1$dм</string>
+    <string name="spectrogram_gap_duration_seconds">%1$dс</string>
+    <string name="spectrogram_gap_mismatch_warning">⚠ другой детектор/калибровка</string>
     <string name="spectrogram_preview_toggle">Показать или скрыть предпросмотр спектра</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Экспорт спектра…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Экспорт…</string>

@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -67,6 +68,7 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -2348,15 +2350,17 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             Log.d(TAG, "loading spectrogram file");
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_READ_SPG)) {
-                    Intent loadIntent = new Intent()
+                    Intent loadIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT)
+                            .addCategory(Intent.CATEGORY_OPENABLE)
                             .setType("*/*")
-                            .setAction(Intent.ACTION_GET_CONTENT);
+                            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                     startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_spectrogram)), LOAD_SPG_CODE);
                 }
             } else {
-                Intent loadIntent = new Intent()
+                Intent loadIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT)
+                        .addCategory(Intent.CATEGORY_OPENABLE)
                         .setType("*/*")
-                        .setAction(Intent.ACTION_GET_CONTENT);
+                        .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_spectrogram)), LOAD_SPG_CODE);
             }
             return true;
@@ -3113,9 +3117,20 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             if (selectedFile != null)
                 shareFile(selectedFile);
         } else if (requestCode == LOAD_SPG_CODE && resultCode == RESULT_OK) {
-            selectedFile = data.getData(); //The uri with the location of the file
-            if (selectedFile != null)
-                loadAndViewSpectrogram(selectedFile);
+            List<Uri> selectedFiles = new ArrayList<>();
+            if (data.getClipData() != null) {
+                ClipData clipData = data.getClipData();
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    Uri uri = clipData.getItemAt(i).getUri();
+                    if (uri != null) {
+                        selectedFiles.add(uri);
+                    }
+                }
+            } else if (data.getData() != null) {
+                selectedFiles.add(data.getData());
+            }
+            if (!selectedFiles.isEmpty())
+                loadAndViewSpectrograms(selectedFiles);
         } else if (requestCode == SELECT_SAVE_HIST_DIR_CODE && resultCode == RESULT_OK && (data != null)) {
             try {
                 final Uri dirUri = data.getData();
@@ -3543,21 +3558,20 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         }
     }
 
-    private void loadAndViewSpectrogram(Uri histFile) {
+    private void loadAndViewSpectrograms(List<Uri> histFiles) {
         if (isLoadingSpectrogram) {
-            ToastHelper.showToast(this, "ERROR: loadAndViewSpectrogram called while spectrogram is loading.");
+            ToastHelper.showToast(this, "ERROR: loadAndViewSpectrograms called while spectrogram is loading.");
             return;
         }
 
-        final String filename = histFile.getPath();
-        if (filename == null) {
-            Log.d(TAG, "Null filename");
-            ToastHelper.showToast(this, getString(R.string.strange_file_name));
-            return;
+        for (Uri histFile : histFiles) {
+            if (histFile.getPath() == null) {
+                Log.d(TAG, "Null filename");
+                ToastHelper.showToast(this, getString(R.string.strange_file_name));
+                return;
+            }
         }
-        Log.d(TAG, filename);
 
-        SpectrumFileAS spectrumFile = new SpectrumFileAS();
         AtomSpectraSpectrogramData.instance.clear();
 
         loadingSpectrogramCancellationToken = new CancellationToken();
@@ -3570,17 +3584,31 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             mainHandler.post(() -> updateSpectrogramMenu());
 
             try {
-                spectrumFile.loadSpectrogram(histFile, context, AtomSpectraSpectrogramData.instance,
-                        rowCount -> {
-                            mainHandler.post(() -> {
-                                if (active && spectrogramLoadingDialog != null) {
-                                    spectrogramLoadingDialog.setMessage(getString(R.string.spectrogram_loading_dialog_message, AtomSpectraSpectrogramData.instance.rowCount()));
-                                }
-                            });
-                        }, loadingSpectrogramCancellationToken);
+                for (Uri histFile : histFiles) {
+                    if (loadingSpectrogramCancellationToken.isCancelled()) {
+                        break;
+                    }
+
+                    Log.d(TAG, histFile.getPath());
+                    SpectrumFileAS spectrumFile = new SpectrumFileAS();
+                    spectrumFile.loadSpectrogram(histFile, context, AtomSpectraSpectrogramData.instance,
+                            rowCount -> {
+                                mainHandler.post(() -> {
+                                    if (active && spectrogramLoadingDialog != null) {
+                                        spectrogramLoadingDialog.setMessage(getString(R.string.spectrogram_loading_dialog_message, AtomSpectraSpectrogramData.instance.rowCount()));
+                                    }
+                                });
+                            }, loadingSpectrogramCancellationToken);
+                }
+
+                if (histFiles.size() > 1) {
+                    AtomSpectraSpectrogramData.instance.sortSegmentsRejectOverlap();
+                }
+
                 mainHandler.post(() -> showSpectrogramView());
                 ToastHelper.showToast(getContext(), getString(R.string.spectrogram_load_success));
             } catch (Exception e) {
+                AtomSpectraSpectrogramData.instance.clear();
                 AtomSpectraLog.addMessage(getContext(), Log.getStackTraceString(e));
                 ToastHelper.showToast(getContext(), getString(R.string.spectrogram_load_error, e.getMessage()));
             } finally {

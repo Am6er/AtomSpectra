@@ -35,6 +35,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
@@ -47,10 +48,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     // region selection state - kept static so it survives orientation changes / activity recreate
     private static String recordingId = "";
-    private static int bgLeftBound = -1;
-    private static int bgRightBound = -1;
-    private static int fgLeftBound = -1;
-    private static int fgRightBound = -1;
+    private static AtomSpectraSpectrogramView.SelectionBound bgLeftBound = null;
+    private static AtomSpectraSpectrogramView.SelectionBound bgRightBound = null;
+    private static AtomSpectraSpectrogramView.SelectionBound fgLeftBound = null;
+    private static AtomSpectraSpectrogramView.SelectionBound fgRightBound = null;
     private static int lastRowCount = 0;
     private static boolean previewVisible = true;
 
@@ -166,8 +167,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (preview == null || !previewVisible) {
             return;
         }
-        double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound, bgRightBound);
-        double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound, fgRightBound);
+        double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound.segmentIndex, bgLeftBound.rowIndex, bgRightBound.segmentIndex, bgRightBound.rowIndex);
+        double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound.segmentIndex, fgLeftBound.rowIndex, fgRightBound.segmentIndex, fgRightBound.rowIndex);
         double[] energies = computeEnergiesArray();
         preview.setScale(scale);
         preview.setSpectra(bg, fg, energies);
@@ -248,10 +249,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         // reset state for each new spectrogram
         if (recordingId != AtomSpectraSpectrogramData.instance.getRecordingId()) {
             sbin = 1;
-            bgLeftBound = -1;
-            bgRightBound = -1;
-            fgLeftBound = -1;
-            fgRightBound = -1;
+            bgLeftBound = null;
+            bgRightBound = null;
+            fgLeftBound = null;
+            fgRightBound = null;
             recordingId = AtomSpectraSpectrogramData.instance.getRecordingId();
 
         }
@@ -285,18 +286,12 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
             int newRowCount = AtomSpectraSpectrogramData.instance.rowCount();
-
-            // shift handle indices when oldest rows have been dropped (MAX_ROWS truncation)
             if (newRowCount == 0) {
-                bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = -1;
-            } else if (newRowCount > 0 && (bgLeftBound < 0 || bgRightBound < 0 || fgLeftBound < 0 || fgRightBound < 0)) {
-                bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = 0;
+                bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = null;
+            } else if (newRowCount > 0 && (bgLeftBound == null || bgRightBound == null || fgLeftBound == null || fgRightBound == null)) {
+                bgLeftBound = bgRightBound = fgLeftBound = fgRightBound = AtomSpectraSpectrogramView.SelectionBound.zeroIndex();
             } else if (lastRowCount > 0 && newRowCount < lastRowCount) {
-                int dropped = lastRowCount - newRowCount;
-                bgLeftBound = shiftRowIndex(bgLeftBound, dropped);
-                bgRightBound = shiftRowIndex(bgRightBound, dropped);
-                fgLeftBound = shiftRowIndex(fgLeftBound, dropped);
-                fgRightBound = shiftRowIndex(fgRightBound, dropped);
+                // TODO: is it really a case?
             }
             lastRowCount = newRowCount;
 
@@ -313,11 +308,6 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             syncRegionsToPreview();
         }
-    }
-
-    private static int shiftRowIndex(int row, int dropped) {
-        if (row < 0) return row;
-        return Math.max(0, row - dropped);
     }
 
     @SuppressLint("DefaultLocale")
@@ -478,7 +468,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     private void showSpectrumExportNameDialog() {
         String basePrefix = "";
-        Spectrum baseSpectrum = AtomSpectraSpectrogramData.instance.getBaseSpectrum();
+        Spectrum baseSpectrum = AtomSpectraSpectrogramData.instance.baseSegment().getBaseSpectrum();
         if (baseSpectrum != null && !baseSpectrum.getSuffix().isEmpty()) {
             basePrefix = baseSpectrum.getSuffix() + "-";
         }
@@ -605,15 +595,23 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
     }
 
-    private void exportSpectrum(int leftBound, int rightBound, String spectrumName, CancellationToken cancellationToken) {
+    private void exportSpectrum(AtomSpectraSpectrogramView.SelectionBound leftBound, AtomSpectraSpectrogramView.SelectionBound rightBound, String spectrumName, CancellationToken cancellationToken) {
         SpectrumFileAS spectrum = new SpectrumFileAS();
-        int fromDelta = Math.min(leftBound, rightBound);
-        fromDelta = Constants.MinMax(fromDelta, 0, AtomSpectraSpectrogramData.instance.rowCount() - 1);
-        int toDelta = Math.max(leftBound, rightBound);
-        toDelta = Constants.MinMax(toDelta, 0, AtomSpectraSpectrogramData.instance.rowCount() - 1);
+        AtomSpectraSpectrogramView.SelectionBound fromDelta;
+        AtomSpectraSpectrogramView.SelectionBound toDelta;
+        if (leftBound.compareTo(rightBound) <= 0) {
+            fromDelta = leftBound;
+            toDelta = rightBound;
+        } else {
+            fromDelta = rightBound;
+            toDelta = leftBound;
+        }
+
         try {
+            List<AtomSpectraSpectrogramData.SegmentExportRange> ranges =
+                    AtomSpectraSpectrogramData.instance.resolveExportRanges(fromDelta.segmentIndex, fromDelta.rowIndex, toDelta.segmentIndex, toDelta.rowIndex);
             Handler mainHandler = new Handler(Looper.getMainLooper());
-            String spectrumFileName = spectrum.exportSpectrogramPartAsSpectrum(AtomSpectraSpectrogramData.instance.getSpectrogramFileName(), spectrumName, fromDelta, toDelta, this, progress -> {
+            String spectrumFileName = spectrum.exportSpectrogramPartAsSpectrum(ranges, spectrumName, this, progress -> {
                 mainHandler.post(() -> {
                     if (isActive && spectrumExportingDialog != null) {
                         spectrumExportingDialog.setMessage(progress);
