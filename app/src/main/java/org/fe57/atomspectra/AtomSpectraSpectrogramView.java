@@ -192,7 +192,7 @@ public class AtomSpectraSpectrogramView extends View {
     private float ENERGY_TICK_HEIGHT_DP = 8f;
     private float CHANNEL_AXIS_HEIGHT_DP = 40f;
     private float HANDLE_SIZE_DP = 24f;
-    private float HANDLE_TOUCH_RADIUS_DP = 40f;
+    private float HANDLE_TOUCH_RADIUS_DP = 50f;
     private float PADDING_TOP_DP = HANDLE_SIZE_DP / 2f;
     private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
     private float COLOR_BAR_HEIGHT_DP = 16f;
@@ -478,8 +478,6 @@ public class AtomSpectraSpectrogramView extends View {
                 // selection
                 if (draggingSelectionHandle != HANDLE_NONE) {
                     SelectionBound row = touchYToBinStartRow(event.getY());
-                    // touchYToBinStartRow may fail to resolve a row (returns null); leave the
-                    // handle where it is rather than assigning null and NPEing in setSelectionHandleRow.
                     if (row != null) {
                         setSelectionHandleRow(draggingSelectionHandle, row);
                         renderSpectrogramToBitmap(); // probably not optimal to re-render everything
@@ -676,8 +674,8 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         int viewHeight = getHeight();
-        if (y > viewHeight - CHANNEL_AXIS_HEIGHT_PX) {
-            y = viewHeight - CHANNEL_AXIS_HEIGHT_PX;
+        if (y > viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX) {
+            y = viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX;
         }
 
         return y;
@@ -1572,8 +1570,11 @@ public class AtomSpectraSpectrogramView extends View {
             return;
         }
 
-        float apexY = rowToViewportYpx(row);
         boolean visible = row.compareTo(visibleStartRow) >= 0 && row.compareTo(visibleEndRow) <= 0;
+        float apexY = rowToViewportYpx(row);
+        if (row.compareTo(visibleEndRow) > 0) {
+            apexY = rowToViewportYpx(visibleEndRow);
+        }
 
         if (visible) {
             // selection boundary line
