@@ -478,9 +478,13 @@ public class AtomSpectraSpectrogramView extends View {
                 // selection
                 if (draggingSelectionHandle != HANDLE_NONE) {
                     SelectionBound row = touchYToBinStartRow(event.getY());
-                    setSelectionHandleRow(draggingSelectionHandle, row);
-                    renderSpectrogramToBitmap(); // probably not optimal to re-render everything
-                    invalidate();
+                    // touchYToBinStartRow may fail to resolve a row (returns null); leave the
+                    // handle where it is rather than assigning null and NPEing in setSelectionHandleRow.
+                    if (row != null) {
+                        setSelectionHandleRow(draggingSelectionHandle, row);
+                        renderSpectrogramToBitmap(); // probably not optimal to re-render everything
+                        invalidate();
+                    }
                     return true;
                 }
 
@@ -735,7 +739,18 @@ public class AtomSpectraSpectrogramView extends View {
                                   String scale, String palette, boolean scrollToBottom,
                                   SelectionBound bgLeftBound, SelectionBound bgRightBound, SelectionBound fgLeftBound, SelectionBound fgRightBound) {
         this.segmentsData = data.getSegments();
-        if (this.segmentsData.isEmpty()) {
+        // Treat "no delta rows yet" the same as "no segments": a segment can exist with a base
+        // spectrum but zero rows (recording just started). In that case the caller passes null
+        // bounds, so we must not fall through to the handle logic. See AtomSpectraSpectrogram
+        // .updateSpectrogram, which keys emptiness off rowCount() (total rows), not segment count.
+        boolean hasRows = false;
+        for (AtomSpectraSpectrogramData.SegmentData segment : this.segmentsData) {
+            if (segment.getRowCount() > 0) {
+                hasRows = true;
+                break;
+            }
+        }
+        if (!hasRows) {
             this.segmentsBinData = new ArrayList<>();
             this.gapsMeta = new ArrayList<>();
             this.virtualRowsMeta = new VirtualRowMeta[0];
