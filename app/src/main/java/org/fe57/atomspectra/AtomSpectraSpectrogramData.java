@@ -11,7 +11,7 @@ import java.util.List;
 public class AtomSpectraSpectrogramData {
     public static final AtomSpectraSpectrogramData instance = new AtomSpectraSpectrogramData();
     public static final int CHANNEL_COUNT = 1024; // must be 2^n and less then 8192
-    public static final int MAX_ROWS = 25000;
+    public static final int MAX_ROWS = 35000;
 
     // A segment groups rows recorded under a single base spectrum (calibration + device
     // info) and backing file. addDelta() always appends to the latest segment; a new
@@ -267,7 +267,7 @@ public class AtomSpectraSpectrogramData {
             if (fromSegment == toSegment) {
                 Segment segment = segments.get(fromSegment);
                 fromRow = Math.max(0, Math.min(bound1Row, bound2Row));
-                toRow = Math.min(segment.rowCount() - 1, Math.max(bound1Segment, bound2Segment));
+                toRow = Math.min(segment.rowCount() - 1, Math.max(bound1Row, bound2Row));
                 if (fromRow > toRow) {
                     // TODO: throw?
                     return null;
@@ -292,7 +292,7 @@ public class AtomSpectraSpectrogramData {
                 int toSegmentRow = s == toSegment
                         ? toRow
                         : segment.rowCount() - 1;
-                for (int i = fromSegmentRow; i < toSegmentRow; i++) {
+                for (int i = fromSegmentRow; i <= toSegmentRow; i++) {
                     double duration = segment.durations.get(i);
                     float[] row = segment.spectrogram.get(i);
                     totalDuration += duration;
@@ -370,7 +370,7 @@ public class AtomSpectraSpectrogramData {
             if (fromSegment == toSegment) {
                 Segment segment = segments.get(fromSegment);
                 fromRow = Math.max(0, Math.min(bound1Row, bound2Row));
-                toRow = Math.min(segment.rowCount() - 1, Math.max(bound1Segment, bound2Segment));
+                toRow = Math.min(segment.rowCount() - 1, Math.max(bound1Row, bound2Row));
                 if (fromRow > toRow) {
                     // TODO: throw?
                     return ranges;
@@ -397,8 +397,8 @@ public class AtomSpectraSpectrogramData {
                     // In-memory row 0 of first segment may no longer be file-local delta
                     // 0 if earlier rows were evicted (MAX_ROWS truncation)
                     ranges.add(new SegmentExportRange(segment.spectrogramFileName,
-                            fromSegmentRow + s == fromSegment ? segment.evictedRowCount : 0,
-                            toSegmentRow + s == fromSegment ? segment.evictedRowCount : 0));
+                            fromSegmentRow + (s == fromSegment ? segment.evictedRowCount : 0),
+                            toSegmentRow + (s == fromSegment ? segment.evictedRowCount : 0)));
                 }
             }
 
