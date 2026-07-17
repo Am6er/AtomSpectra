@@ -543,6 +543,15 @@
     <string name="spectrogram_loading_dialog_stop">Stop and view loaded</string>
     <string name="spectrogram_view">View</string>
     <string name="spectrogram_row_count">Rows: %1$d</string>
+    <string name="spectrogram_gap_label">gap: %1$s</string>
+    <string name="spectrogram_gap_duration_days_hours">%1$dd %2$dh</string>
+    <string name="spectrogram_gap_duration_days">%1$dd</string>
+    <string name="spectrogram_gap_duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="spectrogram_gap_duration_hours">%1$dh</string>
+    <string name="spectrogram_gap_duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="spectrogram_gap_duration_minutes">%1$dm</string>
+    <string name="spectrogram_gap_duration_seconds">%1$ds</string>
+    <string name="spectrogram_gap_mismatch_warning">⚠ different detector/calibration</string>
     <string name="spectrogram_preview_toggle">Show or hide the spectrum preview</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Exporting spectrum…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Exporting…</string>

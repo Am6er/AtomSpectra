@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.security.InvalidParameterException;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 //This is the main class to load and store own Atom Spectra spectrum
@@ -312,6 +313,12 @@ public class SpectrumFileAS extends SpectrumFile {
         }
     }
 
+    /**
+     * Loads a single spectrogram file (base spectrum + deltas) into target as a new
+     * segment, appended via addSegment(). Callers loading multiple files must clear()
+     * target once up front themselves and call this once per file - it no longer clears
+     * on its own, so it can be called repeatedly to build up a multi-segment load.
+     */
     public void loadSpectrogram(@NonNull Uri spectrogramFilePath, Context context, AtomSpectraSpectrogramData target, ProgressCallback<Integer> onDeltasLoaded, CancellationToken cancellationToken) throws InvalidParameterException, IOException {
         validateLoadState();
 
@@ -323,8 +330,7 @@ public class SpectrumFileAS extends SpectrumFile {
              BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
             String versionStr = fr.readLine();
             loadSpectrumV3(fr, versionStr);
-            target.clear();
-            target.setBaseSpectrum(this.spectrumList.get(0), spectrogramFilePath);
+            target.addSegment(this.spectrumList.get(0), spectrogramFilePath);
             // load deltas
             while (true) {
                 if (cancellationToken.isCancelled()) {
@@ -349,70 +355,95 @@ public class SpectrumFileAS extends SpectrumFile {
         }
     }
 
-    public String exportSpectrogramPartAsSpectrum(@NonNull Uri spectrogramFilePath, String spectrumName, int fromDelta, int toDelta, Context context, ProgressCallback<String> onProgress, CancellationToken cancellationToken) throws InvalidParameterException, IOException {
+    /**
+     * Combines deltas from one or more segment ranges (see
+     * {@link AtomSpectraSpectrogramData#resolveExportRanges}) into a single exported
+     * spectrum file. Ranges are processed in order; only deltas are combined across
+     * ranges/segments — base spectrums are read solely to locate/skip to each range's
+     * deltas within its own file. The combined output's calibration and device info come
+     * from the first (chronologically earliest) range's base spectrum only.
+     */
+    public String exportSpectrogramPartAsSpectrum(@NonNull List<AtomSpectraSpectrogramData.SegmentExportRange> ranges, String spectrumName, Context context, ProgressCallback<String> onProgress, CancellationToken cancellationToken) throws InvalidParameterException, IOException {
         validateLoadState();
 
-        if (toDelta < fromDelta || toDelta < 0 || fromDelta < 0) {
-            throw new InvalidParameterException(String.format("Invalid delta indices [%d, %d]", fromDelta, toDelta));
+        if (ranges.isEmpty()) {
+            throw new InvalidParameterException("No segment ranges to export");
         }
 
-        InputStream histFile = context.getContentResolver().openInputStream(spectrogramFilePath);
-        if (histFile == null) {
-            throw new IOException("Unable to open spectrogram file: " + spectrogramFilePath);
+        int totalDeltaCount = 0;
+        for (AtomSpectraSpectrogramData.SegmentExportRange range : ranges) {
+            if (range.fileToDelta < range.fileFromDelta || range.fileToDelta < 0 || range.fileFromDelta < 0) {
+                throw new InvalidParameterException(String.format("Invalid delta indices [%d, %d]", range.fileFromDelta, range.fileToDelta));
+            }
+            totalDeltaCount += range.fileToDelta - range.fileFromDelta + 1;
         }
 
-        Spectrum baseSpectrum;
+        Spectrum baseSpectrum = null;
         long[] combinedSpectrum = new long[Constants.NUM_HIST_POINTS];
         double combinedDuration = 0;
         long lastDeltaDate = 0;
+        int processedDeltaCount = 0;
 
-        try (InputStream in = histFile;
-             BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
-            // load base spectrum
-            String versionStr = fr.readLine();
-            onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_loading_base, spectrumName));
-            loadSpectrumV3(fr, versionStr);
-            baseSpectrum = this.spectrumList.get(0);
-            // TODO: validate channel count
-            int deltaIndex = 0;
-            // load deltas
-            onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas, spectrumName));
-            while (true) {
-                if (cancellationToken.isCancelled()) {
-                    break;
+        for (AtomSpectraSpectrogramData.SegmentExportRange range : ranges) {
+            if (cancellationToken.isCancelled()) {
+                break;
+            }
+
+            InputStream histFile = context.getContentResolver().openInputStream(range.spectrogramFileName);
+            if (histFile == null) {
+                throw new IOException("Unable to open spectrogram file: " + range.spectrogramFileName);
+            }
+
+            // Each segment's own file is loaded via its own SpectrumFileAS instance:
+            // validateLoadState()/spectrumList are per-instance, and each range's base
+            // spectrum is only needed transiently to skip to that range's deltas (except
+            // for the very first range, whose base spectrum becomes the combined output's
+            // calibration).
+            SpectrumFileAS segmentFile = new SpectrumFileAS();
+            try (InputStream in = histFile;
+                 BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
+                String versionStr = fr.readLine();
+                onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_loading_base, spectrumName));
+                segmentFile.loadSpectrumV3(fr, versionStr);
+                if (baseSpectrum == null) {
+                    baseSpectrum = segmentFile.spectrumList.get(0);
                 }
+                // TODO: validate channel count
 
-                if (deltaIndex < fromDelta) {
-                    skipNextDelta(fr);
-                    deltaIndex++;
-
-                    if ((fromDelta - deltaIndex) % 50 == 0) {
-                        int progressPercent = deltaIndex * 100 / (fromDelta + 1); // just to avoid potential zero division, even it is not the case here
-                        onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas_percent, spectrumName, progressPercent));
+                int deltaIndex = 0;
+                onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas, spectrumName));
+                while (true) {
+                    if (cancellationToken.isCancelled()) {
+                        break;
                     }
 
-                    continue;
-                }
+                    if (deltaIndex < range.fileFromDelta) {
+                        segmentFile.skipNextDelta(fr);
+                        deltaIndex++;
+                        continue;
+                    }
 
-                if (deltaIndex > toDelta) {
-                    break;
-                }
+                    if (deltaIndex > range.fileToDelta) {
+                        break;
+                    }
 
-                if ((deltaIndex - fromDelta) % 50 == 0) {
-                    int progressPercent = (deltaIndex - fromDelta) * 100 / (toDelta - fromDelta + 1);
-                    onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_combining_deltas_percent, spectrumName, progressPercent));
-                }
-                SpectrumDelta delta = readNextDelta(fr, 1);
-                if (delta == null) {
-                    throw new InvalidParameterException(String.format("Null delta for index: %d", deltaIndex));
-                }
-                lastDeltaDate = delta.date;
-                combinedDuration += delta.duration;
-                for (int i = 0; i < combinedSpectrum.length; i++) {
-                    combinedSpectrum[i] += delta.channels[i];
-                }
+                    if (processedDeltaCount % 50 == 0) {
+                        int progressPercent = processedDeltaCount * 100 / totalDeltaCount;
+                        onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_combining_deltas_percent, spectrumName, progressPercent));
+                    }
+                    SpectrumDelta delta = segmentFile.readNextDelta(fr, 1);
+                    if (delta == null) {
+                        throw new InvalidParameterException(String.format("Null delta for index: %d", deltaIndex));
+                    }
+                    lastDeltaDate = delta.date;
+                    combinedDuration += delta.duration;
+                    for (int i = 0; i < combinedSpectrum.length; i++) {
+                        combinedSpectrum[i] += delta.channels[i];
+                    }
 
-                deltaIndex++;
+                    deltaIndex++;
+                    processedDeltaCount++;
+                }
             }
         }
 

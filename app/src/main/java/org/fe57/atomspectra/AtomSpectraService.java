@@ -2834,8 +2834,7 @@ public class AtomSpectraService extends Service {
                             .setChannelCompression(1)
                             .saveSpectrumAndCloseStream(docStream, this);
 
-                    AtomSpectraSpectrogramData.instance.clear();
-                    AtomSpectraSpectrogramData.instance.setBaseSpectrum(spgAutosaveSpectrum, spgAutosaveFilePath);
+                    AtomSpectraSpectrogramData.instance.addSegment(spgAutosaveSpectrum, spgAutosaveFilePath);
                     notifySpectrogramUpdated();
                     this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_SHORT);
                 } catch (Exception e) {
