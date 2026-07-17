@@ -167,6 +167,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (preview == null || !previewVisible) {
             return;
         }
+        if (bgLeftBound == null || bgRightBound == null || fgLeftBound == null || fgRightBound == null) {
+            return;
+        }
         double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound.segmentIndex, bgLeftBound.rowIndex, bgRightBound.segmentIndex, bgRightBound.rowIndex);
         double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound.segmentIndex, fgLeftBound.rowIndex, fgRightBound.segmentIndex, fgRightBound.rowIndex);
         double[] energies = computeEnergiesArray();
