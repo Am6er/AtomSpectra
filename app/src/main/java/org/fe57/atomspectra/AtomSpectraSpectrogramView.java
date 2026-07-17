@@ -695,15 +695,34 @@ public class AtomSpectraSpectrogramView extends View {
         virtualRowIndex = Constants.MinMax(virtualRowIndex, 0, virtualRowsMeta.length - 1);
         VirtualRowMeta selectionCandidate = virtualRowsMeta[virtualRowIndex];
         if (selectionCandidate.gapIndex >= 0) {
-            // it is a gap - find segment
-            // TODO: maybe nearest one is better choice, so far use previous
-            while (virtualRowIndex > 0) {
-                virtualRowIndex--;
-                selectionCandidate = virtualRowsMeta[virtualRowIndex];
-                if (selectionCandidate.segmentIndex >= 0) {
+            // Touch landed in a gap band between two segments. Snap to whichever
+            // adjacent segment row is nearer, rather than always the previous one.
+            int prevIndex = virtualRowIndex;
+            while (prevIndex > 0) {
+                prevIndex--;
+                if (virtualRowsMeta[prevIndex].segmentIndex >= 0) {
                     break;
                 }
             }
+            boolean prevIsSegment = virtualRowsMeta[prevIndex].segmentIndex >= 0;
+
+            int nextIndex = virtualRowIndex;
+            while (nextIndex < virtualRowsMeta.length - 1) {
+                nextIndex++;
+                if (virtualRowsMeta[nextIndex].segmentIndex >= 0) {
+                    break;
+                }
+            }
+            boolean nextIsSegment = virtualRowsMeta[nextIndex].segmentIndex >= 0;
+
+            if (prevIsSegment && nextIsSegment) {
+                virtualRowIndex = (virtualRowIndex - prevIndex) <= (nextIndex - virtualRowIndex) ? prevIndex : nextIndex;
+            } else if (prevIsSegment) {
+                virtualRowIndex = prevIndex;
+            } else {
+                virtualRowIndex = nextIndex;
+            }
+            selectionCandidate = virtualRowsMeta[virtualRowIndex];
         }
 
         if (selectionCandidate.segmentIndex != -1) {
