@@ -198,7 +198,6 @@ public class AtomSpectraSpectrogramView extends View {
     private float COLOR_BAR_HEIGHT_DP = 16f;
     private float COLOR_BAR_MARGIN_TOP_DP = 4f;
     private int GAP_BAND_HEIGHT_ROWS = 25;
-    private int GAP_BAND_HEIGHT_DP = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_DP;
 
     private int POINT_SIZE_PX = POINT_SIZE_DP;
     private int TIME_AXIS_WIDTH_PX = (int) TIME_AXIS_WIDTH_DP;
@@ -213,7 +212,7 @@ public class AtomSpectraSpectrogramView extends View {
     private int PADDING_RIGHT_PX = (int) HANDLE_SIZE_DP;
     private int COLOR_BAR_HEIGHT_PX = (int) COLOR_BAR_HEIGHT_DP;
     private int COLOR_BAR_MARGIN_TOP_PX = (int) COLOR_BAR_MARGIN_TOP_DP;
-    private int GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_DP;
+    private int GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_PX;
 
     private int TIMESTAMP_EACH_BINS = 25;
 
@@ -972,7 +971,11 @@ public class AtomSpectraSpectrogramView extends View {
         PADDING_RIGHT_PX = dpToPx(PADDING_RIGHT_DP);
         COLOR_BAR_HEIGHT_PX = dpToPx(COLOR_BAR_HEIGHT_DP);
         COLOR_BAR_MARGIN_TOP_PX = dpToPx(COLOR_BAR_MARGIN_TOP_DP);
-        GAP_BAND_HEIGHT_PX = dpToPx(GAP_BAND_HEIGHT_DP);
+        // The gap band is rendered as GAP_BAND_HEIGHT_ROWS virtual rows, each POINT_SIZE_PX
+        // tall, so its true on-screen height must be derived from the (density-bucketed)
+        // POINT_SIZE_PX - not dpToPx(GAP_BAND_HEIGHT_DP), which diverges from it at densities
+        // where POINT_SIZE_PX is overridden, mis-centering the gap label.
+        GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_PX;
     }
 
     private void recycleBitmap() {
