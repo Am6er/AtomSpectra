@@ -197,7 +197,7 @@ public class AtomSpectraSpectrogramView extends View {
     private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
     private float COLOR_BAR_HEIGHT_DP = 16f;
     private float COLOR_BAR_MARGIN_TOP_DP = 4f;
-    private int GAP_BAND_HEIGHT_ROWS = 30;
+    private int GAP_BAND_HEIGHT_ROWS = 25;
     private int GAP_BAND_HEIGHT_DP = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_DP;
 
     private int POINT_SIZE_PX = POINT_SIZE_DP;
@@ -650,6 +650,16 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     // calculates pixel coordinate of the corresponding virtual row for the given selection bound
+    // The spectrogram is blitted at whole-row granularity (virtualRowStart = verticalOffsetPx /
+    // POINT_SIZE_PX). Handles, gap lines and touch hit-testing must use this same row-snapped
+    // offset, otherwise they drift sub-row against the spectrogram while scrolling (jitter).
+    private int snappedVerticalOffsetPx() {
+        if (POINT_SIZE_PX <= 0) {
+            return verticalOffsetPx;
+        }
+        return (verticalOffsetPx / POINT_SIZE_PX) * POINT_SIZE_PX;
+    }
+
     private float rowToViewportYpx(SelectionBound row) {
         // sum full preceding segments plus one gap band per boundary, then the bin offset within the target segment
         int virtualRowIndex = getBinForRow(row.rowIndex, spectrumBinning);
@@ -657,7 +667,7 @@ public class AtomSpectraSpectrogramView extends View {
             virtualRowIndex += segmentsBinData.get(s).size() + GAP_BAND_HEIGHT_ROWS;
         }
 
-        float y = PADDING_TOP_PX + (virtualRowIndex * POINT_SIZE_PX - verticalOffsetPx) + POINT_SIZE_PX / 2f;
+        float y = PADDING_TOP_PX + (virtualRowIndex * POINT_SIZE_PX - snappedVerticalOffsetPx()) + POINT_SIZE_PX / 2f;
         if (y < PADDING_TOP_PX) {
             y = PADDING_TOP_PX;
         }
@@ -677,7 +687,7 @@ public class AtomSpectraSpectrogramView extends View {
             return visibleStartRow;
         }
 
-        int virtualRowPx = Math.round(y - PADDING_TOP_PX) + verticalOffsetPx;
+        int virtualRowPx = Math.round(y - PADDING_TOP_PX) + snappedVerticalOffsetPx();
         int virtualRowIndex = virtualRowPx / POINT_SIZE_PX;
         virtualRowIndex = Constants.MinMax(virtualRowIndex, 0, virtualRowsMeta.length - 1);
         VirtualRowMeta selectionCandidate = virtualRowsMeta[virtualRowIndex];
@@ -1191,7 +1201,7 @@ public class AtomSpectraSpectrogramView extends View {
                             : TIMESTAMP_TICK_WIDTH_PX / 2;
 
                     int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
-                    int tickY = (tsBinIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
+                    int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
                     if (dateLabel.equals(currentDateLabel)) {
                         // render time only
                         canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
@@ -1327,7 +1337,7 @@ public class AtomSpectraSpectrogramView extends View {
                 }
 
                 // gap.middleLinePx is a virtual-layout coordinate; map it to the viewport
-                float middleY = PADDING_TOP_PX + gap.middleLinePx - verticalOffsetPx;
+                float middleY = PADDING_TOP_PX + gap.middleLinePx - snappedVerticalOffsetPx();
 
                 if (gap.isMismatch) {
                     String warning = getResources().getString(R.string.spectrogram_gap_mismatch_warning);
