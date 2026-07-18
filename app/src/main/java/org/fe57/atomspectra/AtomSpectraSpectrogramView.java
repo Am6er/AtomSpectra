@@ -192,7 +192,7 @@ public class AtomSpectraSpectrogramView extends View {
     private float ENERGY_TICK_HEIGHT_DP = 8f;
     private float CHANNEL_AXIS_HEIGHT_DP = 40f;
     private float HANDLE_SIZE_DP = 24f;
-    private float HANDLE_TOUCH_RADIUS_DP = 50f;
+    private float HANDLE_TOUCH_RADIUS_DP = 32f;
     private float PADDING_TOP_DP = HANDLE_SIZE_DP / 2f;
     private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
     private float COLOR_BAR_HEIGHT_DP = 16f;
@@ -446,13 +446,13 @@ public class AtomSpectraSpectrogramView extends View {
                 lastTouchY = event.getY();
                 lastTouchX = event.getX();
 
-                int hitColorBarHandle = pickColorBarHandle(lastTouchX, lastTouchY);
-                if (hitColorBarHandle != HANDLE_NONE) {
-                    draggingColorBarHandle = hitColorBarHandle;
+                // hit-test all handles with a single 2D distance metric and grab the nearest,
+                // so a selection handle clamped near the color bar isn't stolen by it
+                int hitHandle = pickNearestHandle(lastTouchX, lastTouchY);
+                if (hitHandle == HANDLE_COLOR_BAR_MIN || hitHandle == HANDLE_COLOR_BAR_MAX) {
+                    draggingColorBarHandle = hitHandle;
                     return true;
                 }
-
-                int hitHandle = pickSelectionHandle(lastTouchX, lastTouchY);
                 if (hitHandle != HANDLE_NONE) {
                     draggingSelectionHandle = hitHandle;
                     return true;
@@ -540,58 +540,57 @@ public class AtomSpectraSpectrogramView extends View {
         return super.onTouchEvent(event);
     }
 
-    private int pickSelectionHandle(float x, float y) {
-        if (visibleStartRow == null || visibleEndRow == null || POINT_SIZE_PX <= 0) {
-            return HANDLE_NONE;
-        }
-
+    // hit-tests every draggable handle (selection triangles + color bar min/max) with the same
+    // 2D distance metric and returns the nearest within HANDLE_TOUCH_RADIUS_PX, or HANDLE_NONE.
+    // The returned constant is unambiguous: HANDLE_COLOR_BAR_* identify color bar handles.
+    private int pickNearestHandle(float x, float y) {
         int viewWidth = getWidth();
-        float touchRadiusSq = HANDLE_TOUCH_RADIUS_PX * HANDLE_TOUCH_RADIUS_PX;
-
-        int[] handles = new int[]{HANDLE_FG_LEFT, HANDLE_BG_LEFT, HANDLE_FG_RIGHT, HANDLE_BG_RIGHT};
+        float bestDistSq = HANDLE_TOUCH_RADIUS_PX * HANDLE_TOUCH_RADIUS_PX;
         int bestHandle = HANDLE_NONE;
-        float bestDistSq = touchRadiusSq;
-        // choose first within radius
-        // TODO: select closer one?
-        for (int handle : handles) {
-            SelectionBound row = getRowForSelectionHandle(handle);
-            if (row == null) continue;
 
-            float apexX = isLeftHandle(handle) ? TIME_AXIS_WIDTH_PX : (viewWidth - HANDLE_SIZE_PX);
-            float apexY = rowToViewportYpx(row);
-            float dx = x - apexX;
-            float dy = y - apexY;
-            float distSq = dx * dx + dy * dy;
-            if (distSq < bestDistSq) {
-                bestDistSq = distSq;
-                bestHandle = handle;
+        // selection handles: distance to the triangle apex
+        if (visibleStartRow != null && visibleEndRow != null && POINT_SIZE_PX > 0) {
+            int[] handles = new int[]{HANDLE_FG_LEFT, HANDLE_BG_LEFT, HANDLE_FG_RIGHT, HANDLE_BG_RIGHT};
+            for (int handle : handles) {
+                SelectionBound row = getRowForSelectionHandle(handle);
+                if (row == null) continue;
+
+                float apexX = isLeftHandle(handle) ? TIME_AXIS_WIDTH_PX : (viewWidth - HANDLE_SIZE_PX);
+                float apexY = rowToViewportYpx(row);
+                float dx = x - apexX;
+                float dy = y - apexY;
+                float distSq = dx * dx + dy * dy;
+                if (distSq < bestDistSq) {
+                    bestDistSq = distSq;
+                    bestHandle = handle;
+                }
             }
         }
-        return bestHandle;
-    }
 
-    private int pickColorBarHandle(float x, float y) {
+        // color bar handles: distance to the handle position at the bar's vertical center
         int barLeft = PADDING_RIGHT_PX;
-        int barRight = getWidth() - PADDING_RIGHT_PX;
+        int barRight = viewWidth - PADDING_RIGHT_PX;
         int barWidth = barRight - barLeft;
-        if (barWidth <= 0) return HANDLE_NONE;
+        if (barWidth > 0) {
+            float barCenterY = getHeight() - COLOR_BAR_HEIGHT_PX / 2f;
+            float dyBar = y - barCenterY;
 
-        int barTop = getHeight() - COLOR_BAR_HEIGHT_PX;
-        float touchRadius = HANDLE_TOUCH_RADIUS_PX;
+            float dMin = x - (barLeft + colorBarMinFraction * barWidth);
+            float distMinSq = dMin * dMin + dyBar * dyBar;
+            if (distMinSq < bestDistSq) {
+                bestDistSq = distMinSq;
+                bestHandle = HANDLE_COLOR_BAR_MIN;
+            }
 
-        if (y < barTop - touchRadius || y > barTop + touchRadius) return HANDLE_NONE;
-        if (x < barLeft - touchRadius || x > barRight + touchRadius) return HANDLE_NONE;
+            float dMax = x - (barLeft + colorBarMaxFraction * barWidth);
+            float distMaxSq = dMax * dMax + dyBar * dyBar;
+            if (distMaxSq < bestDistSq) {
+                bestDistSq = distMaxSq;
+                bestHandle = HANDLE_COLOR_BAR_MAX;
+            }
+        }
 
-        float minHandleX = barLeft + colorBarMinFraction * barWidth;
-        float maxHandleX = barLeft + colorBarMaxFraction * barWidth;
-
-        float distMin = Math.abs(x - minHandleX);
-        float distMax = Math.abs(x - maxHandleX);
-
-        if (distMin <= touchRadius && distMin <= distMax) return HANDLE_COLOR_BAR_MIN;
-        if (distMax <= touchRadius) return HANDLE_COLOR_BAR_MAX;
-
-        return HANDLE_NONE;
+        return bestHandle;
     }
 
     private float touchXToColorBarFraction(float x) {
@@ -1576,9 +1575,6 @@ public class AtomSpectraSpectrogramView extends View {
 
         boolean visible = row.compareTo(visibleStartRow) >= 0 && row.compareTo(visibleEndRow) <= 0;
         float apexY = rowToViewportYpx(row);
-        if (row.compareTo(visibleEndRow) > 0) {
-            apexY = rowToViewportYpx(visibleEndRow);
-        }
 
         if (visible) {
             // selection boundary line
