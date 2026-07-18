@@ -10,13 +10,21 @@ import androidx.annotation.NonNull;
 
 public class DialogHelper {
     public static void showActionConfirmationDialog(@NonNull Context context, String message, Runnable action) {
+        showActionConfirmationDialog(context, message,
+                context.getString(R.string.dialog_continue_button),
+                context.getString(R.string.dialog_cancel_button),
+                action);
+    }
+
+    public static void showActionConfirmationDialog(@NonNull Context context, String message,
+                                                    String positiveLabel, String negativeLabel, Runnable action) {
         final AlertDialog.Builder alert = new AlertDialog.Builder(context)
                 .setTitle(context.getString(R.string.dialog_confirm_title))
                 .setMessage(message)
-                .setPositiveButton(R.string.dialog_continue_button, (dialog, whichButton) -> {
+                .setPositiveButton(positiveLabel, (dialog, whichButton) -> {
                     action.run();
                 })
-                .setNegativeButton(R.string.dialog_cancel_button, (dialog, whichButton) -> {});
+                .setNegativeButton(negativeLabel, (dialog, whichButton) -> {});
         alert.show();
     }
 }
