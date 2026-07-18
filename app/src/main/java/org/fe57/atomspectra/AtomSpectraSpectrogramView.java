@@ -1085,7 +1085,16 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
 
-        if (this.segmentsBinData == null || this.segmentsBinData.isEmpty() || this.segmentsBinData.get(0).isEmpty()) {
+        if (this.segmentsBinData == null || this.segmentsBinData.isEmpty()) {
+            return;
+        }
+        ArrayList<float[]> firstNonEmptyBinData = null;
+        for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
+            if (!segmentBinData.isEmpty()) {
+                firstNonEmptyBinData = segmentBinData;
+            }
+        }
+        if (firstNonEmptyBinData == null) {
             return;
         }
 
@@ -1093,7 +1102,7 @@ public class AtomSpectraSpectrogramView extends View {
         int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX - PADDING_TOP_PX;
 
         int virtualRowsCount = this.virtualRowsMeta.length;
-        int colBinsCount = this.segmentsBinData.get(0).get(0).length; // first row of first segment
+        int colBinsCount = firstNonEmptyBinData.get(0).length; // first row of first segment
 
         int virtualRowHeightPx = POINT_SIZE_PX;
         int colBinWidthPx = POINT_SIZE_PX;
