@@ -286,12 +286,20 @@ public class AtomSpectraSpectrogramData {
             double totalDuration = 0;
             for (int s = fromSegment; s <= toSegment; s++) {
                 Segment segment = segments.get(s);
+                if (segment.rowCount() == 0) {
+                    continue;
+                }
+
                 int fromSegmentRow = s == fromSegment
                         ? fromRow
                         : 0;
+                fromSegmentRow = Constants.MinMax(fromSegmentRow, 0, segment.rowCount() - 1);
+
                 int toSegmentRow = s == toSegment
                         ? toRow
                         : segment.rowCount() - 1;
+                toSegmentRow = Constants.MinMax(toSegmentRow, 0, segment.rowCount() - 1);
+
                 for (int i = fromSegmentRow; i <= toSegmentRow; i++) {
                     double duration = segment.durations.get(i);
                     float[] row = segment.spectrogram.get(i);
@@ -394,6 +402,8 @@ public class AtomSpectraSpectrogramData {
                         ? toRow
                         : segment.rowCount() - 1;
                 if (segment.rowCount() > 0) {
+                    fromSegmentRow = Constants.MinMax(fromSegmentRow, 0, segment.rowCount() - 1);
+                    toSegmentRow = Constants.MinMax(toSegmentRow, 0, segment.rowCount() - 1);
                     // In-memory row 0 of first segment may no longer be file-local delta
                     // 0 if earlier rows were evicted (MAX_ROWS truncation)
                     ranges.add(new SegmentExportRange(segment.spectrogramFileName,
