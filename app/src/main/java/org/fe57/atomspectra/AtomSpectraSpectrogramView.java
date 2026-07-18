@@ -735,26 +735,17 @@ public class AtomSpectraSpectrogramView extends View {
 
         if (selectionCandidate.segmentIndex != -1) {
             int rowIndex = getBinStartRow(selectionCandidate.segmentRowBinIndex, spectrumBinning);
+            SelectionBound candidateBound = new SelectionBound(selectionCandidate.segmentIndex, rowIndex);
 
             // clamp to visible area
-            if (selectionCandidate.segmentIndex < visibleStartRow.segmentIndex) {
-                rowIndex = getBinStartRow(visibleStartRow.rowIndex, spectrumBinning);
-                return new SelectionBound(visibleStartRow.segmentIndex, rowIndex);
+            if (candidateBound.compareTo(visibleStartRow) < 0) {
+                return visibleStartRow;
             }
-            if (selectionCandidate.segmentIndex == visibleStartRow.segmentIndex && rowIndex < visibleStartRow.rowIndex) {
-                rowIndex = getBinStartRow(visibleStartRow.rowIndex, spectrumBinning);
-                return new SelectionBound(visibleStartRow.segmentIndex, rowIndex);
-            }
-            if (selectionCandidate.segmentIndex == visibleEndRow.segmentIndex && rowIndex > visibleEndRow.rowIndex) {
-                rowIndex = getBinStartRow(visibleEndRow.rowIndex, spectrumBinning);
-                return new SelectionBound(visibleEndRow.segmentIndex, rowIndex);
-            }
-            if (selectionCandidate.segmentIndex > visibleEndRow.segmentIndex) {
-                rowIndex = getBinStartRow(visibleEndRow.rowIndex, spectrumBinning);
-                return new SelectionBound(visibleEndRow.segmentIndex, rowIndex);
+            if (candidateBound.compareTo(visibleEndRow) > 0) {
+                return visibleEndRow;
             }
 
-            return new SelectionBound(selectionCandidate.segmentIndex, rowIndex);
+            return candidateBound;
         } else {
             // TODO: log? it is quite unexpected to get here
             AtomSpectraLog.addMessage(getContext(), "Unexpected: touchYToBinStartRow failed to find segment");
