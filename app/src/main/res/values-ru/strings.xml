@@ -420,6 +420,9 @@
     <string name="dialog_no_button">Нет</string>
     <string name="dialog_continue_button">Продолжить</string>
     <string name="dialog_cancel_button">Отмена</string>
+    <string name="dialog_discard_button">Сбросить изменения</string>
+    <string name="dialog_keep_editing_button">Продолжить редактирование</string>
+    <string name="sens_discard_message">Изменения конфигурации не применены.</string>
 
     <string name="dialog_confirm_exit_while_recording_message">Запись спектра в процессе, завершение программы может привести к потере данных.</string>
 

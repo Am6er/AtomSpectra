@@ -420,6 +420,9 @@
     <string name="dialog_no_button">No</string>
     <string name="dialog_continue_button">Continue</string>
     <string name="dialog_cancel_button">Cancel</string>
+    <string name="dialog_discard_button">Discard changes</string>
+    <string name="dialog_keep_editing_button">Keep editing</string>
+    <string name="sens_discard_message">Your configuration change hasn\'t applied.</string>
 
     <string name="dialog_confirm_exit_while_recording_message">Spectrum recording is in progress, exiting the program may result in data loss.</string>
 

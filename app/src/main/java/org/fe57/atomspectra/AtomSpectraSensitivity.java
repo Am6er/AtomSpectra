@@ -32,10 +32,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +71,8 @@ public class AtomSpectraSensitivity extends Activity {
     private SensitivityProfile workingProfile;
     private String selectedId;
     private boolean editable;
+    // Snapshot of the persisted state at the last "clean" point; used to detect unsaved edits on exit.
+    private String cleanSignature;
     // Compensated curve backing the table editor; mirrored into workingProfile on change.
     private TreeMap<Float, Double> curve = new TreeMap<>();
 
@@ -111,6 +115,7 @@ public class AtomSpectraSensitivity extends Activity {
         setupSpinner();
         selectWorkingFor(selectedId);
         populate();
+        cleanSignature = signature();
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         final IntentFilter intentFilter = new IntentFilter();
@@ -134,10 +139,44 @@ public class AtomSpectraSensitivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            finish();
+            confirmDiscardOrFinish();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        confirmDiscardOrFinish();
+    }
+
+    /** Warn about unsaved edits before leaving via an implicit exit (back / up); apply happens on OK. */
+    private void confirmDiscardOrFinish() {
+        if (!isDirty()) {
+            finish();
+            return;
+        }
+        DialogHelper.showActionConfirmationDialog(this,
+                getString(R.string.sens_discard_message),
+                getString(R.string.dialog_discard_button),
+                getString(R.string.dialog_keep_editing_button),
+                this::finish);
+    }
+
+    private boolean isDirty() {
+        flushScalars();
+        return !signature().equals(cleanSignature);
+    }
+
+    // Snapshot of the working state ({@code selectedId} + serialized custom profile)
+    private String signature() {
+        StringWriter sw = new StringWriter();
+        try {
+            SensitivityProfileFile.write(sw, customWorking);
+        } catch (IOException e) {
+            return selectedId + "|<err>";
+        }
+        return selectedId + "|" + sw;
     }
 
     private final BroadcastReceiver mDataUpdateReceiver = new BroadcastReceiver() {
