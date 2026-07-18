@@ -292,6 +292,10 @@ public class AtomSpectraSpectrogramView extends View {
     private String scale = SCALE_SQRT;
     private String palette = PALETTE_IRON;
 
+    // value->color lookup: palette indexed by scaled (sqrt/log) linear color index
+    private int[] colorLut = null;
+    private double colorLutInvRange = 0; // 1 / (maxValue - minValue)
+
     // vertical/horizontal drag
     private int draggingColorBarHandle = HANDLE_NONE;
     private int draggingSelectionHandle = HANDLE_NONE;
@@ -344,6 +348,12 @@ public class AtomSpectraSpectrogramView extends View {
     private final Object spectrogramBitmapSync = new Object();
     private volatile Bitmap spectrogramBitmap = null;
     private boolean autoScroll = true;
+
+    // reused visible-area pixel buffer, grown on demand (see renderSpectrogramToBitmap)
+    private int[] spgPixelsBuffer = null;
+
+    // reused date formatter for time-axis labels
+    private final SimpleDateFormat dateFormat = createDateFormat();
 
     public interface OnSpectrogramStateChangedListener {
         void onRowSelectionChanged();
@@ -470,6 +480,7 @@ public class AtomSpectraSpectrogramView extends View {
                     }
                     this.minValue = colorBarMinFraction * this.spectrogramMaxCps;
                     this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
+                    buildColorLut();
                     renderSpectrogramToBitmap();
                     invalidate();
                     return true;
@@ -894,6 +905,7 @@ public class AtomSpectraSpectrogramView extends View {
 
         this.minValue = colorBarMinFraction * this.spectrogramMaxCps;
         this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
+        buildColorLut();
 
         // calculate energy for each channel
         double[] allEnergies = new double[channelBinsCount];
@@ -1145,7 +1157,13 @@ public class AtomSpectraSpectrogramView extends View {
 
         HashSet<Integer> visibleGaps = new HashSet<>();
         int totalPixels = virtualRowsToRender * virtualRowHeightPx * colBinsToRenderWidthPx;
-        int[] spgPixels = new int[totalPixels];
+        // reuse the buffer across frames; only grow it when the visible area needs more. Every
+        // pixel in [0, totalPixels) is overwritten below before setPixels reads it back, so no
+        // clearing is needed.
+        if (this.spgPixelsBuffer == null || this.spgPixelsBuffer.length < totalPixels) {
+            this.spgPixelsBuffer = new int[totalPixels];
+        }
+        int[] spgPixels = this.spgPixelsBuffer;
         for (int virtualRowIndex = virtualRowStart; virtualRowIndex <= virtualRowEnd; virtualRowIndex++) {
             VirtualRowMeta rowMeta = virtualRowsMeta[virtualRowIndex];
             if (rowMeta.segmentIndex >= 0) {
@@ -1449,21 +1467,7 @@ public class AtomSpectraSpectrogramView extends View {
             int barTop = viewHeight - COLOR_BAR_HEIGHT_PX;
             int barBottom = viewHeight;
 
-            int[] colors = IRON_PALETTE;
-            switch (palette) {
-                case PALETTE_GLOW:
-                    colors = GLOW_PALETTE;
-                    break;
-                case PALETTE_GRAY:
-                    colors = GRAY_PALETTE;
-                    break;
-                case PALETTE_LIME:
-                    colors = LIME_PALETTE;
-                    break;
-                case PALETTE_YELLOW:
-                    colors = YELLOW_PALETTE;
-                    break;
-            }
+            int[] colors = paletteColors();
 
             int minHandleX = barLeft + Math.round(colorBarMinFraction * barWidth);
             int maxHandleX = barLeft + Math.round(colorBarMaxFraction * barWidth);
@@ -1613,55 +1617,72 @@ public class AtomSpectraSpectrogramView extends View {
         canvas.drawPath(path, outlinePaint);
     }
 
-    private int mapValueToColor(double value) {
-        int[] colors = IRON_PALETTE;
+    private int[] paletteColors() {
         switch (palette) {
             case PALETTE_GLOW:
-                colors = GLOW_PALETTE;
-                break;
+                return GLOW_PALETTE;
             case PALETTE_GRAY:
-                colors = GRAY_PALETTE;
-                break;
+                return GRAY_PALETTE;
             case PALETTE_LIME:
-                colors = LIME_PALETTE;
-                break;
+                return LIME_PALETTE;
             case PALETTE_YELLOW:
-                colors = YELLOW_PALETTE;
-                break;
-        }
-
-        double lowerBound = this.minValue;
-        double upperBound = this.maxValue;
-        value -= lowerBound;
-        if (value < 0) {
-            value = 0;
-        }
-
-        double ratio = value / (upperBound - lowerBound);
-        long colorIndex = Math.round(ratio * (colors.length - 1));
-        switch (this.scale) {
-            case AtomSpectraSpectrogramView.SCALE_LOG:
-                colorIndex = Math.round((Math.log(colorIndex + 1) / Math.log(colors.length)) * (colors.length - 1));
-                break;
-            case AtomSpectraSpectrogramView.SCALE_SQRT:
-                colorIndex = Math.round((Math.sqrt(colorIndex) / Math.sqrt(colors.length)) * (colors.length - 1));
-                break;
+                return YELLOW_PALETTE;
             default:
-                break;
+                return IRON_PALETTE;
         }
-
-        if (colorIndex > colors.length - 1) {
-            colorIndex = colors.length - 1;
-        }
-
-        return colors[(int) colorIndex];
     }
 
-    private static String formatDate(Date date) {
+    // rebuilds colorLut/colorLutInvRange from the current palette, scale and min/max range.
+    // Must be called after any of palette, scale, minValue or maxValue change.
+    private void buildColorLut() {
+        int[] colors = paletteColors();
+        int n = colors.length;
+        int[] lut = new int[n];
+        for (int i = 0; i < n; i++) {
+            long colorIndex = i;
+            switch (this.scale) {
+                case AtomSpectraSpectrogramView.SCALE_LOG:
+                    colorIndex = Math.round((Math.log(i + 1) / Math.log(n)) * (n - 1));
+                    break;
+                case AtomSpectraSpectrogramView.SCALE_SQRT:
+                    colorIndex = Math.round((Math.sqrt(i) / Math.sqrt(n)) * (n - 1));
+                    break;
+                default:
+                    break;
+            }
+            if (colorIndex > n - 1) {
+                colorIndex = n - 1;
+            }
+            lut[i] = colors[(int) colorIndex];
+        }
+        this.colorLut = lut;
+        double range = this.maxValue - this.minValue;
+        this.colorLutInvRange = range > 0 ? 1.0 / range : 0.0;
+    }
+
+    private int mapValueToColor(double value) {
+        int[] lut = this.colorLut;
+        int maxIndex = lut.length - 1;
+        double v = value - this.minValue;
+        if (v < 0) {
+            v = 0;
+        }
+        long index = Math.round(v * this.colorLutInvRange * maxIndex);
+        if (index > maxIndex) {
+            index = maxIndex;
+        }
+        return lut[(int) index];
+    }
+
+    private static SimpleDateFormat createDateFormat() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         sdf.setTimeZone(TimeZone.getDefault());
 
-        return sdf.format(date);
+        return sdf;
+    }
+
+    private String formatDate(Date date) {
+        return dateFormat.format(date);
     }
 
     private int dpToPx(float dp) {
