@@ -215,7 +215,9 @@
     <string name="smoothness_format">Smoothness: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="spectrum_change_delta_duration_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Channel compression (export): <xliff:g id="channels_as_one">%1$d</xliff:g></string>
-    <string name="total_time_format">time: <xliff:g id="total_time">%1$.0f</xliff:g> s</string>
+    <string name="total_time_format">time: <xliff:g id="total_time">%1$s</xliff:g></string>
+    <string name="spectrum_time_hms_format"><xliff:g id="hours">%1$02d</xliff:g>:<xliff:g id="minutes">%2$02d</xliff:g>:<xliff:g id="seconds">%3$02d</xliff:g></string>
+    <string name="spectrum_time_days_hms_format"><xliff:g id="days">%1$d</xliff:g>d <xliff:g id="hours">%2$02d</xliff:g>:<xliff:g id="minutes">%3$02d</xliff:g>:<xliff:g id="seconds">%4$02d</xliff:g></string>
     <string name="delta_time_format">time: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
     <string name="dose_rate_interval_prefix">int.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
     <string name="dose_rate_compensated_prefix">dr(c): <xliff:g id="dose_rate">%1$s</xliff:g></string>
@@ -620,7 +622,7 @@
         \t- The text field <annotation foreground="parameter">upd</annotation> displays the local time (hours:minutes:seconds) of the last foreground spectrum data update. The value --:--:-- is shown before the first data arrives or after the spectrum is cleared.\n
         \t- The text field <annotation foreground="parameter">cps</annotation> displays the number of counts during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \t- The text field <annotation foreground="parameter">~cps</annotation> displays the average count rate across the entire energy range for the entire acquisition time.\n
-        \t- The text field <annotation foreground="parameter">time</annotation> displays the total time of spectrum acquisition.\n
+        \t- The text field <annotation foreground="parameter">time</annotation> displays the total time of spectrum acquisition as hh:mm:ss, with days added when the duration is 24 hours or longer (for example, 2d 03:45:12).\n
         \n
         \tSpectrum <annotation foreground="parameter">Change</annotation> mode:\n
         \t- This mode displays the change in the spectrum state in a sliding time window. The sliding window size can be selected in the range from 1 to 300 s in the <annotation foreground="parameter">Diff Time</annotation> parameter in the <annotation foreground="parameter">Settings</annotation>. In this mode, two spectra with different sliding window durations are displayed: n seconds and 4n seconds (e.g. 30/120). The color of the short window spectrum (n seconds) in this mode is purple, and the long one (4n seconds) is green. The lines displaying the total acquisition time and count rate of the main spectrum are replaced by a display of the window sizes and count rates within these windows (short/long).\n

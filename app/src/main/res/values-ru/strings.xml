@@ -215,7 +215,9 @@
     <string name="smoothness_format">Сглаживание: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="spectrum_change_delta_duration_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
     <string name="channel_compression_format">Сжатие каналов (экспорт): <xliff:g id="channels_as_one">%1$d</xliff:g></string>
-    <string name="total_time_format">время: <xliff:g id="total_time">%1$.0f</xliff:g> с</string>
+    <string name="total_time_format">время: <xliff:g id="total_time">%1$s</xliff:g></string>
+    <string name="spectrum_time_hms_format"><xliff:g id="hours">%1$02d</xliff:g>:<xliff:g id="minutes">%2$02d</xliff:g>:<xliff:g id="seconds">%3$02d</xliff:g></string>
+    <string name="spectrum_time_days_hms_format"><xliff:g id="days">%1$d</xliff:g>д <xliff:g id="hours">%2$02d</xliff:g>:<xliff:g id="minutes">%3$02d</xliff:g>:<xliff:g id="seconds">%4$02d</xliff:g></string>
     <string name="delta_time_format">время: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> с</string>
     <string name="dose_rate_interval_prefix">инт.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
     <string name="dose_rate_compensated_prefix">мд(к): <xliff:g id="dose_rate">%1$s</xliff:g></string>
@@ -621,7 +623,7 @@
         \t- Текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \t- Текстовое поле <annotation foreground="parameter">~cps</annotation> отображает среднее количество импульсов в секунду по всему диапазону энергий за все время набора.\n
-        \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает общее время набора спектра.\n
+        \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает общее время набора спектра в формате чч:мм:сс; при длительности 24 часа и более добавляются дни (например, 2д 03:45:12).\n
         \n
         \tРежим <annotation foreground="parameter">Изменение</annotation> спектра:\n
         \t- В данном режиме отображается изменение состояния спектра в режиме скользящего временного окна. Размер скользящего окна можно выбрать в диапазоне от 1 до 300 с в параметре <annotation foreground="parameter">Дельта-время</annotation> в <annotation foreground="parameter">Настройках</annotation>. В этом режиме отображается два спектра с разной длительностью скользящего окна: n секунд и 4n секунд (например, 30/120). Цвет спектра короткого окна (n) в этом режиме пурпурный, длинного (4n) - зеленый. Строки отображения общего времени набора и скорости счета основного спектра сменяются на отображение размеров окон и скоростей счета в рамках этих окон (короткое/длинное).\n

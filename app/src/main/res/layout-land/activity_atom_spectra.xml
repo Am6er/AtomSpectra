@@ -176,7 +176,7 @@
                 android:layout_weight="1"
                 android:clickable="true"
                 android:longClickable="true"
-                android:text="time: 1s"
+                android:text="time: 00:00:00"
                 android:textColor="#FFFFFFFF"
                 android:textSize="14dp" />
 
