@@ -190,6 +190,7 @@ public class SpectrumFileAS extends SpectrumFile {
         } catch (Exception e) {
             throw new InvalidParameterException(String.format("Unable to parse channel count: %s", channelCountStr));
         }
+        spectrum.setSourceChannelCount(channelCount);
 
         String calPoliFactorStr = fr.readLine();
         int calPoliFactor;

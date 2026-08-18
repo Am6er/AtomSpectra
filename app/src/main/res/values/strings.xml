@@ -45,7 +45,7 @@
     <string name="histogram_menu">Spectrum</string>
     <string name="hist_save_file">Save to…</string>
     <string name="hist_load_file">Load from…</string>
-    <string name="hist_add_file">Add from…</string>
+    <string name="hist_add_file">Combine with…</string>
     <string name="hist_export">Export</string>
     <string name="hist_export_to_bqmoni">Export to BqMoni…</string>
     <string name="hist_export_to_spe">Export to SPE…</string>
@@ -379,6 +379,11 @@
     <string name="strange_file_name">A strange file name</string>
     <string name="hist_load_success">Spectrum loaded successfully</string>
     <string name="hist_load_error">Spectrum loading failed!</string>
+    <string name="hist_add_success">Spectra combined successfully</string>
+    <string name="hist_add_error">Combining spectra failed!</string>
+    <string name="hist_add_mismatch_confirm">The selected spectrum has a different detector or energy calibration. Channel-by-channel summing may be incorrect. Combine anyway?</string>
+    <string name="hist_add_channel_mismatch">Cannot combine spectra with a different number of channels</string>
+    <string name="hist_recording_in_progress">Stop recording first</string>
     <string name="cal_load_success">Calibration loaded successfully</string>
     <string name="cal_load_error">Calibration loading failed!</string>
     <string name="cal_applied">Calibration applied</string>
@@ -723,7 +728,8 @@
     </string>
     <string name="help_text_part7"><big><annotation foreground="caption">7. Data storage:</annotation></big>\n
         \t- You can save main spectrum to view it later. The spectrum is stored in own format file named \'<i>Spectrum-date.txt</i>\', where \'date\' is the current date. You can add a suffix after date as a note.\n
-        \t- A saved spectrum can be loaded in the program via menu. Loading spectrum automatically pauses a spectrum update.\n
+        \t- A saved spectrum can be loaded in the program via <annotation foreground="parameter">Load from…</annotation> in the <annotation foreground="parameter">Spectrum</annotation> submenu. Loading and combining spectra are available only while recording is stopped.\n
+        \t- You can sum another saved spectrum with the current one using <annotation foreground="parameter">Combine with…</annotation> in the <annotation foreground="parameter">Spectrum</annotation> submenu. Channel counts and acquisition times are added together. The current calibration, description and detector info are kept. Spectra with a different number of channels cannot be combined.\n
         \t- The main spectrum can be exported in a \'<i>.xml</i>\' format compatible with \'BecquerelMonitor\'. The files are named as \'Bq-date.xml\' where \'date\' is the current date. You can add a suffix after date as a note. If the background is shown on graph it will be also added to the output file as background spectrum.\n
         \t- The main spectrum can be exported in a \'<i>.spe</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.spe</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
         \t- The main spectrum can be exported in a \'<i>.N42</i>\' format compatible with other spectroscopic programs. The files are named as \'<i>MCA-date.N42</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n

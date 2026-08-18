@@ -12,6 +12,7 @@ import java.util.Locale;
 //This class contains information about spectrum itself. To load or store use a SpectrumFile class.
 public class Spectrum {
     private long[] DataArray;                     //spectrum data
+    private int SourceChannelCount;               //channel count as stored in the source file (may differ from DataArray.length after remap)
     private long SpectrumTime;                    //total amount of time collected, NOT seconds, count of Constant.UPDATE_PERIOD
     private long SpectrumDate;                    //last spectrum update date
     private Calibration SpectrumCalibration;      //spectrum calibration
@@ -44,6 +45,7 @@ public class Spectrum {
 
     public Spectrum(Spectrum other) {
         this.DataArray = Arrays.copyOf(other.DataArray, other.DataArray.length);
+        SourceChannelCount = other.SourceChannelCount;
         SpectrumCalibration = new Calibration(other.SpectrumCalibration);
         SpectrumTime = other.SpectrumTime;
         Comments = other.Comments;
@@ -58,6 +60,7 @@ public class Spectrum {
 
     public Spectrum ReinitializeFrom(Spectrum other) {
         this.DataArray = Arrays.copyOf(other.DataArray, other.DataArray.length);
+        SourceChannelCount = other.SourceChannelCount;
         SpectrumCalibration = new Calibration(other.SpectrumCalibration);
         SpectrumTime = other.SpectrumTime;
         Comments = other.Comments;
@@ -68,6 +71,15 @@ public class Spectrum {
         Longitude = other.Longitude;
         DeviceInfo = other.DeviceInfo;
         Changed = other.Changed;
+        return this;
+    }
+
+    public int getSourceChannelCount() {
+        return SourceChannelCount;
+    }
+
+    public Spectrum setSourceChannelCount(int sourceChannelCount) {
+        SourceChannelCount = sourceChannelCount;
         return this;
     }
 
@@ -408,6 +420,7 @@ public class Spectrum {
 
     public Spectrum initSpectrumData(int channelCount, Calibration calibration) {
         DataArray = new long[channelCount];
+        SourceChannelCount = channelCount;
         SpectrumCalibration = calibration;
         SpectrumTime = 0;
         Comments = "";

@@ -45,7 +45,7 @@
     <string name="histogram_menu">Спектр</string>
     <string name="hist_save_file">Сохранить…</string>
     <string name="hist_load_file">Загрузить из…</string>
-    <string name="hist_add_file">Добавить из…</string>
+    <string name="hist_add_file">Объединить с…</string>
     <string name="hist_export">Экспорт</string>
     <string name="hist_export_to_bqmoni">Экспорт в BqMoni…</string>
     <string name="hist_export_to_spe">Экспорт в SPE…</string>
@@ -379,6 +379,11 @@
     <string name="strange_file_name">Странное имя файла</string>
     <string name="hist_load_success">Спектр успешно загружен</string>
     <string name="hist_load_error">Загрузка спектра НЕУДАЧНА!</string>
+    <string name="hist_add_success">Спектры успешно объединены</string>
+    <string name="hist_add_error">Объединение спектров НЕУДАЧНО!</string>
+    <string name="hist_add_mismatch_confirm">Выбранный спектр имеет другой детектор или энергетическую калибровку. Поканальное сложение может быть некорректным. Объединить?</string>
+    <string name="hist_add_channel_mismatch">Нельзя объединить спектры с разным числом каналов</string>
+    <string name="hist_recording_in_progress">Сначала остановите запись</string>
     <string name="cal_load_success">Калибровка загружена</string>
     <string name="cal_load_error">Загрузка калибровки НЕУДАЧНА!</string>
     <string name="cal_applied">Калибровка принята</string>
@@ -728,7 +733,8 @@
     <string name="help_text_part7">
         <big><annotation foreground="caption">7. Сохранение данных:</annotation></big>\n
         \t- Можно сохранить основной спектр для просмотра его позднее. Спектр сохраняется в собственном формате под именем «<i>Spectrum-date.txt</i>», где «date» - текущая дата. После даты можно вставить суффикс как заметку.\n
-        \t- Сохранённый спетр может быть загружен в программу через меню. Загрузка спектра автоматически останавливает обновление спектра.\n
+        \t- Сохранённый спектр может быть загружен в программу командой <annotation foreground="parameter">Загрузить из…</annotation> в подменю <annotation foreground="parameter">Спектр</annotation>. Загрузка и объединение спектров доступны только когда запись остановлена.\n
+        \t- Можно сложить другой сохранённый спектр с текущим командой <annotation foreground="parameter">Объединить с…</annotation> в подменю <annotation foreground="parameter">Спектр</annotation>. Отсчёты каналов и время набора суммируются. Текущая калибровка, описание и сведения о детекторе сохраняются. Спектры с разным числом каналов объединить нельзя.\n
         \t- Основной спектр может быть экспортирован в формате «<i>.xml</i>» в формате, совместимым с программой «<i>Becquerel Monitor</i>». Файлы именуются в виде «<i>Bq-date.xml</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку. Если на графике выведен фон, то он тоже будет добавлен в выходной файл.\n
         \t- Основной спектр может быть экспортирован в формате «<i>.spe</i>» в формате, совместимым с другими спектрометрическими программами. Файлы именуются в виде «<i>MCA-date.spe</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
         \t- Основной спектр может быть экспортирован в формате «<i>.N42</i>» в формате, совместимым с другими спектрометрическими программами. Файлы именуются в виде «<i>MCA-date.N42</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
