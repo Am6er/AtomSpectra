@@ -29,11 +29,9 @@
                 android:title="@string/hist_load_file" />
             <item
                 android:id="@+id/action_hist_add_from_file"
-                android:enabled="false"
                 android:icon="@drawable/menu_add_file"
                 android:orderInCategory="203"
-                android:title="@string/hist_add_file"
-                android:visible="false" />
+                android:title="@string/hist_add_file" />
             <item
                 android:id="@+id/action_export_spectrum"
                 android:icon="@drawable/menu_set_as"

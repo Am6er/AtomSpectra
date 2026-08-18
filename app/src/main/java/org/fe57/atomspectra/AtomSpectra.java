@@ -67,6 +67,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -2438,6 +2439,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             }
             return true;
         } else if (item.getItemId() == R.id.action_hist_from_file) {
+            if (!AtomSpectraService.getFreeze()) {
+                ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+                return true;
+            }
             Log.d(TAG, "loading hist file");
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_READ_HIST)) {
@@ -2454,9 +2459,13 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             }
             return true;
         } else if (item.getItemId() == R.id.action_hist_add_from_file) {
+            if (!AtomSpectraService.getFreeze()) {
+                ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+                return true;
+            }
             Log.d(TAG, "adding hist file");
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_READ_HIST)) {
+                if (checkPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, getString(R.string.perm_ask_read_title), getString(R.string.perm_ask_read_text), REQUEST_ADD_HIST)) {
                     Intent loadIntent = new Intent()
                             .setType("*/*")
                             .setAction(Intent.ACTION_GET_CONTENT);
@@ -3110,7 +3119,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         } else if (requestCode == ADD_HIST_CODE && resultCode == RESULT_OK) {
             selectedFile = data.getData(); //The uri with the location of the file
             if (selectedFile != null)
-                loadSpectrum(selectedFile, true);
+                addSpectrumFromFile(selectedFile);
         } else if (requestCode == LOAD_BACK_CODE && resultCode == RESULT_OK) {
 
             selectedFile = data.getData(); //The uri with the location of the file
@@ -3462,6 +3471,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     }
 
     private void loadSpectrum(Uri histFile, boolean showMessage) {
+        if (!AtomSpectraService.getFreeze()) {
+            ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+            return;
+        }
         final String filename = histFile.getPath();
         if (filename == null) {
             Log.d(TAG, "Null filename");
@@ -3478,21 +3491,11 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 throw new NullPointerException("Unexpected: spectrum is null after successful load");
             }
 
-            AtomSpectraService.freeze(true);
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
-
             AtomSpectraService.ForegroundSpectrum.ReinitializeFrom(spectrum);
             ((TextView) findViewById(R.id.suffixView)).setText(spectrum.getSuffix());
             AtomSpectraService.recalculateInterval();
             updateCalibrationMenu();
-            AtomSpectraService.total_counts = spectrum.getTotalCounts();
-            if (app_menu != null) {
-                app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
-                app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
-            }
-            AtomSpectraIsotopes.showFoundIsotopes = false;
-            AtomSpectraIsotopes.foundList.clear();
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+            refreshForegroundSpectrumView();
             Log.d(TAG, "Histogram is loaded successfully");
             if (showMessage) {
                 ToastHelper.showToast(this, getString(R.string.hist_load_success));
@@ -3503,6 +3506,75 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 ToastHelper.showToast(this, getString(R.string.hist_load_error));
             }
         }
+    }
+
+    private void addSpectrumFromFile(Uri histFile) {
+        if (!AtomSpectraService.getFreeze()) {
+            ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+            return;
+        }
+        final String filename = histFile.getPath();
+        if (filename == null) {
+            Log.d(TAG, "Null filename");
+            ToastHelper.showToast(this, getString(R.string.strange_file_name));
+            return;
+        }
+        Log.d(TAG, filename);
+
+        SpectrumFileAS spectrumFile = new SpectrumFileAS();
+        try {
+            spectrumFile.loadSpectrum(histFile, this);
+            Spectrum spectrum = spectrumFile.getSpectrum(0);
+            if (spectrum == null) {
+                throw new NullPointerException("Unexpected: spectrum is null after successful load");
+            }
+
+            Spectrum current = AtomSpectraService.ForegroundSpectrum;
+            if (current.getSourceChannelCount() != spectrum.getSourceChannelCount()
+                    || current.getDataArray().length != spectrum.getDataArray().length) {
+                ToastHelper.showToast(this, getString(R.string.hist_add_channel_mismatch));
+                return;
+            }
+
+            if (isSpectrumCombineMismatch(current, spectrum)) {
+                DialogHelper.showActionConfirmationDialog(this, getString(R.string.hist_add_mismatch_confirm), () -> applyAddedSpectrum(spectrum));
+                return;
+            }
+            applyAddedSpectrum(spectrum);
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
+            ToastHelper.showToast(this, getString(R.string.hist_add_error));
+        }
+    }
+
+    private void applyAddedSpectrum(Spectrum spectrum) {
+        if (!AtomSpectraService.getFreeze()) {
+            ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+            return;
+        }
+        AtomSpectraService.ForegroundSpectrum.addSpectrum(spectrum);
+        refreshForegroundSpectrumView();
+        Log.d(TAG, "Histogram is added successfully");
+        ToastHelper.showToast(this, getString(R.string.hist_add_success));
+    }
+
+    private void refreshForegroundSpectrumView() {
+        AtomSpectraService.total_counts = AtomSpectraService.ForegroundSpectrum.getTotalCounts();
+        AtomSpectraIsotopes.showFoundIsotopes = false;
+        AtomSpectraIsotopes.foundList.clear();
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    private boolean isSpectrumCombineMismatch(Spectrum a, Spectrum b) {
+        String deviceInfoA = a.getDeviceInfo() == null ? "" : a.getDeviceInfo();
+        String deviceInfoB = b.getDeviceInfo() == null ? "" : b.getDeviceInfo();
+        boolean deviceInfoMismatch = !deviceInfoA.equals(deviceInfoB);
+
+        double[] coeffsA = a.getSpectrumCalibration() != null ? a.getSpectrumCalibration().getCoeffArray() : null;
+        double[] coeffsB = b.getSpectrumCalibration() != null ? b.getSpectrumCalibration().getCoeffArray() : null;
+        boolean calibrationMismatch = !Arrays.equals(coeffsA, coeffsB);
+
+        return deviceInfoMismatch || calibrationMismatch;
     }
 
     private void loadCalibrationFromSpectrum(Uri histFile) {
@@ -4061,13 +4133,16 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     private void updateRecordStatusMenu() {
         if (app_menu != null) {
-            if (AtomSpectraService.getFreeze()) {
+            boolean recordingPaused = AtomSpectraService.getFreeze();
+            if (recordingPaused) {
                 app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.record);
                 app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_continue_update);
             } else {
                 app_menu.findItem(R.id.action_hist_freeze).setIcon(R.drawable.menu_block);
                 app_menu.findItem(R.id.action_hist_freeze).setTitle(R.string.hist_freeze_update);
             }
+            app_menu.findItem(R.id.action_hist_from_file).setEnabled(recordingPaused);
+            app_menu.findItem(R.id.action_hist_add_from_file).setEnabled(recordingPaused);
         }
     }
 
