@@ -1032,7 +1032,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
                             statusLine2Text.setText(getString(R.string.cps_show, cp1s, cp1s_interval));
                             statusLine3Text.setText(getString(R.string.cps_average_show, total_time > 1 ? total_counts / total_time : 0));
-                            statusLine4Text.setText(getString(R.string.total_time_format, total_time));
+                            statusLine4Text.setText(getString(R.string.total_time_format, formatSpectrumTime(total_time)));
                             statusLine2Text.setTextColor(Color.WHITE);
                             statusLine3Text.setTextColor(Color.WHITE);
                             statusLine4Text.setTextColor(Color.WHITE);
@@ -1476,6 +1476,14 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
             return getString(R.string.dose_rate_measurement_time_format, (int) Math.round(measurementTimeSeconds));
         }
         return getString(R.string.dose_rate_measurement_time_format_fractional, measurementTimeSeconds);
+    }
+
+    private String formatSpectrumTime(double timeSeconds) {
+        long[] parts = Spectrum.splitAcquisitionTime(timeSeconds);
+        if (parts[0] > 0) {
+            return getString(R.string.spectrum_time_days_hms_format, parts[0], parts[1], parts[2], parts[3]);
+        }
+        return getString(R.string.spectrum_time_hms_format, parts[1], parts[2], parts[3]);
     }
 
     @Override

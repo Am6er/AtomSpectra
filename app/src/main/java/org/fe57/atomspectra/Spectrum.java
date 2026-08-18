@@ -257,6 +257,16 @@ public class Spectrum {
         return SpectrumTime * Constants.UPDATE_PERIOD / 1000.0;
     }
 
+    static long[] splitAcquisitionTime(double timeSeconds) {
+        long totalSeconds = Math.max(0L, Math.round(timeSeconds));
+        return new long[] {
+                totalSeconds / 86400L,
+                (totalSeconds % 86400L) / 3600L,
+                (totalSeconds % 3600L) / 60L,
+                totalSeconds % 60L
+        };
+    }
+
     public Spectrum setRealSpectrumTime(double spectrumTime) {
         SpectrumTime = (long)StrictMath.rint(spectrumTime * 1000.0 / Constants.UPDATE_PERIOD);
         return this;
