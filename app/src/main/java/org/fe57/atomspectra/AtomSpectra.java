@@ -111,6 +111,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     private int gotAnswers = 0;
 
     private AtomSpectraService mAtomSpectraService = null;
+    private boolean serviceBound = false;
     private static Context AppContext;
 
     public static boolean active = false;
@@ -459,6 +460,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                 getApplicationContext().startService(inputServiceIntent);
             }
             getApplicationContext().bindService(inputServiceIntent, mServiceConnection, BIND_IMPORTANT);
+            serviceBound = true;
             inputServiceIntent = null;
         } else {
             if (sharedPreferences.getBoolean(Constants.CONFIG.CONF_CHECK_AUDIO, true)) {
@@ -550,6 +552,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
                             getApplicationContext().startService(inputServiceIntent);
                         }
                         getApplicationContext().bindService(inputServiceIntent, mServiceConnection, BIND_IMPORTANT);
+                        serviceBound = true;
                         inputServiceIntent = null;
                     }
                 } else {
@@ -1513,7 +1516,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         buttonsTimer.cancel();
         unregisterReceiver(mDataUpdateReceiver);
 
-        getApplicationContext().unbindService(mServiceConnection);
+        if (serviceBound) {
+            getApplicationContext().unbindService(mServiceConnection);
+            serviceBound = false;
+        }
         background_subtract = false;
         if (app_menu != null) {
             app_menu.findItem(R.id.action_background_show).setChecked(false);
