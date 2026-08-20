@@ -1101,6 +1101,12 @@ public class AtomSpectraSpectrogramView extends View {
         int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
         int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX - PADDING_TOP_PX;
 
+        if (spgViewWidth <= 0 || spgViewHeight <= 0) {
+            // view smaller than its axis/color-bar chrome (e.g. narrow split-window slot):
+            // the plot area would be negative and produce degenerate array/setPixels sizes
+            return;
+        }
+
         int virtualRowsCount = this.virtualRowsMeta.length;
         int colBinsCount = firstNonEmptyBinData.get(0).length; // first row of first segment
 
@@ -1465,6 +1471,7 @@ public class AtomSpectraSpectrogramView extends View {
 
             int barTop = viewHeight - COLOR_BAR_HEIGHT_PX;
             int barBottom = viewHeight;
+            if (barTop < 0) return; // view shorter than the color bar: setPixels y would be negative
 
             int[] colors = paletteColors();
 
