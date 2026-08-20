@@ -112,6 +112,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
 
     private AtomSpectraService mAtomSpectraService = null;
     private boolean serviceBound = false;
+    private boolean receiverRegistered = false;
     private static Context AppContext;
 
     public static boolean active = false;
@@ -479,6 +480,7 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
         } else {
             registerReceiver(mDataUpdateReceiver, makeAtomSpectraUpdateIntentFilter());
         }
+        receiverRegistered = true;
 
         PrefHelper.getWorkingDir(this, true);
     }
@@ -1514,7 +1516,10 @@ public class AtomSpectra extends Activity implements OnGestureListener, OnReques
     protected void onDestroy() {
         super.onDestroy();
         buttonsTimer.cancel();
-        unregisterReceiver(mDataUpdateReceiver);
+        if (receiverRegistered) {
+            unregisterReceiver(mDataUpdateReceiver);
+            receiverRegistered = false;
+        }
 
         if (serviceBound) {
             getApplicationContext().unbindService(mServiceConnection);
