@@ -55,6 +55,17 @@
                 android:textColor="#00BCD4"
                 android:textSize="20sp" />
 
+            <TextView
+                android:id="@+id/audioPermissionHint"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:text="@string/perm_hint_audio"
+                android:textColor="#FFB300"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
             <CheckBox
                 android:id="@+id/CheckPileUp"
                 android:layout_width="fill_parent"
@@ -771,6 +782,16 @@
                 android:layout_weight="1"
                 android:text="@string/add_gps"
                 android:textColor="#FFFFFFFF" />
+
+            <TextView
+                android:id="@+id/gpsPermissionHint"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/perm_hint_gps"
+                android:textColor="#FFB300"
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="match_parent"

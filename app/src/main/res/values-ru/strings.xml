@@ -22,7 +22,6 @@
     <string name="settings_spg_midnight_reset">Создавать новый файл спектрограммы в полночь</string>
 
     <string name="isotope_search">Atom Spectra Поиск изотопов</string>
-    <string name="app_bar_sensitivity">Atom Spectra Чувствительность</string>
     <string name="action_settings">Параметры</string>
     <string name="action_select_interval">Выбрать интервал…</string>
     <string name="action_restart">Сброс спектра</string>
@@ -37,10 +36,6 @@
     <string name="nav_bar_spectrum_change">Изменение</string>
     <string name="nav_bar_search">Поиск</string>
     <string name="nav_bar_spectrogram">Спектрограмма</string>
-    <string name="nav_bar_spectrum_short">Спк</string>
-    <string name="nav_bar_spectrum_change_short">Изм</string>
-    <string name="nav_bar_search_short">Пск</string>
-    <string name="nav_bar_spectrogram_short">Спг</string>
 
     <string name="histogram_menu">Спектр</string>
     <string name="hist_save_file">Сохранить…</string>
@@ -55,13 +50,12 @@
     <string name="hist_share_export">Поделиться</string>
     <string name="hist_freeze_update">Пауза</string>
     <string name="hist_continue_update">Продолжить</string>
-    <string name="hist_stop_record">Запись остановлена из-за изменения параметров входа!</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
     <string name="hist_ask_delete_text">Вы действительно хотите очистить данные спектра?</string>
     <string name="hist_smooth">Сгладить</string>
     <string name="hist_unsmooth">Восстановить</string>
     <string name="hist_delta">Изменение спектра</string>
-    <string name="hist_set_suffix">Ввести описание</string>
+    <string name="hist_set_suffix">Ввести описание (суффикс файла)</string>
     <string name="hist_suffix">Спектр</string>
 
     <string name="background">Фон</string>
@@ -77,7 +71,7 @@
 
     <string name="notify_close">Закрыть</string>
 
-    <string name="enable_pileup">Включить анализ импульсов</string>
+    <string name="enable_pileup">Включить анализ наложения импульсов</string>
     <string name="allow_partial_histogram_data">Разрешить обработку спектров с частичными данными</string>
     <string name="invert">Инвертировать вход</string>
     <string name="add_gps">Добавлять координаты GPS в файлы</string>
@@ -87,7 +81,7 @@
     <string name="atom_swift_app_dr_compensated">AtomSwift МД: Компенсированная</string>
     <string name="atom_swift_app_dr_interval">AtomSwift МД: Интервал</string>
     <string name="input_sound">Вход:</string>
-    <string name="input_sound_absent">Нет источника! Использую по-умолчанию.</string>
+    <string name="input_sound_absent">Нет выбранного аудио источника! Использую по-умолчанию.</string>
     <string name="interval_search_sound_disabled_label">сигнал выкл.</string>
     <string name="interval_search_output_sound_enabled">Включить звуковой сигнал</string>
     <string name="interval_search_energy_range_full">Диапазон энергий: Полный</string>
@@ -96,14 +90,10 @@
     <string name="interval_search_sound_volume">Громкость звука: %1$d%%</string>
     <string name="interval_search_detection_level">Уровень обнаружения: %1$d сигм(ы)</string>
     <string name="use_raw_audio_source">Использовать необработанный звук</string>
-    <string name="no_audio_available">Не могу использовать аудио-вход!</string>
-    <string name="no_usb_available">Не могу использовать вход USB!</string>
     <string name="sensitivity_add_row">Добавить</string>
     <string name="sensitivity_remove_row">DEL</string>
     <string name="sensitivity_edit_row">EDIT</string>
-    <string name="update_data_error">Не могу обновить данные устройства</string>
     <string name="no_audio_output_available">Не могу вывести звук!</string>
-    <string name="audio_44100">Входная частота установлена в 44,1 кГц. Если Вы хотите попробовать 48 кГц подключите спектрометр и перезапустите программу.</string>
 
     <string name="reducedto">Вывод: 128 к.</string>
     <string name="maxfront">Макс точек фронта: 10</string>
@@ -119,9 +109,6 @@
     <string name="rightwards">\u00d7</string>
 
     <string name="cps">cps: 0</string>
-
-    <string name="hint_keV_show">100.0</string>
-    <string name="hint_sens_show">1.0</string>
 
     <string name="cursortext">Курсор: 0 к., 0 кэВ</string>
     <string name="mode_fast">Быстрый</string>
@@ -237,8 +224,6 @@
     <string name="dose_rate_measurement_time_format"> [<xliff:g id="measurement_time">%1$d</xliff:g> s]</string>
     <string name="dose_rate_measurement_time_format_fractional"> [<xliff:g id="measurement_time">%1$.1f</xliff:g> s]</string>
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
-    <string name="status_last_updated_format">upd: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="status_last_updated_placeholder">upd: --:--:--</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">~cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
@@ -293,27 +278,20 @@
     <string name="graph_max_zoom">Достигнут максимальный зум</string>
     <string name="graph_min_zoom">Достигнут минимальный зум</string>
 
-    <string name="perm_ask_audio_title">Запрос разрешения AUDIO</string>
-    <string name="perm_ask_audio_text">Этому приложению необходимо разрешение RECORD_AUDIO для получения сигнала от спектрометра. Без этого разрешения программа может только показывать ранее полученные спектры.</string>
+    <string name="perm_startup_title">Разрешения</string>
+    <string name="perm_startup_text">Сейчас AtomSpectra запросит несколько разрешений. Разрешите те, что вам необходимы:\n\n- Микрофон: приём сигнала от спектрометров с аудиоинтерфейсом. Без него работают только Atom Spectra Pro USB-спектрометры.\n- Файлы: сохранение и открытие спектров, спектрограмм и настроек.\n- Геолокация: добавление GPS-координат в сохраняемые файлы.\n- Уведомления: показ уведомления о фоновой записи.</string>
+    <string name="working_dir_title">Рабочая директория</string>
+    <string name="working_dir_rationale">AtomSpectra нужна директория для сохранения и открытия спектров, спектрограмм и экспортов. Выберите её сейчас. Позже её можно изменить в настройках.</string>
+    <string name="working_dir_set">Рабочая директория выбрана: %1$s</string>
+    <string name="perm_hint_audio">Для спектрометров с аудиоинтерфейсом нужно разрешение на микрофон. Выдайте его в настройках системы и полностью перезапустите приложение.</string>
+    <string name="perm_hint_gps">Для добавления GPS-координат нужно разрешение на геолокацию. Выдайте его в настройках системы и полностью перезапустите приложение.</string>
     <string name="perm_ask_power_title">Сохранение питания</string>
     <string name="perm_ask_power_text">Пожалуйста, откройте список исключений питания и добавьте AtomSpectra для корректной работы программы в фоновом режиме.</string>
-    <string name="perm_ask_write_title">Запрос разрешения WRITE</string>
-    <string name="perm_ask_write_text">Данное разрешение необходимо для записи файл на внешний носитель</string>
-    <string name="perm_ask_read_title">Запрос разрешения READ</string>
-    <string name="perm_ask_read_text">Данное разрешение необходимо для чтения с внешнего носителя</string>
-    <string name="perm_ask_share_text">Данное разрешение необходимо для отправки файла</string>
-    <string name="perm_ask_fine_gps_title">Запрос доступа к GPS</string>
-    <string name="perm_ask_fine_gps_text">Программе необходимо получить разрешение на доступ к координатам GPS, чтобы добавить их в выходной файл. Координаты будут считываться только в том случае, если активно главное окно программы и в параметрах установлен флажок GPS.</string>
-    <string name="perm_ask_fine_gps_text_android_14">Программе необходимо получить разрешение на доступ к координатам GPS, чтобы добавить их в выходной файл. Координаты будут считываться только в том случае, если активно главное окно программы и в параметрах установлен флажок GPS.\n\nПрограмма не может быть запущена без доступа к координатам GPS, выдайте доступ в настройках системы и перезапустите программу.</string>
-    <string name="perm_ask_gps_off_title">GPS выключен</string>
-    <string name="perm_ask_gps_off_text">GPS выключен. Пожалуйста, включите GPS для добавления координат в файл со спектром</string>
 
-    <string name="perm_no_audio">Нет разрешения на чтение аудио</string>
     <string name="perm_no_read_histogram">Нет разрешения на чтение спектра</string>
     <string name="perm_no_read_spectrogram">Нет разрешения на чтение спектрограммы</string>
     <string name="perm_no_read_background">Нет разрешения на чтение фона</string>
     <string name="perm_no_read_calibration">Нет разрешения на чтение калибровки из файла</string>
-    <string name="perm_no_write_directory">Не могу создать каталог /AtomSpectra на внешнем носителе, перемещаюсь во внутренний каталог</string>
     <string name="perm_no_write_histogram">Нет разрешения на запись спектра</string>
     <string name="perm_no_write_background">Нет разрешения на запись фона</string>
     <string name="perm_no_write_bqmoni">Нет разрешения на экспорт спектра в Beсquerel Monitor</string>
@@ -323,8 +301,6 @@
     <string name="perm_no_write_export_energy">Нет разрешения на экспорт спектра с энергией в CSV</string>
     <string name="perm_no_share">Нет разрешения на чтение файла для отправки</string>
     <string name="perm_no_outside">Файл вне моего доступа</string>
-    <string name="perm_no_usb">Нет прав для доступа к устройству USB</string>
-    <string name="perm_no_gps">Нет доступа к GPS, GPS-данные будут отсутствовать</string>
 
     <string name="error_working_dir_not_set">Рабочая директория не установлена. Установите рабочую директорию в настройках.</string>
     <string name="error_working_dir_not_valid">Рабочая директория \'$1%s\' некорректна. Установите рабочую директорию в настройках.</string>
@@ -338,7 +314,6 @@
     <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
 
     <string name="ask_select_histogram">Выбрать спектр</string>
-    <string name="ask_select_background">Выбрать спектр фона</string>
     <string name="ask_select_spectrogram">Выбрать спектрограмму</string>
     <string name="ask_select_calibration">Выбрать файл калибровки</string>
     <string name="ask_select_device_file">Выбрать файл устройства</string>
@@ -403,7 +378,7 @@
     <string name="cal_store_usb_wait">Подождите для сохранения калибровки в устройстве USB</string>
     <string name="cal_apply_usb">Калибровка принята из устройства USB</string>
     <string name="cal_wrong_usb">Неверная калибровка в устройстве USB</string>
-    <string name="cal_wrong_checksum">Плохая контрольная сумма в устройстве USB</string>
+    <string name="cal_wrong_checksum">Неверная контрольная сумма в устройстве USB</string>
     <string name="cal_timeout">Таймаут устройства USB</string>
     <string name="cal_store_usb">Калибровка сохранена в устройстве USB</string>
     <string name="cal_wrong_store_usb">Не могу сохранить калибровку в устройстве USB</string>
@@ -436,6 +411,7 @@
     <string name="log_no_records">Нет записей</string>
     <string name="log_recording_suspended">Запись приостановлена</string>
     <string name="log_recording_resumed">Запись возобновлена</string>
+    <string name="log_foreground_start_failed">Не удалось запустить фоновую службу: %1$s</string>
     <string name="log_audio_input_added">Добавлено устройство аудио входа: %1$s</string>
     <string name="log_audio_input_removed">Удалено устройство аудио входа: %1$s</string>
     <string name="log_audio_zero_buffers_detected">Аудио буфер нулевой длины получен несколько раз подряд (%1$d), перезапуск аудио</string>
@@ -587,8 +563,13 @@
     <string name="help_text_overview"><big><annotation foreground="caption">Общее</annotation></big>\n
         Данная программа читает сигнал со спектрометра, подключённого к телефону через микрофонный вход (например <u>AtomSpectra 3, 4</u> или похожие), с USB-аудио спектрометра (например <u>AtomSpectra Nano</u> или похожие) или с USB спектрометра <u>AtomSpectra Pro</u>. Если ни один из них не подключён к телефону, то программа работает в демонстрационном режиме, читая внутренний микрофон и выводя его спектр.\n
         \n
-        ВНИМАНИЕ: Пожалуйста, добавьте программу в список исключения питания для корректной работы программы в фоне или при выключенном экране телефона. Также для корректной работы программы обязательно разрешение на чтение микрофона и разрешение на работу с файловой системой (см. про установку рабочей директории ниже), а на Android 14 и новее - разрешение на доступ к местоположению.\n
+        ВНИМАНИЕ: Пожалуйста, добавьте программу в список исключения питания для корректной работы программы в фоне или при выключенном экране телефона.\n
         Для полной остановки программы используйте пункт меню <annotation foreground="parameter">Завершить программу</annotation>.\n
+        Разрешения, необходимые для работы программы:\n
+        \t- Микрофон: приём сигнала от спектрометров с аудиоинтерфейсом. Без него работают только Atom Spectra Pro USB-спектрометры.\n
+        \t- Файлы: сохранение и открытие спектров, спектрограмм и настроек.\n
+        \t- Геолокация: добавление GPS-координат в сохраняемые файлы.\n
+        \t- Уведомления: показ уведомления о фоновой записи.\n
         \n
     </string>
     <string name="help_text_part1">
