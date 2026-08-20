@@ -128,6 +128,10 @@ public class AtomSpectraShapeView extends View {
 			margin_right = (int) (1 * ht_px);
 			width = viewWidth - margin_left - margin_right;
 			height = viewHeight - margin_top - margin_bottom;
+			if (width <= 0 || height <= 0) {
+				// view too small (e.g. transient layout pass): nothing to plot
+				return;
+			}
 			int nx;
 			int ny;
 
