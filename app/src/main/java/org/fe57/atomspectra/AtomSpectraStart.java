@@ -21,7 +21,6 @@ public class AtomSpectraStart extends Activity {
         super.onCreate(savedInstanceState);
         Intent notificationIntent = getIntent();
         notificationIntent.setClass(this, AtomSpectra.class);
-//        Intent notificationIntent = new Intent(this, AtomSpectra.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(notificationIntent);
         finish();

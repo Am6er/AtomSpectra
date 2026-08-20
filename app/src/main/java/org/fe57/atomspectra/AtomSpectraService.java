@@ -1,6 +1,5 @@
 package org.fe57.atomspectra;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -42,7 +41,6 @@ import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.PermissionChecker;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.util.Pair;
 
@@ -70,7 +68,6 @@ public class AtomSpectraService extends Service {
     private boolean inversion = false;
     private boolean pileup = true;
     private static int first_channel = 0;   //First channel to show
-    public static boolean canOpenAudio = false;
     public static boolean isCalibrated = false;
 
     //Output sound to the speaker
@@ -509,10 +506,22 @@ public class AtomSpectraService extends Service {
         }
         refreshServiceNotification();
         Notification notification = createNewServiceNotification();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            startForeground(FOREGROUND_PROCESS_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
-        } else {
-            startForeground(FOREGROUND_PROCESS_ID, notification);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // Type is computed by the activity from currently granted permissions and passed
+                // in; fall back to deriving it here if the service was (re)started without it.
+                int fgsType = (intent != null && intent.hasExtra(Constants.ACTION_PARAMETERS.FGS_TYPE))
+                        ? intent.getIntExtra(Constants.ACTION_PARAMETERS.FGS_TYPE, 0)
+                        : AppPermissions.foregroundServiceType(this);
+                startForeground(FOREGROUND_PROCESS_ID, notification, fgsType);
+            } else {
+                startForeground(FOREGROUND_PROCESS_ID, notification);
+            }
+        } catch (Exception e) {
+            // e.g. ForegroundServiceStartNotAllowedException / SecurityException when the granted
+            // permissions do not cover the requested FGS type. Don't crash the app over it.
+            Log.e(TAG, "startForeground failed", e);
+            showToastInMainLooper(getStringOrDefaultLocale(R.string.log_foreground_start_failed, String.valueOf(e.getMessage())), Toast.LENGTH_LONG);
         }
         if (isStarted)
             return START_NOT_STICKY;
@@ -527,8 +536,7 @@ public class AtomSpectraService extends Service {
                 SystemClock.sleep(USB_WAIT_DEVICE);
                 onUSBAttached(device);
             } else {
-                inputType = INPUT_AUDIO;
-                inputDeviceInfo = getAudioDeviceInfoText(null);
+                selectNonUsbInput();
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
                 sendDataToUI();
             }
@@ -543,8 +551,7 @@ public class AtomSpectraService extends Service {
                     onUSBNoAccess();
                 }
             } else {
-                inputType = INPUT_AUDIO;
-                inputDeviceInfo = getAudioDeviceInfoText(null);
+                selectNonUsbInput();
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
                 sendDataToUI();
             }
@@ -642,7 +649,7 @@ public class AtomSpectraService extends Service {
         intervalSearchAlarmDetectionLevel = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
         // --- end interval search
 
-        addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
+        addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
         allowPartialHistogram = sp.getBoolean(Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM, Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT);
@@ -953,23 +960,15 @@ public class AtomSpectraService extends Service {
         if (Locator == null) {
             Locator = new GPSLocator(getApplicationContext());
         }
-        if ((hasFeatureGPS || hasFeatureNetwork) && PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                final Context id = this;
-                if (PermissionChecker.checkSelfPermission(id, Manifest.permission.ACCESS_FINE_LOCATION) != PermissionChecker.PERMISSION_GRANTED) {
-                    Locator.stopUsingGPS();
-                    addGPS = false;
-                } else {
-                    Locator.startUsingGPS();
-                    if (!Locator.hasGPS) {
-                        Locator.stopUsingGPS();
-                        addGPS = false;
-                    }
-                }
+        if ((hasFeatureGPS || hasFeatureNetwork) && PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT)) {
+            if (!AppPermissions.isLocationGranted(this)) {
+                Locator.stopUsingGPS();
+                addGPS = false;
             } else {
                 Locator.startUsingGPS();
                 if (!Locator.hasGPS) {
                     Locator.stopUsingGPS();
+                    addGPS = false;
                 }
             }
         }
@@ -1269,7 +1268,6 @@ public class AtomSpectraService extends Service {
             }
             if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
                 Log.i(TAG, "Received Stop Foreground Intent");
-                canOpenAudio = false;
                 releaseOutputAudioTrack();
                 Log.d(TAG, "recording Stop");
                 Stop();
@@ -1576,7 +1574,6 @@ public class AtomSpectraService extends Service {
 
     public void Stop() {
         notify_cancel_all();
-        canOpenAudio = false;
         isStarted = false;
         try {
             unregisterReceiver(broadcastReceiver);
@@ -1980,7 +1977,7 @@ public class AtomSpectraService extends Service {
             return;
         }
         synchronized (ARLock) {
-            if (canOpenAudio && (AR == null)) {
+            if (isAudioInputAvailable() && (AR == null)) {
                 AR = new AudioRecord(AudioSource, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BufferSize);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (inputSound) {
@@ -2641,8 +2638,7 @@ public class AtomSpectraService extends Service {
         } else {
             synchronized (inputSync) {
                 if (inputType == INPUT_SERIAL) {
-                    inputType = INPUT_AUDIO;
-                    inputDeviceInfo = getAudioDeviceInfoText(null);
+                    selectNonUsbInput();
                 }
             }
         }
@@ -2655,13 +2651,28 @@ public class AtomSpectraService extends Service {
     private final void onUSBNoAccess() {
         synchronized (inputSync) {
             if (inputType == INPUT_SERIAL) {
-                inputType = INPUT_AUDIO;
-                inputDeviceInfo = getAudioDeviceInfoText(null);
+                selectNonUsbInput();
                 setFreeze(true);
             }
         }
 
         showToastInMainLooper(R.string.action_usb_no_access, Toast.LENGTH_SHORT);
+    }
+
+    // input used when no USB spectrometer is attached: audio if the mic permission is held, else none
+    private void selectNonUsbInput() {
+        if (isAudioInputAvailable()) {
+            inputType = INPUT_AUDIO;
+            inputDeviceInfo = getAudioDeviceInfoText(null);
+        } else {
+            inputType = INPUT_NONE;
+            inputDeviceInfo = "NONE";
+        }
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    private boolean isAudioInputAvailable() {
+        return service_context != null && AppPermissions.isMicGranted(service_context);
     }
 
     /**
@@ -2900,27 +2911,19 @@ public class AtomSpectraService extends Service {
     private void checkGPS() {
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-        SharedPreferences sharedPreferences = PrefHelper.getASSharedPreferences(this);
-        addGPS = sharedPreferences.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
+        boolean wantGPS = PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
 
-        if ((hasFeatureGPS || hasFeatureNetwork) && addGPS) {
-            if (PermissionChecker.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED) {
-                Locator.startUsingGPS();
-                if (!Locator.hasGPS) {
-                    SharedPreferences.Editor editor = PrefHelper.getASSharedPreferences(this).edit();
-                    editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-                    editor.apply();
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
-                }
-            } else {
+        if ((hasFeatureGPS || hasFeatureNetwork) && wantGPS && AppPermissions.isLocationGranted(this)) {
+            Locator.startUsingGPS();
+            addGPS = Locator.hasGPS; // only stamp coordinates once a provider is actually available
+            if (!Locator.hasGPS) {
                 Locator.stopUsingGPS();
-                SharedPreferences.Editor editor = PrefHelper.getASSharedPreferences(this).edit();
-                editor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-                editor.apply();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
             }
         } else {
+            // setting off, permission missing, or no hardware: write no coordinates, but keep the
+            // user's "add GPS" intent so startup can ask for the permission again
             Locator.stopUsingGPS();
+            addGPS = false;
         }
     }
 
@@ -3080,7 +3083,7 @@ public class AtomSpectraService extends Service {
     }
 
     private void refreshServiceNotification() {
-        if (service_context != null) {
+        if (service_context != null && AppPermissions.areNotificationsAllowed(service_context)) {
             NotificationManagerCompat.from(service_context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
         }
     }

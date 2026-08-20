@@ -22,7 +22,6 @@
     <string name="settings_spg_midnight_reset">Create a new spectrogram file at midnight</string>
 
     <string name="isotope_search">Atom Spectra Find Isotopes</string>
-    <string name="app_bar_sensitivity">Atom Spectra Sensitivity</string>
     <string name="action_settings">Settings</string>
     <string name="action_select_interval">Set interval…</string>
     <string name="action_restart">Clear spectrum</string>
@@ -37,10 +36,6 @@
     <string name="nav_bar_spectrum_change">Change</string>
     <string name="nav_bar_search">Search</string>
     <string name="nav_bar_spectrogram">Spectrogram</string>
-    <string name="nav_bar_spectrum_short">Spc</string>
-    <string name="nav_bar_spectrum_change_short">Chng</string>
-    <string name="nav_bar_search_short">Srch</string>
-    <string name="nav_bar_spectrogram_short">Spg</string>
 
     <string name="histogram_menu">Spectrum</string>
     <string name="hist_save_file">Save to…</string>
@@ -55,13 +50,12 @@
     <string name="hist_share_export">Share</string>
     <string name="hist_freeze_update">Pause recording</string>
     <string name="hist_continue_update">Continue recording</string>
-    <string name="hist_stop_record">Recording stopped due to input change!</string>
     <string name="hist_ask_delete_title">Clear spectrum</string>
     <string name="hist_ask_delete_text">Are you sure to clear spectrum data?</string>
     <string name="hist_smooth">Smooth</string>
     <string name="hist_unsmooth">Unsmooth</string>
     <string name="hist_delta">Spectrum change</string>
-    <string name="hist_set_suffix">Set description</string>
+    <string name="hist_set_suffix">Set description (file suffix)</string>
     <string name="hist_suffix">Spectrum</string>
 
     <string name="background">Background</string>
@@ -87,7 +81,7 @@
     <string name="atom_swift_app_dr_compensated">AtomSwift DR: Compensated</string>
     <string name="atom_swift_app_dr_interval">AtomSwift DR: Interval</string>
     <string name="input_sound">Source:</string>
-    <string name="input_sound_absent">No input source! Use default.</string>
+    <string name="input_sound_absent">No selected input source! Using default.</string>
     <string name="interval_search_sound_disabled_label">alarm off</string>
     <string name="interval_search_output_sound_enabled">Enable sound alarm</string>
     <string name="interval_search_energy_range_full">Energy range: Full</string>
@@ -96,14 +90,10 @@
     <string name="interval_search_sound_volume">Sound volume: %1$d%%</string>
     <string name="interval_search_detection_level">Detection level: %1$d sigma</string>
     <string name="use_raw_audio_source">Use raw audio source</string>
-    <string name="no_audio_available">Can\'t use audio input!</string>
-    <string name="no_usb_available">Can\'t use USB input!</string>
     <string name="sensitivity_add_row">Add Row</string>
     <string name="sensitivity_remove_row">DEL</string>
     <string name="sensitivity_edit_row">EDIT</string>
-    <string name="update_data_error">Can\'t update device data</string>
     <string name="no_audio_output_available">Can\'t use audio output!</string>
-    <string name="audio_44100">Input frequency is set to 44.1 kHz. If you want to try 48 kHz connect the spectrometer and restart the program.</string>
 
     <string name="reducedto">Show as: 128 ch.</string>
     <string name="maxfront">Max front points: 10</string>
@@ -119,9 +109,6 @@
     <string name="rightwards">\u00d7</string>
 
     <string name="cps">cps: 0</string>
-
-    <string name="hint_keV_show">100.0</string>
-    <string name="hint_sens_show">1.0</string>
 
     <string name="cursortext">Cursor: 0 ch., 0 keV</string>
     <string name="mode_fast">Fast</string>
@@ -237,8 +224,6 @@
     <string name="dose_rate_measurement_time_format"> [<xliff:g id="measurement_time">%1$d</xliff:g> s]</string>
     <string name="dose_rate_measurement_time_format_fractional"> [<xliff:g id="measurement_time">%1$.1f</xliff:g> s]</string>
     <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
-    <string name="status_last_updated_format">upd: <xliff:g id="time">%1$s</xliff:g></string>
-    <string name="status_last_updated_placeholder">upd: --:--:--</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
     <string name="cps_delta_show">~cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
@@ -293,27 +278,20 @@
     <string name="graph_max_zoom">Maximum zoom reached</string>
     <string name="graph_min_zoom">Minimum zoom reached</string>
 
-    <string name="perm_ask_audio_title">AUDIO permission acquisition</string>
-    <string name="perm_ask_audio_text">This application needs RECORD_AUDIO permission to capture signal from spectrometer. Without this permission the program can show previous spectra only.</string>
+    <string name="perm_startup_title">Permissions</string>
+    <string name="perm_startup_text">AtomSpectra will now ask for a few permissions. Allow the ones you need:\n\n- Microphone: capture the signal from audio-interface spectrometers. Without it only Atom Spectra Pro USB serial spectrometers work.\n- Files: save and open spectra, spectrograms and configuration.\n- Location: add GPS coordinates to saved files.\n- Notifications: show the background recording notification.</string>
+    <string name="working_dir_title">Working folder</string>
+    <string name="working_dir_rationale">AtomSpectra needs a folder to save and open spectra, spectrograms and exports. Please pick one now. You can change it later in Settings.</string>
+    <string name="working_dir_set">Working folder set: %1$s</string>
+    <string name="perm_hint_audio">Microphone permission is required for audio-interface spectrometers. Grant it in the system settings and fully restart the app.</string>
+    <string name="perm_hint_gps">Location permission is required to add GPS coordinates. Grant it in the system settings and fully restart the app.</string>
     <string name="perm_ask_power_title">Power saving</string>
     <string name="perm_ask_power_text">Please go to a battery exclusion list and add AtomSpectra in order to work properly in the background.</string>
-    <string name="perm_ask_write_title">WRITE permission acquisition</string>
-    <string name="perm_ask_write_text">This permission is needed to write a file on external storage</string>
-    <string name="perm_ask_read_title">READ permission acquisition</string>
-    <string name="perm_ask_read_text">This permission is needed to read file from external storage</string>
-    <string name="perm_ask_share_text">This permission is needed to send file</string>
-    <string name="perm_ask_fine_gps_title">GPS access acquisition</string>
-    <string name="perm_ask_fine_gps_text">The program needs to access GPS coordinates permission to add them to the output file. The coordinates will be read only if the main program window is active and a GPS checkbox is switched on in the parameters.</string>
-    <string name="perm_ask_fine_gps_text_android_14">The program needs to access GPS coordinates permission to add them to the output file. The coordinates will be read only if the main program window is active and a GPS checkbox is switched on in the parameters. \n\nProgram cannot be started without permission for GPS coordinates, grant permission in the system settings and restart the program.</string>
-    <string name="perm_ask_gps_off_title">GPS is off</string>
-    <string name="perm_ask_gps_off_text">GPS is switched off. Please switch on GPS to add coordinates to the spectrum file</string>
 
-    <string name="perm_no_audio">No permission to open audio</string>
     <string name="perm_no_read_histogram">No permission to read a spectrum</string>
     <string name="perm_no_read_spectrogram">No permission to read a spectrogram</string>
     <string name="perm_no_read_background">No permission to read a background</string>
     <string name="perm_no_read_calibration">No permission to read a calibration file</string>
-    <string name="perm_no_write_directory">Can\'t create folder /AtomSpectra on external storage, move to own directory</string>
     <string name="perm_no_write_histogram">No permission to write a spectrum</string>
     <string name="perm_no_write_background">No permission to write a background</string>
     <string name="perm_no_write_bqmoni">No permission to export a spectrum to Becquerel Monitor</string>
@@ -323,8 +301,6 @@
     <string name="perm_no_write_export_energy">No permission to export a spectrum with an energy to a CSV file</string>
     <string name="perm_no_share">No permission to read a file to share</string>
     <string name="perm_no_outside">A file is outside of my scope</string>
-    <string name="perm_no_usb">No permission to access USB device</string>
-    <string name="perm_no_gps">No GPS access, GPS data will be undefined</string>
 
     <string name="error_working_dir_not_set">Working directory is not set. Go to settings and configure working directory.</string>
     <string name="error_working_dir_not_valid">Working directory \'$1%s\' is not valid. Go to settings and configure working directory.</string>
@@ -338,7 +314,6 @@
     <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
 
     <string name="ask_select_histogram">Select a spectrum</string>
-    <string name="ask_select_background">Select a background spectrum</string>
     <string name="ask_select_spectrogram">Select a spectrogram</string>
     <string name="ask_select_calibration">Select a calibration file</string>
     <string name="ask_select_device_file">Select a device file</string>
@@ -436,6 +411,7 @@
     <string name="log_no_records">No records</string>
     <string name="log_recording_suspended">Recording suspended</string>
     <string name="log_recording_resumed">Recording resumed</string>
+    <string name="log_foreground_start_failed">Unable to start the background service: %1$s</string>
     <string name="log_audio_input_added">Audio input device added: %1$s</string>
     <string name="log_audio_input_removed">Audio input device removed: %1$s</string>
     <string name="log_audio_zero_buffers_detected">Zero audio buffer received several times in a row (%1$d), restarting audio</string>
@@ -587,8 +563,13 @@
     <string name="help_text_overview"><big><annotation foreground="caption">Overview.</annotation></big>\n
         This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), or from an USB spectrometer <u>AtomSpectra Pro</u>. If none of them is connected to a phone the program works in a demo mode reading an internal microphone and creating a spectrum.\n
         \n
-        NOTE: Please add the program to the power exclusion list for proper operation in the background or when the screen is switched off. For the program to function correctly, it is also necessary to grant permission to access the microphone and permission to work with the file system (see below for setting the working directory), and on Android 14 and later, permission to access the location.\n
+        NOTE: Please add the program to the power exclusion list for proper operation in the background or when the screen is switched off.\n
         To fully stop the program please use <annotation foreground="parameter">Exit completely</annotation> menu item.\n
+        Permissions required for the app to operate:\n
+        \t- Microphone: capture the signal from audio-interface spectrometers. Without it only Atom Spectra Pro USB serial spectrometers work.\n
+        \t- Files: save and open spectra, spectrograms and configuration.\n
+        \t- Location: add GPS coordinates to saved files.\n
+        \t- Notifications: show the background recording notification.\n
         \n
     </string>
     <string name="help_text_part1"><big><annotation foreground="caption">1. Operating:</annotation></big>\n

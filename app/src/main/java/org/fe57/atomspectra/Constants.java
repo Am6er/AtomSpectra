@@ -59,6 +59,7 @@ public class Constants {
     public static final int SPG_DELTA_DURATION_MAX = 60;                                                                     //maximum delta between auto saves
     public static final int SPG_INTERVAL_DEFAULT = 0;
     public static final boolean SPG_MIDNIGHT_RESET_DEFAULT = false;
+    public static final boolean ADD_GPS_TO_FILES_DEFAULT = true;                                                        //add GPS coordinates to files by default
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
     public static final boolean USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT = false;
     public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
@@ -141,6 +142,7 @@ public class Constants {
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_USB_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
+        String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
     }
 
     public interface SEARCH {
@@ -207,6 +209,8 @@ public class Constants {
         String USB_COMMAND_DATA = "Data";
         String UPDATE_USB_CALIBRATION = "USB";
         String GPS_STATUS = "Status";
+        // foreground-service type bitmask computed by the activity and passed to the service
+        String FGS_TYPE = "fgs_type";
     }
 
     public interface GROUPS {

@@ -1,7 +1,6 @@
 package org.fe57.atomspectra;
 
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
@@ -40,17 +39,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback;
-import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.util.Locale;
 
-public class AtomSpectraSettings extends Activity  implements OnGestureListener, OnRequestPermissionsResultCallback {
+public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     private final static String TAG = AtomSpectraSettings.class.getSimpleName();
-    private final static int REQUEST_FINE_GPS = 501;
 
     public static boolean active = false;
 
@@ -106,6 +101,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
         updateMinFrontPointsText();
         updateMaxFrontPointsText();
         setupDoseUpdateFrequency();
+        setupAudioSectionAvailability();
         // --- end audio processing
 
         // --- usb processing
@@ -171,27 +167,6 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
         sendUsbInfoRequest();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_FINE_GPS:
-                CheckBox v = findViewById(R.id.enableGPSCheckbox);
-                if (grantResults.length > 1 && (grantResults[0] == PackageManager.PERMISSION_GRANTED || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
-                    saveBooleanPref(true, Constants.CONFIG.CONF_ADD_GPS_TO_FILES);
-                    v.setChecked(true);
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
-                } else {
-                    saveBooleanPref(false, Constants.CONFIG.CONF_ADD_GPS_TO_FILES);
-                    Toast.makeText(this, getString(R.string.perm_no_gps), Toast.LENGTH_LONG).show();
-                    v.setChecked(false);
-                }
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
-                break;
-            default:
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
     }
 
     @Override
@@ -1163,47 +1138,44 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
 
     // add gps
     private void setupEnableGPSCheckbox() {
-        // drop the parameter if the user drop the permission
-        if (sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    saveBooleanPref(false, Constants.CONFIG.CONF_ADD_GPS_TO_FILES);
-                }
-            }
-        }
+        boolean hasFeature = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)
+                || getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+        boolean granted = AppPermissions.isLocationGranted(this);
+        boolean available = hasFeature && granted;
 
-        final Activity id = this;
+        // Location is requested at app startup. Here the toggle is only usable once the permission
+        // is held; without it the toggle is disabled and off, and the hint tells the user to grant
+        // it in the system settings and fully restart the app.
         CheckBox enableGPSCheckbox = findViewById(R.id.enableGPSCheckbox);
-        enableGPSCheckbox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false));
+        enableGPSCheckbox.setEnabled(available);
+        enableGPSCheckbox.setChecked(available && sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT));
+        findViewById(R.id.gpsPermissionHint).setVisibility(hasFeature && !granted ? View.VISIBLE : View.GONE);
         enableGPSCheckbox.setOnClickListener(v -> {
-            SharedPreferences.Editor prefEditor = PrefHelper.getASSharedPreferences(this).edit();
-            boolean res = ((CheckBox) v).isChecked();
-            if (res) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        // Permission is not granted
-                        //When permission is not granted by user, show them message why this permission is needed.
-                        final AlertDialog.Builder alert = new AlertDialog.Builder(id)
-                                .setTitle(getString(R.string.perm_ask_fine_gps_title))
-                                .setMessage(getString(R.string.perm_ask_fine_gps_text))
-                                .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                                    ActivityCompat.requestPermissions(id, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_GPS);
-                                });
-                        alert.show();
-                    } else {
-                        prefEditor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, true);
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
-                    }
-                } else {
-                    prefEditor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, true);
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
-                }
-            } else {
-                prefEditor.putBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false);
-            }
-            prefEditor.apply();
+            saveBooleanPref(((CheckBox) v).isChecked(), Constants.CONFIG.CONF_ADD_GPS_TO_FILES);
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
             sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
         });
+    }
+
+    // Audio-processing settings are only useful with a microphone-interface spectrometer; without
+    // the mic permission the section is disabled and a hint tells the user to grant it and restart.
+    private void setupAudioSectionAvailability() {
+        boolean micGranted = AppPermissions.isMicGranted(this);
+        int[] audioControls = {
+                R.id.CheckPileUp, R.id.CheckRawAudio, R.id.CheckInvert,
+                R.id.inputSoundCheckbox, R.id.inputSoundText,
+                R.id.decMinFrontButton, R.id.incMinFrontButton,
+                R.id.decMaxFrontButton, R.id.incMaxFrontButton,
+                R.id.increaseFreq, R.id.decreaseFreq
+        };
+        for (int id : audioControls) {
+            View view = findViewById(id);
+            if (view != null) {
+                view.setEnabled(micGranted);
+                view.setAlpha(micGranted ? 1f : 0.4f);
+            }
+        }
+        findViewById(R.id.audioPermissionHint).setVisibility(micGranted ? View.GONE : View.VISIBLE);
     }
 
     // export channel compression
@@ -1530,7 +1502,7 @@ public class AtomSpectraSettings extends Activity  implements OnGestureListener,
             if (Constants.ACTION.ACTION_UPDATE_SETTINGS.equals(action)) {
                 SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
                 CheckBox box = findViewById(R.id.enableGPSCheckbox);
-                box.setChecked(settings.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, false));
+                box.setChecked(settings.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT));
                 if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
                     updateNoiseDiscriminatorTextFromPrefs();
                 } else {
