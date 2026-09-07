@@ -39,6 +39,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
@@ -53,6 +54,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Timer;
@@ -94,6 +96,11 @@ public class AtomSpectraService extends Service {
     public static int rightChannelInterval = Constants.NUM_HIST_POINTS - 1;
     private static double leftEnergyInterval = 0;
     private static double rightEnergyInterval = 0;
+
+    // "-cal" commands of a calibration store still waiting for their answer
+    private final Object calibrationStoreSync = new Object();
+    private final List<String> pendingCalibrationStoreCommands = new ArrayList<>();
+    private boolean calibrationStoreFailed = false;
 
     public static Calibration newCalibration = new Calibration();
     public static Spectrum ForegroundSpectrum = new Spectrum();
@@ -307,6 +314,11 @@ public class AtomSpectraService extends Service {
     private final static String SERVICE_STO_ID = "Service command -sto";
     private final static String SERVICE_STT_ID = "Service command -stt";
     private final static String SERVICE_MODE_ID = "Service command -mode 0";
+    private final static String SERVICE_CAL_STORE_ID = "Service command -cal store";
+
+    // the "-cal" answer is a fixed frame of registers: the calibration words first, then the
+    // device metadata
+    private final static int CAL_REGISTERS = 40;
 
     public final static String CHANNEL_ID = "AtomSpectraService";
 
@@ -537,7 +549,6 @@ public class AtomSpectraService extends Service {
                 onUSBAttached(device);
             } else {
                 selectNonUsbInput();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
                 sendDataToUI();
             }
         } else {
@@ -552,7 +563,6 @@ public class AtomSpectraService extends Service {
                 }
             } else {
                 selectNonUsbInput();
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
                 sendDataToUI();
             }
         }
@@ -753,6 +763,117 @@ public class AtomSpectraService extends Service {
     public static void recalculateInterval() {
         if (leftChannelInterval != 0 || rightChannelInterval != Constants.NUM_HIST_POINTS - 1) {
             setEnergyInterval(leftEnergyInterval, rightEnergyInterval);
+        }
+    }
+
+    // --- calibration ---------------------------------------------------------------------------
+    // The active calibration lives on ForegroundSpectrum; the service owns loading it at startup
+    // and exchanging it with the device. Everything that changes it goes through applyCalibration.
+
+    /** Make a calibration the active one and let the UI know it changed. */
+    public static void applyCalibration(@NonNull Context context, Calibration calibration) {
+        ForegroundSpectrum.setSpectrumCalibration(calibration);
+        recalculateInterval();
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_CALIBRATION_CHANGED).setPackage(Constants.PACKAGE_NAME));
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    /** Set the last calibrated channel, store it, and let the UI know. */
+    public static void applyLastCalibrationChannel(@NonNull Context context, int channel) {
+        lastCalibrationChannel = Constants.MinMax(channel, Constants.MIN_LAST_CALIBRATION_CHANNEL, Constants.NUM_HIST_POINTS);
+        PrefHelper.setLastCalibrationChannel(context, lastCalibrationChannel);
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_CALIBRATION_CHANGED).setPackage(Constants.PACKAGE_NAME));
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    /** Load the calibration from preferences or from the device (answer arrives asynchronously). */
+    private void loadCalibration(int storage) {
+        if (storage == Constants.CALIBRATION_STORAGE_USB) {
+            if (!isUsbCalibrationAvailable())
+                return;
+            usbDevice.sendTextCommand("-cal", SERVICE_CAL_ID);
+            return;
+        }
+        lastCalibrationChannel = PrefHelper.getLastCalibrationChannel(this);
+        applyCalibration(this, PrefHelper.getCalibration(this));
+    }
+
+    /** Store the active calibration into preferences or into the device. */
+    private void storeCalibration(int storage) {
+        Calibration calibration = ForegroundSpectrum.getSpectrumCalibration();
+        if (storage == Constants.CALIBRATION_STORAGE_USB) {
+            if (!isUsbCalibrationAvailable())
+                return;
+            showToastInMainLooper(R.string.cal_store_usb_wait, Toast.LENGTH_SHORT);
+            String[] commands = AtomSpectraSerial.buildCalibrationCommands(
+                    calibration.getCoeffArray(AtomSpectraSerial.CALIBRATION_COEFFICIENTS));
+            synchronized (calibrationStoreSync) {
+                pendingCalibrationStoreCommands.clear();
+                pendingCalibrationStoreCommands.addAll(Arrays.asList(commands));
+                calibrationStoreFailed = false;
+            }
+            for (String command : commands) {
+                usbDevice.sendTextCommand(command, SERVICE_CAL_STORE_ID);
+            }
+            return;
+        }
+        PrefHelper.setCalibrationAndLastChannel(this, calibration, lastCalibrationChannel);
+    }
+
+    private boolean isUsbCalibrationAvailable() {
+        if (inputType == INPUT_SERIAL && usbDevice != null && usbDevice.isOpened())
+            return true;
+        // TODO: localize
+        showToastInMainLooper("USB device is not available", Toast.LENGTH_SHORT);
+        return false;
+    }
+
+    /** Handle a "-cal" answer: apply the calibration, or ask the UI about a bad checksum. */
+    private void onDeviceCalibrationRead(String commandResult) {
+        AtomSpectraSerial.CalibrationAnswer answer = AtomSpectraSerial.parseCalibrationAnswer(commandResult);
+        if (answer == null) {
+            showToastInMainLooper(R.string.cal_wrong_usb, Toast.LENGTH_SHORT);
+            return;
+        }
+        if (!answer.checksumValid) {
+            // only the UI can ask whether to use it anyway. Every "-cal" read starts from the
+            // activity (it owns the USB_DEVICE_ATTACHED filter and ACTION_LOAD_CALIBRATION), so
+            // by the time the answer arrives the activity is alive and listening.
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_CALIBRATION_CHECKSUM_MISMATCH)
+                    .putExtra(Constants.ACTION_PARAMETERS.CALIBRATION_COEFFICIENTS, answer.coeffs)
+                    .setPackage(Constants.PACKAGE_NAME));
+            return;
+        }
+        applyDeviceCalibration(this, answer.coeffs);
+    }
+
+    /** Apply coefficients that came from a device, reporting whether they were usable. */
+    public static void applyDeviceCalibration(@NonNull Context context, double[] coeffs) {
+        Calibration calibration = new Calibration();
+        calibration.Calculate(coeffs);
+        if (calibration.isCorrect()) {
+            applyCalibration(context, calibration);
+            ToastHelper.showToast(context, R.string.cal_apply_usb);
+        } else {
+            ToastHelper.showToast(context, R.string.cal_wrong_usb);
+        }
+    }
+
+    /** Track the per-command answers of a calibration store, reporting once all of them are in. */
+    private void onDeviceCalibrationStoreAnswer(String command, String commandResult) {
+        boolean finished;
+        boolean failed;
+        synchronized (calibrationStoreSync) {
+            if (pendingCalibrationStoreCommands.isEmpty())
+                return;
+            if (!AtomSpectraSerial.COMMAND_RESULT_OK.equals(commandResult))
+                calibrationStoreFailed = true;
+            pendingCalibrationStoreCommands.remove(command);
+            finished = pendingCalibrationStoreCommands.isEmpty();
+            failed = calibrationStoreFailed;
+        }
+        if (finished) {
+            showToastInMainLooper(failed ? R.string.cal_wrong_store_usb : R.string.cal_store_usb, Toast.LENGTH_SHORT);
         }
     }
 
@@ -982,6 +1103,7 @@ public class AtomSpectraService extends Service {
 
         initOutputAudioTrack();
         loadSettings();
+        loadCalibration(Constants.CALIBRATION_STORAGE_MEMORY);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(broadcastReceiver,
@@ -1224,6 +1346,8 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
         intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GRAPH);
+        intentFilter.addAction(Constants.ACTION.ACTION_LOAD_CALIBRATION);
+        intentFilter.addAction(Constants.ACTION.ACTION_STORE_CALIBRATION);
         return intentFilter;
     }
 
@@ -1243,7 +1367,8 @@ public class AtomSpectraService extends Service {
                 setFreeze(true);
                 DeleteSpc();
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, false).setPackage(Constants.PACKAGE_NAME));
+                // DeleteSpc() resets the spectrum to the default calibration, restore the stored one
+                loadCalibration(Constants.CALIBRATION_STORAGE_MEMORY);
                 sendDataToUI();
                 return;
             }
@@ -1285,6 +1410,16 @@ public class AtomSpectraService extends Service {
             }
             if (Constants.ACTION.ACTION_UPDATE_GRAPH.equals(action)) {
                 sendDataToUI();
+            }
+            if (Constants.ACTION.ACTION_LOAD_CALIBRATION.equals(action)) {
+                loadCalibration(intent.getIntExtra(Constants.ACTION_PARAMETERS.CALIBRATION_STORAGE,
+                        Constants.CALIBRATION_STORAGE_MEMORY));
+                return;
+            }
+            if (Constants.ACTION.ACTION_STORE_CALIBRATION.equals(action)) {
+                storeCalibration(intent.getIntExtra(Constants.ACTION_PARAMETERS.CALIBRATION_STORAGE,
+                        Constants.CALIBRATION_STORAGE_MEMORY));
+                return;
             }
             if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 if (inputType == INPUT_SERIAL) {
@@ -1481,17 +1616,19 @@ public class AtomSpectraService extends Service {
                     }
                     if (commandResult != null) {
                         final String[] dataArray = commandResult.split("\\s+");
-                        if (dataArray.length != 40) {
-                            showToastInMainLooper("Unable to read USB device metadata, unexpected register count: " + dataArray.length, Toast.LENGTH_SHORT);
+                        if (dataArray.length != CAL_REGISTERS) {
+                            showToastInMainLooper(getStringOrDefaultLocale(R.string.log_usb_answer_unexpected_registers, dataArray.length, CAL_REGISTERS), Toast.LENGTH_SHORT);
                             return;
                         }
+                        // the same answer carries the calibration and the device metadata
+                        onDeviceCalibrationRead(commandResult);
                         inputDeviceInfo = getUsbDeviceInfoText(dataArray[39]);
                         ForegroundSpectrum
                                 .setDeviceInfo(inputDeviceInfo)
                                 .updateComments();
                         AtomSpectraLog.addMessage(service_context, "Device info: " + inputDeviceInfo);
                     } else {
-                        showToastInMainLooper("Unable to read USB device metadata, null command result", Toast.LENGTH_SHORT);
+                        showToastInMainLooper(R.string.log_usb_answer_missing, Toast.LENGTH_SHORT);
                     }
                 }
                 if (SERVICE_MODE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
@@ -1523,8 +1660,10 @@ public class AtomSpectraService extends Service {
                         freeze_update_data = true;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
                     }
-
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_CALIBRATION).putExtra(Constants.ACTION_PARAMETERS.UPDATE_USB_CALIBRATION, true));
+                }
+                if (SERVICE_CAL_STORE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
+                    onDeviceCalibrationStoreAnswer(intent.getStringExtra(AtomSpectraSerial.EXTRA_COMMAND),
+                            intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT));
                 }
                 if (SERVICE_STA_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
                     String commandResult = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);

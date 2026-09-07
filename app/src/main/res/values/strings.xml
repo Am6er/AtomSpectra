@@ -379,7 +379,6 @@
     <string name="cal_apply_usb">Calibration applied from USB device</string>
     <string name="cal_wrong_usb">Wrong calibration from a USB device</string>
     <string name="cal_wrong_checksum">A bad calibration checksum from a USB device</string>
-    <string name="cal_timeout">Timeout from a USB device</string>
     <string name="cal_store_usb">Calibration stored to USB device</string>
     <string name="cal_wrong_store_usb">Can\'t store calibration to a USB device</string>
     <string name="cal_load_anyway">Load calibration anyway?</string>
@@ -421,6 +420,8 @@
     <string name="log_usb_command_timeout">%1$s USB command timeout</string>
     <string name="log_usb_device_version_error">USB device version read error</string>
     <string name="log_usb_device_version_unknown">USB device version is unknown</string>
+    <string name="log_usb_answer_unexpected_registers">Unexpected \"-cal\" answer: %1$d registers instead of %2$d</string>
+    <string name="log_usb_answer_missing">No answer from the USB device</string>
     <string name="log_usb_watchdog_no_data_triggered">USB data watchdog: no data from USB for %1$d seconds. Trying to reconnect and execute -sta command</string>
     <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
     <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>

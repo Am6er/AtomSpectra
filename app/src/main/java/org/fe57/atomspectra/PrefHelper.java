@@ -11,6 +11,9 @@ import java.util.Locale;
 import java.util.TreeMap;
 
 public class PrefHelper {
+    /** Sentinel for "no coefficient stored"; a real c0 never takes this value. */
+    private static final float NO_COEFFICIENT = -1000;
+
     public static String configCalibrationChannel(int i) {
         return Constants.CONFIG.CONF_CAL_CHANNEL + i + ":";
     }
@@ -33,6 +36,86 @@ public class PrefHelper {
 
     public static SharedPreferences getASSharedPreferences(@NonNull Context context) {
         return context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
+    }
+
+    // --- Energy calibration -------------------------------------------------------------------
+
+    /**
+     * The stored energy calibration. Falls back to the default linear 0..3000 keV curve when
+     * nothing is stored, and converts a legacy install (calibration points instead of polynomial
+     * coefficients) into coefficients on first access.
+     */
+    public static Calibration getCalibration(@NonNull Context context) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        int poliSize = sp.getInt(Constants.CONFIG.CONF_CAL_POLI_SIZE, -1);
+        if (poliSize == -1) {
+            // nothing stored yet: linear 0..3000 keV over the whole histogram
+            Calibration calibration = new Calibration()
+                    .addPoint(0, 0.0)
+                    .addPoint(Constants.NUM_HIST_POINTS - 1, 3000.0);
+            calibration.Calculate();
+            return calibration;
+        }
+
+        Calibration calibration = new Calibration();
+        double firstCoefficient = sp.getFloat(configCalibrationCoefficient(0), NO_COEFFICIENT);
+        boolean hasLegacyPoints = sp.getInt(configCalibrationChannel(1), -1) != -1;
+        if (firstCoefficient != NO_COEFFICIENT || !hasLegacyPoints) {
+            double[] coeffs = new double[poliSize + 1];
+            for (int i = 0; i <= poliSize; i++)
+                coeffs[i] = sp.getFloat(configCalibrationCoefficient(i), 1);
+            calibration.Calculate(coeffs);
+        } else {
+            migrateLegacyCalibrationPoints(sp, poliSize, calibration);
+        }
+        return calibration;
+    }
+
+    public static int getLastCalibrationChannel(@NonNull Context context) {
+        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_LAST_CHANNEL, Constants.NUM_HIST_POINTS);
+    }
+
+    public static void setLastCalibrationChannel(@NonNull Context context, int channel) {
+        getASSharedPreferences(context).edit()
+                .putInt(Constants.CONFIG.CONF_LAST_CHANNEL, channel)
+                .apply();
+    }
+
+    /** Store both the calibration and the last calibration channel in one edit. */
+    public static void setCalibrationAndLastChannel(@NonNull Context context, @NonNull Calibration calibration, int lastChannel) {
+        SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
+        writeCalibration(editor, calibration);
+        editor.putInt(Constants.CONFIG.CONF_LAST_CHANNEL, lastChannel);
+        editor.apply();
+    }
+
+    private static void writeCalibration(@NonNull SharedPreferences.Editor editor, @NonNull Calibration calibration) {
+        int poliSize = calibration.getFactor();
+        double[] coeffs = calibration.getCoeffArray(poliSize + 1);
+        editor.putInt(Constants.CONFIG.CONF_CAL_POLI_SIZE, poliSize);
+        for (int i = 0; i <= poliSize; i++)
+            editor.putFloat(configCalibrationCoefficient(i), (float) coeffs[i]);
+    }
+
+    /**
+     * Pre-coefficient installs stored the calibration as a list of (channel, energy) points. Fit
+     * them once, then replace the points in preferences with the resulting coefficients.
+     */
+    private static void migrateLegacyCalibrationPoints(@NonNull SharedPreferences sp, int poliSize, @NonNull Calibration calibration) {
+        for (int i = 1; i <= poliSize + 1; i++) {
+            int channel = sp.getInt(configCalibrationChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
+            double energy = sp.getFloat(configCalibrationEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
+            calibration.addPoint(channel, energy);
+        }
+        calibration.Calculate();
+
+        SharedPreferences.Editor editor = sp.edit();
+        writeCalibration(editor, calibration);
+        for (int i = 1; i <= poliSize + 1; i++) {
+            editor.remove(configCalibrationChannel(i));
+            editor.remove(configCalibrationEnergy(i));
+        }
+        editor.apply();
     }
 
     public static String getLocale(@NonNull Context context) {
