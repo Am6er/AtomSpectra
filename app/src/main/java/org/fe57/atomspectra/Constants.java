@@ -33,6 +33,12 @@ public class Constants {
     public static final int UPDATE_DOSE_DEFAULT = 1;                                                                     //dose rate update per second
     public static final int MAX_POLI_SIZE = 4;                                                                           //maximum polynom size of y=a+bx+cx^2+... To add higher size you need to add more menu items to menu and its checks
     public static final int MAX_CALIBRATION_POINTS = 10;                                                                 //maximum new calibration points
+    // lowest channel the calibration may end at: not a hard limit of the math (which needs only 2
+    // channels), a guard rail so the spectrum cannot be stretched below the 1024-point display grid
+    public static final int MIN_LAST_CALIBRATION_CHANNEL = 1024;
+    // where a calibration is loaded from or stored to; add a value per new device kind
+    public static final int CALIBRATION_STORAGE_MEMORY = 0;                                                              //application preferences
+    public static final int CALIBRATION_STORAGE_USB = 1;                                                                 //attached USB device
     public static final double DOSE_SCALE = 0.001;                                                                       //scale input data to draw
     public static final double DOSE_OVERHEAD = 1.05;                                                                     //maximum to be shown
     public static final int CURSOR_TIMEOUT = 7000;                                                                       //timeout of buttons in ms
@@ -194,7 +200,17 @@ public class Constants {
 
         // read by AtomSpectra to actualize menu status after capturing status change
         String ACTION_UPDATE_MENU = "org.fe57.atomspectra.ACTION_UPDATE_MENU";
-        String ACTION_UPDATE_CALIBRATION = "org.fe57.atomspectra.ACTION_UPDATE_CALIBRATION";
+
+        // calibration is owned by AtomSpectraService:
+        // sent by the service after the active calibration changed, read by the UI to refresh
+        String ACTION_CALIBRATION_CHANGED = "org.fe57.atomspectra.ACTION_CALIBRATION_CHANGED";
+        // sent to the service to (re)load the calibration from preferences or from the USB device
+        String ACTION_LOAD_CALIBRATION = "org.fe57.atomspectra.ACTION_LOAD_CALIBRATION";
+        // sent to the service to store the active calibration into preferences or into the USB device
+        String ACTION_STORE_CALIBRATION = "org.fe57.atomspectra.ACTION_STORE_CALIBRATION";
+        // sent by the service when a calibration read from the device failed its checksum,
+        // so the UI can ask the user whether to use it anyway
+        String ACTION_CALIBRATION_CHECKSUM_MISMATCH = "org.fe57.atomspectra.ACTION_CALIBRATION_CHECKSUM_MISMATCH";
         String ACTION_CHECK_GPS_AVAILABILITY = "org.fe57.atomspectra.ACTION_CHECK_GPS";
         String ACTION_UPDATE_SETTINGS = "org.fe57.atomspectra.ACTION_UPDATE_SETTINGS";
         String ACTION_CLOSE_SENSITIVITY = "org.fe57.atomspectra.ACTION_CLOSE_SENSITIVITY";
@@ -207,7 +223,10 @@ public class Constants {
     public interface ACTION_PARAMETERS {
         String USB_COMMAND_ID = "ID";
         String USB_COMMAND_DATA = "Data";
-        String UPDATE_USB_CALIBRATION = "USB";
+        // CALIBRATION_STORAGE_* value telling where to load the calibration from / store it to
+        String CALIBRATION_STORAGE = "CalibrationStorage";
+        // double[] carried by ACTION_CALIBRATION_CHECKSUM_MISMATCH
+        String CALIBRATION_COEFFICIENTS = "CalibrationCoefficients";
         String GPS_STATUS = "Status";
         // foreground-service type bitmask computed by the activity and passed to the service
         String FGS_TYPE = "fgs_type";

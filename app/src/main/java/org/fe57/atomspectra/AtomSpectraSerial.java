@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.zip.CRC32;
 
 public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
@@ -308,6 +309,77 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         CRC32 crc = new CRC32();
         crc.update(data);
         return crc.getValue();
+    }
+
+    // --- calibration wire format ------------------------------------------------------------
+    // The device keeps the calibration as CALIBRATION_COEFFICIENTS doubles, transferred as two
+    // 8-digit hex words each, followed by a CRC32 word over all of them.
+
+    public static final int CALIBRATION_COEFFICIENTS = 5;
+    private static final int CALIBRATION_WORDS = 2 * CALIBRATION_COEFFICIENTS + 1; // + crc word
+    private static final int CALIBRATION_WORD_LENGTH = 8;
+
+    /** Calibration coefficients read from the device, with the result of the checksum check. */
+    public static class CalibrationAnswer {
+        public final double[] coeffs;
+        public final boolean checksumValid;
+
+        CalibrationAnswer(double[] coeffs, boolean checksumValid) {
+            this.coeffs = coeffs;
+            this.checksumValid = checksumValid;
+        }
+    }
+
+    /**
+     * Parse a "-cal" answer into coefficients. Returns null when the answer is not a well-formed
+     * set of hex words; a well-formed answer whose CRC does not match is returned with
+     * checksumValid == false, so the caller can decide whether to use it.
+     */
+    public static CalibrationAnswer parseCalibrationAnswer(String data) {
+        if (data == null)
+            return null;
+        String[] words = data.trim().split("\\s+");
+        if (words.length < CALIBRATION_WORDS)
+            return null;
+        double[] coeffs = new double[CALIBRATION_COEFFICIENTS];
+        StringBuilder combined = new StringBuilder();
+        long crc;
+        try {
+            for (int i = 0; i < CALIBRATION_COEFFICIENTS; i++) {
+                coeffs[i] = Double.longBitsToDouble(Long.parseUnsignedLong(words[2 * i] + words[2 * i + 1], 16));
+                combined.append(words[2 * i]).append(words[2 * i + 1]);
+            }
+            crc = Long.parseUnsignedLong(words[CALIBRATION_WORDS - 1], 16);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return new CalibrationAnswer(coeffs, crc32(combined.toString().getBytes()) == crc);
+    }
+
+    /** Build the "-cal" commands that store the calibration on the device, CRC word included. */
+    public static String[] buildCalibrationCommands(@NonNull double[] coeffs) {
+        String[] commands = new String[CALIBRATION_WORDS];
+        StringBuilder combined = new StringBuilder();
+        for (int i = 0; i < CALIBRATION_COEFFICIENTS; i++) {
+            String value = toCalibrationWords(i < coeffs.length ? coeffs[i] : 0.0);
+            String high = value.substring(0, CALIBRATION_WORD_LENGTH);
+            String low = value.substring(CALIBRATION_WORD_LENGTH);
+            combined.append(high.toUpperCase(Locale.US)).append(low.toUpperCase(Locale.US));
+            commands[2 * i] = String.format(Locale.US, "-cal %d %s", 2 * i, high);
+            commands[2 * i + 1] = String.format(Locale.US, "-cal %d %s", 2 * i + 1, low);
+        }
+        String crc = Long.toHexString(crc32(combined.toString().getBytes()));
+        while (crc.length() < CALIBRATION_WORD_LENGTH)
+            crc = "0" + crc;
+        commands[CALIBRATION_WORDS - 1] = String.format(Locale.US, "-cal %d %s", CALIBRATION_WORDS - 1, crc);
+        return commands;
+    }
+
+    private static String toCalibrationWords(double value) {
+        StringBuilder hex = new StringBuilder(Long.toHexString(Double.doubleToRawLongBits(value)));
+        while (hex.length() < 2 * CALIBRATION_WORD_LENGTH)
+            hex.insert(0, "0");
+        return hex.toString();
     }
 
     // test if byte is needed to be escaped

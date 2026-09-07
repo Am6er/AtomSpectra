@@ -379,7 +379,6 @@
     <string name="cal_apply_usb">Калибровка принята из устройства USB</string>
     <string name="cal_wrong_usb">Неверная калибровка в устройстве USB</string>
     <string name="cal_wrong_checksum">Неверная контрольная сумма в устройстве USB</string>
-    <string name="cal_timeout">Таймаут устройства USB</string>
     <string name="cal_store_usb">Калибровка сохранена в устройстве USB</string>
     <string name="cal_wrong_store_usb">Не могу сохранить калибровку в устройстве USB</string>
     <string name="cal_load_anyway">Загрузить калибровку в любом случае?</string>
@@ -421,6 +420,8 @@
     <string name="log_usb_command_timeout">Превышено время ожидания выполнения USB команды %1$s</string>
     <string name="log_usb_device_version_error">Ошибка чтения версии USB устройства</string>
     <string name="log_usb_device_version_unknown">Неизвестная версия USB устройства</string>
+    <string name="log_usb_answer_unexpected_registers">Неожиданный ответ \"-cal\": %1$d регистров вместо %2$d</string>
+    <string name="log_usb_answer_missing">Нет ответа от USB устройства</string>
     <string name="log_usb_watchdog_no_data_triggered">Контроль USB данных: нет данных из USB в течение %1$d секунд. Попытка переподключения и выполнения команды -sta</string>
     <string name="log_usb_watchdog_unable_open_device">Контроль USB данных: не удалось открыть USB устройство</string>
     <string name="log_usb_watchdog_device_no_perm">Контроль USB данных: нет доступа к USB устройству</string>
