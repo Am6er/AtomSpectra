@@ -106,7 +106,8 @@ public final class AppPermissions {
      * Foreground-service type bitmask derived from currently granted permissions
      */
     public static int foregroundServiceType(Context ctx) {
-        int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE;
+        // base type: the only one whose Android 14+ prerequisites the app can always satisfy
+        int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE;
         if (isMicGranted(ctx)) {
             type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
         }
