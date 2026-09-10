@@ -7,6 +7,7 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
 import android.os.Process;
+import android.os.SystemClock;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -22,13 +23,31 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.zip.CRC32;
 
-public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
+public class AtomSpectraSerial implements SerialInputOutputManager.Listener, SpectrumSource {
     private static final int CIRCULAR_BUFFER_SIZE = 128 * 1024; // ~2 seconds of data at max baud rate (600kbps / 8N1 = 60KB/s)
     private static final int SERIAL_MANAGER_READ_BUFFER_SIZE = 4 * 1024;
     private static final int SERIAL_MANAGER_READ_QUEUE_SIZE = 4;
     private static final int SERIAL_MANAGER_WRITE_TIMEOUT = 1000;
+
+    // time the device needs to settle between a close and the following open
+    public static final int USB_WAIT_DEVICE = 600;
+    // number of registers in a "-cal" answer; the last one carries the device metadata
+    private static final int CAL_REGISTERS = 40;
+    private static final int CAL_REGISTER_DEVICE_META = 39;
+
+    // ids of the commands this source issues on its own behalf; answers to them are routed into the
+    // typed reply intents instead of the raw ACTION_USB_HAS_ANSWER channel
+    private final static String OP_ID_INF = "Source command -inf";
+    private final static String OP_ID_CAL = "Source command -cal";
+    private final static String OP_ID_MODE = "Source command -mode 0";
+    private final static String OP_ID_STA = "Source command -sta";
+    private final static String OP_ID_STO = "Source command -sto";
+    private final static String OP_ID_STT = "Source command -stt";
+    private final static String OP_ID_RST = "Source command -rst";
 
     private UsbDevice Device;
     private UsbSerialDriver Driver;
@@ -58,6 +77,28 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     private int cpu_load = 0;
     private long lost_impulses = 0;
     private long total_impulse_length = 0;
+
+    // device to open on the next requestOpen(); the service hands it over when the platform reports
+    // an attach, and the watchdog replaces it with whatever it re-discovers
+    private volatile UsbDevice pendingDevice = null;
+    // set by requestStart() / cleared by requestStop(): what the watchdog and the data path use to
+    // tell "the device should be sending data" from "nobody asked it to"
+    private volatile boolean collecting = false;
+    private volatile String deviceMeta = null;
+
+    // HACK! when started, the device sends wrong data for 1-2 seconds as it cannot fit a full
+    // spectrum into the time left before the next data packet. Reports emitted while this window is
+    // open carry the unreliable flag, so the service updates the histogram but derives no cps
+    // interval or dose rate from them.
+    private static final int UNRELIABLE_DATA_REPORTS = 2;
+    private int unreliableDataReportsLeft = 0;
+
+    // in rare cases spectrum data receiving randomly stops: the physical device keeps working, but
+    // android delivers no data through the serial port and every command ends with a timeout. This
+    // timer checks that data keeps arriving and restarts the serial interface when it does not.
+    private static final int DATA_WATCHDOG_INTERVAL_SECONDS = 10;
+    private final Object watchdogSync = new Object();
+    private Timer dataWatchdogTimer = null;
 
     private static final long SUPPRESSION_DURATION_MINUTES = 2;
     private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it will spam a lot of messages in logs and may cause performance issues
@@ -120,7 +161,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     public final static String EXTRA_ID = "Id";
     public final static String EXTRA_NUMBER = "Number";
     public final static String EXTRA_COMMAND = "Command";
-    private final static String SERIAL_ID = "internal";
 
     public final static String EXTRA_DATA_TYPE =
             "org.fe57.atomspectra.EXTRA_DATA_TYPE";
@@ -154,6 +194,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
     }
 
     public void Destroy() {
+        collecting = false;
+        cancelDataWatchdog();
         stopProcessingThread();
 
         if (Port != null && Port.isOpen()) {
@@ -248,18 +290,17 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
             }
         }
 
+        LinkedList<CommandCode> failedCommands = new LinkedList<>();
         synchronized (syncCommand) {
             while (!Commands.isEmpty()) {
                 CommandCode failed = Commands.pop();
-                Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
-                intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_ERR);
-                intentText.putExtra(EXTRA_NUMBER, failed.Number);
-                intentText.putExtra(EXTRA_COMMAND, new String(failed.command));
-                intentText.putExtra(EXTRA_ID, failed.id);
-                context.sendBroadcast(intentText);
+                failedCommands.add(failed);
                 AtomSpectraLog.addMessage(context, "Serial command failed due Close() call: " + new String(failed.command));
             }
             AnswerNumber = 0;
+        }
+        for (CommandCode failed : failedCommands) {
+            deliverAnswer(failed, COMMAND_RESULT_ERR);
         }
 
         stopProcessingThread();
@@ -281,16 +322,310 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
         lastHistStartPos = -1;
     }
 
-    // clear histogram
-    // The histogram array is owned by the packet-processing thread; the actual
-    // zeroing happens on that thread when the device acknowledges "-rst" (see CODE_TEXT
-    // handler), so this method only issues the command and never touches the array.
-    public void ClearHistogram() {
+    // +++ SpectrumSource +++
+
+    /** Hand over the device to open on the next requestOpen(). USB-specific. */
+    public void setPendingDevice(UsbDevice device) {
+        pendingDevice = device;
+    }
+
+    @Override
+    public void requestOpen() {
+        UsbDevice device = pendingDevice;
+        if (!isOpened()) {
+            if (device == null || !Open(device)) {
+                // opening the port itself failed, there is no command to name
+                emitError(OP_OPEN, REASON_ERROR, null);
+                return;
+            }
+        }
+
+        sendTextCommand("-inf", OP_ID_INF);
+        sendTextCommand("-cal", OP_ID_CAL);
+        sendTextCommand("-mode 0", OP_ID_MODE);
+    }
+
+    @Override
+    public void requestStart() {
+        collecting = true;
+        armUnreliableDataWindow();
+        sendTextCommand("-sta", OP_ID_STA);
+    }
+
+    @Override
+    public void requestStop() {
+        collecting = false;
+        cancelDataWatchdog();
+        sendTextCommand("-sto", OP_ID_STO);
+    }
+
+    // The histogram array is owned by the packet-processing thread; the actual zeroing happens on
+    // that thread when the device acknowledges "-rst" (see the CODE_TEXT handler), so this only
+    // issues the command and never touches the array.
+    @Override
+    public void requestReset() {
         if (Port == null || !Port.isOpen()) {
             return;
         }
 
-        sendTextCommand("-rst", SERIAL_ID);
+        armUnreliableDataWindow();
+        sendTextCommand("-rst", OP_ID_RST);
+    }
+
+    @Override
+    public void requestStatus() {
+        sendTextCommand("-stt", OP_ID_STT);
+    }
+
+    // one "-cal" answer carries both the calibration and the device info; the firmware version
+    // check is part of the open hand-shake and is not repeated here
+    @Override
+    public void requestDeviceMeta() {
+        sendTextCommand("-cal", OP_ID_CAL);
+    }
+
+    @Override
+    public void close() {
+        collecting = false;
+        cancelDataWatchdog();
+        Close();
+    }
+
+    @Override
+    public int inputTypeId() {
+        return AtomSpectraService.INPUT_USB;
+    }
+
+    @Override
+    public String deviceInfo() {
+        return deviceMeta;
+    }
+
+    private void armUnreliableDataWindow() {
+        unreliableDataReportsLeft = UNRELIABLE_DATA_REPORTS;
+    }
+
+    // +++ reply intents +++
+
+    private void broadcastReply(@NonNull Intent intent) {
+        final Context ctx = context;
+        if (ctx == null) {
+            return;
+        }
+
+        ctx.sendBroadcast(intent
+                .setPackage(Constants.PACKAGE_NAME)
+                .putExtra(EXTRA_SOURCE_INPUT_TYPE, inputTypeId()));
+    }
+
+    private void emitError(int op, int reason, String label) {
+        broadcastReply(new Intent(Constants.ACTION.ACTION_INPUT_ERROR)
+                .putExtra(EXTRA_ERROR_OP, op)
+                .putExtra(EXTRA_ERROR_REASON, reason)
+                .putExtra(EXTRA_ERROR_LABEL, label));
+    }
+
+    private void emitDisconnected(int reason) {
+        broadcastReply(new Intent(Constants.ACTION.ACTION_INPUT_DISCONNECTED)
+                .putExtra(EXTRA_DISCONNECT_REASON, reason));
+    }
+
+    private void emitStatus(boolean isCollecting) {
+        broadcastReply(new Intent(Constants.ACTION.ACTION_INPUT_STATUS)
+                .putExtra(EXTRA_STATUS_COLLECTING, isCollecting));
+    }
+
+    private void emitMetadata(double[] coeffs, boolean checksumValid, String device) {
+        broadcastReply(new Intent(Constants.ACTION.ACTION_INPUT_METADATA)
+                .putExtra(EXTRA_META_CALIBRATION_COEFFS, coeffs)
+                .putExtra(EXTRA_META_CALIBRATION_CHECKSUM_VALID, checksumValid)
+                .putExtra(EXTRA_META_DEVICE, device));
+    }
+
+    // +++ answer routing +++
+
+    /** The request an own command belongs to, or -1 for a command issued by somebody else. */
+    private static int opForId(String id) {
+        if (OP_ID_INF.equals(id) || OP_ID_CAL.equals(id))
+            return OP_DEVICE_META;
+        if (OP_ID_MODE.equals(id))
+            return OP_OPEN;
+        if (OP_ID_STA.equals(id))
+            return OP_START;
+        if (OP_ID_STO.equals(id))
+            return OP_STOP;
+        if (OP_ID_STT.equals(id))
+            return OP_STATUS;
+        if (OP_ID_RST.equals(id))
+            return OP_RESET;
+        return -1;
+    }
+
+    /**
+     * Route a command answer: own commands become typed reply intents, everybody else's stay on the
+     * opaque raw-command channel.
+     */
+    private void deliverAnswer(CommandCode cmd, String answer) {
+        if (cmd == null) {
+            return;
+        }
+
+        final Context ctx = context;
+        if (ctx == null) {
+            return;
+        }
+
+        String command = new String(cmd.command);
+        int op = opForId(cmd.id);
+        if (op != -1) {
+            handleOwnAnswer(op, command, answer);
+            return;
+        }
+
+        Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
+        intentText.putExtra(EXTRA_RESULT, answer);
+        intentText.putExtra(EXTRA_NUMBER, cmd.Number);
+        intentText.putExtra(EXTRA_COMMAND, command);
+        intentText.putExtra(EXTRA_ID, cmd.id);
+        ctx.sendBroadcast(intentText);
+    }
+
+    private void handleOwnAnswer(int op, String command, String answer) {
+        if (COMMAND_RESULT_ERR.equals(answer)) {
+            emitError(op, REASON_ERROR, command);
+            return;
+        }
+        if (COMMAND_RESULT_TIMEOUT.equals(answer)) {
+            emitError(op, REASON_TIMEOUT, command);
+            return;
+        }
+
+        if (command.equals("-inf")) {
+            checkDeviceVersion(answer);
+            return;
+        }
+        if (command.equals("-cal")) {
+            readDeviceCalibration(answer);
+            return;
+        }
+        if (op == OP_STATUS) {
+            emitStatus(COMMAND_RESULT_OK_COLLECTING.equals(answer));
+            return;
+        }
+        if (op == OP_START) {
+            restartDataWatchdog();
+        }
+    }
+
+    /** Warn about firmware this app is not able to drive correctly. */
+    private void checkDeviceVersion(String answer) {
+        final Context ctx = context;
+        if (ctx == null) {
+            return;
+        }
+        if (answer == null) {
+            ToastHelper.showToast(ctx, R.string.log_usb_device_version_unknown);
+            return;
+        }
+
+        String version = getParameter(answer, "VERSION");
+        if (version == null) {
+            ToastHelper.showToast(ctx, R.string.log_usb_device_version_unknown);
+            return;
+        }
+        try {
+            if (Integer.decode(version) < Constants.USB_DEVICE_MINIMAL_VERSION)
+                ToastHelper.showToast(ctx, ctx.getString(R.string.usb_below_minimal_version, Constants.USB_DEVICE_MINIMAL_VERSION));
+        } catch (Exception ignored) {
+            ToastHelper.showToast(ctx, R.string.log_usb_device_version_error);
+        }
+    }
+
+    /** One "-cal" answer carries both the calibration and the device metadata. */
+    private void readDeviceCalibration(String answer) {
+        final Context ctx = context;
+        if (ctx == null) {
+            return;
+        }
+        if (answer == null) {
+            ToastHelper.showToast(ctx, R.string.log_usb_answer_missing);
+            return;
+        }
+
+        final String[] dataArray = answer.split("\\s+");
+        if (dataArray.length != CAL_REGISTERS) {
+            ToastHelper.showToast(ctx, ctx.getString(R.string.log_usb_answer_unexpected_registers, dataArray.length, CAL_REGISTERS));
+            return;
+        }
+
+        CalibrationAnswer calibration = parseCalibrationAnswer(answer);
+        deviceMeta = dataArray[CAL_REGISTER_DEVICE_META];
+        emitMetadata(calibration == null ? null : calibration.coeffs,
+                calibration != null && calibration.checksumValid,
+                deviceMeta);
+    }
+
+    // +++ data watchdog +++
+
+    private void restartDataWatchdog() {
+        synchronized (watchdogSync) {
+            cancelDataWatchdog();
+            if (!collecting) {
+                return;
+            }
+
+            dataWatchdogTimer = new Timer();
+            dataWatchdogTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    dataWatchdogTask();
+                }
+            }, DATA_WATCHDOG_INTERVAL_SECONDS * 1000L);
+        }
+    }
+
+    private void cancelDataWatchdog() {
+        synchronized (watchdogSync) {
+            if (dataWatchdogTimer != null) {
+                dataWatchdogTimer.cancel();
+                dataWatchdogTimer.purge();
+                dataWatchdogTimer = null;
+            }
+        }
+    }
+
+    // Recovery is transport-specific: re-discover the device, reopen the port and start again.
+    // Runs without holding watchdogSync, because reopening takes syncCommand.
+    private void dataWatchdogTask() {
+        final Context ctx = context;
+        if (ctx == null || !collecting || !isOpened()) {
+            return;
+        }
+
+        ToastHelper.showToast(ctx, ctx.getString(R.string.log_usb_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
+        UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
+        UsbDevice device = scanForSpectraProDevice(manager);
+        if (device == null) {
+            ToastHelper.showToast(ctx, R.string.log_usb_watchdog_device_not_found);
+            emitDisconnected(AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT);
+            return;
+        }
+        if (!manager.hasPermission(device)) {
+            ToastHelper.showToast(ctx, R.string.log_usb_watchdog_device_no_perm);
+            emitDisconnected(AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT);
+            return;
+        }
+
+        Close();
+        SystemClock.sleep(USB_WAIT_DEVICE);
+        pendingDevice = device;
+        if (!Open(device)) {
+            ToastHelper.showToast(ctx, R.string.log_usb_watchdog_unable_open_device);
+            emitDisconnected(AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT);
+            return;
+        }
+
+        requestStart();
     }
 
     // CRC-16 (MODBUS version)
@@ -623,19 +958,21 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
                     }
 
-                    Intent intentScope = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
-                    intentScope.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SERIAL_SPECTRUM_COUNTS, histogram);
+                    Intent intentScope = new Intent(Constants.ACTION.ACTION_INPUT_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
+                    intentScope.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_INPUT_SPECTRUM_COUNTS, histogram);
                     intentScope.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS, scope);
                     intentScope.putExtra(EXTRA_DATA_TYPE, CODE_SCOPE);
                     context.sendBroadcast(intentScope);
                     break;
 
                 case CODE_TEXT:
+                    CommandCode answered = null;
+                    String answer;
                     synchronized (syncCommand) {
                         int newLength = newPacket.length - 3;    //remove 0x03 code operation and trailing crc16 two-byte code
                         byte[] answerPacket = new byte[newLength];   //remove first code byte and last 0x0D,0x0A bytes
                         System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
-                        String answer = new String(answerPacket);
+                        answer = new String(answerPacket);
                         //fix some sort of error in Spectra Pro
                         if (COMMAND_RESULT_OK2.equals(answer)) {
                             answer = COMMAND_RESULT_OK;
@@ -648,13 +985,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             AtomSpectraLog.addMessage(context, "Packet TEXT code=0x03 text=" + answer.trim());
                         }
                         String commandStr = new String(Commands.getFirst().command);
-                        Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
-                        intentText.putExtra(EXTRA_RESULT, answer);
-                        intentText.putExtra(EXTRA_ID, Commands.getFirst().id);
-                        intentText.putExtra(EXTRA_COMMAND, commandStr);
-                        intentText.putExtra(EXTRA_NUMBER, Commands.pop().Number);
+                        answered = Commands.pop();
                         AnswerNumber = 0; //data received
-                        context.sendBroadcast(intentText);
 
                         if ((commandStr.equals("-sta") || commandStr.equals("-rst")) &&
                                 (COMMAND_RESULT_OK.equals(answer) || COMMAND_RESULT_OK_COLLECTING.equals(answer))) {
@@ -672,6 +1004,10 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                             resetErrorSuppression();
                         }
                     }
+
+                    // delivered outside syncCommand: handling an own answer may restart the
+                    // watchdog, whose recovery path takes syncCommand itself
+                    deliverAnswer(answered, answer);
 
                     sendPacket(); // send next packet
                     break;
@@ -716,15 +1052,30 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
 //                                ((newPacket[18] & 0xFF) << 24);
                     }
 
-                    Intent intent = new Intent(Constants.ACTION.ACTION_USB_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
+                    boolean isHistogramComplete = histBinsMissing == 0;
+                    boolean isUnreliable = false;
+                    if (unreliableDataReportsLeft > 0) {
+                        if (isHistogramComplete) {
+                            unreliableDataReportsLeft = 0;
+                        } else {
+                            unreliableDataReportsLeft--;
+                            isUnreliable = true;
+                        }
+                    }
+
+                    Intent intent = new Intent(Constants.ACTION.ACTION_INPUT_HAS_DATA).setPackage(Constants.PACKAGE_NAME);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS, new long[1024]);
-                    intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_SERIAL_SPECTRUM_COUNTS, histogram);
+                    intent.putExtra(AtomSpectraService.EXTRA_DATA_ARRAY_LONG_INPUT_SPECTRUM_COUNTS, histogram);
                     intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_CP1S, cps);
-                    intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME, total_time);
+                    // whole seconds from the device, widened to the common report contract
+                    intent.putExtra(AtomSpectraService.EXTRA_DATA_INT_FG_TOTAL_TIME, (double) total_time);
                     intent.putExtra(EXTRA_DATA_TYPE, CODE_DATA);
-                    intent.putExtra(EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, histBinsMissing == 0);
+                    intent.putExtra(EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, isHistogramComplete);
+                    intent.putExtra(EXTRA_DATA_BOOL_UNRELIABLE, isUnreliable);
+                    intent.putExtra(EXTRA_SOURCE_INPUT_TYPE, inputTypeId());
                     resetHistogramCompleteness();
                     context.sendBroadcast(intent);
+                    restartDataWatchdog();
                     break;
                 default:
                     //Toast.makeText(context, context.getString(R.string.unknown_code, code & 0xFF), Toast.LENGTH_SHORT).show();
@@ -827,12 +1178,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                         }
                         if (code != null) {
                             AtomSpectraLog.addMessage(ctx, "Serial command timed out: " + new String(code.command));
-                            Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
-                            intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_TIMEOUT);
-                            intentText.putExtra(EXTRA_NUMBER, code.Number);
-                            intentText.putExtra(EXTRA_COMMAND, new String(code.command));
-                            intentText.putExtra(EXTRA_ID, code.id);
-                            ctx.sendBroadcast(intentText);
+                            deliverAnswer(code, COMMAND_RESULT_TIMEOUT);
                         }
                         sendPacket(); //try to send next packet
                     }
@@ -841,12 +1187,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener {
                 AtomSpectraLog.addMessage(context, "USB write failed: " + e.getMessage());
                 CommandCode failed = Commands.pop();
                 AnswerNumber = 0;
-                Intent intentText = new Intent(Constants.ACTION.ACTION_USB_HAS_ANSWER).setPackage(Constants.PACKAGE_NAME);
-                intentText.putExtra(EXTRA_RESULT, COMMAND_RESULT_ERR);
-                intentText.putExtra(EXTRA_NUMBER, failed.Number);
-                intentText.putExtra(EXTRA_COMMAND, new String(failed.command));
-                intentText.putExtra(EXTRA_ID, failed.id);
-                context.sendBroadcast(intentText);
+                deliverAnswer(failed, COMMAND_RESULT_ERR);
                 sendPacket();
                 return false;
             }

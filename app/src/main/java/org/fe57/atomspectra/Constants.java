@@ -67,7 +67,7 @@ public class Constants {
     public static final boolean SPG_MIDNIGHT_RESET_DEFAULT = false;
     public static final boolean ADD_GPS_TO_FILES_DEFAULT = true;                                                        //add GPS coordinates to files by default
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
-    public static final boolean USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT = false;
+    public static final boolean ALLOW_PARTIAL_HISTOGRAM_DEFAULT = false;
     public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
     public static final String ATOMSWIFT_DR_NON_COMPENSATED = "non-compensated";
     public static final String ATOMSWIFT_DR_INTERVAL = "interval";
@@ -147,7 +147,7 @@ public class Constants {
         String CONF_SPG_MIDNIGHT_RESET = "Reset spectrogram at midnight";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
-        String CONF_USB_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
+        String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
         String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
     }
 
@@ -187,8 +187,18 @@ public class Constants {
         // sent to atom spectra service when data is needed immediately
         String ACTION_UPDATE_GRAPH = "org.fe57.atomspectra.ACTION_UPDATE_GRAPH";
 
-        // produced by AtomSpectraSerial (usb) and read by AtomSpectraService to recalculate all data
-        String ACTION_USB_HAS_DATA = "org.fe57.atomspectra.ACTION_USB_HAS_DATA";
+        // produced by an input source and read by AtomSpectraService to recalculate all data
+        String ACTION_INPUT_HAS_DATA = "org.fe57.atomspectra.ACTION_INPUT_HAS_DATA";
+
+        // input source replies, see SpectrumSource for the payload of each
+        // answer to requestStatus(): carries whether the source is collecting
+        String ACTION_INPUT_STATUS = "org.fe57.atomspectra.ACTION_INPUT_STATUS";
+        // answer to requestDeviceMeta(): carries calibration and device info
+        String ACTION_INPUT_METADATA = "org.fe57.atomspectra.ACTION_INPUT_METADATA";
+        // any request failed: carries the op code, the reason and a display label
+        String ACTION_INPUT_ERROR = "org.fe57.atomspectra.ACTION_INPUT_ERROR";
+        // the source lost its device: carries a RECORDING_SUSPEND_REASON_* code
+        String ACTION_INPUT_DISCONNECTED = "org.fe57.atomspectra.ACTION_INPUT_DISCONNECTED";
 
         // produced by AtomSpectraSerial (usb) when command executed
         String ACTION_USB_HAS_ANSWER = "org.fe57.atomspectra.ACTION_USB_HAS_ANSWER";
