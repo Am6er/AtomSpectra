@@ -203,9 +203,9 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     private void setupAllowPartialHistogramCheckbox() {
         CheckBox checkAllowPartialHistogram = findViewById(R.id.CheckAllowPartialHistogram);
-        checkAllowPartialHistogram.setChecked(sp.getBoolean(Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM, Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT));
+        checkAllowPartialHistogram.setChecked(sp.getBoolean(Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM, Constants.ALLOW_PARTIAL_HISTOGRAM_DEFAULT));
         checkAllowPartialHistogram.setOnClickListener(v -> {
-            saveBooleanPref(checkAllowPartialHistogram.isChecked(), Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM);
+            saveBooleanPref(checkAllowPartialHistogram.isChecked(), Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM);
         });
     }
 
@@ -437,7 +437,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
 
     public void onClick_noise_minus(View v) {
-        if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
+        if (AtomSpectraService.inputType != AtomSpectraService.INPUT_USB) {
             SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
 
@@ -457,7 +457,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
 
     public void onClick_noise_plus(View v) {
-        if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
+        if (AtomSpectraService.inputType != AtomSpectraService.INPUT_USB) {
             SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
             int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
 
@@ -513,7 +513,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 intValue = StrictMath.max(0, StrictMath.min(Constants.NUM_HIST_POINTS / 4, intValue));
                 saveNoiseDiscriminatorToPrefs(intValue);
             }
-            if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
+            if (AtomSpectraService.inputType == AtomSpectraService.INPUT_USB) {
                 String value = input.getText().toString();
                 int intValue = usb_noise_value;
                 try {
@@ -1529,7 +1529,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
                 CheckBox box = findViewById(R.id.enableGPSCheckbox);
                 box.setChecked(settings.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT));
-                if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
+                if (AtomSpectraService.inputType != AtomSpectraService.INPUT_USB) {
                     updateNoiseDiscriminatorTextFromPrefs();
                 } else {
                     sendUsbInfoRequest();

@@ -614,7 +614,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     setTitle(getString(R.string.cal_show_line, AtomSpectraService.newCalibration.getPointChannel(9), AtomSpectraService.newCalibration.getPointEnergy(9))).
                     setVisible(AtomSpectraService.newCalibration.getPointsCount() > 9);
 
-            boolean isUSB = AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL;
+            boolean isUSB = AtomSpectraService.inputType == AtomSpectraService.INPUT_USB;
             app_menu.findItem(R.id.action_cal_store_device)
                     .setEnabled(isUSB)
                     .setVisible(isUSB);
@@ -3661,7 +3661,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         if (AtomSpectraService.inputType == AtomSpectraService.INPUT_NONE) {
             inputType.setBackgroundResource(R.drawable.input_none);
         }
-        if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
+        if (AtomSpectraService.inputType == AtomSpectraService.INPUT_USB) {
             inputType.setBackgroundResource(R.drawable.input_usb);
         }
         if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
