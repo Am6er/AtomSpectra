@@ -13,7 +13,7 @@ import java.util.Locale;
 public class Spectrum {
     private long[] DataArray;                     //spectrum data
     private int SourceChannelCount;               //channel count as stored in the source file (may differ from DataArray.length after remap)
-    private long SpectrumTime;                    //total amount of time collected, NOT seconds, count of Constant.UPDATE_PERIOD
+    private double SpectrumTime;                  //total amount of time collected, in seconds
     private long SpectrumDate;                    //last spectrum update date
     private Calibration SpectrumCalibration;      //spectrum calibration
     private @NonNull String Comments = "";        //full comment string to save if exists
@@ -32,13 +32,13 @@ public class Spectrum {
         initSpectrumData(channelCount, Calibration.defaultCalibration(channelCount));
     }
 
-    public Spectrum(long[] data, long time, Calibration calibration) {
+    public Spectrum(long[] data, double time, Calibration calibration) {
         initSpectrumData(data.length, calibration);
         DataArray = Arrays.copyOf(data, data.length);
         if (calibration == null || !calibration.isCorrect()) {
             SpectrumCalibration = Calibration.defaultCalibration(data.length);
         }
-        
+
         SpectrumTime = time;
         Changed = false;
     }
@@ -256,17 +256,8 @@ public class Spectrum {
         return SpectrumTime == 0;
     }
 
-    public long getSpectrumTime() {
+    public double getSpectrumTime() {
         return SpectrumTime;
-    }
-
-    public Spectrum setSpectrumTime(long spectrumTime) {
-        SpectrumTime = spectrumTime;
-        return this;
-    }
-
-    public double getRealSpectrumTime() {
-        return SpectrumTime * Constants.UPDATE_PERIOD / 1000.0;
     }
 
     static long[] splitAcquisitionTime(double timeSeconds) {
@@ -279,8 +270,8 @@ public class Spectrum {
         };
     }
 
-    public Spectrum setRealSpectrumTime(double spectrumTime) {
-        SpectrumTime = (long)StrictMath.rint(spectrumTime * 1000.0 / Constants.UPDATE_PERIOD);
+    public Spectrum setSpectrumTime(double spectrumTime) {
+        SpectrumTime = spectrumTime;
         return this;
     }
 
@@ -371,9 +362,9 @@ public class Spectrum {
 
     public Spectrum updateComments() {
         long counts = getTotalCounts();
-        double realTime = getRealSpectrumTime();
+        double realTime = getSpectrumTime();
         double cps = 0;
-        if (SpectrumTime > 1) {
+        if (realTime > 0) {
             cps = counts / realTime;
 
         }

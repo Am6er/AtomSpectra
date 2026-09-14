@@ -6,14 +6,12 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.security.InvalidParameterException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
-import java.util.function.Consumer;
 
 public class SpectrumFileBqMoni extends SpectrumFile {
     @Override
@@ -50,7 +48,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                     }
                 }
                 GregorianCalendar dateBegin = (GregorianCalendar) dateNow.clone();
-                time_count = (int) (spectrum.getRealSpectrumTime());
+                time_count = (int) (spectrum.getSpectrumTime());
                 dateBegin.add(Calendar.SECOND, -time_count);
                 tmp = spectrum.getDataArray();
                 num_channels = tmp.length / channelCompression;
@@ -145,7 +143,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                 fw.append("      </EnergySpectrum>\n");
 
                 if (backgroundSpectrum != null && (!backgroundSpectrum.isEmpty())) {
-                    time_count = (int) (backgroundSpectrum.getRealSpectrumTime());
+                    time_count = (int) (backgroundSpectrum.getSpectrumTime());
                     tmp = backgroundSpectrum.getDataArray();
                     num_channels = tmp.length / channelCompression;
                     calc_pulses = 0;

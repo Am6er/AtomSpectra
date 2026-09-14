@@ -8,11 +8,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 public class ToastHelper {
-    public static void showToast(@NonNull Context context, int text) {
-        showToast(context, context.getString(text));
+    public static void showToastAndLog(@NonNull Context context, int text) {
+        showToastAndLog(context, context.getString(text));
     }
 
-    public static void showToast(@NonNull Context context, String text) {
+    public static void showToastAndLog(@NonNull Context context, String text) {
         showToastInMainLooper(context.getApplicationContext(), text);
     }
 

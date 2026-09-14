@@ -45,13 +45,19 @@ public class AtomSpectraLog extends Activity {
     private static boolean notifyPending = false;
 
     public static void addMessage(Context context, String message) {
+        addMessage(context, null, message);
+    }
+
+    /** Prefixes the message with a source tag, e.g. the device/input source it originated from. */
+    public static void addMessage(Context context, String tag, String message) {
+        String formatted = (tag == null || tag.isEmpty()) ? message : (tag + ": " + message);
         synchronized (logSync) {
             if (log.size() >= MAX_MESSAGES) {
                 log.remove();
             }
 
             Date now = new Date();
-            log.add(String.format("%s: %s", formatDate(now), message));
+            log.add(String.format("%s: %s", formatDate(now), formatted));
         }
 
         notifyLogUpdated(context);

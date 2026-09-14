@@ -47,7 +47,7 @@ public class SpectrumFileAS extends SpectrumFile {
         } catch (Exception e) {
             throw new InvalidParameterException(String.format("Unable to parse spectrum time: %s", version));
         }
-        spectrum.setRealSpectrumTime(spectrumTime);
+        spectrum.setSpectrumTime(spectrumTime);
 
         String poliFactorStr = fr.readLine();
         int poliFactor;
@@ -181,7 +181,7 @@ public class SpectrumFileAS extends SpectrumFile {
         } catch (Exception e) {
             throw new InvalidParameterException(String.format("Unable to parse spectrum time: %s", spectrumTimeStr));
         }
-        spectrum.setRealSpectrumTime(spectrumTime);
+        spectrum.setSpectrumTime(spectrumTime);
 
         String channelCountStr = fr.readLine();
         int channelCount;
@@ -288,7 +288,7 @@ public class SpectrumFileAS extends SpectrumFile {
             validateSaveState();
             Spectrum spectrum = spectrumList.get(0);
             long[] tmp = spectrum.getDataArray();
-            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+            double time = StrictMath.max(spectrum.getSpectrumTime(), 1.0);
 
             fw.append("FORMAT: 3\n");
             fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));                           //version 2
@@ -339,7 +339,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 }
 
                 if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
-                    ToastHelper.showToast(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
+                    ToastHelper.showToastAndLog(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
                     break;
                 }
 
@@ -455,7 +455,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
         onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_saving_spectrum, spectrumName));
         Spectrum spectrumToSave = new Spectrum(baseSpectrum);
-        spectrumToSave.setRealSpectrumTime(combinedDuration);
+        spectrumToSave.setSpectrumTime(combinedDuration);
         spectrumToSave.setSuffix(spectrumName);
         spectrumToSave.setLocation(0, 0, 0);
         spectrumToSave.setSpectrumDate(lastDeltaDate);
@@ -480,7 +480,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
             Spectrum spectrum = spectrumList.get(0);
             long[] tmp = spectrum.getDataArray();
-            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+            double time = StrictMath.max(spectrum.getSpectrumTime(), 1.0);
 
             if (spectrum.getSpectrumDate() == 0) {
                 fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));

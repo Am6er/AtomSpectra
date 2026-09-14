@@ -423,6 +423,7 @@
     <string name="log_usb_device_version_unknown">USB device version is unknown</string>
     <string name="log_usb_answer_unexpected_registers">Unexpected \"-cal\" answer: %1$d registers instead of %2$d</string>
     <string name="log_usb_answer_missing">No answer from the USB device</string>
+    <string name="log_usb_answer_malformed_calibration">Malformed \"-cal\" answer: registers are not valid hex</string>
     <string name="log_usb_watchdog_no_data_triggered">USB data watchdog: no data from USB for %1$d seconds. Trying to reconnect and execute -sta command</string>
     <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
     <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>

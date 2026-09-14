@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
 import android.graphics.Color;
@@ -57,11 +56,7 @@ import org.fe57.atomspectra.AppPermissions.Capability;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -71,7 +66,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
 
 public class AtomSpectra extends ComponentActivity implements OnGestureListener {
 
@@ -159,7 +153,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             action.run();
         } else {
             permissions.ensure(Capability.STORAGE, action,
-                    () -> ToastHelper.showToast(this, deniedMessage));
+                    () -> ToastHelper.showToastAndLog(this, deniedMessage));
         }
     }
 
@@ -330,7 +324,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 inputServiceIntent.putExtra(Constants.USB_DEVICE, device);
             } else {
                 UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-                UsbDevice dev = AtomSpectraSerial.scanForSpectraProDevice(manager);
+                UsbDevice dev = AtomSpectraProSource.scanForSpectraProDevice(manager);
                 if (dev != null) {
                     if (manager.hasPermission(dev)) {
                         inputServiceIntent.putExtra(Constants.USB_DEVICE, dev);
@@ -417,7 +411,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
         startInputService();
         updateSelectedInputIndicator();
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
         ensureWorkingDirectory();
     }
 
@@ -468,7 +461,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 Context context = getContext();
                 UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
                 if ((device != null)) {
-                    if (AtomSpectraSerial.isSpectraPro(device)) {
+                    if (AtomSpectraProSource.isSpectraPro(device)) {
                         if (!usbManager.hasPermission(device)) {
                             PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
                             usbManager.requestPermission(device, pi);
@@ -553,7 +546,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 }
             } catch (Exception e) {
                 prefEditor.remove(Constants.CONFIG.CONF_DIRECTORY_SELECTED);
-                ToastHelper.showToast(this, getString(R.string.storage_required));
+                ToastHelper.showToastAndLog(this, getString(R.string.storage_required));
             }
             prefEditor.apply();
         }
@@ -681,7 +674,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     AtomSpectraService.applyDeviceCalibration(this, coeffs);
                 })
                 .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                    ToastHelper.showToast(this, getString(R.string.cal_wrong_checksum));
+                    ToastHelper.showToastAndLog(this, getString(R.string.cal_wrong_checksum));
                 });
         alert.show();
     }
@@ -996,7 +989,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                 }
                 if ((device != null)) {
-                    if (AtomSpectraSerial.isSpectraPro(device)) {
+                    if (AtomSpectraProSource.isSpectraPro(device)) {
                         UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
                         if (!usbManager.hasPermission(device)) {
                             PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
@@ -1501,7 +1494,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                             try {
                                                 fValue = Float.parseFloat(input.getText().toString().replaceAll(",", "."));
                                             } catch (Exception nfe) {
-                                                ToastHelper.showToast(AtomSpectra.this, getString(R.string.cal_error_number));
+                                                ToastHelper.showToastAndLog(AtomSpectra.this, getString(R.string.cal_error_number));
                                                 return;
                                             }
                                             AtomSpectraService.newCalibration.addPoint(channel_x, fValue);
@@ -1509,7 +1502,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                                 app_menu.findItem(R.id.action_cal_draw_function).setEnabled(true);
                                                 AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
                                                 if (!AtomSpectraService.newCalibration.isCorrect()) {
-                                                    ToastHelper.showToast(AtomSpectra.this, getString(R.string.cal_maybe_wrong, channel_x, fValue));
+                                                    ToastHelper.showToastAndLog(AtomSpectra.this, getString(R.string.cal_maybe_wrong, channel_x, fValue));
                                                 }
                                             }
                                             updateCalibrationMenu();
@@ -1535,7 +1528,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                                 AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
                                                 app_menu.findItem(R.id.action_cal_draw_function).setEnabled(true);
                                                 if (!AtomSpectraService.newCalibration.isCorrect()) {
-                                                    ToastHelper.showToast(AtomSpectra.this, getString(R.string.cal_maybe_wrong, cursor_x, i.getEnergy(0)));
+                                                    ToastHelper.showToastAndLog(AtomSpectra.this, getString(R.string.cal_maybe_wrong, cursor_x, i.getEnergy(0)));
                                                 }
                                             }
                                             updateCalibrationMenu();
@@ -1577,7 +1570,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
 
             private void showToast(String phrase) {
-                ToastHelper.showToast(getApplicationContext(), phrase);
+                ToastHelper.showToastAndLog(getApplicationContext(), phrase);
             }
         });
     }
@@ -1693,7 +1686,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
 
             private void showToast(String phrase) {
-                ToastHelper.showToast(getApplicationContext(), phrase);
+                ToastHelper.showToastAndLog(getApplicationContext(), phrase);
             }
         });
     }
@@ -1996,7 +1989,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return true;
         } else if (item.getItemId() == R.id.action_hist_from_file) {
             if (!AtomSpectraService.getFreeze()) {
-                ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+                ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
                 return true;
             }
             Log.d(TAG, "loading hist file");
@@ -2016,7 +2009,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return true;
         } else if (item.getItemId() == R.id.action_hist_add_from_file) {
             if (!AtomSpectraService.getFreeze()) {
-                ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+                ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
                 return true;
             }
             Log.d(TAG, "adding hist file");
@@ -2056,7 +2049,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 storeCalibration(Constants.CALIBRATION_STORAGE_USB);
             } else {
                 DialogHelper.showActionConfirmationDialog(this, getString(R.string.calibration_stop_before_save_device_text), () -> {
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
                     storeCalibration(Constants.CALIBRATION_STORAGE_USB);
                 });
             }
@@ -2072,7 +2065,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 loadCalibration(Constants.CALIBRATION_STORAGE_USB);
             } else {
                 DialogHelper.showActionConfirmationDialog(this, getString(R.string.calibration_stop_before_load_device_text), () -> {
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
                     loadCalibration(Constants.CALIBRATION_STORAGE_USB);
                 });
             }
@@ -2399,12 +2392,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (AtomSpectraService.getFreeze()) {
                 item.setIcon(R.drawable.menu_block);
                 item.setTitle(R.string.hist_freeze_update);
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, false).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, false).setPackage(Constants.PACKAGE_NAME));
                 ((TextView) findViewById(R.id.suffixView)).setText(AtomSpectraService.ForegroundSpectrum.getSuffix());
             } else {
                 item.setIcon(R.drawable.record);
                 item.setTitle(R.string.hist_continue_update);
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
             }
             return true;
         } else if (item.getItemId() == R.id.action_share_export) {
@@ -2490,7 +2483,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 try {
                     fValue = Float.parseFloat(input.getText().toString().replaceAll(",", "."));
                 } catch (Exception nfe) {
-                    ToastHelper.showToast(context, getString(R.string.cal_error_number));
+                    ToastHelper.showToastAndLog(context, getString(R.string.cal_error_number));
                     return;
                 }
                 Calibration new_cal = new Calibration();
@@ -2498,7 +2491,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 coeffs[finalNumber] = fValue;
                 new_cal.Calculate(coeffs);
                 if (!new_cal.isCorrect()) {
-                    ToastHelper.showToast(context, getString(R.string.cal_error_number));
+                    ToastHelper.showToastAndLog(context, getString(R.string.cal_error_number));
                     return;
                 }
                 itemMenu.setTitle(String.format(Locale.getDefault(), "c%d: %.12g", finalNumber, fValue));
@@ -2548,7 +2541,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         if (AtomSpectraService.newCalibration.getPointsCount() > 1) {
                             AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
                             if (!AtomSpectraService.newCalibration.isCorrect()) {
-                                ToastHelper.showToast(AtomSpectra.this, getString(R.string.cal_maybe_wrong, channel_x, fValue));
+                                ToastHelper.showToastAndLog(AtomSpectra.this, getString(R.string.cal_maybe_wrong, channel_x, fValue));
                             }
                         } else {
                             AtomSpectraService.showCalibrationFunction = false;
@@ -2615,7 +2608,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 try {
                     iValue = Integer.parseInt(input.getText().toString().replaceAll(",", "."));
                 } catch (Exception nfe) {
-                    ToastHelper.showToast(context, getString(R.string.cal_error_number));
+                    ToastHelper.showToastAndLog(context, getString(R.string.cal_error_number));
                     return;
                 }
                 AtomSpectraService.applyLastCalibrationChannel(context, iValue);
@@ -2707,7 +2700,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     getContentResolver().takePersistableUriPermission(dirUri, takeFlags);
                     editor.commit();
                     final String name = dir.getName();
-                    ToastHelper.showToast(this, getString(R.string.working_dir_set,
+                    ToastHelper.showToastAndLog(this, getString(R.string.working_dir_set,
                             name != null ? name : dirUri.getLastPathSegment()));
                 }
             }
@@ -2747,10 +2740,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         });
                         alert.show();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_histogram));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_histogram));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_histogram));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_histogram));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -2774,10 +2767,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         editor.commit();
                         saveDefaultBackground();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_background));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_background));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_background));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_background));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -2801,10 +2794,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         editor.commit();
                         loadBackgroundOrDefault(null);
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_read_background));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_read_background));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_read_background));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_read_background));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -2845,10 +2838,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         });
                         alert.show();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_export));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_export));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_export));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_export));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -2889,10 +2882,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         });
                         alert.show();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_export_energy));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_export_energy));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_export_energy));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_export_energy));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -2933,10 +2926,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         });
                         alert.show();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_bqmoni));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_bqmoni));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_bqmoni));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_bqmoni));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -2977,10 +2970,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         });
                         alert.show();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_spe));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_spe));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_spe));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_spe));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -3021,10 +3014,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         });
                         alert.show();
                     } else {
-                        ToastHelper.showToast(this, getString(R.string.perm_no_write_N42));
+                        ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_N42));
                     }
                 } else {
-                    ToastHelper.showToast(this, getString(R.string.perm_no_write_N42));
+                    ToastHelper.showToastAndLog(this, getString(R.string.perm_no_write_N42));
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
@@ -3035,13 +3028,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
     private void loadSpectrum(Uri histFile, boolean showMessage) {
         if (!AtomSpectraService.getFreeze()) {
-            ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
             return;
         }
         final String filename = histFile.getPath();
         if (filename == null) {
             Log.d(TAG, "Null filename");
-            ToastHelper.showToast(this, getString(R.string.strange_file_name));
+            ToastHelper.showToastAndLog(this, getString(R.string.strange_file_name));
             return;
         }
         Log.d(TAG, filename);
@@ -3062,25 +3055,25 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             refreshForegroundSpectrumView();
             Log.d(TAG, "Histogram is loaded successfully");
             if (showMessage) {
-                ToastHelper.showToast(this, getString(R.string.hist_load_success));
+                ToastHelper.showToastAndLog(this, getString(R.string.hist_load_success));
             }
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
             if (showMessage) {
-                ToastHelper.showToast(this, getString(R.string.hist_load_error));
+                ToastHelper.showToastAndLog(this, getString(R.string.hist_load_error));
             }
         }
     }
 
     private void addSpectrumFromFile(Uri histFile) {
         if (!AtomSpectraService.getFreeze()) {
-            ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
             return;
         }
         final String filename = histFile.getPath();
         if (filename == null) {
             Log.d(TAG, "Null filename");
-            ToastHelper.showToast(this, getString(R.string.strange_file_name));
+            ToastHelper.showToastAndLog(this, getString(R.string.strange_file_name));
             return;
         }
         Log.d(TAG, filename);
@@ -3096,7 +3089,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             Spectrum current = AtomSpectraService.ForegroundSpectrum;
             if (current.getSourceChannelCount() != spectrum.getSourceChannelCount()
                     || current.getDataArray().length != spectrum.getDataArray().length) {
-                ToastHelper.showToast(this, getString(R.string.hist_add_channel_mismatch));
+                ToastHelper.showToastAndLog(this, getString(R.string.hist_add_channel_mismatch));
                 return;
             }
 
@@ -3107,19 +3100,19 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             applyAddedSpectrum(spectrum);
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.hist_add_error));
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_add_error));
         }
     }
 
     private void applyAddedSpectrum(Spectrum spectrum) {
         if (!AtomSpectraService.getFreeze()) {
-            ToastHelper.showToast(this, getString(R.string.hist_recording_in_progress));
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
             return;
         }
         AtomSpectraService.ForegroundSpectrum.addSpectrum(spectrum);
         refreshForegroundSpectrumView();
         Log.d(TAG, "Histogram is added successfully");
-        ToastHelper.showToast(this, getString(R.string.hist_add_success));
+        ToastHelper.showToastAndLog(this, getString(R.string.hist_add_success));
     }
 
     private void refreshForegroundSpectrumView() {
@@ -3145,7 +3138,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         final String filename = histFile.getPath();
         if (filename == null) {
             Log.d(TAG, "Null filename");
-            ToastHelper.showToast(this, getString(R.string.strange_file_name));
+            ToastHelper.showToastAndLog(this, getString(R.string.strange_file_name));
             return;
         }
         Log.d(TAG, filename);
@@ -3161,10 +3154,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             AtomSpectraService.applyCalibration(this, spectrum.getSpectrumCalibration());
 
             Log.d(TAG, "Calibration is loaded successfully");
-            ToastHelper.showToast(this, getString(R.string.cal_load_success));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_load_success));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.cal_load_error));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_load_error));
         }
     }
 
@@ -3202,14 +3195,14 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
     private void loadAndViewSpectrograms(List<Uri> histFiles) {
         if (isLoadingSpectrogram) {
-            ToastHelper.showToast(this, "ERROR: loadAndViewSpectrograms called while spectrogram is loading.");
+            ToastHelper.showToastAndLog(this, "ERROR: loadAndViewSpectrograms called while spectrogram is loading.");
             return;
         }
 
         for (Uri histFile : histFiles) {
             if (histFile.getPath() == null) {
                 Log.d(TAG, "Null filename");
-                ToastHelper.showToast(this, getString(R.string.strange_file_name));
+                ToastHelper.showToastAndLog(this, getString(R.string.strange_file_name));
                 return;
             }
         }
@@ -3248,11 +3241,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 }
 
                 mainHandler.post(() -> showSpectrogramView());
-                ToastHelper.showToast(getContext(), getString(R.string.spectrogram_load_success));
+                ToastHelper.showToastAndLog(getContext(), getString(R.string.spectrogram_load_success));
             } catch (Exception e) {
                 AtomSpectraSpectrogramData.instance.clear();
                 AtomSpectraLog.addMessage(getContext(), Log.getStackTraceString(e));
-                ToastHelper.showToast(getContext(), getString(R.string.spectrogram_load_error, e.getMessage()));
+                ToastHelper.showToastAndLog(getContext(), getString(R.string.spectrogram_load_error, e.getMessage()));
             } finally {
                 isLoadingSpectrogram = false;
                 mainHandler.post(() -> {
@@ -3279,10 +3272,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     .setChannelCompression(1);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
             AtomSpectraService.ForegroundSpectrum.setChanged(false);
-            ToastHelper.showToast(this, getString(R.string.hist_save_success, spectrumFileName));
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_save_success, spectrumFileName));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.hist_save_error, suffix));
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_save_error, suffix));
         }
     }
 
@@ -3313,20 +3306,20 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 Uri dirUri = Uri.parse(workingDir);
                 if (dirUri == null) {
                     AtomSpectraLog.addMessage(this, String.format("Unexpected: unable to parse working dir path '%s'", workingDir));
-                    ToastHelper.showToast(this, getString(R.string.error_working_dir_not_valid, workingDir));
+                    ToastHelper.showToastAndLog(this, getString(R.string.error_working_dir_not_valid, workingDir));
                     return;
                 }
                 DocumentFile dirFile = DocumentFile.fromTreeUri(this, dirUri);
                 if ((dirFile == null) || !dirFile.isDirectory()) {
                     AtomSpectraLog.addMessage(this, String.format("Unexpected: working dir path is not a directory '%s'", workingDir));
-                    ToastHelper.showToast(this, getString(R.string.error_working_dir_not_valid, workingDir));
+                    ToastHelper.showToastAndLog(this, getString(R.string.error_working_dir_not_valid, workingDir));
                     return;
                 }
                 String path = workingDir + "/document/" + Uri.encode(DocumentsContract.getTreeDocumentId(dirUri) + "/Background");
                 DocumentFile backgroundFile = DocumentFile.fromSingleUri(this, Uri.parse(path));
                 if ((backgroundFile == null) || !backgroundFile.isFile()) {
                     AtomSpectraLog.addMessage(this, String.format("Unexpected: background file '%s' is not a file", path));
-                    ToastHelper.showToast(this, getString(R.string.background_load_error));
+                    ToastHelper.showToastAndLog(this, getString(R.string.background_load_error));
                     return;
                 }
                 backgroundFilePath = backgroundFile.getUri();
@@ -3339,7 +3332,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 backgroundFilePath = Uri.fromFile(new File(path));
                 if (backgroundFilePath == null) {
                     AtomSpectraLog.addMessage(this, String.format("Unexpected: unable to construct default background Uri from path '%s'", path));
-                    ToastHelper.showToast(this, getString(R.string.background_load_error));
+                    ToastHelper.showToastAndLog(this, getString(R.string.background_load_error));
                     return;
                 }
             }
@@ -3368,16 +3361,16 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             view.setVisibility(show_back ? TextView.VISIBLE : TextView.INVISIBLE);
             sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
             Log.d(TAG, "Background is loaded successfully");
-            ToastHelper.showToast(this, getString(R.string.background_load_success));
+            ToastHelper.showToastAndLog(this, getString(R.string.background_load_success));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.background_load_error));
+            ToastHelper.showToastAndLog(this, getString(R.string.background_load_error));
         }
     }
 
     private void saveDefaultBackground() {
         if (AtomSpectraService.BackgroundSpectrum.isEmpty()) {
-            ToastHelper.showToast(this, getString(R.string.background_no_data));
+            ToastHelper.showToastAndLog(this, getString(R.string.background_no_data));
             return;
         }
 
@@ -3395,10 +3388,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     addSpectrum(spectrum).
                     setChannelCompression(1);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
-            ToastHelper.showToast(this, getString(R.string.background_save_success));
+            ToastHelper.showToastAndLog(this, getString(R.string.background_save_success));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.background_save_error));
+            ToastHelper.showToastAndLog(this, getString(R.string.background_save_error));
         }
     }
 
@@ -3420,10 +3413,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     setChannelCompression(exportChannelCompression);
             saveFile.setAddEnergy(with_energy);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
-            ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.export_save_error, suffix));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_error, suffix));
         }
     }
 
@@ -3446,10 +3439,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     .setBackgroundSpectrum(backSpectrum)
                     .setChannelCompression(exportChannelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
-            ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.export_save_error, suffix));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_error, suffix));
         }
     }
 
@@ -3468,10 +3461,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             saveFile.addSpectrum(spectrum)
                     .setChannelCompression(exportChannelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
-            ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.export_save_error, suffix));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_error, suffix));
         }
     }
 
@@ -3494,10 +3487,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     .setBackgroundSpectrum(backSpectrum)
                     .setChannelCompression(exportChannelCompression);
             saveFile.saveSpectrumAndCloseStream(docStream, this);
-            ToastHelper.showToast(this, getString(R.string.export_save_success, spectrumFileName));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_success, spectrumFileName));
         } catch (Exception e) {
             AtomSpectraLog.addMessage(this, Log.getStackTraceString(e));
-            ToastHelper.showToast(this, getString(R.string.export_save_error, suffix));
+            ToastHelper.showToastAndLog(this, getString(R.string.export_save_error, suffix));
         }
     }
 
@@ -3506,7 +3499,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         final String filename = file.getPath();
         String onlyName, onlyLoName;
         if (filename == null) {
-            ToastHelper.showToast(this, getString(R.string.strange_file_name));
+            ToastHelper.showToastAndLog(this, getString(R.string.strange_file_name));
             return;
         }
         if (filename.lastIndexOf('/') != -1) {
@@ -3522,7 +3515,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         try {
             shareIntent.putExtra(Intent.EXTRA_STREAM, file);
         } catch (Exception e) {
-            ToastHelper.showToast(this, getString(R.string.perm_no_outside));
+            ToastHelper.showToastAndLog(this, getString(R.string.perm_no_outside));
             return;
         }
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -3546,7 +3539,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (shareIntent.resolveActivity(getPackageManager()) != null)
                 startActivity(Intent.createChooser(shareIntent, null));
         } catch (Exception e) {
-            ToastHelper.showToast(this, getString(R.string.something_wrong));
+            ToastHelper.showToastAndLog(this, getString(R.string.something_wrong));
         }
     }
 
@@ -3554,11 +3547,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     public void onAddCalibrationPoint(View view) {
 //		final Button button = (Button) view;
         if (AtomSpectraService.newCalibration.getPointsCount() >= Constants.MAX_CALIBRATION_POINTS) {
-            ToastHelper.showToast(this, getString(R.string.cal_no_more));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_no_more));
             return;
         }
         if (AtomSpectraService.newCalibration.containsPointChannel(cursor_x)) {
-            ToastHelper.showToast(this, getString(R.string.cal_have_channel));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_have_channel));
             return;
         }
         if ((cursor_x >= 0) && (cursor_x < Constants.NUM_HIST_POINTS)) {
@@ -3587,7 +3580,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 try {
                     fValue = Float.parseFloat(input.getText().toString().replaceAll(",", "."));
                 } catch (Exception nfe) {
-                    ToastHelper.showToast(context, getString(R.string.cal_error_number));
+                    ToastHelper.showToastAndLog(context, getString(R.string.cal_error_number));
                     return;
                 }
                 AtomSpectraService.newCalibration.addPoint(cursor_x, fValue);
@@ -3595,7 +3588,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
                     app_menu.findItem(R.id.action_cal_draw_function).setEnabled(true);
                     if (!AtomSpectraService.newCalibration.isCorrect()) {
-                        ToastHelper.showToast(this, getString(R.string.cal_maybe_wrong, cursor_x, fValue));
+                        ToastHelper.showToastAndLog(this, getString(R.string.cal_maybe_wrong, cursor_x, fValue));
                     }
                 }
                 updateCalibrationMenu();
@@ -3605,12 +3598,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             });
             alert.show();
         } else
-            ToastHelper.showToast(this, getString(R.string.put_cursor_first));
+            ToastHelper.showToastAndLog(this, getString(R.string.put_cursor_first));
     }
 
     public void onCalibrateButton(View view) {
         if (AtomSpectraService.newCalibration.getPointsCount() < 2) {
-            ToastHelper.showToast(this, getString(R.string.cal_no_enough_data));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_no_enough_data));
             return;
         }
         AtomSpectraService.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
@@ -3624,9 +3617,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             Button button = findViewById(R.id.addCalibrationPointButton);
             button.setText("1");
             button.setEnabled(true);
-            ToastHelper.showToast(this, getString(R.string.cal_applied));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_applied));
         } else {
-            ToastHelper.showToast(this, getString(R.string.cal_load_error));
+            ToastHelper.showToastAndLog(this, getString(R.string.cal_load_error));
         }
     }
 
@@ -3766,7 +3759,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 .setTitle(getString(R.string.recording_suspended_dialog_title))
                 .setMessage(message)
                 .setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
                     dismissRecordingSuspendedDialog();
                 })
                 .setCancelable(false);

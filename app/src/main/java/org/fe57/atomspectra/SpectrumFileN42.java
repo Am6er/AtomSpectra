@@ -68,8 +68,8 @@ public class SpectrumFileN42 extends SpectrumFile {
                 dateNow = new GregorianCalendar(Locale.US);
                 dateNow.setTime(new Date(spectrum.getSpectrumDate()));
                 dateBegin = (GregorianCalendar) dateNow.clone();
-                dateBegin.add(Calendar.SECOND, (int) -(spectrum.getRealSpectrumTime()));
-                double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+                dateBegin.add(Calendar.SECOND, (int) -(spectrum.getSpectrumTime()));
+                double time = StrictMath.max(spectrum.getSpectrumTime(), 1.0);
                 long counts = 0;
                 long calc_pulses;
                 long[] tmp = spectrum.getDataArray();
@@ -156,8 +156,8 @@ public class SpectrumFileN42 extends SpectrumFile {
                 GregorianCalendar dateBackgroundNow = new GregorianCalendar(Locale.US);
                 dateBackgroundNow.setTime(new Date(backgroundSpectrum.getSpectrumDate()));
                 GregorianCalendar dateBackgroundBegin = (GregorianCalendar) dateBackgroundNow.clone();
-                dateBackgroundBegin.add(Calendar.SECOND, (int) -(backgroundSpectrum.getRealSpectrumTime()));
-                time = StrictMath.max((double) backgroundSpectrum.getRealSpectrumTime(), 1.0);
+                dateBackgroundBegin.add(Calendar.SECOND, (int) -(backgroundSpectrum.getSpectrumTime()));
+                time = StrictMath.max((double) backgroundSpectrum.getSpectrumTime(), 1.0);
 
                 Calibration exportBackgroundCalibration = new Calibration();
                 coeffs = backgroundSpectrum.getSpectrumCalibration().getCoeffArray();

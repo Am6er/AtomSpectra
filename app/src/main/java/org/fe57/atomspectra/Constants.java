@@ -57,10 +57,8 @@ public class Constants {
     public static final boolean OUTPUT_FILE_NAME_ADD_DATE_DEFAULT = true;                                                    //add date to output file name
     public static final boolean OUTPUT_FILE_NAME_ADD_TIME_DEFAULT = true;                                                    //add date to output file name
     public static final int DEFAULT_DELTA_TIME = 1;                                                                      //default delta time in seconds between output
-    public static final int UPDATE_PERIOD = 100; //in ms DO NOT CHANGE - a lot of code relies on exact 100 ms
     public static String[] LOCALES = {"Default", "Russian", "English"};
     public static String[] LOCALES_ID = {"", "ru", "en"};
-    public static final int USB_DEVICE_MINIMAL_VERSION = 11;                                                             //minimal firmware version for AtomSpectra Pro to operate correctly
     public static final int SPG_DELTA_DURATION_MIN = 5;                                                                          //minimal delta between auto saves
     public static final int SPG_DELTA_DURATION_MAX = 60;                                                                     //maximum delta between auto saves
     public static final int SPG_INTERVAL_DEFAULT = 0;
@@ -84,6 +82,7 @@ public class Constants {
     public static final int AUDIO_SOURCE_RAW = 2;
     public static final int AUDIO_SOURCE_VOICE = 1;
     public static final int AUDIO_SOURCE_DEFAULT = AUDIO_SOURCE_VOICE;
+
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
@@ -193,22 +192,6 @@ public class Constants {
         // sent to atom spectra service when data is needed immediately
         String ACTION_UPDATE_GRAPH = "org.fe57.atomspectra.ACTION_UPDATE_GRAPH";
 
-        // produced by an input source and read by AtomSpectraService to recalculate all data
-        String ACTION_INPUT_HAS_DATA = "org.fe57.atomspectra.ACTION_INPUT_HAS_DATA";
-
-        // input source replies, see SpectrumSource for the payload of each
-        // answer to requestStatus(): carries whether the source is collecting
-        String ACTION_INPUT_STATUS = "org.fe57.atomspectra.ACTION_INPUT_STATUS";
-        // answer to requestDeviceMeta(): carries calibration and device info
-        String ACTION_INPUT_METADATA = "org.fe57.atomspectra.ACTION_INPUT_METADATA";
-        // any request failed: carries the op code, the reason and a display label
-        String ACTION_INPUT_ERROR = "org.fe57.atomspectra.ACTION_INPUT_ERROR";
-        // the source lost its device: carries a RECORDING_SUSPEND_REASON_* code
-        String ACTION_INPUT_DISCONNECTED = "org.fe57.atomspectra.ACTION_INPUT_DISCONNECTED";
-
-        // produced by AtomSpectraSerial (usb) when command executed
-        String ACTION_USB_HAS_ANSWER = "org.fe57.atomspectra.ACTION_USB_HAS_ANSWER";
-
         // produced when start/stop of data collection is needed
         String ACTION_FREEZE_DATA = "org.fe57.atomspectra.ACTION_FREEZE_DATA";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
@@ -232,7 +215,6 @@ public class Constants {
         String ACTION_CLOSE_SENSITIVITY = "org.fe57.atomspectra.ACTION_CLOSE_SENSITIVITY";
         String ACTION_UPDATE_ISOTOPE_LIST = "org.fe57.atomspectra.ACTION_UPDATE_ISOTOPE_LIST";
         String ACTION_GET_USB_PERMISSION = "org.fe57.atomspectra.GET_USB_PERMISSION";
-        String ACTION_SEND_USB_COMMAND = "org.fe57.atomspectra.SEND_USB_COMMAND";
         String ACTION_UPDATE_GPS = "org.fe57.atomspectra.SEND_GPS_COMMAND";
         /** Map-facing device position snapshot (immutable extras). */
         String ACTION_DEVICE_LOCATION_UPDATED = "org.fe57.atomspectra.ACTION_DEVICE_LOCATION_UPDATED";

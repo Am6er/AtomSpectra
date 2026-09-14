@@ -181,7 +181,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         long[] chan_raw = new long[num_lines];
 
         if (AtomSpectra.background_subtract) {
-            double backgroundScale = (double) AtomSpectraService.ForegroundSpectrum.getSpectrumTime() / (double) AtomSpectraService.BackgroundSpectrum.getSpectrumTime();
+            double backgroundScale = AtomSpectraService.ForegroundSpectrum.getSpectrumTime() / AtomSpectraService.BackgroundSpectrum.getSpectrumTime();
             long[] data = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraService.BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration(), AtomSpectraService.lastCalibrationChannel);
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++)

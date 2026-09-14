@@ -314,13 +314,13 @@ public class PrefHelper {
     public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {
         SharedPreferences sharedPreferences = getASSharedPreferences(context);
         if (sharedPreferences == null) {
-            ToastHelper.showToast(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
+            ToastHelper.showToastAndLog(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
             return null;
         }
 
         String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
         if (workingDir == null && notifyUserIfNotSet) {
-            ToastHelper.showToast(context, context.getString(R.string.error_working_dir_not_set));
+            ToastHelper.showToastAndLog(context, context.getString(R.string.error_working_dir_not_set));
         }
 
         return workingDir;

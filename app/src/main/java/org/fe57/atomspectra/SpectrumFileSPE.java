@@ -30,10 +30,10 @@ public class SpectrumFileSPE extends SpectrumFile {
             GregorianCalendar dateNow = new GregorianCalendar(Locale.US);
             dateNow.setTime(new Date(spectrumList.get(0).getSpectrumDate()));
             GregorianCalendar dateBegin = (GregorianCalendar) dateNow.clone();
-            int time_count = (int) (spectrumList.get(0).getRealSpectrumTime());
+            int time_count = (int) (spectrumList.get(0).getSpectrumTime());
             dateBegin.add(Calendar.SECOND, -time_count);
             Spectrum spectrum = spectrumList.get(0);
-            double time = StrictMath.max(spectrumList.get(0).getRealSpectrumTime(), 1.0);
+            double time = StrictMath.max(spectrumList.get(0).getSpectrumTime(), 1.0);
             long counts = 0;
             long calc_pulses;
             long[] tmp = spectrumList.get(0).getDataArray();
