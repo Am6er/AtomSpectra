@@ -114,7 +114,7 @@ public class AtomSpectraSpectrogramData {
 
     public void addDelta(Spectrum delta) {
         long[] channels = delta.getDataArray();
-        double duration = delta.getRealSpectrumTime();
+        double duration = delta.getSpectrumTime();
         long timestamp = delta.getSpectrumDate();
         this.addDelta(channels, duration, timestamp, delta.getLatitude(), delta.getLongitude());
     }

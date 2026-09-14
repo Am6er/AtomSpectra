@@ -32,6 +32,20 @@
     <string name="action_usb_attached">USB attached</string>
     <string name="action_usb_detached">USB detached</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
+    <string name="device_default_microphone">Default microphone</string>
+    <string name="device_spectra_pro">Spectra Pro (USB)</string>
+    <string name="device_waiting_notification">Waiting for the selected device</string>
+    <string name="device_none_selected_notification">No device selected</string>
+    <string name="device_waiting_description">%1$s - waiting for the device</string>
+    <string name="action_switch_device">Switch device</string>
+    <string name="device_select_title">Select a device</string>
+    <string name="device_select_offline">Work offline (files only)</string>
+    <string name="device_select_connecting">Connecting…</string>
+    <string name="device_select_permission_needed">Permission needed — tap to grant</string>
+    <string name="device_select_none">No devices found</string>
+    <string name="device_switch_discard_title">Switch device</string>
+    <string name="device_switch_discard_text">The current spectrum has unsaved changes. Switch the device anyway?</string>
+    <string name="device_start_replace_text">The device no longer holds this unsaved spectrum. Recording will replace it. Continue?</string>
 
     <string name="nav_bar_spectrum">Spectrum</string>
     <string name="nav_bar_spectrum_change">Change</string>
@@ -81,8 +95,6 @@
     <string name="atom_swift_app_dr_non_compensated">AtomSwift DR: Non-compensated</string>
     <string name="atom_swift_app_dr_compensated">AtomSwift DR: Compensated</string>
     <string name="atom_swift_app_dr_interval">AtomSwift DR: Interval</string>
-    <string name="input_sound">Source:</string>
-    <string name="input_sound_absent">No selected input source! Using default.</string>
     <string name="interval_search_sound_disabled_label">alarm off</string>
     <string name="interval_search_output_sound_enabled">Enable sound alarm</string>
     <string name="interval_search_energy_range_full">Energy range: Full</string>
@@ -141,9 +153,7 @@
     <string name="calibration_calculate">Calculate</string>
     <string name="calibration_load_from_file">Load from…</string>
     <string name="calibration_store_device">Store to the device</string>
-    <string name="calibration_store_memory">Store to the program</string>
-    <string name="calibration_revert_device">Retrieve from the device</string>
-    <string name="calibration_revert_memory">Retrieve from the program</string>
+    <string name="calibration_revert_device">Use device calibration</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Device</string>
     <string name="calibration_load_device_energy">Load with calibration…</string>
@@ -153,7 +163,6 @@
     <string name="calibration_add_nuclid_title">Add a calibration point</string>
     <string name="calibration_add_nuclid_text">Add a calibration point for channel %1$d with %2$s (%3$.2f keV)?</string>
     <string name="calibration_add_nuclid2_text">Enter an energy (in keV) for channel %1$d (now %2$s, %3$.2f keV):</string>
-    <string name="calibration_stop_before_save_device_text">To save the calibration to the device, spectrum recording will be stopped</string>
     <string name="calibration_stop_before_load_device_text">To read the calibration from the device, the spectrum recording will be stopped</string>
 
     <string name="detector_sensitivity">Device Sensitivity</string>
@@ -331,7 +340,7 @@
     <string name="ask_channel_title">Set a cursor channel</string>
     <string name="ask_channel_text">New channel (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
     <string name="ask_last_channel_title">Enter channel number</string>
-    <string name="ask_last_channel_text">New channel (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+    <string name="ask_last_channel_text">New channel (<xliff:g id="min_channel">%1$d</xliff:g>-<xliff:g id="last_channel">%2$d</xliff:g>):</string>
     <string name="ask_delete_calibration_line_title">Delete a line</string>
     <string name="ask_delete_calibration_line_text">Delete a channel %1$d (%2$.2f keV) from the list?</string>
     <string name="ask_select_interval_title">Select interval to search</string>
@@ -376,13 +385,14 @@
     <string name="export_save_error"><xliff:g id="file_save">%1$s</xliff:g> export failed!</string>
     <string name="something_wrong">Something goes wrong!</string>
     <string name="unknown_code">Got unknown code from the device: <xliff:g id="code">%1$d</xliff:g></string>
-    <string name="cal_store_usb_wait">Wait for calibration to store into USB device</string>
-    <string name="cal_apply_usb">Calibration applied from USB device</string>
-    <string name="cal_wrong_usb">Wrong calibration from a USB device</string>
+    <string name="cal_store_wait">Wait for calibration to store into the device</string>
+    <string name="cal_apply_usb">Calibration applied from the device</string>
+    <string name="cal_wrong_usb">Wrong calibration from the device</string>
+    <string name="cal_none_stored">No calibration is stored for this device</string>
+    <string name="device_not_available">Device is not available</string>
     <string name="cal_wrong_checksum">A bad calibration checksum from a USB device</string>
-    <string name="cal_store_usb">Calibration stored to USB device</string>
+    <string name="cal_stored">Calibration stored to the device</string>
     <string name="cal_wrong_store_usb">Can\'t store calibration to a USB device</string>
-    <string name="cal_load_anyway">Load calibration anyway?</string>
     <string name="usb_below_minimal_version">Update device firmware to <xliff:g id="version">%1$d</xliff:g> or higher</string>
     <string name="usb_version_read_error">Device firmware version read error</string>
     <string name="usb_version_unknown">Device firmware version is unknown</string>
@@ -392,7 +402,7 @@
     <string name="recording_suspended_dialog_usb_disconnected">USB device is disconnected while reading data, please connect the device to resume.</string>
     <string name="recording_suspended_dialog_audio_added">External microphone is connected during data reading process, please disconnect external microphone to resume.</string>
     <string name="recording_suspended_dialog_audio_removed">External microphone is disconnected during data reading process, please connect external microphone to resume.</string>
-    <string name="recording_suspended_dialog_dismiss">Ignore and stop reading data</string>
+    <string name="recording_suspended_dialog_dismiss">Stop and work offline</string>
     <string name="recording_suspended_notification">Data reading suspended!</string>
     <string name="recording_suspended_notification_suspended_at">Recording suspended: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Recording resumed: <xliff:g id="time">%1$s</xliff:g></string>
@@ -423,6 +433,7 @@
     <string name="log_usb_device_version_unknown">USB device version is unknown</string>
     <string name="log_usb_answer_unexpected_registers">Unexpected \"-cal\" answer: %1$d registers instead of %2$d</string>
     <string name="log_usb_answer_missing">No answer from the USB device</string>
+    <string name="log_usb_answer_malformed_calibration">Malformed \"-cal\" answer: registers are not valid hex</string>
     <string name="log_usb_watchdog_no_data_triggered">USB data watchdog: no data from USB for %1$d seconds. Trying to reconnect and execute -sta command</string>
     <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
     <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>

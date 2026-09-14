@@ -28,8 +28,8 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedListener {
-    private static final int MIN_COMPRESSION = Constants.ADC_EFF_BITS - 3;
-    private static final int MAX_COMPRESSION = Constants.ADC_EFF_BITS;
+    private static final int MIN_COMPRESSION = 10;
+    private static final int MAX_COMPRESSION = 13;
 
     private int compression = MAX_COMPRESSION;
     private int poli_order = 5;
@@ -159,8 +159,8 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         return res;
     }
 
-    public static void updateFoundIsotopes() {
-        SharedPreferences sp = PrefHelper.getASSharedPreferences(AtomSpectra.getContext());
+    public static void updateFoundIsotopes(Context context) {
+        SharedPreferences sp = PrefHelper.getASSharedPreferences(context);
 
         int window = sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT);
         window = Constants.MinMax(window, 5, 200);
@@ -176,21 +176,21 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         int poli_order = sp.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT);
         int library = sp.getInt(Constants.SEARCH.PREF_LIBRARY, 0);
 
-        int num_lines = Constants.NUM_HIST_POINTS >> (Constants.ADC_EFF_BITS - compression);
-        int num_scale = 1 << (Constants.ADC_EFF_BITS - compression);
+        int num_scale = 1 << (MAX_COMPRESSION - compression);
+        int num_lines = SpectrumData.instance.getChannelCount() / num_scale;
         long[] chan_raw = new long[num_lines];
 
-        if (AtomSpectra.background_subtract) {
-            double backgroundScale = (double) AtomSpectraService.ForegroundSpectrum.getSpectrumTime() / (double) AtomSpectraService.BackgroundSpectrum.getSpectrumTime();
-            long[] data = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraService.BackgroundSpectrum.getDataArray(), AtomSpectraService.BackgroundSpectrum.getSpectrumCalibration(), AtomSpectraService.lastCalibrationChannel);
+        if (UIViewState.instance.backgroundSubtract) {
+            double backgroundScale = SpectrumData.instance.foreground.getSpectrumTime() / SpectrumData.instance.background.getSpectrumTime();
+            long[] data = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(SpectrumData.instance.background.getDataArray(), SpectrumData.instance.background.getSpectrumCalibration(), SpectrumData.instance.lastCalibrationChannel);
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
-                    chan_raw[i] += StrictMath.max(0.0, AtomSpectraService.ForegroundSpectrum.getDataArray()[j] - data[j] * backgroundScale);
+                    chan_raw[i] += StrictMath.max(0.0, SpectrumData.instance.foreground.getDataArray()[j] - data[j] * backgroundScale);
             }
         } else {
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
-                    chan_raw[i] += AtomSpectraService.ForegroundSpectrum.getDataArray()[j];
+                    chan_raw[i] += SpectrumData.instance.foreground.getDataArray()[j];
             }
         }
         //filter for high single peaks or drops
@@ -213,7 +213,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 //        Matrix SavitzkyGolay = getSavitzkyGolayMatrix(poli_order, window);
         double[] coeffs = new double[2 * window + 1];
         int shift_window, old_window = 0;
-        int channel_0 = StrictMath.max(100, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(662.0));
+        int channel_0 = StrictMath.max(100, SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(662.0));
         double[] peak_array = new double[num_lines];
         for (int i = 0; i < num_lines; i++) {
             shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(i / (double) channel_0)) * window), 4);
@@ -251,9 +251,9 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
             if (prev_Peak > 0.0 && cur_Peak < 0.0 && max_Channel > 3 && max_Peak > threshold) {
 //            if (prev_Peak > 0.0 && cur_Peak < 0.0 && max_Channel > 5 && (golay_array[i] > threshold * square_golay_array[i]) ) {
                 if (chan_raw[i] > chan_raw[i - 1]) {
-                    peak_energy = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(i * num_scale);
+                    peak_energy = SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy(i * num_scale);
                 } else {
-                    peak_energy = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy((i - 1) * num_scale);
+                    peak_energy = SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy((i - 1) * num_scale);
                 }
                 if (peak_energy <= 0)
                     continue;
@@ -334,7 +334,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         ((Button) findViewById(R.id.showIsotopes)).setText(getString(R.string.show_isotopes));
         AtomSpectraIsotopes.showFoundIsotopes = false;
 
-        updateFoundIsotopes();
+        updateFoundIsotopes(this);
         updateIsotopeList();
     }
 

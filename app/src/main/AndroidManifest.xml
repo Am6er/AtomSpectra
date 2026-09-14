@@ -91,6 +91,11 @@
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
         <activity
+            android:name=".AtomSpectraDeviceSelect"
+            android:label="@string/device_select_title"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
+        <activity
             android:name=".AtomSpectraHelp"
             android:label="@string/help" />
         <activity

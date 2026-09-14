@@ -288,28 +288,33 @@ public class AtomSpectraShapeView extends View {
 			}
 
 			// render selected interval
-			if (this.render_mode == RENDER_MODE_SPECTRUM && AtomSpectraService.leftChannelInterval > 0 && AtomSpectraService.rightChannelInterval < Constants.NUM_HIST_POINTS - 1) {
-				if (isXAxisEnergyScale() &&
-						AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) < x_max_value &&
-						AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) > x_min_value) {
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
-					} else {
-						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
+			if (this.render_mode == RENDER_MODE_SPECTRUM && spectrumData != null && energyIntervalData != null) {
+				EnergyIntervalData.Snapshot interval = energyIntervalData.get();
+				Calibration spectrumCalibration = spectrumData.foreground.getSpectrumCalibration();
+				int channelCount = spectrumData.getChannelCount();
+				if (interval.leftChannel > 0 && interval.rightChannel < channelCount - 1) {
+					if (isXAxisEnergyScale() &&
+							spectrumCalibration.toEnergy(interval.leftChannel) < x_max_value &&
+							spectrumCalibration.toEnergy(interval.rightChannel) > x_min_value) {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+							squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
+						} else {
+							squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
+						}
+						squareColor.setStyle(Style.FILL);
+						canvas.drawRect(margin_left + (float) StrictMath.max(0, (spectrumCalibration.toEnergy(interval.leftChannel) - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + (float) StrictMath.min(width, (spectrumCalibration.toEnergy(interval.rightChannel) - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
 					}
-					squareColor.setStyle(Style.FILL);
-					canvas.drawRect(margin_left + (float) StrictMath.max(0, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval) - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + (float) StrictMath.min(width, (AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval) - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
-				}
-				if (!isXAxisEnergyScale() &&
-						AtomSpectraService.leftChannelInterval < x_max_value &&
-						AtomSpectraService.rightChannelInterval > x_min_value) {
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
-					} else {
-						squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
+					if (!isXAxisEnergyScale() &&
+							interval.leftChannel < x_max_value &&
+							interval.rightChannel > x_min_value) {
+						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+							squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground, null));
+						} else {
+							squareColor.setColor(getResources().getColor(R.color.colorIntervalBackground));
+						}
+						squareColor.setStyle(Style.FILL);
+						canvas.drawRect(margin_left + StrictMath.max(0, (interval.leftChannel - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + StrictMath.min(width, (interval.rightChannel - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
 					}
-					squareColor.setStyle(Style.FILL);
-					canvas.drawRect(margin_left + StrictMath.max(0, (AtomSpectraService.leftChannelInterval - x_min_value) / (x_max_value - x_min_value) * width), margin_top, margin_left + StrictMath.min(width, (AtomSpectraService.rightChannelInterval - x_min_value) / (x_max_value - x_min_value) * width), margin_top + height - 1, squareColor);
 				}
 			}
 
@@ -382,8 +387,10 @@ public class AtomSpectraShapeView extends View {
 						if (AtomSpectraIsotopes.checkedIsotopeLine[i]) {
 							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
-							} else { //in "ch."
-								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
+							} else if (spectrumData != null) { //in "ch."
+								x_pos = (float) spectrumData.foreground.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
+							} else {
+								continue;
 							}
 							if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
 								squareColor.setColor(AtomSpectraIsotopes.isotopeLineArray.get(i).getColor());
@@ -401,8 +408,10 @@ public class AtomSpectraShapeView extends View {
 						for (int i = 0; i < AtomSpectraIsotopes.foundList.size(); i++) {
 							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
-							} else { //in "ch."
-								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
+							} else if (spectrumData != null) { //in "ch."
+								x_pos = (float) spectrumData.foreground.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
+							} else {
+								continue;
 							}
 							if ((x_pos >= x_min_value) && (x_pos <= x_max_value)) {
 								canvas.drawLine(margin_left + ((x_pos - x_min_value) / (x_max_value - x_min_value)) * width, margin_top,
@@ -467,9 +476,12 @@ public class AtomSpectraShapeView extends View {
 							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0);
 								isotopeLabel = String.format("%.2f", x_pos);
-							} else { //in "ch."
-								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
+							} else if (spectrumData != null) { //in "ch."
+								x_pos = (float) spectrumData.foreground.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.isotopeLineArray.get(i).getEnergy(0));
 								isotopeLabel = AtomSpectraIsotopes.isotopeLineArray.get(i).getName();
+							} else {
+								AtomSpectraIsotopes.isotopeLineArray.get(i).setCoord(null);
+								continue;
 							}
 							textColor.setColor(AtomSpectraIsotopes.isotopeLineArray.get(i).getColor());
 							textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
@@ -528,9 +540,12 @@ public class AtomSpectraShapeView extends View {
 							if (isXAxisEnergyScale()) {
 								x_pos = (float) AtomSpectraIsotopes.foundList.get(i).getEnergy(0);
 								isotopeLabel = String.format("%.2f", x_pos);
-							} else { //in "ch."
-								x_pos = (float) AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
+							} else if (spectrumData != null) { //in "ch."
+								x_pos = (float) spectrumData.foreground.getSpectrumCalibration().toChannel(AtomSpectraIsotopes.foundList.get(i).getEnergy(0));
 								isotopeLabel = AtomSpectraIsotopes.foundList.get(i).getName();
+							} else {
+								AtomSpectraIsotopes.foundList.get(i).setCoord(null);
+								continue;
 							}
 							textColor.getTextBounds(isotopeLabel, 0, isotopeLabel.length(), rect);
 							float rectWidth = rect.width() + 2;
@@ -627,13 +642,13 @@ public class AtomSpectraShapeView extends View {
 				}
 
 				// calibration circle points
-				if (this.render_mode == RENDER_MODE_CALIBRATION) {
+				if (this.render_mode == RENDER_MODE_CALIBRATION && spectrumData != null) {
 					squareColor.setColor(Color.GREEN);
 					squareColor.setStyle(Style.FILL);
 					float radius = (float) StrictMath.min(width, height) / 75.0f;
-					for (int i = 0; i < AtomSpectraService.newCalibration.getPointsCount(); i++) {
-						float y = (float) (margin_top + (1 - StrictMath.min(1, (AtomSpectraService.newCalibration.getPointEnergy(i) - y_min) / (y_max - y_min) * y_zoom)) * height);
-						float x = margin_left + ((AtomSpectraService.newCalibration.getPointChannel(i) - x_min_value) / (x_max_value - x_min_value)) * width;
+					for (int i = 0; i < spectrumData.newCalibration.getPointsCount(); i++) {
+						float y = (float) (margin_top + (1 - StrictMath.min(1, (spectrumData.newCalibration.getPointEnergy(i) - y_min) / (y_max - y_min) * y_zoom)) * height);
+						float x = margin_left + ((spectrumData.newCalibration.getPointChannel(i) - x_min_value) / (x_max_value - x_min_value)) * width;
 						if (x >= margin_left && x <= (margin_left + width) && y >= margin_top && y <= (margin_top + height))
 							canvas.drawCircle(x, y, radius, squareColor);
 					}
@@ -659,7 +674,248 @@ public class AtomSpectraShapeView extends View {
 		}
 	}
 
-	public void showSpectrum(
+	private static final int OUTPUT_SIZE = 1024;
+	private final double[] foregroundOutput = new double[OUTPUT_SIZE];
+	private final double[] backgroundOutput = new double[OUTPUT_SIZE];
+	private final double[] calibrationFunctionOutput = new double[OUTPUT_SIZE];
+
+	/** Holders retained from the last show* for onDraw overlays. */
+	private SpectrumData spectrumData;
+	private EnergyIntervalData energyIntervalData;
+
+	/** The visible part of the spectrum: pan/zoom from UIViewState and the x range it covers. */
+	private static final class ViewWindow {
+		final int scaleFactor;
+		final int firstChannel;
+		final int lastChannel;
+		final int numValues;
+		final boolean energyAxis;
+		final float xMin;
+		final float xMax;
+		private final SpectrumData spectrum;
+
+		ViewWindow(SpectrumData spectrum, int scaleFactor, int firstChannel, boolean energyAxis) {
+			this.spectrum = spectrum;
+			this.scaleFactor = scaleFactor;
+			this.firstChannel = firstChannel;
+			this.numValues = 1 << (Constants.SCALE_MAX - scaleFactor - 1);
+			this.energyAxis = energyAxis;
+			this.lastChannel = spectrum.lastCalibrationChannel;
+			int endChannel = firstChannel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - scaleFactor));
+			if (energyAxis) {
+				Calibration calibration = spectrum.foreground.getSpectrumCalibration();
+				this.xMin = (float) calibration.getEnergyFromEnergyChannel(firstChannel, lastChannel);
+				this.xMax = (float) calibration.getEnergyFromEnergyChannel(endChannel, lastChannel);
+			} else {
+				this.xMin = firstChannel;
+				this.xMax = endChannel;
+			}
+		}
+
+		float cursor(double cursorChannel) {
+			if (energyAxis) {
+				return (float) spectrum.foreground.getSpectrumCalibration().toEnergy((int) cursorChannel);
+			}
+			return (float) cursorChannel;
+		}
+	}
+
+	private String lastReportedViewError;
+
+	private ViewWindow getViewWindow(UIViewState view, SpectrumData spectrum, boolean energyAxis) {
+		int[] pan = view.getScaleAndFirstChannel();
+		int channelCount = spectrum.getChannelCount();
+		String error = null;
+		if (pan[0] < Constants.scaleMinFor(channelCount) || pan[0] > Constants.SCALE_MAX) {
+			error = String.format(Locale.US, "ERROR: unexpected scale factor: %d", pan[0]);
+		} else if (pan[1] < 0 || (long) pan[1] + ((long) Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - pan[0])) > channelCount) {
+			error = String.format(Locale.US, "ERROR: unexpected first channel: %d (scale %d, channels %d)", pan[1], pan[0], channelCount);
+		}
+		if (error != null) {
+			if (!error.equals(lastReportedViewError)) {
+				lastReportedViewError = error;
+				AtomSpectraLog.addMessage(getContext(), error);
+			}
+			return null;
+		}
+		lastReportedViewError = null;
+		return new ViewWindow(spectrum, pan[0], pan[1], energyAxis);
+	}
+
+	public void showSpectrum(UIViewState view, SpectrumData spectrum, EnergyIntervalData intervals) {
+		this.spectrumData = spectrum;
+		this.energyIntervalData = intervals;
+		ViewWindow window = getViewWindow(view, spectrum, view.energyAxis);
+		if (window == null) {
+			return;
+		}
+
+		Calibration calibration = spectrum.foreground.getSpectrumCalibration();
+		int lastChannel = window.lastChannel;
+		int compressMode = view.compressMode;
+		int x_size = view.reducedTo;
+
+		double[] smoothed = makeSmooth(spectrum.foreground.getDataArray(), calibration, view);
+		double[] fgSource = window.energyAxis ? calibration.toEnergy(smoothed, lastChannel) : smoothed;
+		compressToOutput(fgSource, foregroundOutput, window.firstChannel, window.scaleFactor, window.numValues, compressMode, 1.0);
+
+		Arrays.fill(backgroundOutput, 0);
+		boolean showBack = view.backgroundShow && !spectrum.background.isEmpty();
+		if (showBack) {
+			Calibration backCalibration = spectrum.background.getSpectrumCalibration();
+			double backgroundScale = spectrum.foreground.getSpectrumTime() / spectrum.background.getSpectrumTime();
+			double[] backSmoothed = makeSmooth(spectrum.background.getDataArray(), backCalibration, view);
+			double[] bgSource = window.energyAxis
+					? calibration.toEnergy(backSmoothed, backCalibration, lastChannel)
+					: calibration.toChannel(backSmoothed, backCalibration, lastChannel);
+			compressToOutput(bgSource, backgroundOutput, window.firstChannel, window.scaleFactor, window.numValues, compressMode, backgroundScale);
+		}
+
+		drawSpectrum(foregroundOutput, backgroundOutput, showBack, view.backgroundSubtract, window.energyAxis, x_size, view.logScale, view.barMode,
+				window.xMin, window.xMax, view.yZoomFactor, window.scaleFactor, window.cursor(view.cursorX), false);
+	}
+
+	public void showSpectrumChange(UIViewState view, SpectrumData spectrum, SpectrumChangeData changeData, EnergyIntervalData intervals) {
+		this.spectrumData = spectrum;
+		this.energyIntervalData = intervals;
+		ViewWindow window = getViewWindow(view, spectrum, view.energyAxis);
+		if (window == null) {
+			return;
+		}
+
+		Calibration calibration = spectrum.foreground.getSpectrumCalibration();
+		int lastChannel = window.lastChannel;
+		int compressMode = view.compressMode;
+		int x_size = view.reducedTo;
+		SpectrumChangeData.Snapshot change = changeData.get();
+
+		Arrays.fill(foregroundOutput, 0);
+		Arrays.fill(backgroundOutput, 0);
+		if (!change.isEmpty()) {
+			double backgroundScale = (double) change.foregroundTimeSeconds / (double) change.backgroundTimeSeconds;
+			double[] fgSmoothed = makeSmooth(change.foregroundDelta, calibration, view);
+			double[] bgSmoothed = makeSmooth(change.backgroundDelta, calibration, view);
+			double[] fgSource = window.energyAxis ? calibration.toEnergy(fgSmoothed, lastChannel) : fgSmoothed;
+			double[] bgSource = window.energyAxis ? calibration.toEnergy(bgSmoothed, lastChannel) : bgSmoothed;
+			compressToOutput(fgSource, foregroundOutput, window.firstChannel, window.scaleFactor, window.numValues, compressMode, 1.0);
+			compressToOutput(bgSource, backgroundOutput, window.firstChannel, window.scaleFactor, window.numValues, compressMode, backgroundScale);
+		}
+
+		drawSpectrum(foregroundOutput, backgroundOutput, true, false, window.energyAxis, x_size, view.logScale, view.barMode,
+				window.xMin, window.xMax, view.yZoomFactor, window.scaleFactor, window.cursor(view.cursorX), true);
+	}
+
+	public void showCalibration(UIViewState view, SpectrumData spectrum) {
+		this.spectrumData = spectrum;
+		ViewWindow window = getViewWindow(view, spectrum, false);
+		if (window == null) {
+			return;
+		}
+
+		int x_size = view.reducedTo;
+		compressToOutput(spectrum.newCalibration.getApproximationList(), calibrationFunctionOutput,
+				window.firstChannel, window.scaleFactor, window.numValues, Constants.COMPRESS_GRAPH_AVERAGE, 1.0);
+		drawCalibration(calibrationFunctionOutput, x_size, window.xMin, window.xMax, view.yZoomFactor, window.scaleFactor);
+	}
+
+	public void showIntervalSearch(UIViewState view, MeasurementData measurement, boolean show_alarm_level) {
+		drawIntervalSearch(
+				measurement.getIntervalHistory(),
+				measurement.getIntervalHighAlarmHistory(),
+				measurement.getIntervalLowAlarmHistory(),
+				measurement.getIntervalBaselineHistory(),
+				measurement.getTimestamps(),
+				show_alarm_level,
+				view.yZoomFactor);
+	}
+
+	public void showDoseSearch(UIViewState view, MeasurementData measurement) {
+		drawDoseSearch(measurement.getNonCompensatedHistory(), measurement.getCompensatedHistory(), measurement.getTimestamps(), view.yZoomFactor);
+	}
+
+	/**
+	 * Fits source array into the 1024-element output array.
+	 */
+	private static void compressToOutput(double[] source, double[] output,
+										 int firstChannel, int scaleFactor, int numValues,
+										 int compressMode, double scale) {
+		long endChannel = (long) firstChannel + ((long) Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - scaleFactor));
+		if (firstChannel < 0 || endChannel > source.length) {
+			Arrays.fill(output, 0);
+			return;
+		}
+		if (scaleFactor == Constants.SCALE_MAX) {
+			// at scale max we need to display 512 points, extend up to 1024 points by duplicating values
+			for (int i = 0; i < Constants.WINDOW_OUTPUT_SIZE; i++) {
+				double val = source[firstChannel + i] * scale;
+				output[2 * i] = val;
+				output[2 * i + 1] = val;
+			}
+		} else {
+			// compress source array (>1024 points) into 1024 points by summing/averaging/max of values in each range
+			for (int i = 0; i < OUTPUT_SIZE; i++) {
+				double val = 0;
+				int base = firstChannel + i * numValues;
+				switch (compressMode) {
+					case Constants.COMPRESS_GRAPH_MAX:
+						for (int j = 0; j < numValues; j++) {
+							val = StrictMath.max(val, source[base + j]);
+						}
+						break;
+					default: // SUM and AVERAGE both accumulate first
+						for (int j = 0; j < numValues; j++) {
+							val += source[base + j];
+						}
+						if (compressMode == Constants.COMPRESS_GRAPH_AVERAGE) {
+							val /= numValues;
+						}
+						break;
+				}
+				output[i] = val * scale;
+			}
+		}
+	}
+
+	private static double[] makeSmooth(long[] input, Calibration calibration, UIViewState view) {
+		double[] converted = new double[input.length];
+		for (int i = 0; i < input.length; i++)
+			converted[i] = input[i];
+		return makeSmooth(converted, calibration, view);
+	}
+
+	/** Savitzky-Golay smoothing when enabled, the input itself otherwise. */
+	private static double[] makeSmooth(double[] input, Calibration calibration, UIViewState view) {
+		if (!view.smooth) {
+			return input;
+		}
+
+		int smoothBasicWindow = -1 + 8 * view.smoothWindow;
+		double[] result = new double[input.length];
+		int shift_window, old_window;
+		shift_window = old_window = StrictMath.max((int) (0.3 * smoothBasicWindow), 4);
+		int channel_0 = StrictMath.max(100, calibration.toChannel(662.0));
+		double[] GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
+		double temp;
+		for (int i = 0; i < input.length; i++) {
+			shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(calibration.toChannel(662.0) / (double) channel_0)) * smoothBasicWindow), 4);
+			if (old_window != shift_window) {
+				old_window = shift_window;
+				GolayArray = AtomSpectraFindIsotope.calcSavitzkyGolayWeight(0, 3, shift_window);
+			}
+			if (i < shift_window || (i >= (input.length - shift_window))) {
+				result[i] = input[i];
+			} else {
+				temp = 0.0;
+				for (int j = i - shift_window; j <= i + shift_window; j++) {
+					temp += input[j] * GolayArray[j - (i - shift_window)];
+				}
+				result[i] = StrictMath.max(temp, 0.0);
+			}
+		}
+		return result;
+	}
+
+	private void drawSpectrum(
 			double[] fg, // foreground drawing
 			double[] back,  // background drawing
 			boolean show_back, // show background
@@ -761,8 +1017,10 @@ public class AtomSpectraShapeView extends View {
 			double cursor_X_Energy; //use energy to search the nearest isotope
 			if (isXAxisEnergyScale())
 				cursor_X_Energy = cursor_X;
+			else if (spectrumData != null)
+				cursor_X_Energy = spectrumData.foreground.getSpectrumCalibration().toEnergy((int) cursor_X);
 			else
-				cursor_X_Energy = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy((int) cursor_X);
+				cursor_X_Energy = cursor_X;
 			double deltaEnergy = cursor_X_Energy;
 			for (int i = 0; i < AtomSpectraIsotopes.isotopeLineArray.size(); i++) {
 				if (AtomSpectraIsotopes.isotopeLibrary > 0 && !AtomSpectraIsotopes.IAEAList[AtomSpectraIsotopes.isotopeLibrary - 1].isInChain(AtomSpectraIsotopes.isotopeLineArray.get(i).getName()))
@@ -821,7 +1079,7 @@ public class AtomSpectraShapeView extends View {
 		invalidate();
 	}
 
-	public void showIntervalSearch(
+	private void drawIntervalSearch(
 			double[] search_values, // array to draw
 			double[] alarm_high,
 			double[] alarm_low,
@@ -903,7 +1161,7 @@ public class AtomSpectraShapeView extends View {
 		invalidate();
 	}
 
-	public void showDoseSearch(
+	private void drawDoseSearch(
 			double[] non_compensated_values,
 			double[] compensated_values,
 			long[] history_timestamps_ms,
@@ -960,7 +1218,7 @@ public class AtomSpectraShapeView extends View {
 		invalidate();
 	}
 
-	public void showCalibration(
+	private void drawCalibration(
 			double[] calibration_values, // array to draw
 			int x_size, // number of abscissa point to be drawn
 			float x_min, // minimum value for X-scale
@@ -1007,9 +1265,11 @@ public class AtomSpectraShapeView extends View {
 				if (cal_reduced_reversed[i] > y_max) y_max = cal_reduced_reversed[i];
 				if (cal_reduced_reversed[i] < y_min) y_min = cal_reduced_reversed[i];
 			}
-			for (int i = 0; i < AtomSpectraService.newCalibration.getPointsCount(); i++) {
-				y_min = StrictMath.min(y_min, AtomSpectraService.newCalibration.getPointEnergy(i));
-				y_max = StrictMath.max(y_max, AtomSpectraService.newCalibration.getPointEnergy(i));
+			if (spectrumData != null) {
+				for (int i = 0; i < spectrumData.newCalibration.getPointsCount(); i++) {
+					y_min = StrictMath.min(y_min, spectrumData.newCalibration.getPointEnergy(i));
+					y_max = StrictMath.max(y_max, spectrumData.newCalibration.getPointEnergy(i));
+				}
 			}
 			y_max = StrictMath.max(y_max, y_min + 1);
 
@@ -1036,12 +1296,12 @@ public class AtomSpectraShapeView extends View {
 			x_min_value = 0;
 			setXAxisType(X_AXIS_POINTS);
 			y_zoom = y_zoom_factor;
-			y_max = Constants.NUM_HIST_POINTS / 2.0 - 1;
-			y_min = -(Constants.NUM_HIST_POINTS / 2.0);
+			y_max = AtomSpectraAudioSource.OSCILLOSCOPE_SAMPLE_CENTER - 1;
+			y_min = -AtomSpectraAudioSource.OSCILLOSCOPE_SAMPLE_CENTER;
 
 			double[] y_values = new double[size];
 			for (int i = 0; i < size; i++) {
-				y_values[i] = audio_data[i] - Constants.NUM_HIST_POINTS / 2.0;
+				y_values[i] = audio_data[i] - AtomSpectraAudioSource.OSCILLOSCOPE_SAMPLE_CENTER;
 			}
 
 			Shape audio_shape = getShape(y_values, y_zoom, 1, y_max, 0.5, y_min, Shape.STYLE_LINE, Color.WHITE, Color.WHITE);

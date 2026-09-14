@@ -41,23 +41,47 @@ public class PrefHelper {
     // --- Energy calibration -------------------------------------------------------------------
 
     /**
-     * The stored energy calibration. Falls back to the default linear 0..3000 keV curve when
-     * nothing is stored, and converts a legacy install (calibration points instead of polynomial
+     * Coefficients stored for one device, or null when the device has none.
+     */
+    public static double[] getDeviceCalibration(@NonNull Context context, @NonNull String deviceId) {
+        String stored = getASSharedPreferences(context).getString(Constants.CONFIG.CONF_CAL_DEVICE + deviceId, null);
+        if (stored == null || stored.isEmpty())
+            return null;
+        String[] parts = stored.split(";");
+        double[] coeffs = new double[parts.length];
+        try {
+            for (int i = 0; i < parts.length; i++)
+                coeffs[i] = Double.parseDouble(parts[i]);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return coeffs;
+    }
+
+    public static void setDeviceCalibration(@NonNull Context context, @NonNull String deviceId, @NonNull double[] coeffs) {
+        StringBuilder stored = new StringBuilder();
+        for (int i = 0; i < coeffs.length; i++) {
+            if (i > 0)
+                stored.append(';');
+            stored.append(coeffs[i]);
+        }
+        getASSharedPreferences(context).edit()
+                .putString(Constants.CONFIG.CONF_CAL_DEVICE + deviceId, stored.toString())
+                .apply();
+    }
+
+    /**
+     * The calibration that used to be shared by all devices ("program" calibration), or null when
+     * nothing is stored. Converts an older install (calibration points instead of polynomial
      * coefficients) into coefficients on first access.
      */
-    public static Calibration getCalibration(@NonNull Context context) {
+    public static Calibration getLegacyCalibration(@NonNull Context context, int channelCount) {
         SharedPreferences sp = getASSharedPreferences(context);
         int poliSize = sp.getInt(Constants.CONFIG.CONF_CAL_POLI_SIZE, -1);
-        if (poliSize == -1) {
-            // nothing stored yet: linear 0..3000 keV over the whole histogram
-            Calibration calibration = new Calibration()
-                    .addPoint(0, 0.0)
-                    .addPoint(Constants.NUM_HIST_POINTS - 1, 3000.0);
-            calibration.Calculate();
-            return calibration;
-        }
+        if (poliSize == -1)
+            return null;
 
-        Calibration calibration = new Calibration();
+        Calibration calibration = new Calibration(channelCount);
         double firstCoefficient = sp.getFloat(configCalibrationCoefficient(0), NO_COEFFICIENT);
         boolean hasLegacyPoints = sp.getInt(configCalibrationChannel(1), -1) != -1;
         if (firstCoefficient != NO_COEFFICIENT || !hasLegacyPoints) {
@@ -66,27 +90,19 @@ public class PrefHelper {
                 coeffs[i] = sp.getFloat(configCalibrationCoefficient(i), 1);
             calibration.Calculate(coeffs);
         } else {
-            migrateLegacyCalibrationPoints(sp, poliSize, calibration);
+            migrateLegacyCalibrationPoints(sp, poliSize, channelCount, calibration);
         }
         return calibration;
     }
 
-    public static int getLastCalibrationChannel(@NonNull Context context) {
-        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_LAST_CHANNEL, Constants.NUM_HIST_POINTS);
+    public static int getLastCalibrationChannel(@NonNull Context context, int defaultChannelCount) {
+        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_LAST_CHANNEL, defaultChannelCount);
     }
 
     public static void setLastCalibrationChannel(@NonNull Context context, int channel) {
         getASSharedPreferences(context).edit()
                 .putInt(Constants.CONFIG.CONF_LAST_CHANNEL, channel)
                 .apply();
-    }
-
-    /** Store both the calibration and the last calibration channel in one edit. */
-    public static void setCalibrationAndLastChannel(@NonNull Context context, @NonNull Calibration calibration, int lastChannel) {
-        SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
-        writeCalibration(editor, calibration);
-        editor.putInt(Constants.CONFIG.CONF_LAST_CHANNEL, lastChannel);
-        editor.apply();
     }
 
     private static void writeCalibration(@NonNull SharedPreferences.Editor editor, @NonNull Calibration calibration) {
@@ -101,9 +117,9 @@ public class PrefHelper {
      * Pre-coefficient installs stored the calibration as a list of (channel, energy) points. Fit
      * them once, then replace the points in preferences with the resulting coefficients.
      */
-    private static void migrateLegacyCalibrationPoints(@NonNull SharedPreferences sp, int poliSize, @NonNull Calibration calibration) {
+    private static void migrateLegacyCalibrationPoints(@NonNull SharedPreferences sp, int poliSize, int channelCount, @NonNull Calibration calibration) {
         for (int i = 1; i <= poliSize + 1; i++) {
-            int channel = sp.getInt(configCalibrationChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
+            int channel = sp.getInt(configCalibrationChannel(i), (channelCount - 1) * (i - 1) / poliSize);
             double energy = sp.getFloat(configCalibrationEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
             calibration.addPoint(channel, energy);
         }
@@ -314,13 +330,13 @@ public class PrefHelper {
     public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {
         SharedPreferences sharedPreferences = getASSharedPreferences(context);
         if (sharedPreferences == null) {
-            ToastHelper.showToast(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
+            ToastHelper.showToastAndLog(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
             return null;
         }
 
         String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
         if (workingDir == null && notifyUserIfNotSet) {
-            ToastHelper.showToast(context, context.getString(R.string.error_working_dir_not_set));
+            ToastHelper.showToastAndLog(context, context.getString(R.string.error_working_dir_not_set));
         }
 
         return workingDir;

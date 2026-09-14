@@ -92,31 +92,6 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="5sp"
-                android:layout_marginBottom="5sp"
-                android:orientation="horizontal">
-
-                <CheckBox
-                    android:id="@+id/inputSoundCheckbox"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/input_sound"
-                    android:textColor="#FFFFFFFF" />
-
-                <TextView
-                    android:id="@+id/inputSoundText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="onSelectInputSoundClick"
-                    android:text="..."
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    tools:ignore="HardcodedText" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
                 <Button
@@ -177,6 +152,41 @@
                     android:layout_weight="1"
                     android:minHeight="24dp"
                     android:onClick="onClick_maxFront_plus"
+                    android:text="@string/plus" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/decNoiseButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_noise_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/noiseText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:clickable="true"
+                    android:gravity="center"
+                    android:onClick="onClick_noise"
+                    android:text="@string/noisediscriminator"
+                    android:textColor="#FFFFFFFF" />
+
+                <Button
+                    android:id="@+id/incNoiseButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_noise_plus"
                     android:text="@string/plus" />
 
             </LinearLayout>
@@ -284,41 +294,6 @@
                     android:layout_weight="1"
                     android:minHeight="24dp"
                     android:onClick="onClick_reducedTo_plus"
-                    android:text="@string/plus" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <Button
-                    android:id="@+id/decNoiseButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_noise_minus"
-                    android:text="@string/minus" />
-
-                <TextView
-                    android:id="@+id/noiseText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_weight="80"
-                    android:clickable="true"
-                    android:gravity="center"
-                    android:onClick="onClick_noise"
-                    android:text="@string/noisediscriminator"
-                    android:textColor="#FFFFFFFF" />
-
-                <Button
-                    android:id="@+id/incNoiseButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:minHeight="24dp"
-                    android:onClick="onClick_noise_plus"
                     android:text="@string/plus" />
 
             </LinearLayout>
