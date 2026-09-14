@@ -1,24 +1,34 @@
 package org.fe57.atomspectra;
 
 /**
- * An asynchronous spectrum source: microphone, USB spectrometer or, later, a wireless device.
- * The service owns exactly one at a time.
- *
- * Control flows service -> source as method calls, data and answers flow source -> service as
- * intents. Every request returns nothing and never blocks on a device; the answer arrives as one
- * of the reply intents declared below.
- *
- * requestStart(), requestStop() and requestReset() have no success intent - success is observable
- * because data intents start, stop, or resume from a cleared baseline. Only failure is reported.
+ * An asynchronous spectrum source: microphone, USB spectrometer or wireless device.
+ * Abstraction used to unify device communication protocol related to spectrum data flow:
+ * 1. connecting to device
+ * 2. running/stopping/resetting spectrum acquisition
+ * 3. storing calibration
+ * 4. defining data format and intents for asynchronous operation
  */
 public interface SpectrumSource {
-    // op codes carried by the error intent so the service can tell which request failed
-    int OP_OPEN = 1;
+    // source type codes
+    int TYPE_NONE = 0;
+    int TYPE_AUDIO = 1;
+    int TYPE_SPECTRA_PRO = 2;
+    int TYPE_BLUZ = 3;
+
+    // status codes
+    public static final int STATUS_NONE = 0;
+    public static final int STATUS_STOPPED = 1;
+    public static final int STATUS_COLLECTING = 2;
+    public static final int STATUS_CONNECTING = 3;
+    public static final int STATUS_SAVING_SETTINGS = 4;
+    public static final int STATUS_CLOSED = 5;
+
+    // op codes
+    int OP_CONNECT = 1;
     int OP_START = 2;
     int OP_STOP = 3;
     int OP_RESET = 4;
-    int OP_STATUS = 5;
-    int OP_DEVICE_META = 6;
+    int OP_CALIBRATION_SAVE = 5;
 
     // failure reasons carried by the error intent
     int REASON_ERROR = 1;
@@ -27,33 +37,40 @@ public interface SpectrumSource {
     // +++ extras common to every reply intent +++
     String EXTRA_SOURCE_INPUT_TYPE = "org.fe57.atomspectra.EXTRA_SOURCE_INPUT_TYPE";
 
-    // +++ ACTION_INPUT_STATUS +++
-    String EXTRA_STATUS_COLLECTING = "org.fe57.atomspectra.EXTRA_STATUS_COLLECTING";
+    // +++ ACTION_SOURCE_CONNECTED +++
+    String ACTION_SOURCE_CONNECTED = "org.fe57.atomspectra.ACTION_SOURCE_CONNECTED";
+    String EXTRA_SOURCE_STATUS = "org.fe57.atomspectra.EXTRA_SOURCE_STATUS";
+    String EXTRA_SOURCE_DEVICE_ID = "org.fe57.atomspectra.EXTRA_SOURCE_DEVICE_ID";
+    String EXTRA_SOURCE_CALIBRATION_COEFFS = "org.fe57.atomspectra.EXTRA_SOURCE_CALIBRATION_COEFFS";
 
-    // +++ ACTION_INPUT_METADATA +++
-    // calibration coefficients as read from the device, null when the device has none to give
-    String EXTRA_META_CALIBRATION_COEFFS = "org.fe57.atomspectra.EXTRA_META_CALIBRATION_COEFFS";
-    String EXTRA_META_CALIBRATION_CHECKSUM_VALID = "org.fe57.atomspectra.EXTRA_META_CALIBRATION_CHECKSUM_VALID";
-    // device identification, without any input-type prefix
-    String EXTRA_META_DEVICE = "org.fe57.atomspectra.EXTRA_META_DEVICE";
+    // +++ ACTION_SOURCE_ERROR +++
+    String ACTION_SOURCE_ERROR = "org.fe57.atomspectra.ACTION_SOURCE_ERROR";
+    String EXTRA_SOURCE_ERROR_OP = "org.fe57.atomspectra.EXTRA_SOURCE_ERROR_OP";
+    String EXTRA_SOURCE_ERROR_REASON = "org.fe57.atomspectra.EXTRA_SOURCE_ERROR_REASON";
+    String EXTRA_SOURCE_ERROR_TEXT = "org.fe57.atomspectra.EXTRA_SOURCE_ERROR_TEXT";
 
-    // +++ ACTION_INPUT_ERROR +++
-    String EXTRA_ERROR_OP = "org.fe57.atomspectra.EXTRA_ERROR_OP";
-    String EXTRA_ERROR_REASON = "org.fe57.atomspectra.EXTRA_ERROR_REASON";
-    // what the failure is called in the UI; the source supplies it so the service never has to know
-    // the command grammar of any particular device
-    String EXTRA_ERROR_LABEL = "org.fe57.atomspectra.EXTRA_ERROR_LABEL";
+    // +++ ACTION_SOURCE_DISCONNECTED +++
+    String ACTION_SOURCE_DISCONNECTED = "org.fe57.atomspectra.ACTION_SOURCE_DISCONNECTED";
+    String EXTRA_SOURCE_DISCONNECT_REASON = "org.fe57.atomspectra.EXTRA_SOURCE_DISCONNECT_REASON";
 
-    // +++ ACTION_INPUT_DISCONNECTED +++
-    String EXTRA_DISCONNECT_REASON = "org.fe57.atomspectra.EXTRA_DISCONNECT_REASON";
+    // +++ ACTION_SOURCE_DATA +++
+    String ACTION_SOURCE_DATA = "org.fe57.atomspectra.ACTION_SOURCE_DATA";
+    String EXTRA_SOURCE_DATA_HISTOGRAM = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_HISTOGRAM";
+    String EXTRA_SOURCE_DATA_RECORDING_TIME = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_RECORDING_TIME";
+    String EXTRA_SOURCE_DATA_CPS = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_CPS";
 
-    // +++ ACTION_INPUT_HAS_DATA +++
-    // a report the source knows to be junk: it still updates the histogram, but the service derives
-    // no cps interval or dose rate from it
-    String EXTRA_DATA_BOOL_UNRELIABLE = "org.fe57.atomspectra.EXTRA_DATA_BOOL_UNRELIABLE";
+    // +++ ACTION_SOURCE_DATA_FRAME_SKIPPED +++
+    String ACTION_SOURCE_DATA_FRAME_SKIPPED = "org.fe57.atomspectra.ACTION_SOURCE_DATA_FRAME_SKIPPED";
+    String EXTRA_SOURCE_DATA_FRAME_SKIPPED_REASON = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_FRAME_SKIPPED_REASON";
 
-    /** Connect and hand-shake. Completes when the metadata intent lands. */
-    void requestOpen();
+    // +++ ACTION_SOURCE_CALIBRATION_SAVED +++
+    String ACTION_SOURCE_CALIBRATION_SAVED = "org.fe57.atomspectra.ACTION_SOURCE_CALIBRATION_SAVED";
+
+    /** Connect and hand-shake. Load necessary device metadata like calibration, device id etc. Success is opened intent. */
+    void requestConnect();
+
+    /** Request current data state. Success is single data intent. */
+    void requestData();
 
     /** Begin acquisition. Success is data intents starting to arrive. */
     void requestStart();
@@ -61,23 +78,29 @@ public interface SpectrumSource {
     /** Halt acquisition. Success is data intents stopping. */
     void requestStop();
 
-    /** Clear the device-side spectrum. The first report after a reset is always unreliable. */
+    /** Clear the device-side spectrum. */
     void requestReset();
 
-    /** Ask whether the source is collecting; answered by the status intent. */
-    void requestStatus();
+    /** Save calibration to device. */
+    void requestSaveCalibration(double[] coeffs);
 
-    /** Ask for calibration and device info; answered by the metadata intent. */
-    void requestDeviceMeta();
-
-    /** Release the source locally. Synchronous: nothing waits on a device answer. */
+    /** Close connection and free up all the resources, spectrum source couldn't be used after close. */
     void close();
 
-    boolean isOpened();
+    /** Source input type. */
+    int inputType();
 
-    /** One of the AtomSpectraService.INPUT_* ids. */
-    int inputTypeId();
+    /** Device status. */
+    int status();
 
-    /** Device identification for this source, without any input-type prefix. */
-    String deviceInfo();
+    /** Channel count. */
+    int channelCount();
+
+    /** Device identification for this source. */
+    String deviceId();
+
+    /** Device calibration coefficients. */
+    double[] calibration();
+
+    // TODO: add specific device stored settings abstraction, calibration is separate as it is required for a spectrum, other settings are optional
 }

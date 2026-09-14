@@ -26,7 +26,6 @@ import android.text.method.NumberKeyListener;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
-import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1153,7 +1152,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         enableGPSCheckbox.setOnClickListener(v -> {
             saveBooleanPref(((CheckBox) v).isChecked(), Constants.CONFIG.CONF_ADD_GPS_TO_FILES);
             sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
         });
     }
 
@@ -1328,7 +1326,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     // --- end misc section
 
     private void stopRecording() {
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
     }
 
     private void saveStringPref(String value, String setting) {
@@ -1454,11 +1452,11 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 finish();
             }
             if (Constants.ACTION.ACTION_USB_HAS_ANSWER.equals(action)) {
-                String id = intent.getStringExtra(AtomSpectraSerial.EXTRA_ID);
-                String data = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
+                String id = intent.getStringExtra(AtomSpectraProSource.EXTRA_ID);
+                String data = intent.getStringExtra(AtomSpectraProSource.EXTRA_RESULT);
                 if (SETTINGS_GET_INF_ID.equals(id)) {
                     if (data != null) {
-                        String val = AtomSpectraSerial.getParameter(data, "NOISE");
+                        String val = AtomSpectraProSource.getParameter(data, "NOISE");
                         if (val != null) {
                             try {
                                 usb_noise_value = Integer.parseInt(val);
@@ -1479,7 +1477,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                         }
                     }
                 } else if (SETTINGS_SET_NOISE_ID.equals(id)) {
-                    if (AtomSpectraSerial.COMMAND_RESULT_OK.equals(data)) {
+                    if (AtomSpectraProSource.COMMAND_RESULT_OK.equals(data)) {
                         updateNoiseDiscriminatorTextFromUSB();
                     }
                 }

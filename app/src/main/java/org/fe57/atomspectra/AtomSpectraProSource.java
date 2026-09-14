@@ -8,7 +8,6 @@ import android.hardware.usb.UsbManager;
 import android.os.Handler;
 import android.os.Process;
 import android.os.SystemClock;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -27,7 +26,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.zip.CRC32;
 
-public class AtomSpectraSerial implements SerialInputOutputManager.Listener, SpectrumSource {
+public class AtomSpectraProSource implements SerialInputOutputManager.Listener, SpectrumSource {
     private static final int CIRCULAR_BUFFER_SIZE = 128 * 1024; // ~2 seconds of data at max baud rate (600kbps / 8N1 = 60KB/s)
     private static final int SERIAL_MANAGER_READ_BUFFER_SIZE = 4 * 1024;
     private static final int SERIAL_MANAGER_READ_QUEUE_SIZE = 4;
@@ -37,34 +36,37 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
     public static final int USB_WAIT_DEVICE = 600;
     // number of registers in a "-cal" answer; the last one carries the device metadata
     private static final int CAL_REGISTERS = 40;
-    private static final int CAL_REGISTER_DEVICE_META = 39;
+    private static final int CAL_REGISTER_DEVICE_ID = 39;
 
     // ids of the commands this source issues on its own behalf; answers to them are routed into the
     // typed reply intents instead of the raw ACTION_USB_HAS_ANSWER channel
-    private final static String OP_ID_INF = "Source command -inf";
-    private final static String OP_ID_CAL = "Source command -cal";
-    private final static String OP_ID_MODE = "Source command -mode 0";
-    private final static String OP_ID_STA = "Source command -sta";
-    private final static String OP_ID_STO = "Source command -sto";
-    private final static String OP_ID_STT = "Source command -stt";
-    private final static String OP_ID_RST = "Source command -rst";
+    private final static String OP_ID_CHECK_FIRMWARE = "Check firmware version (-inf)";
+    private final static String OP_ID_LOAD_CALIBRATION_AND_ID = "Load calibration and serial number (-cal)";
+    private final static String OP_ID_ENABLE_SPECTROMETER_MODE = "Enable spectrometer mode (-mode 0)";
+    private final static String OP_ID_START_COLLECTING = "Start collecting (-sta)";
+    private final static String OP_ID_STOP_COLLECTING = "Stop collecting (-sto)";
+    private final static String OP_ID_CHECK_STATUS = "Check status (-stt)";
+    private final static String OP_ID_RESET_HISTOGRAM = "Reset histogram (-rst)";
+    private final static String OP_ID_LOAD_HISTOGRAM = "Load histogram (-sho)";
 
-    private UsbDevice Device;
-    private UsbSerialDriver Driver;
-    private UsbDeviceConnection Connection;
-    private UsbSerialPort Port;
-    private SerialInputOutputManager Manager;
+    private int status = SpectrumSource.STATUS_NONE;
+    private UsbDevice device;
+    private volatile String deviceId = null;
+    private UsbSerialDriver driver;
+    private UsbDeviceConnection connection;
+    private UsbSerialPort port;
+    private SerialInputOutputManager manager;
     private volatile Context context;
 
     // circular buffer for incoming data
     // head == end means empty buffer, (end + 1) % size == head means full buffer
     private final byte[] inputData = new byte[CIRCULAR_BUFFER_SIZE];
-    private volatile int inputDataHead; // first meaningful byte in inputData
-    private volatile int inputDataEnd; // first free byte in inputData
+    private volatile int inputDataHead = 0; // first meaningful byte in inputData
+    private volatile int inputDataEnd = 0; // first free byte in inputData
 
     private final Object circularBufferSync = new Object();
     private Thread processingThread = null;
-    Handler asyncTasksHandler;
+    private Handler asyncTasksHandler = null;
 
     public long[] histogram = new long[Constants.NUM_HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[Constants.NUM_HIST_POINTS];
@@ -77,14 +79,6 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
     private int cpu_load = 0;
     private long lost_impulses = 0;
     private long total_impulse_length = 0;
-
-    // device to open on the next requestOpen(); the service hands it over when the platform reports
-    // an attach, and the watchdog replaces it with whatever it re-discovers
-    private volatile UsbDevice pendingDevice = null;
-    // set by requestStart() / cleared by requestStop(): what the watchdog and the data path use to
-    // tell "the device should be sending data" from "nobody asked it to"
-    private volatile boolean collecting = false;
-    private volatile String deviceMeta = null;
 
     // HACK! when started, the device sends wrong data for 1-2 seconds as it cannot fit a full
     // spectrum into the time left before the next data packet. Reports emitted while this window is
@@ -153,105 +147,52 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
     public static final int CODE_DATA = 0x04;
 
     public final static String COMMAND_RESULT_OK = "-ok\r\n";
-    private final static String COMMAND_RESULT_OK2 = "ok\r\n";  //replace this one with COMMAND_RESULT_OK as to be wrong
+    private final static String COMMAND_RESULT_OK2 = "ok\r\n";  // legacy
     public final static String COMMAND_RESULT_ERR = "-err\r\n";
     public final static String COMMAND_RESULT_TIMEOUT = "-timeout\r\n";
     public final static String COMMAND_RESULT_OK_COLLECTING = "-ok collecting\r\n";
 
-    public final static String EXTRA_ID = "Id";
-    public final static String EXTRA_NUMBER = "Number";
-    public final static String EXTRA_COMMAND = "Command";
-
-    public final static String EXTRA_DATA_TYPE =
-            "org.fe57.atomspectra.EXTRA_DATA_TYPE";
-    public final static String EXTRA_RESULT =
-            "org.fe57.atomspectra.EXTRA_DATA_PACKET";
-    public final static String EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE =
-            "org.fe57.atomspectra.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE";
-
     //Constructor
-    public AtomSpectraSerial(Context context) {
+    public AtomSpectraProSource(Context context, UsbDevice device) {
         this.context = context;
+        this.device = device;
         asyncTasksHandler = new Handler(context.getMainLooper());
-        Manager = null;
-        Init();
     }
 
-    private void Init() {
-        Driver = null;
-        Device = null;
-        Connection = null;
-        Port = null;
-        inputDataHead = 0;
-        inputDataEnd = 0;
-        processingThread = null;
-        resetHistogramCompleteness();
-        resetErrorSuppression();
-        synchronized (syncCommand) {
-            AnswerNumber = 0;
-            Commands.clear();
-        }
-    }
-
-    public void Destroy() {
-        collecting = false;
-        cancelDataWatchdog();
-        stopProcessingThread();
-
-        if (Port != null && Port.isOpen()) {
-            try {
-                Port.close();
-            } catch (Exception ignore) {
-                //nothing
-            }
+    @Override
+    public void requestConnect() {
+        if (this.status == SpectrumSource.STATUS_CLOSED) {
+            emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, "Connecting to an already closed source");
+            return;
         }
 
-        if (Manager != null) {
-            Manager.stop();
+        // opening the port itself failed, there is no command to name
+        emitError(OP_CONNECT, REASON_ERROR, null);
+
+        if (this.isOpened()) {
+            // TODO: notify connected, report unexpected second request?
+            return;
         }
-        Manager = null;
 
-        if (asyncTasksHandler != null) {
-            asyncTasksHandler.removeCallbacksAndMessages(null);
+        this.driver = UsbSerialProber.getDefaultProber().probeDevice(this.device);
+        if (this.driver == null) {
+            // TODO: report error
+            return;
         }
-        asyncTasksHandler = null;
-
-        context = null;
-    }
-
-    //Test if device is working
-    public boolean isOpened() {
-        return (Port != null) && (Port.isOpen());
-    }
-
-    //Open the port
-    public boolean Open(@NonNull UsbDevice device) {
-        Driver = UsbSerialProber.getDefaultProber().probeDevice(device);
-        if (Driver == null) {
-            return false;
-        }
-        Device = device;
         UsbManager manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         if (manager == null) {
             AtomSpectraLog.addMessage(context, "USB connection failed: UsbManager is not available");
-            Close();
-            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
-            context.sendBroadcast(intent);
-            return false;
+            // TODO: report error
         }
         try {
             Connection = manager.openDevice(Driver.getDevice());
             if (Connection == null) {
                 AtomSpectraLog.addMessage(context, "USB connection failed: could not open device");
-                Close();
-                return false;
+                // TODO: report error
             }
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB connection failed: " + e.getMessage());
-            Close();
-            Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
-            context.sendBroadcast(intent);
-            return false;
+            // TODO: report error
         }
         Port = Driver.getPorts().get(0);
         try {
@@ -268,43 +209,75 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
             processingThread.start();
         } catch (Exception e) {
             AtomSpectraLog.addMessage(context, "USB port setup failed: " + e.getMessage());
-            Close();
             Intent intent = new Intent(Constants.ACTION.ACTION_USB_DETACHED).setPackage(Constants.PACKAGE_NAME);
             context.sendBroadcast(intent);
-            return false;
         }
-        return true;
+
+        sendTextCommand("-inf", OP_ID_CHECK_FIRMWARE);
+        sendTextCommand("-mode 0", OP_ID_ENABLE_SPECTROMETER_MODE);
+        sendTextCommand("-cal", OP_ID_LOAD_CALIBRATION_AND_ID);
+        sendTextCommand("-stt", OP_ID_CHECK_STATUS);
     }
 
-    public void Close() {
-        if (Manager != null) {
-            Manager.stop();
-        }
-        Manager = null;
 
-        if (Port != null) {
-            try {
-                Port.close();
-            } catch (Exception ignore) {
-                //nothing
-            }
-        }
 
+    @Override
+    public void close() {
+        this.status = SpectrumSource.STATUS_CLOSED;
+
+        this.cancelDataWatchdog();
+        this.stopProcessingThread();
+        this.cancelAsyncTasks();
+        this.closePort();
+        this.stopUsbManager();
+        this.reportIncompleteCommandsAsFailed();
+
+        this.context = null;
+    }
+
+    private void reportIncompleteCommandsAsFailed() {
         LinkedList<CommandCode> failedCommands = new LinkedList<>();
-        synchronized (syncCommand) {
-            while (!Commands.isEmpty()) {
-                CommandCode failed = Commands.pop();
+        synchronized (this.syncCommand) {
+            while (!this.commands.isEmpty()) {
+                CommandCode failed = this.commands.pop();
                 failedCommands.add(failed);
-                AtomSpectraLog.addMessage(context, "Serial command failed due Close() call: " + new String(failed.command));
+                AtomSpectraLog.addMessage(context, "Serial command failed due close() call: " + new String(failed.command));
             }
-            AnswerNumber = 0;
+            this.answerNumber = 0;
         }
         for (CommandCode failed : failedCommands) {
             deliverAnswer(failed, COMMAND_RESULT_ERR);
         }
+    }
 
-        stopProcessingThread();
-        Init();
+    private void stopUsbManager() {
+        if (this.manager != null) {
+            this.manager.stop();
+        }
+        this.manager = null;
+    }
+
+    private void closePort() {
+        if (this.port != null && this.port.isOpen()) {
+            try {
+                this.port.close();
+            } catch (Exception ignore) {
+                // nothing
+            }
+        }
+        this.port = null;
+    }
+
+    private void cancelAsyncTasks() {
+        if (this.asyncTasksHandler != null) {
+            this.asyncTasksHandler.removeCallbacksAndMessages(null);
+        }
+        this.asyncTasksHandler = null;
+    }
+
+    //Test if device is working
+    public boolean isOpened() {
+        return (this.port != null) && (this.port.isOpen());
     }
 
     private void resetTelemetry() {
@@ -324,39 +297,20 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
 
     // +++ SpectrumSource +++
 
-    /** Hand over the device to open on the next requestOpen(). USB-specific. */
-    public void setPendingDevice(UsbDevice device) {
-        pendingDevice = device;
-    }
 
-    @Override
-    public void requestOpen() {
-        UsbDevice device = pendingDevice;
-        if (!isOpened()) {
-            if (device == null || !Open(device)) {
-                // opening the port itself failed, there is no command to name
-                emitError(OP_OPEN, REASON_ERROR, null);
-                return;
-            }
-        }
-
-        sendTextCommand("-inf", OP_ID_INF);
-        sendTextCommand("-cal", OP_ID_CAL);
-        sendTextCommand("-mode 0", OP_ID_MODE);
-    }
 
     @Override
     public void requestStart() {
         collecting = true;
         armUnreliableDataWindow();
-        sendTextCommand("-sta", OP_ID_STA);
+        sendTextCommand("-sta", OP_ID_START_COLLECTING);
     }
 
     @Override
     public void requestStop() {
         collecting = false;
         cancelDataWatchdog();
-        sendTextCommand("-sto", OP_ID_STO);
+        sendTextCommand("-sto", OP_ID_STOP_COLLECTING);
     }
 
     // The histogram array is owned by the packet-processing thread; the actual zeroing happens on
@@ -369,19 +323,19 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
         }
 
         armUnreliableDataWindow();
-        sendTextCommand("-rst", OP_ID_RST);
+        sendTextCommand("-rst", OP_ID_RESET_HISTOGRAM);
     }
 
     @Override
     public void requestStatus() {
-        sendTextCommand("-stt", OP_ID_STT);
+        sendTextCommand("-stt", OP_ID_CHECK_STATUS);
     }
 
     // one "-cal" answer carries both the calibration and the device info; the firmware version
     // check is part of the open hand-shake and is not repeated here
     @Override
     public void requestDeviceMeta() {
-        sendTextCommand("-cal", OP_ID_CAL);
+        sendTextCommand("-cal", OP_ID_LOAD_CALIBRATION_AND_ID);
     }
 
     @Override
@@ -418,11 +372,11 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
                 .putExtra(EXTRA_SOURCE_INPUT_TYPE, inputTypeId()));
     }
 
-    private void emitError(int op, int reason, String label) {
-        broadcastReply(new Intent(Constants.ACTION.ACTION_INPUT_ERROR)
-                .putExtra(EXTRA_ERROR_OP, op)
-                .putExtra(EXTRA_ERROR_REASON, reason)
-                .putExtra(EXTRA_ERROR_LABEL, label));
+    private void emitError(int op, int reason, String text) {
+        broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_ERROR)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_OP, op)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_REASON, reason)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_TEXT, text));
     }
 
     private void emitDisconnected(int reason) {
@@ -446,17 +400,13 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
 
     /** The request an own command belongs to, or -1 for a command issued by somebody else. */
     private static int opForId(String id) {
-        if (OP_ID_INF.equals(id) || OP_ID_CAL.equals(id))
-            return OP_DEVICE_META;
-        if (OP_ID_MODE.equals(id))
-            return OP_OPEN;
-        if (OP_ID_STA.equals(id))
+        if (OP_ID_CHECK_FIRMWARE.equals(id) || OP_ID_LOAD_CALIBRATION_AND_ID.equals(id) || OP_ID_ENABLE_SPECTROMETER_MODE.equals(id) || OP_ID_CHECK_STATUS.equals(id))
+            return OP_CONNECT;
+        if (OP_ID_START_COLLECTING.equals(id))
             return OP_START;
-        if (OP_ID_STO.equals(id))
+        if (OP_ID_STOP_COLLECTING.equals(id))
             return OP_STOP;
-        if (OP_ID_STT.equals(id))
-            return OP_STATUS;
-        if (OP_ID_RST.equals(id))
+        if (OP_ID_RESET_HISTOGRAM.equals(id))
             return OP_RESET;
         return -1;
     }
@@ -559,7 +509,7 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
         }
 
         CalibrationAnswer calibration = parseCalibrationAnswer(answer);
-        deviceMeta = dataArray[CAL_REGISTER_DEVICE_META];
+        deviceMeta = dataArray[CAL_REGISTER_DEVICE_ID];
         emitMetadata(calibration == null ? null : calibration.coeffs,
                 calibration != null && calibration.checksumValid,
                 deviceMeta);
@@ -1122,8 +1072,8 @@ public class AtomSpectraSerial implements SerialInputOutputManager.Listener, Spe
 
     }
 
-    private final LinkedList<CommandCode> Commands = new LinkedList<>();
-    private long AnswerNumber = 0;
+    private final LinkedList<CommandCode> commands = new LinkedList<>();
+    private long answerNumber = 0;
     private final Object syncCommand = new Object();
 
     private boolean sendPacket() {

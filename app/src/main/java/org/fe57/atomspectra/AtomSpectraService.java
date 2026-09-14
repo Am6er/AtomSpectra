@@ -13,7 +13,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.hardware.usb.UsbDevice;
@@ -60,7 +59,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
 
 public class AtomSpectraService extends Service {
     private final static String TAG = AtomSpectraService.class.getSimpleName();
@@ -371,7 +369,7 @@ public class AtomSpectraService extends Service {
 
     private final AudioDeviceCallback audioChanged = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) ? createAudioDeviceCallback() : null;
 
-    private AtomSpectraSerial usbDevice = null;
+    private AtomSpectraProSource usbDevice = null;
 
     // The one source the service currently collects from. Null only when inputType is INPUT_NONE -
     // never merely because recording is frozen or suspended. Audio has no source object until
@@ -540,7 +538,7 @@ public class AtomSpectraService extends Service {
                 device = intent.getParcelableExtra(Constants.USB_DEVICE);
             }
             if (device != null) {
-                SystemClock.sleep(AtomSpectraSerial.USB_WAIT_DEVICE);
+                SystemClock.sleep(AtomSpectraProSource.USB_WAIT_DEVICE);
                 onUSBAttached(device);
             } else {
                 selectFallbackInput();
@@ -548,10 +546,10 @@ public class AtomSpectraService extends Service {
             }
         } else {
             UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-            UsbDevice device = AtomSpectraSerial.scanForSpectraProDevice(manager);
+            UsbDevice device = AtomSpectraProSource.scanForSpectraProDevice(manager);
             if (device != null) {
                 if (manager.hasPermission(device)) {
-                    SystemClock.sleep(AtomSpectraSerial.USB_WAIT_DEVICE);
+                    SystemClock.sleep(AtomSpectraProSource.USB_WAIT_DEVICE);
                     onUSBAttached(device);
                 } else {
                     onInputNoAccess();
@@ -800,8 +798,8 @@ public class AtomSpectraService extends Service {
             if (!isUsbCalibrationAvailable())
                 return;
             showToastInMainLooper(R.string.cal_store_usb_wait, Toast.LENGTH_SHORT);
-            String[] commands = AtomSpectraSerial.buildCalibrationCommands(
-                    calibration.getCoeffArray(AtomSpectraSerial.CALIBRATION_COEFFICIENTS));
+            String[] commands = AtomSpectraProSource.buildCalibrationCommands(
+                    calibration.getCoeffArray(AtomSpectraProSource.CALIBRATION_COEFFICIENTS));
             synchronized (calibrationStoreSync) {
                 pendingCalibrationStoreCommands.clear();
                 pendingCalibrationStoreCommands.addAll(Arrays.asList(commands));
@@ -899,7 +897,7 @@ public class AtomSpectraService extends Service {
         synchronized (calibrationStoreSync) {
             if (pendingCalibrationStoreCommands.isEmpty())
                 return;
-            if (!AtomSpectraSerial.COMMAND_RESULT_OK.equals(commandResult))
+            if (!AtomSpectraProSource.COMMAND_RESULT_OK.equals(commandResult))
                 calibrationStoreFailed = true;
             pendingCalibrationStoreCommands.remove(command);
             finished = pendingCalibrationStoreCommands.isEmpty();
@@ -1129,7 +1127,7 @@ public class AtomSpectraService extends Service {
 
         ForegroundSpectrum.setSuffix(getStringOrDefaultLocale(R.string.hist_suffix));
         BackgroundSpectrum.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
-        usbDevice = new AtomSpectraSerial(context);
+        usbDevice = new AtomSpectraProSource(context);
         sp = PrefHelper.getASSharedPreferences(this);
         sp.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
         smooth_basic_window = -1 + 8 * sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
@@ -1381,7 +1379,6 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_FREEZE_DATA);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_IMPULSE);
-        intentFilter.addAction(Constants.ACTION.ACTION_SEND_USB_COMMAND);
         intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
         intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
@@ -1414,6 +1411,7 @@ public class AtomSpectraService extends Service {
                 DeleteSpc();
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
                 // DeleteSpc() resets the spectrum to the default calibration, restore the stored one
+                // TODO: calibration should be taken from the connected device?
                 loadCalibration(Constants.CALIBRATION_STORAGE_MEMORY);
                 sendDataToUI();
                 return;
@@ -1422,19 +1420,8 @@ public class AtomSpectraService extends Service {
                 Arrays.fill(referencePulse, 0);
                 return;
             }
-            if (Constants.ACTION.ACTION_SEND_USB_COMMAND.equals(action)) {
-                if (inputType != INPUT_USB || usbDevice == null || !usbDevice.isOpened()) {
-                    return;
-                }
-                String command = intent.getStringExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA);
-                String id = intent.getStringExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID);
-                if (command != null && id != null) {
-                    usbDevice.sendTextCommand(command, id);
-                }
-                return;
-            }
             if (Constants.ACTION.ACTION_FREEZE_DATA.equals(action)) {
-                setFreeze(intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true));
+                setFreeze(intent.getBooleanExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true));
                 return;
             }
             if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
@@ -1450,13 +1437,6 @@ public class AtomSpectraService extends Service {
             }
             if (Intent.ACTION_BATTERY_LOW.equals(action) && AtomSpectraService.ForegroundSpectrum.isChanged()) {
                 saveCurrentSpectrum("battery_low");
-            }
-            if (Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY.equals(action)) {
-                // requestLocationUpdates() delivers its callbacks on the calling thread's looper, so
-                // keep registering from the main thread as before the receiver was moved
-                // TODO: re-evaluate whether this action is still needed - both senders already know
-                // the location permission state, so it may be removable after a small adaptation
-                new Handler(Looper.getMainLooper()).post(AtomSpectraService.this::checkGPS);
             }
             if (Constants.ACTION.ACTION_UPDATE_GRAPH.equals(action)) {
                 sendDataToUI();
@@ -1493,7 +1473,7 @@ public class AtomSpectraService extends Service {
                 }
                 if (device != null && usbManager != null) {
                     usbDevice.Close();
-                    SystemClock.sleep(AtomSpectraSerial.USB_WAIT_DEVICE);
+                    SystemClock.sleep(AtomSpectraProSource.USB_WAIT_DEVICE);
                     if (!usbManager.hasPermission(device)) {
                         //showToastInMainLooper("Asking permissions", Toast.LENGTH_SHORT);
                         PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
@@ -1512,13 +1492,13 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_INPUT_HAS_DATA.equals(action)) {
-                switch (intent.getIntExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, AtomSpectraSerial.CODE_NONE)) {
-                    case AtomSpectraSerial.CODE_DATA:
+                switch (intent.getIntExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, AtomSpectraProSource.CODE_NONE)) {
+                    case AtomSpectraProSource.CODE_DATA:
                         if (freeze_update_data) {
                             return;
                         }
 
-                        boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraSerial.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
+                        boolean isHistogramComplete = intent.getBooleanExtra(AtomSpectraProSource.EXTRA_DATA_BOOL_HISTOGRAM_COMPLETE, false);
                         boolean isUnreliableReport = intent.getBooleanExtra(SpectrumSource.EXTRA_DATA_BOOL_UNRELIABLE, false);
                         if (!allowPartialHistogram && !isHistogramComplete) {
                             skippedIncompleteHistogramCount++;
@@ -1601,7 +1581,7 @@ public class AtomSpectraService extends Service {
 
                         break;
 
-                    case AtomSpectraSerial.CODE_SCOPE:
+                    case AtomSpectraProSource.CODE_SCOPE:
                         //it is useless for Nano Pro
 //                        long[] scope = intent.getLongArrayExtra(EXTRA_DATA_ARRAY_LONG_SERIAL_SCOPE_COUNTS);
 //                        if(scope != null) {
@@ -1623,9 +1603,9 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_USB_HAS_ANSWER.equals(action)) {
                 // raw command channel: what is left here are the commands the service issues itself
                 // rather than through a SpectrumSource request
-                if (SERVICE_CAL_STORE_ID.equals(intent.getStringExtra(AtomSpectraSerial.EXTRA_ID))) {
-                    onDeviceCalibrationStoreAnswer(intent.getStringExtra(AtomSpectraSerial.EXTRA_COMMAND),
-                            intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT));
+                if (SERVICE_CAL_STORE_ID.equals(intent.getStringExtra(AtomSpectraProSource.EXTRA_ID))) {
+                    onDeviceCalibrationStoreAnswer(intent.getStringExtra(AtomSpectraProSource.EXTRA_COMMAND),
+                            intent.getStringExtra(AtomSpectraProSource.EXTRA_RESULT));
                 }
                 return;
             }
@@ -2941,12 +2921,11 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private void checkGPS() {
+    private void ensureGPSConfigured() {
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-        boolean wantGPS = PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
 
-        if ((hasFeatureGPS || hasFeatureNetwork) && wantGPS && AppPermissions.isLocationGranted(this)) {
+        if ((hasFeatureGPS || hasFeatureNetwork) && addGPS && AppPermissions.isLocationGranted(this)) {
             Locator.startUsingGPS();
             addGPS = Locator.hasGPS; // only stamp coordinates once a provider is actually available
             if (!Locator.hasGPS) {

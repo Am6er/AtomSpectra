@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
 import android.graphics.Color;
@@ -57,11 +56,7 @@ import org.fe57.atomspectra.AppPermissions.Capability;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -72,7 +67,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.TreeMap;
 
 public class AtomSpectra extends ComponentActivity implements OnGestureListener {
 
@@ -331,7 +325,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 inputServiceIntent.putExtra(Constants.USB_DEVICE, device);
             } else {
                 UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-                UsbDevice dev = AtomSpectraSerial.scanForSpectraProDevice(manager);
+                UsbDevice dev = AtomSpectraProSource.scanForSpectraProDevice(manager);
                 if (dev != null) {
                     if (manager.hasPermission(dev)) {
                         inputServiceIntent.putExtra(Constants.USB_DEVICE, dev);
@@ -418,7 +412,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
         startInputService();
         updateSelectedInputIndicator();
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
         ensureWorkingDirectory();
     }
 
@@ -469,7 +462,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 Context context = getContext();
                 UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
                 if ((device != null)) {
-                    if (AtomSpectraSerial.isSpectraPro(device)) {
+                    if (AtomSpectraProSource.isSpectraPro(device)) {
                         if (!usbManager.hasPermission(device)) {
                             PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
                             usbManager.requestPermission(device, pi);
@@ -991,7 +984,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                 }
                 if ((device != null)) {
-                    if (AtomSpectraSerial.isSpectraPro(device)) {
+                    if (AtomSpectraProSource.isSpectraPro(device)) {
                         UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
                         if (!usbManager.hasPermission(device)) {
                             PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(Constants.ACTION.ACTION_GET_USB_PERMISSION), mutabilityFlag);
@@ -2044,7 +2037,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 storeCalibration(Constants.CALIBRATION_STORAGE_USB);
             } else {
                 DialogHelper.showActionConfirmationDialog(this, getString(R.string.calibration_stop_before_save_device_text), () -> {
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
                     storeCalibration(Constants.CALIBRATION_STORAGE_USB);
                 });
             }
@@ -2060,7 +2053,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 loadCalibration(Constants.CALIBRATION_STORAGE_USB);
             } else {
                 DialogHelper.showActionConfirmationDialog(this, getString(R.string.calibration_stop_before_load_device_text), () -> {
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
                     loadCalibration(Constants.CALIBRATION_STORAGE_USB);
                 });
             }
@@ -2387,12 +2380,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (AtomSpectraService.getFreeze()) {
                 item.setIcon(R.drawable.menu_block);
                 item.setTitle(R.string.hist_freeze_update);
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, false).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, false).setPackage(Constants.PACKAGE_NAME));
                 ((TextView) findViewById(R.id.suffixView)).setText(AtomSpectraService.ForegroundSpectrum.getSuffix());
             } else {
                 item.setIcon(R.drawable.record);
                 item.setTitle(R.string.hist_continue_update);
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
             }
             return true;
         } else if (item.getItemId() == R.id.action_share_export) {
@@ -3742,7 +3735,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 .setTitle(getString(R.string.recording_suspended_dialog_title))
                 .setMessage(message)
                 .setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
-                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
+                    sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraProSource.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
                     dismissRecordingSuspendedDialog();
                 })
                 .setCancelable(false);
