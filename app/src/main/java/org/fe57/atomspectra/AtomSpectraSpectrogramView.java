@@ -1292,6 +1292,16 @@ public class AtomSpectraSpectrogramView extends View {
                 // energy axis render
                 int energyAxisBaseline = spgViewHeight + PADDING_TOP_PX;
                 int channelAxisBaseline = spgViewHeight + PADDING_TOP_PX + CHANNEL_AXIS_HEIGHT_PX / 2;
+                Spectrum baseSpectrum = segmentsData != null && !segmentsData.isEmpty()
+                        ? segmentsData.get(0).getBaseSpectrum()
+                        : null;
+                int baseChannelCount = baseSpectrum == null ? 0 : baseSpectrum.getDataArray().length;
+                int baseChannelBinning = baseChannelCount / AtomSpectraSpectrogramData.CHANNEL_COUNT;
+                // a base spectrum narrower than CHANNEL_COUNT cannot be mapped onto the bins,
+                // so the channel axis is left empty rather than labeled with zeros
+                boolean hasChannelAxis = baseChannelBinning >= 1;
+                int channelMajorTick = baseChannelCount / 8 * channelBinning;
+                int channelMinorTick = channelMajorTick / 4;
                 for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
                     int tickX = (colBin - colBinStart) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
 
@@ -1325,16 +1335,26 @@ public class AtomSpectraSpectrogramView extends View {
                         }
                     }
 
-                    // render ch label
-                    if (colBin % 50 == 0) {
-                        String label = colBin == 0 ? "0 ch" : String.format("%d", colBin);
-                        canvas.drawText(label, tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
-                    }
+                    // render ch label - always expressed in base spectrum (unbinned) channel numbers.
+                    // The label is the channel just past this bin's range (1024, 2048, ... 8192),
+                    // so the top channel gets a label, while the tick itself is drawn at the bin's
+                    // left edge - one column short of the boundary it names, as on the energy axis.
+                    // Bin 0 is labeled explicitly so the axis starts at 0 ch.
+                    if (hasChannelAxis) {
+                        boolean isFirstBin = colBin == 0;
+                        int channel = (colBin + 1) * channelBinning * baseChannelBinning;
+                        boolean isMajorTick = channel % channelMajorTick == 0;
+                        if (isFirstBin) {
+                            canvas.drawText("0 ch", tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
+                        } else if (isMajorTick) {
+                            canvas.drawText(String.format("%d", channel), tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
+                        }
 
-                    // render ch tick
-                    if (colBin % 10 == 0) {
-                        int tickHeight = colBin % 50 == 0 ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
-                        canvas.drawLine(tickX - 0.5f, channelAxisBaseline, tickX - 0.5f, channelAxisBaseline + tickHeight, paint);
+                        // render ch tick
+                        if (isFirstBin || isMajorTick || channel % channelMinorTick == 0) {
+                            int tickHeight = (isFirstBin || isMajorTick) ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
+                            canvas.drawLine(tickX - 0.5f, channelAxisBaseline, tickX - 0.5f, channelAxisBaseline + tickHeight, paint);
+                        }
                     }
                 }
 
