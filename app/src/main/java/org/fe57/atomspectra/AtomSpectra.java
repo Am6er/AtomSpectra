@@ -651,6 +651,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         updateRecordStatusMenu();
         updateVersionInMenu();
         updateSpectrogramMenu();
+        updateMapMenu();
 
         return true;
     }
@@ -665,6 +666,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_APP);
         intentFilter.addAction(Constants.ACTION.ACTION_AUDIO_CHANGED);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_MENU);
+        intentFilter.addAction(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED);
         intentFilter.addAction(Constants.ACTION.ACTION_GET_USB_PERMISSION);
         intentFilter.addAction(Constants.ACTION.ACTION_CALIBRATION_CHANGED);
         intentFilter.addAction(Constants.ACTION.ACTION_CALIBRATION_CHECKSUM_MISMATCH);
@@ -983,6 +985,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (Constants.ACTION.ACTION_CLOSE_APP.equals(action)) {
                 finishAndRemoveTask();
             }
+            if (Constants.ACTION.ACTION_UPDATE_GPS.equals(action)
+                    || Constants.ACTION.ACTION_SPECTROGRAM_UPDATED.equals(action)) {
+                updateMapMenu();
+            }
             if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 UsbDevice device;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1028,6 +1034,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 updateSelectedInputIndicator();
                 updateCalibrationMenu();
                 updateSpectrogramMenu();
+                updateMapMenu();
 
                 Button searchBaselineButton = findViewById(R.id.searchBaselineButton);
                 searchBaselineButton.setEnabled((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
@@ -1919,6 +1926,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return true;
         } else if (item.getItemId() == R.id.action_spectrogram_view) {
             showSpectrogramView();
+            return true;
+        } else if (item.getItemId() == R.id.action_hist_view_map) {
+            AtomSpectraMap.openSpectrumMap(this);
+            return true;
+        } else if (item.getItemId() == R.id.action_spectrogram_view_map) {
+            AtomSpectraMap.openSpectrogramMap(this);
             return true;
         } else if (item.getItemId() == R.id.action_hist_to_file) {
             Log.d(TAG, "saving file");
@@ -3046,6 +3059,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             ((TextView) findViewById(R.id.suffixView)).setText(spectrum.getSuffix());
             AtomSpectraService.recalculateInterval();
             updateCalibrationMenu();
+            updateMapMenu();
             refreshForegroundSpectrumView();
             Log.d(TAG, "Histogram is loaded successfully");
             if (showMessage) {
@@ -3664,7 +3678,18 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private void updateSpectrogramMenu() {
         if (app_menu != null) {
             app_menu.findItem(R.id.action_spectrogram_load).setEnabled(AtomSpectraService.getFreeze() && !isLoadingSpectrogram);
+            updateMapMenu();
         }
+    }
+
+    private void updateMapMenu() {
+        if (app_menu == null) {
+            return;
+        }
+        app_menu.findItem(R.id.action_hist_view_map)
+                .setEnabled(MapHelper.hasValidSpectrumLocation(AtomSpectraService.ForegroundSpectrum));
+        app_menu.findItem(R.id.action_spectrogram_view_map)
+                .setEnabled(AtomSpectraSpectrogramData.instance.hasLocatedRows());
     }
 
     private void updateVersionInMenu() {

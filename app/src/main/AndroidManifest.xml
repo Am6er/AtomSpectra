@@ -11,6 +11,7 @@
         android:name="android.hardware.location"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission
@@ -25,7 +26,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -39,12 +39,12 @@
 
     <application
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@drawable/logo_atom"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales"
         android:process=":atom_process"
         android:requestLegacyExternalStorage="true"
-        android:localeConfig="@xml/locales"
-        android:enableOnBackInvokedCallback="true"
         android:theme="@style/AppTheme">
         <activity
             android:name=".AtomSpectraStart"
@@ -56,8 +56,10 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:mimeType="text/plain" />
                 <data android:scheme="content" />
             </intent-filter>
@@ -95,41 +97,19 @@
             android:name=".AtomSpectraSpectrogram"
             android:label="@string/spectrogram_activity_title" />
         <activity
+            android:name=".AtomSpectraMap"
+            android:label="@string/map_activity_title" />
+        <activity
             android:name=".AtomSpectraLog"
             android:label="@string/log_activity_title" />
         <activity
             android:name=".AtomSpectra"
-            android:label="@string/app_name"
-            android:exported="false"
-            android:launchMode="singleTask"
             android:documentLaunchMode="intoExisting"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
             tools:ignore="RedundantLabel">
-<!--            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <action android:name="org.fe57.atomspectra.ACTION_CLOSE_APP" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter> -->
-<!--            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:mimeType="text/plain" />
-            </intent-filter> -->
-<!--            <intent-filter>
-                <action android:name="android.intent.action.BATTERY_LOW" />
-                <action android:name="android.intent.action.BATTERY_OKAY"/>
-            </intent-filter> -->
-<!--            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:mimeType="text/plain" />
-                <data android:scheme="content" />
-            </intent-filter> -->
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
@@ -140,9 +120,9 @@
         </activity>
         <activity
             android:name=".AtomSpectraSettings"
+            android:excludeFromRecents="true"
             android:label="@string/settings"
             android:screenOrientation="portrait"
-            android:excludeFromRecents="true"
             android:windowSoftInputMode="stateAlwaysHidden"
             tools:ignore="LockedOrientationActivity" />
         <activity
@@ -151,15 +131,16 @@
             android:label="@string/isotopes" />
         <activity
             android:name=".AtomSpectraFindIsotope"
+            android:excludeFromRecents="true"
             android:label="@string/isotope_search"
             android:screenOrientation="portrait"
-            android:excludeFromRecents="true"
             tools:ignore="LockedOrientationActivity" />
+
         <service
             android:name=".AtomSpectraService"
             android:enabled="true"
-            android:foregroundServiceType="specialUse|microphone|location"
             android:exported="false"
+            android:foregroundServiceType="specialUse|microphone|location"
             android:launchMode="singleInstance">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
@@ -175,7 +156,6 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.BATTERY_LOW" />
-                <!-- <action android:name="android.intent.action.BATTERY_OKAY"/> -->
             </intent-filter>
         </service>
     </application>

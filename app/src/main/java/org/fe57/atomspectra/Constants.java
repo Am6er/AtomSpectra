@@ -149,6 +149,12 @@ public class Constants {
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_USB_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
         String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
+        /** Map basemap provider id: {@code none}, {@code osm}, or {@code custom}. */
+        String CONF_MAP_TILE_PROVIDER = "map_tile_provider";
+        /** Custom tile URL template with {z}/{x}/{y} when provider is {@code custom}. */
+        String CONF_MAP_TILE_CUSTOM_URL = "map_tile_custom_url";
+        /** Optional HTML attribution for the custom tile provider. */
+        String CONF_MAP_TILE_CUSTOM_ATTRIBUTION = "map_tile_custom_attribution";
     }
 
     public interface SEARCH {
@@ -218,6 +224,8 @@ public class Constants {
         String ACTION_GET_USB_PERMISSION = "org.fe57.atomspectra.GET_USB_PERMISSION";
         String ACTION_SEND_USB_COMMAND = "org.fe57.atomspectra.SEND_USB_COMMAND";
         String ACTION_UPDATE_GPS = "org.fe57.atomspectra.SEND_GPS_COMMAND";
+        /** Map-facing device position snapshot (immutable extras). */
+        String ACTION_DEVICE_LOCATION_UPDATED = "org.fe57.atomspectra.ACTION_DEVICE_LOCATION_UPDATED";
     }
 
     public interface ACTION_PARAMETERS {
@@ -230,6 +238,12 @@ public class Constants {
         String GPS_STATUS = "Status";
         // foreground-service type bitmask computed by the activity and passed to the service
         String FGS_TYPE = "fgs_type";
+        String DEVICE_LOCATION_AVAILABLE = "device_location_available";
+        String DEVICE_LOCATION_LATITUDE = "device_location_latitude";
+        String DEVICE_LOCATION_LONGITUDE = "device_location_longitude";
+        String DEVICE_LOCATION_TIME = "device_location_time";
+        String DEVICE_LOCATION_ACCURACY = "device_location_accuracy";
+        String DEVICE_LOCATION_PROVIDER = "device_location_provider";
     }
 
     public interface GROUPS {

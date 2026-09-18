@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Atom Spectra Map</title>
+  <link rel="stylesheet" href="leaflet/leaflet.css" />
+  <link rel="stylesheet" href="map.css" />
+</head>
+<body>
+  <div id="map"></div>
+  <button id="center-location" type="button" hidden aria-label="My location" title="My location">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+    </svg>
+  </button>
+  <div id="country-label">—</div>
+  <div id="cps-legend" hidden>
+    <div class="cps-legend-title">CPS</div>
+    <div class="cps-legend-max"></div>
+    <div class="cps-legend-bar">
+      <div class="cps-legend-swatch-wrap">
+        <canvas class="swatch" aria-hidden="true"></canvas>
+        <div class="cps-legend-handle cps-legend-handle-max" role="slider" aria-label="Maximum CPS" tabindex="0"></div>
+        <div class="cps-legend-handle cps-legend-handle-min" role="slider" aria-label="Minimum CPS" tabindex="0"></div>
+      </div>
+    </div>
+    <div class="cps-legend-min"></div>
+  </div>
+  <div id="point-popup" hidden></div>
+  <script src="leaflet/leaflet.js"></script>
+  <script src="map.js"></script>
+</body>
+</html>
