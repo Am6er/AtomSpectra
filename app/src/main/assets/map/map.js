@@ -629,7 +629,26 @@
       return "—";
     }
     try {
-      return new Date(ts).toLocaleString();
+      var d = new Date(ts);
+      if (isNaN(d.getTime())) {
+        return String(ts);
+      }
+      function pad(n) {
+        return n < 10 ? "0" + n : String(n);
+      }
+      return (
+        d.getFullYear() +
+        "-" +
+        pad(d.getMonth() + 1) +
+        "-" +
+        pad(d.getDate()) +
+        " " +
+        pad(d.getHours()) +
+        ":" +
+        pad(d.getMinutes()) +
+        ":" +
+        pad(d.getSeconds())
+      );
     } catch (e) {
       return String(ts);
     }
