@@ -55,6 +55,12 @@
   // Fixed screen-pixel size for spectrum and spectrogram (not scaled by zoom).
   var TRACK_POINT_RADIUS = 10;
   var TRACK_POINT_HIT_RADIUS = 34;
+  var MAX_DRAWN_POINTS = 2500;
+  // Per-cell aggregate when decimating: "max" | "min" | "avg"
+  var DECIMATION_MODE = "max";
+  // Below this zoom, world cells shrink so zoomed-out tracks stay denser.
+  var DECIMATION_REF_ZOOM = 15;
+  var DECIMATION_MIN_CELL = 4;
   var refreshInFlight = null;
   var refreshQueued = false;
 
@@ -665,6 +671,7 @@
       this._scale = this._options.scale || buildColorScale(this._tracks);
       this._isSpectrum = !!this._options.isSpectrum;
       this._points = [];
+      this._displayPoints = [];
       this._selected = null;
       this._prepare();
     },
@@ -708,6 +715,7 @@
 
     _prepare: function () {
       this._points = [];
+      this._displayPoints = [];
       for (var t = 0; t < this._tracks.length; t++) {
         var track = this._tracks[t];
         var prepared = [];
@@ -734,15 +742,144 @@
       }
     },
 
-    _projectAll: function (topLeft) {
+    _rebuildDisplayPoints: function (topLeft) {
+      var mapObj = this._map;
+      var size = mapObj.getSize();
+      var pad = TRACK_POINT_RADIUS + TRACK_POINT_STROKE_OUTER_WIDTH + 8;
+      var minX = -pad;
+      var minY = -pad;
+      var maxX = size.x + pad;
+      var maxY = size.y + pad;
+
+      var mapBounds = mapObj.getBounds();
+      var wrapsLng = mapBounds.getWest() > mapBounds.getEast();
+      var sw = mapObj.containerPointToLatLng(L.point(minX, maxY));
+      var ne = mapObj.containerPointToLatLng(L.point(maxX, minY));
+      var minLat = Math.min(sw.lat, ne.lat);
+      var maxLat = Math.max(sw.lat, ne.lat);
+      var minLon = Math.min(sw.lng, ne.lng);
+      var maxLon = Math.max(sw.lng, ne.lng);
+
+      // World-pixel grid at current zoom: pan-stable (unlike container bins).
+      var zoom = mapObj.getZoom();
+      // Prefer denser sampling when zoomed out (track compresses on screen).
+      // At/above DECIMATION_REF_ZOOM, cells stay ~point diameter; below that they shrink.
+      var cellSize =
+        2 *
+        TRACK_POINT_RADIUS *
+        Math.pow(2, Math.min(0, zoom - DECIMATION_REF_ZOOM));
+      cellSize = Math.max(DECIMATION_MIN_CELL, Math.ceil(cellSize));
+
+      var mode = DECIMATION_MODE;
+      var isAvg = mode === "avg";
+      var isMin = mode === "min";
+
+      var visible = [];
       for (var t = 0; t < this._points.length; t++) {
         var track = this._points[t];
         for (var i = 0; i < track.length; i++) {
-          var lp = this._map.latLngToLayerPoint(track[i].latlng);
-          track[i].x = lp.x - topLeft.x;
-          track[i].y = lp.y - topLeft.y;
+          var pt = track[i];
+          if (
+            !wrapsLng &&
+            (pt.lat < minLat ||
+              pt.lat > maxLat ||
+              pt.lon < minLon ||
+              pt.lon > maxLon)
+          ) {
+            continue;
+          }
+          var lp = mapObj.latLngToLayerPoint(pt.latlng);
+          var px = lp.x - topLeft.x;
+          var py = lp.y - topLeft.y;
+          if (px < minX || px > maxX || py < minY || py > maxY) {
+            continue;
+          }
+          pt.x = px;
+          pt.y = py;
+          var world = mapObj.project(pt.latlng, zoom);
+          visible.push({ pt: pt, wx: world.x, wy: world.y });
         }
       }
+
+      function binVisible(sizePx) {
+        var cells = Object.create(null);
+        var count = 0;
+        for (var v = 0; v < visible.length; v++) {
+          var item = visible[v];
+          var vp = item.pt;
+          var cx = Math.floor(item.wx / sizePx);
+          var cy = Math.floor(item.wy / sizePx);
+          var key = cx + ":" + cy;
+          var cell = cells[key];
+          if (isAvg) {
+            if (!cell) {
+              cells[key] = {
+                sumCps: vp.cps,
+                sumX: vp.x,
+                sumY: vp.y,
+                count: 1,
+              };
+              count += 1;
+            } else {
+              cell.sumCps += vp.cps;
+              cell.sumX += vp.x;
+              cell.sumY += vp.y;
+              cell.count += 1;
+            }
+          } else if (!cell) {
+            cells[key] = vp;
+            count += 1;
+          } else if (isMin) {
+            if (vp.cps < cell.cps) {
+              cells[key] = vp;
+            }
+          } else if (vp.cps > cell.cps) {
+            cells[key] = vp;
+          }
+        }
+        return { cells: cells, count: count };
+      }
+
+      var binned = binVisible(cellSize);
+      // Cap draw count without forcing large cells when the track is sparse on screen.
+      if (binned.count > MAX_DRAWN_POINTS) {
+        cellSize = Math.ceil(
+          cellSize * Math.sqrt(binned.count / MAX_DRAWN_POINTS)
+        );
+        binned = binVisible(cellSize);
+      }
+
+      var cells = binned.cells;
+      var display = [];
+      if (isAvg) {
+        for (var avgKey in cells) {
+          if (!Object.prototype.hasOwnProperty.call(cells, avgKey)) {
+            continue;
+          }
+          var agg = cells[avgKey];
+          var ax = agg.sumX / agg.count;
+          var ay = agg.sumY / agg.count;
+          var avgCps = agg.sumCps / agg.count;
+          var avgLl = mapObj.containerPointToLatLng(L.point(ax, ay));
+          display.push({
+            lon: avgLl.lng,
+            lat: avgLl.lat,
+            cps: avgCps,
+            ts: 0,
+            x: ax,
+            y: ay,
+            latlng: avgLl,
+          });
+        }
+      } else {
+        for (var keyOut in cells) {
+          if (Object.prototype.hasOwnProperty.call(cells, keyOut)) {
+            display.push(cells[keyOut]);
+          }
+        }
+      }
+
+      this._displayPoints = display;
     },
 
     _reset: function () {
@@ -759,7 +896,7 @@
       if (this._canvas.height !== size.y) {
         this._canvas.height = size.y;
       }
-      this._projectAll(topLeft);
+      this._rebuildDisplayPoints(topLeft);
       this._draw();
     },
 
@@ -768,34 +905,22 @@
       var size = this._map.getSize();
       ctx.clearRect(0, 0, size.x, size.y);
 
-      var pad = TRACK_POINT_RADIUS + TRACK_POINT_STROKE_OUTER_WIDTH + 8;
-      var minX = -pad;
-      var minY = -pad;
-      var maxX = size.x + pad;
-      var maxY = size.y + pad;
-
-      for (var t = 0; t < this._points.length; t++) {
-        var track = this._points[t];
-        for (var j = 0; j < track.length; j++) {
-          var px = track[j].x;
-          var py = track[j].y;
-          if (px < minX || px > maxX || py < minY || py > maxY) {
-            continue;
-          }
-          ctx.beginPath();
-          ctx.fillStyle = this._isSpectrum
-            ? "rgba(192, 57, 43, " + TRACK_POINT_FILL_ALPHA + ")"
-            : this._scale.colorFor(track[j].cps);
-          ctx.arc(px, py, TRACK_POINT_RADIUS, 0, Math.PI * 2);
-          ctx.fill();
-          if (track[j] === this._selected) {
-            ctx.lineWidth = TRACK_POINT_STROKE_OUTER_WIDTH;
-            ctx.strokeStyle = TRACK_POINT_STROKE_OUTER;
-            ctx.stroke();
-            ctx.lineWidth = TRACK_POINT_STROKE_WIDTH;
-            ctx.strokeStyle = TRACK_POINT_STROKE;
-            ctx.stroke();
-          }
+      var pts = this._displayPoints;
+      for (var j = 0; j < pts.length; j++) {
+        var pt = pts[j];
+        ctx.beginPath();
+        ctx.fillStyle = this._isSpectrum
+          ? "rgba(192, 57, 43, " + TRACK_POINT_FILL_ALPHA + ")"
+          : this._scale.colorFor(pt.cps);
+        ctx.arc(pt.x, pt.y, TRACK_POINT_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+        if (pt === this._selected) {
+          ctx.lineWidth = TRACK_POINT_STROKE_OUTER_WIDTH;
+          ctx.strokeStyle = TRACK_POINT_STROKE_OUTER;
+          ctx.stroke();
+          ctx.lineWidth = TRACK_POINT_STROKE_WIDTH;
+          ctx.strokeStyle = TRACK_POINT_STROKE;
+          ctx.stroke();
         }
       }
     },
@@ -807,16 +932,14 @@
       var click = this._map.latLngToContainerPoint(e.latlng);
       var best = null;
       var bestDist = TRACK_POINT_HIT_RADIUS;
-      for (var t = 0; t < this._points.length; t++) {
-        var track = this._points[t];
-        for (var i = 0; i < track.length; i++) {
-          var dx = track[i].x - click.x;
-          var dy = track[i].y - click.y;
-          var d = Math.sqrt(dx * dx + dy * dy);
-          if (d < bestDist) {
-            bestDist = d;
-            best = track[i];
-          }
+      var pts = this._displayPoints;
+      for (var i = 0; i < pts.length; i++) {
+        var dx = pts[i].x - click.x;
+        var dy = pts[i].y - click.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < bestDist) {
+          bestDist = d;
+          best = pts[i];
         }
       }
       if (!best) {
