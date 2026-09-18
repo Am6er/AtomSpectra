@@ -347,7 +347,8 @@ public class SpectrumFileAS extends SpectrumFile {
                 if (delta == null) {
                     break;
                 }
-                target.addDelta(delta.channels, delta.duration, delta.date);
+                target.addDelta(delta.channels, delta.duration, delta.date,
+                        delta.latitude, delta.longitude);
 
                 if (target.rowCount() > 0 && target.rowCount() % 50 == 0) {
                     onDeltasLoaded.accept(target.rowCount());
@@ -512,11 +513,10 @@ public class SpectrumFileAS extends SpectrumFile {
             throw new InvalidParameterException(String.format("Unable to parse delta date: %s", dateStr));
         }
 
-        // skip lat/lon as those values not used at the time (slightly speeds up parsing)
-        // double latitude = Double.parseDouble(fr.readLine());
-        // double longitude = Double.parseDouble(fr.readLine());
-        buffer.readLine();
-        buffer.readLine();
+        String latStr = buffer.readLine();
+        double latitude = MapHelper.parseCoordinate(latStr, "latitude");
+        String lonStr = buffer.readLine();
+        double longitude = MapHelper.parseCoordinate(lonStr, "longitude");
 
         String durationStr = buffer.readLine();
         double duration;
@@ -551,7 +551,7 @@ public class SpectrumFileAS extends SpectrumFile {
             channels[i / channelBinning] = summ;
         }
 
-        return new SpectrumDelta(duration, channels, date);
+        return new SpectrumDelta(duration, channels, date, latitude, longitude);
     }
 
     private void skipNextDelta(BufferedReader buffer) throws IOException {
@@ -583,18 +583,24 @@ public class SpectrumFileAS extends SpectrumFile {
     }
 
     private static class SpectrumDelta {
-        public final double duration; // s
-        public final long[] channels; // spectrum channels
+        public final double duration; // seconds
+        public final long[] channels; // spectrum channels in counts
 
-        public final long date; // date
+        public final long date; // unix timestamp in seconds
+        public final double latitude; // degrees
+        public final double longitude; // degrees
 
         private SpectrumDelta(
                 double duration,
                 long[] channels,
-                long date) {
+                long date,
+                double latitude,
+                double longitude) {
             this.duration = duration;
             this.channels = channels;
             this.date = date;
+            this.latitude = latitude;
+            this.longitude = longitude;
         }
     }
 }

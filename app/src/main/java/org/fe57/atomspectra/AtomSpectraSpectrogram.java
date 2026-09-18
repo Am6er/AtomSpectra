@@ -17,6 +17,7 @@ import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -62,6 +63,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     private GestureDetector gestureDetector;
     private ScaleGestureDetector scaleGestureDetector;
+    private Menu optionsMenu;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -221,12 +223,40 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.atom_spectra_spectrogram, menu);
+        optionsMenu = menu;
+        updateMapMenu();
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        updateMapMenu();
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
         }
+        if (item.getItemId() == R.id.action_spectrogram_view_map) {
+            AtomSpectraMap.openSpectrogramMap(this);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateMapMenu() {
+        if (optionsMenu == null) {
+            return;
+        }
+        MenuItem mapItem = optionsMenu.findItem(R.id.action_spectrogram_view_map);
+        if (mapItem != null) {
+            mapItem.setEnabled(AtomSpectraSpectrogramData.instance.hasLocatedRows());
+        }
     }
 
     private final BroadcastReceiver mDataUpdateReceiver = new BroadcastReceiver() {
@@ -239,6 +269,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             if (Constants.ACTION.ACTION_SPECTROGRAM_UPDATED.equals(action)) {
                 updateSpectrogram(false);
+                updateMapMenu();
             }
         }
 

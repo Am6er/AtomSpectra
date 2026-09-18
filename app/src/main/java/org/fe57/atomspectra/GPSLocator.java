@@ -159,10 +159,7 @@ public class GPSLocator implements LocationListener {
             locationGPS = null;
             location = null;
         }
-//        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_GPS)
-//                .putExtra(Constants.ACTION_PARAMETERS.GPS_LATITUDE, latitude)
-//                .putExtra(Constants.ACTION_PARAMETERS.GPS_LONGITUDE, longitude)
-//                .putExtra(Constants.ACTION_PARAMETERS.GPS_TIME, gpsTime));
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
 
     @Override
@@ -176,10 +173,7 @@ public class GPSLocator implements LocationListener {
         if (!hasGPS) {
             location = null;
         }
-//        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_GPS)
-//                .putExtra(Constants.ACTION_PARAMETERS.GPS_LATITUDE, latitude)
-//                .putExtra(Constants.ACTION_PARAMETERS.GPS_LONGITUDE, longitude)
-//                .putExtra(Constants.ACTION_PARAMETERS.GPS_TIME, gpsTime));
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
 
     public double getLatitude() {
@@ -208,6 +202,7 @@ public class GPSLocator implements LocationListener {
         location = null;
         locationGPS = null;
         locationNetwork = null;
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
 
     public void startUsingGPS(){

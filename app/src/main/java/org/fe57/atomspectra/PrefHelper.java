@@ -325,4 +325,42 @@ public class PrefHelper {
 
         return workingDir;
     }
+
+    @NonNull
+    public static String getMapTileProviderId(@NonNull Context context) {
+        String id = getASSharedPreferences(context).getString(
+                Constants.CONFIG.CONF_MAP_TILE_PROVIDER, MapTileProviders.DEFAULT_PROVIDER_ID);
+        return id != null ? id : MapTileProviders.DEFAULT_PROVIDER_ID;
+    }
+
+    public static void setMapTileProviderId(@NonNull Context context, @NonNull String providerId) {
+        getASSharedPreferences(context).edit()
+                .putString(Constants.CONFIG.CONF_MAP_TILE_PROVIDER, providerId)
+                .apply();
+    }
+
+    @NonNull
+    public static String getMapTileCustomUrl(@NonNull Context context) {
+        String url = getASSharedPreferences(context).getString(Constants.CONFIG.CONF_MAP_TILE_CUSTOM_URL, "");
+        return url != null ? url : "";
+    }
+
+    public static void setMapTileCustomUrl(@NonNull Context context, @NonNull String url) {
+        getASSharedPreferences(context).edit()
+                .putString(Constants.CONFIG.CONF_MAP_TILE_CUSTOM_URL, url)
+                .apply();
+    }
+
+    @NonNull
+    public static String getMapTileCustomAttribution(@NonNull Context context) {
+        String attribution = getASSharedPreferences(context)
+                .getString(Constants.CONFIG.CONF_MAP_TILE_CUSTOM_ATTRIBUTION, "");
+        return attribution != null ? attribution : "";
+    }
+
+    public static void setMapTileCustomAttribution(@NonNull Context context, @NonNull String attribution) {
+        getASSharedPreferences(context).edit()
+                .putString(Constants.CONFIG.CONF_MAP_TILE_CUSTOM_ATTRIBUTION, attribution)
+                .apply();
+    }
 }

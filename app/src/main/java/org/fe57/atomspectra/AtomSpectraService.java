@@ -385,6 +385,21 @@ public class AtomSpectraService extends Service {
 
     private GPSLocator Locator = null;
 
+    private static volatile DeviceLocationSnapshot deviceLocationSnapshot =
+            DeviceLocationSnapshot.UNAVAILABLE;
+
+    /** Immutable copy of the latest map-facing device position. */
+    @NonNull
+    public static DeviceLocationSnapshot getDeviceLocationSnapshot() {
+        return deviceLocationSnapshot;
+    }
+
+    private void publishDeviceLocationSnapshot() {
+        DeviceLocationSnapshot snapshot = DeviceLocationSnapshot.capture(this, Locator);
+        deviceLocationSnapshot = snapshot;
+        sendBroadcast(snapshot.toBroadcastIntent());
+    }
+
     public static AlarmBaseline getIntervalSearchAlarmBaseline() {
         return intervalSearchAlarmBaseline;
     }
@@ -1093,6 +1108,7 @@ public class AtomSpectraService extends Service {
                 }
             }
         }
+        publishDeviceLocationSnapshot();
 
         ForegroundSpectrum.setSuffix(getStringOrDefaultLocale(R.string.hist_suffix));
         BackgroundSpectrum.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
@@ -1432,6 +1448,7 @@ public class AtomSpectraService extends Service {
                 if (!freeze_update_data) {
                     ForegroundSpectrum.setLocation(Locator.getLocation()).updateComments();
                 }
+                publishDeviceLocationSnapshot();
             }
             if (Constants.ACTION.ACTION_USB_ATTACHED.equals(action)) {
                 UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
@@ -3064,6 +3081,7 @@ public class AtomSpectraService extends Service {
             Locator.stopUsingGPS();
             addGPS = false;
         }
+        publishDeviceLocationSnapshot();
     }
 
     // sends intent with dose/count rate etc. to AtomSwift app

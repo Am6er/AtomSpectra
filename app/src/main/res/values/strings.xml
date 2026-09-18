@@ -18,6 +18,7 @@
     <string name="settings_atomswift_integration">AtomSwift Integration</string>
     <string name="settings_search_isotopes">Search Isotopes</string>
     <string name="settings_files">Files</string>
+    <string name="settings_maps">Maps</string>
     <string name="settings_miscellaneous">Miscellaneous</string>
     <string name="settings_spg_midnight_reset">Create a new spectrogram file at midnight</string>
 
@@ -529,6 +530,14 @@
     <string name="spectrogram_loading_dialog_message">Wait until loading complete. Rows loaded: %1$d…</string>
     <string name="spectrogram_loading_dialog_stop">Stop and view loaded</string>
     <string name="spectrogram_view">View</string>
+    <string name="spectrogram_view_map">View on map</string>
+    <string name="hist_view_map">View on map</string>
+    <string name="map_activity_title">Atom Spectra Map</string>
+    <string name="map_center_location">My location</string>
+    <string name="map_tile_basemap">Map basemap</string>
+    <string name="map_tile_provider_none">None (offline outlines)</string>
+    <string name="map_tile_provider_osm">OpenStreetMap</string>
+    <string name="map_tile_provider_custom">Custom URL</string>
     <string name="spectrogram_row_count">Rows: %1$d</string>
     <string name="spectrogram_gap_label">gap: %1$s</string>
     <string name="spectrogram_gap_duration_days_hours">%1$dd %2$dh</string>

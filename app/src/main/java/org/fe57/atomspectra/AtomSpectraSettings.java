@@ -149,6 +149,10 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         updateFilenamePatternText();
         // --- end files section
 
+        // --- maps section
+        updateMapTileProviderText();
+        // --- end maps section
+
         // --- misc section
         updateLocaleText();
         // --- end misc section
@@ -1155,6 +1159,28 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
             sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
             sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
         });
+    }
+
+    private void updateMapTileProviderText() {
+        TextView label = findViewById(R.id.mapTileProviderText);
+        String providerId = PrefHelper.getMapTileProviderId(this);
+        label.setText(getString(R.string.map_tile_basemap) + ": " + MapTileProviders.displayName(this, providerId));
+    }
+
+    public void onClick_map_tile_provider_plus(View v) {
+        cycleMapTileProvider(1);
+    }
+
+    public void onClick_map_tile_provider_minus(View v) {
+        cycleMapTileProvider(-1);
+    }
+
+    private void cycleMapTileProvider(int delta) {
+        int index = MapTileProviders.indexOfProvider(PrefHelper.getMapTileProviderId(this));
+        int count = MapTileProviders.SETTINGS_PROVIDER_IDS.length;
+        index = (index + delta + count) % count;
+        PrefHelper.setMapTileProviderId(this, MapTileProviders.SETTINGS_PROVIDER_IDS[index]);
+        updateMapTileProviderText();
     }
 
     // Audio-processing settings are only useful with a microphone-interface spectrometer; without

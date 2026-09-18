@@ -18,6 +18,7 @@
     <string name="settings_atomswift_integration">AtomSwift интеграция</string>
     <string name="settings_search_isotopes">Поиск изотопов</string>
     <string name="settings_files">Файлы</string>
+    <string name="settings_maps">Карты</string>
     <string name="settings_miscellaneous">Прочее</string>
     <string name="settings_spg_midnight_reset">Создавать новый файл спектрограммы в полночь</string>
 
@@ -529,6 +530,14 @@
     <string name="spectrogram_loading_dialog_message">Дождитесь окончания загрузки. Строк загружено: %1$d…</string>
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
+    <string name="spectrogram_view_map">Показать на карте</string>
+    <string name="hist_view_map">Показать на карте</string>
+    <string name="map_activity_title">Atom Spectra Карта</string>
+    <string name="map_center_location">Моё местоположение</string>
+    <string name="map_tile_basemap">Подложка карты</string>
+    <string name="map_tile_provider_none">Нет (только контуры)</string>
+    <string name="map_tile_provider_osm">OpenStreetMap</string>
+    <string name="map_tile_provider_custom">Свой URL</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
     <string name="spectrogram_gap_label">пропуск: %1$s</string>
     <string name="spectrogram_gap_duration_days_hours">%1$dд %2$dч</string>

@@ -5,7 +5,6 @@ import android.net.Uri;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class AtomSpectraSpectrogramData {
@@ -23,6 +22,7 @@ public class AtomSpectraSpectrogramData {
         private final ArrayList<float[]> spectrogram = new ArrayList<>();
         private final ArrayList<Long> timestamps = new ArrayList<>();
         private final ArrayList<Float> durations = new ArrayList<>();
+        private final ArrayList<MapPoint> mapPoints = new ArrayList<>();
         // Count of rows evicted from the front of this segment's in-memory arrays via
         // MAX_ROWS ring-buffer truncation. In-memory row 0 corresponds to file-local delta
         // index evictedRowCount, not 0, once eviction has happened - callers translating an
@@ -116,11 +116,15 @@ public class AtomSpectraSpectrogramData {
         long[] channels = delta.getDataArray();
         double duration = delta.getRealSpectrumTime();
         long timestamp = delta.getSpectrumDate();
-        
-        this.addDelta(channels, duration, timestamp);
+        this.addDelta(channels, duration, timestamp, delta.getLatitude(), delta.getLongitude());
     }
 
     public void addDelta(long[] channels, double duration, long timestamp) {
+        this.addDelta(channels, duration, timestamp, 0, 0);
+    }
+
+    public void addDelta(long[] channels, double duration, long timestamp,
+                         double latitude, double longitude) {
         if (duration <= 0) {
             duration = 1;
         }
@@ -131,14 +135,19 @@ public class AtomSpectraSpectrogramData {
         }
 
         float[] binnedCpsData = new float[CHANNEL_COUNT];
+        float totalCps = 0f;
         for (int i = 0; i < channels.length; i += channelBinning) {
             long summ = 0;
             for (int j = 0; j < channelBinning && (i + j) < channels.length; j++) {
                 summ += channels[i + j];
             }
 
-            binnedCpsData[i / channelBinning] = (float) (summ / duration);
+            float binCps = (float) (summ / duration);
+            binnedCpsData[i / channelBinning] = binCps;
+            totalCps += binCps;
         }
+
+        MapPoint mapPoint = new MapPoint(latitude, longitude, totalCps, timestamp);
 
         synchronized (spectrogramSync) {
             Segment current = lastSegment();
@@ -149,6 +158,7 @@ public class AtomSpectraSpectrogramData {
             current.spectrogram.add(binnedCpsData);
             current.durations.add((float) duration);
             current.timestamps.add(timestamp);
+            current.mapPoints.add(mapPoint);
 
             if (this.rowCountLocked() > MAX_ROWS) {
                 removeOldestRowLocked();
@@ -164,6 +174,7 @@ public class AtomSpectraSpectrogramData {
         oldest.spectrogram.remove(0);
         oldest.durations.remove(0);
         oldest.timestamps.remove(0);
+        oldest.mapPoints.remove(0);
         oldest.evictedRowCount++;
 
         if (oldest.rowCount() == 0 && segments.size() > 1) {
@@ -212,6 +223,19 @@ public class AtomSpectraSpectrogramData {
             return new ArrayList<>(segment.durations);
         }
 
+        public ArrayList<MapPoint> getMapPoints() {
+            return new ArrayList<>(segment.mapPoints);
+        }
+
+        public boolean hasValidMapPoints() {
+            for (MapPoint point : segment.mapPoints) {
+                if (MapHelper.isValidLocation(point.latitude, point.longitude)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public Spectrum getBaseSpectrum() {
             return this.segment.baseSpectrum;
         }
@@ -245,6 +269,70 @@ public class AtomSpectraSpectrogramData {
             }
 
             return result;
+        }
+    }
+
+    /** True if any retained spectrogram row has usable map coordinates. */
+    public boolean hasLocatedRows() {
+        synchronized (spectrogramSync) {
+            for (Segment segment : segments) {
+                for (MapPoint point : segment.mapPoints) {
+                    if (MapHelper.isValidLocation(point.latitude, point.longitude)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Immutable map track snapshot for the map activity. Chronological runs of valid
+     * points only; a new run starts at each spectrogram segment boundary and after any
+     * row without a valid location.
+     */
+    public MapTrackSnapshot getMapSnapshot() {
+        synchronized (spectrogramSync) {
+            List<List<MapPoint>> tracks = new ArrayList<>();
+            List<MapPoint> currentTrack = null;
+
+            for (Segment segment : segments) {
+                // Segment boundaries always break the track.
+                currentTrack = null;
+                for (MapPoint point : segment.mapPoints) {
+                    if (!MapHelper.isValidLocation(point.latitude, point.longitude)) {
+                        currentTrack = null;
+                        continue;
+                    }
+                    if (currentTrack == null) {
+                        currentTrack = new ArrayList<>();
+                        tracks.add(currentTrack);
+                    }
+                    currentTrack.add(point);
+                }
+            }
+
+            return new MapTrackSnapshot(recordingId, tracks);
+        }
+    }
+
+    /** Immutable spectrogram map payload: recording id plus chronological track runs. */
+    public static final class MapTrackSnapshot {
+        public final String recordingId;
+        /** Each inner list is one uninterrupted run of valid {@link MapPoint}s. */
+        public final List<List<MapPoint>> tracks;
+
+        private MapTrackSnapshot(String recordingId, List<List<MapPoint>> tracks) {
+            this.recordingId = recordingId;
+            List<List<MapPoint>> frozenTracks = new ArrayList<>(tracks.size());
+            for (List<MapPoint> track : tracks) {
+                frozenTracks.add(Collections.unmodifiableList(new ArrayList<>(track)));
+            }
+            this.tracks = Collections.unmodifiableList(frozenTracks);
+        }
+
+        public boolean isEmpty() {
+            return tracks.isEmpty();
         }
     }
 

@@ -80,6 +80,12 @@
                 android:icon="@drawable/menu_smooth"
                 android:orderInCategory="207"
                 android:title="@string/hist_smooth" />
+            <item
+                android:id="@+id/action_hist_view_map"
+                android:enabled="false"
+                android:icon="@drawable/menu_set_as"
+                android:orderInCategory="208"
+                android:title="@string/hist_view_map" />
         </menu>
     </item>
     <item
@@ -150,6 +156,12 @@
                 android:icon="@drawable/record"
                 android:orderInCategory="402"
                 android:title="@string/spectrogram_view" />
+            <item
+                android:id="@+id/action_spectrogram_view_map"
+                android:enabled="false"
+                android:icon="@drawable/menu_set_as"
+                android:orderInCategory="403"
+                android:title="@string/spectrogram_view_map" />
         </menu>
     </item>
     <item
