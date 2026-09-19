@@ -30,12 +30,14 @@
   var deviceLatLng = null;
   var countryLabelEl = document.getElementById("country-label");
   var legendEl = document.getElementById("cps-legend");
+  var legendColorbarEl = legendEl.querySelector(".cps-legend-colorbar");
   var legendMinEl = legendEl.querySelector(".cps-legend-min");
   var legendMaxEl = legendEl.querySelector(".cps-legend-max");
   var legendSwatchWrapEl = legendEl.querySelector(".cps-legend-swatch-wrap");
   var legendSwatchEl = legendEl.querySelector(".swatch");
   var legendHandleMinEl = legendEl.querySelector(".cps-legend-handle-min");
   var legendHandleMaxEl = legendEl.querySelector(".cps-legend-handle-max");
+  var decimationModeBtn = document.getElementById("decimation-mode");
   var popupEl = document.getElementById("point-popup");
   var centerBtn = document.getElementById("center-location");
   var measurementFocus = null; // { lat, lon } for country label preference
@@ -56,11 +58,14 @@
   var TRACK_POINT_RADIUS = 10;
   var TRACK_POINT_HIT_RADIUS = 34;
   var MAX_DRAWN_POINTS = 2500;
+  var DECIMATION_MODES = ["max", "min", "avg"];
   // Per-cell aggregate when decimating: "max" | "min" | "avg"
   var DECIMATION_MODE = "max";
   // Below this zoom, world cells shrink so zoomed-out tracks stay denser.
   var DECIMATION_REF_ZOOM = 15;
-  var DECIMATION_MIN_CELL = 4;
+  // Base world cell at/above REF_ZOOM (~point radius → ~2x denser than diameter).
+  var DECIMATION_BASE_CELL = TRACK_POINT_RADIUS;
+  var DECIMATION_MIN_CELL = 2;
   var refreshInFlight = null;
   var refreshQueued = false;
 
@@ -434,17 +439,51 @@
   }
 
   function updateLegend(scale, isSpectrum) {
-    if (isSpectrum || !scale) {
+    if (!scale) {
       legendEl.hidden = true;
       activeColorScale = null;
       return;
     }
-    activeColorScale = scale;
     legendEl.hidden = false;
+    syncDecimationModeButton();
+    if (isSpectrum) {
+      legendColorbarEl.hidden = true;
+      activeColorScale = null;
+      return;
+    }
+    legendColorbarEl.hidden = false;
+    activeColorScale = scale;
     legendMinEl.textContent = formatLegendCps(scale.minCps);
     legendMaxEl.textContent = formatLegendCps(scale.maxCps);
     paintLegendSwatch();
     positionLegendHandles();
+  }
+
+  function syncDecimationModeButton() {
+    if (!decimationModeBtn) {
+      return;
+    }
+    decimationModeBtn.textContent = DECIMATION_MODE;
+    decimationModeBtn.setAttribute(
+      "title",
+      "Decimation: " + DECIMATION_MODE + " (tap to cycle)"
+    );
+    decimationModeBtn.setAttribute(
+      "aria-label",
+      "Decimation mode " + DECIMATION_MODE
+    );
+  }
+
+  function cycleDecimationMode() {
+    var idx = DECIMATION_MODES.indexOf(DECIMATION_MODE);
+    if (idx < 0) {
+      idx = 0;
+    }
+    DECIMATION_MODE = DECIMATION_MODES[(idx + 1) % DECIMATION_MODES.length];
+    syncDecimationModeButton();
+    if (trackLayer) {
+      trackLayer._reset();
+    }
   }
 
   function applyColorBarRange() {
@@ -782,10 +821,9 @@
       // World-pixel grid at current zoom: pan-stable (unlike container bins).
       var zoom = mapObj.getZoom();
       // Prefer denser sampling when zoomed out (track compresses on screen).
-      // At/above DECIMATION_REF_ZOOM, cells stay ~point diameter; below that they shrink.
+      // At/above DECIMATION_REF_ZOOM, cells stay at DECIMATION_BASE_CELL; below that they shrink.
       var cellSize =
-        2 *
-        TRACK_POINT_RADIUS *
+        DECIMATION_BASE_CELL *
         Math.pow(2, Math.min(0, zoom - DECIMATION_REF_ZOOM));
       cellSize = Math.max(DECIMATION_MIN_CELL, Math.ceil(cellSize));
 
@@ -1160,6 +1198,15 @@
     },
   });
   map.addControl(new CpsLegendControl());
+
+  syncDecimationModeButton();
+  if (decimationModeBtn) {
+    decimationModeBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      cycleDecimationMode();
+    });
+  }
 
   drawGraticule();
   updateCenterButton();
