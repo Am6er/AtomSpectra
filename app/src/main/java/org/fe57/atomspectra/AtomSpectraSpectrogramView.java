@@ -16,7 +16,6 @@ import android.view.MotionEvent;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -924,7 +923,7 @@ public class AtomSpectraSpectrogramView extends View {
 
     // Gap mismatch check:
     // 1. device info must match exactly
-    // 2. calibration coefficients must match exactly
+    // 2. calibration coefficients must match as they would in a saved spectrum file
     private boolean isSegmentMismatch(Spectrum a, Spectrum b) {
         if (a == null || b == null) {
             return false;
@@ -934,9 +933,9 @@ public class AtomSpectraSpectrogramView extends View {
         String deviceInfoB = b.getDeviceInfo();
         boolean deviceInfoMismatch = deviceInfoA == null ? deviceInfoB != null : !deviceInfoA.equals(deviceInfoB);
 
-        double[] coeffsA = a.getSpectrumCalibration() != null ? a.getSpectrumCalibration().getCoeffArray() : null;
-        double[] coeffsB = b.getSpectrumCalibration() != null ? b.getSpectrumCalibration().getCoeffArray() : null;
-        boolean calibrationMismatch = !Arrays.equals(coeffsA, coeffsB);
+        Calibration calA = a.getSpectrumCalibration();
+        Calibration calB = b.getSpectrumCalibration();
+        boolean calibrationMismatch = calA == null ? calB != null : !calA.hasEquivalentCoefficients(calB);
 
         return deviceInfoMismatch || calibrationMismatch;
     }

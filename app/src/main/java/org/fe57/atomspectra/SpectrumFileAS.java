@@ -306,7 +306,7 @@ public class SpectrumFileAS extends SpectrumFile {
             fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
             fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
             for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
-                fw.append(String.format(Locale.US, "%.12g\n", coeff));
+                fw.append(Calibration.serializeCoefficient(coeff)).append("\n");
             }
             for (long l : tmp) {
                 fw.append(String.format(Locale.US, "%d\n", l));

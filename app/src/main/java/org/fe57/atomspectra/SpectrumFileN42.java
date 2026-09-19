@@ -92,7 +92,7 @@ public class SpectrumFileN42 extends SpectrumFile {
                     fw.append("    <CoefficientValues>\n");
                     double[] coefficientArray = exportCalibration.getCoeffArray();
                     for (double v : coefficientArray)
-                        fw.append(String.format(Locale.US, "%.12g ", v));
+                        fw.append(Calibration.serializeCoefficient(v)).append(" ");
                     fw.append("\n");
                     fw.append("    </CoefficientValues>\n");
                 }
@@ -176,7 +176,7 @@ public class SpectrumFileN42 extends SpectrumFile {
                     fw.append("    <CoefficientValues>\n");
                     double[] coefficientArray = exportBackgroundCalibration.getCoeffArray();
                     for (double v : coefficientArray)
-                        fw.append(String.format(Locale.US, "%.12g ", v));
+                        fw.append(Calibration.serializeCoefficient(v)).append(" ");
                     fw.append("\n");
                     fw.append("    </CoefficientValues>\n");
                 }

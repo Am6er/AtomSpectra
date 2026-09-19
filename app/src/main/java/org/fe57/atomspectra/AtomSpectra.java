@@ -65,7 +65,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -3135,9 +3134,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         String deviceInfoB = b.getDeviceInfo() == null ? "" : b.getDeviceInfo();
         boolean deviceInfoMismatch = !deviceInfoA.equals(deviceInfoB);
 
-        double[] coeffsA = a.getSpectrumCalibration() != null ? a.getSpectrumCalibration().getCoeffArray() : null;
-        double[] coeffsB = b.getSpectrumCalibration() != null ? b.getSpectrumCalibration().getCoeffArray() : null;
-        boolean calibrationMismatch = !Arrays.equals(coeffsA, coeffsB);
+        Calibration calA = a.getSpectrumCalibration();
+        Calibration calB = b.getSpectrumCalibration();
+        boolean calibrationMismatch = calA == null ? calB != null : !calA.hasEquivalentCoefficients(calB);
 
         return deviceInfoMismatch || calibrationMismatch;
     }
