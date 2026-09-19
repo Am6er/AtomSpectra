@@ -16,16 +16,19 @@
   </button>
   <div id="country-label">—</div>
   <div id="cps-legend" hidden>
-    <div class="cps-legend-title">CPS</div>
-    <div class="cps-legend-max"></div>
-    <div class="cps-legend-bar">
-      <div class="cps-legend-swatch-wrap">
-        <canvas class="swatch" aria-hidden="true"></canvas>
-        <div class="cps-legend-handle cps-legend-handle-max" role="slider" aria-label="Maximum CPS" tabindex="0"></div>
-        <div class="cps-legend-handle cps-legend-handle-min" role="slider" aria-label="Minimum CPS" tabindex="0"></div>
+    <button type="button" id="decimation-mode" class="decimation-mode-btn" aria-label="Decimation mode" title="Decimation: max">max</button>
+    <div class="cps-legend-colorbar">
+      <div class="cps-legend-title">CPS</div>
+      <div class="cps-legend-max"></div>
+      <div class="cps-legend-bar">
+        <div class="cps-legend-swatch-wrap">
+          <canvas class="swatch" aria-hidden="true"></canvas>
+          <div class="cps-legend-handle cps-legend-handle-max" role="slider" aria-label="Maximum CPS" tabindex="0"></div>
+          <div class="cps-legend-handle cps-legend-handle-min" role="slider" aria-label="Minimum CPS" tabindex="0"></div>
+        </div>
       </div>
+      <div class="cps-legend-min"></div>
     </div>
-    <div class="cps-legend-min"></div>
   </div>
   <div id="point-popup" hidden></div>
   <script src="leaflet/leaflet.js"></script>
