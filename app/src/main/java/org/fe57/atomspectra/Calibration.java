@@ -267,6 +267,57 @@ class Calibration {
         return tmp;
     }
 
+    /**
+     * True when this calibration and {@code other} would write the same coefficient lines to a
+     * spectrum file. Live in-memory coefficients often differ by a few ULPs from values reloaded
+     * after that round-trip, so bit-exact {@link Arrays#equals} is too strict for combine / gap
+     * mismatch checks.
+     */
+    public boolean hasEquivalentCoefficients(Calibration other) {
+        if (other == null) {
+            return false;
+        }
+        double[] a = normalizedCoeffArray();
+        double[] b = other.normalizedCoeffArray();
+        if (a == null || b == null) {
+            return a == b;
+        }
+        if (a.length != b.length) {
+            return false;
+        }
+        for (int i = 0; i < a.length; i++) {
+            if (!serializeCoefficient(a[i]).equals(serializeCoefficient(b[i]))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Canonical text form used when writing calibration coefficients to spectrum files.
+     * Equivalence checks must use the same formatter so save/load comparisons cannot drift.
+     */
+    public static String serializeCoefficient(double coeff) {
+        return String.format(Locale.US, "%.12g", coeff);
+    }
+
+    /** Coefficient array with trailing zeros removed, matching {@link #Calculate(double[])}. */
+    private double[] normalizedCoeffArray() {
+        if (coeffArray == null) {
+            return null;
+        }
+        int length = coeffArray.length;
+        while (length > 0 && coeffArray[length - 1] == 0) {
+            length--;
+        }
+        if (length == coeffArray.length) {
+            return coeffArray;
+        }
+        double[] trimmed = new double[length];
+        System.arraycopy(coeffArray, 0, trimmed, 0, length);
+        return trimmed;
+    }
+
     public double[] getCoeffArray(int needed_size) {
         double[] tmp = new double[needed_size];
         if (coeffArray == null)

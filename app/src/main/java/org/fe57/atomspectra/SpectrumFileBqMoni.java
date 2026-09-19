@@ -124,7 +124,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                 fw.append(String.format(Locale.US, "          <PolynomialOrder>%d</PolynomialOrder>\n", coeffs.length - 1));
                 fw.append("          <Coefficients>\n");
                 for (double coeff : coeffs) {
-                    fw.append(String.format(Locale.US, "            <Coefficient>%.12g</Coefficient>\n", coeff));
+                    fw.append(String.format(Locale.US, "            <Coefficient>%s</Coefficient>\n", Calibration.serializeCoefficient(coeff)));
                 }
                 fw.append("          </Coefficients>\n");
                 fw.append("        </EnergyCalibration>\n");
@@ -171,7 +171,7 @@ public class SpectrumFileBqMoni extends SpectrumFile {
                     fw.append(String.format(Locale.US, "          <PolynomialOrder>%d</PolynomialOrder>\n", coeffs.length - 1));
                     fw.append("          <Coefficients>\n");
                     for (double coeff : coeffs) {
-                        fw.append(String.format(Locale.US, "            <Coefficient>%.12g</Coefficient>\n", coeff));
+                        fw.append(String.format(Locale.US, "            <Coefficient>%s</Coefficient>\n", Calibration.serializeCoefficient(coeff)));
                     }
                     fw.append("          </Coefficients>\n");
                     fw.append("        </EnergyCalibration>\n");
