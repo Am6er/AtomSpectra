@@ -63,8 +63,8 @@
   var TRACK_POINT_STROKE_OUTER = "rgba(255, 255, 255, 0.95)";
   var TRACK_POINT_STROKE_OUTER_WIDTH = 5;
   // Fixed screen-pixel size for spectrum and spectrogram (not scaled by zoom).
-  var TRACK_POINT_RADIUS = 10;
-  var TRACK_POINT_HIT_RADIUS = 34;
+  var TRACK_POINT_RADIUS = 8;
+  var TRACK_POINT_HIT_RADIUS = 32;
   var MAX_DRAWN_POINTS = 2500;
   var DECIMATION_MODES = ["max", "min", "avg"];
   // Per-cell aggregate when decimating: "max" | "min" | "avg"
