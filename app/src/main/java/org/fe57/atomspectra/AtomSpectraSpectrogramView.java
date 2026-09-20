@@ -1319,6 +1319,10 @@ public class AtomSpectraSpectrogramView extends View {
                                 majorTick = 1000;
                                 minorTick = 500;
                             }
+                            if (channelBinning > 4) {
+                                majorTick = 1500;
+                                minorTick = 500;
+                            }
                             if (energy % majorTick == 0) {
                                 String label = energy == 0 ? "0 MeV" : String.format("%1.1f", energy / 1000.0f);
                                 canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);

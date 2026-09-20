@@ -41,7 +41,7 @@ import java.util.List;
 public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
     private static final int MAX_SBIN = 128;
-    private static final int MAX_CBIN = 4;
+    private static final int MAX_CBIN = 8;
     private static int sbin = 1;
     private static int cbin = 1;
     private static String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
