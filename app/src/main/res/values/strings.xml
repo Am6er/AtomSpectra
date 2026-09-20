@@ -534,6 +534,7 @@
     <string name="hist_view_map">View on map</string>
     <string name="map_activity_title">Atom Spectra Map</string>
     <string name="map_center_location">My location</string>
+    <string name="map_fit_track">View all</string>
     <string name="map_tile_basemap">Map basemap</string>
     <string name="map_tile_provider_none">None (offline outlines)</string>
     <string name="map_tile_provider_osm">OpenStreetMap</string>

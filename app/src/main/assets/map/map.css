@@ -183,9 +183,9 @@ html, body {
   pointer-events: none;
 }
 
+#fit-track,
 #center-location {
   position: absolute;
-  top: 10px;
   right: 10px;
   z-index: 1000;
   box-sizing: border-box;
@@ -203,6 +203,20 @@ html, body {
   cursor: pointer;
 }
 
+#fit-track {
+  top: 10px;
+}
+
+#center-location {
+  top: 52px;
+}
+
+#fit-track[hidden],
+#center-location[hidden] {
+  display: none !important;
+}
+
+#fit-track svg,
 #center-location svg {
   width: 20px;
   height: 20px;

@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.MenuItem;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -153,6 +154,8 @@ public class AtomSpectraMap extends Activity {
         String baseUa = settings.getUserAgentString();
         settings.setUserAgentString(baseUa + " AtomSpectra/" + BuildConfig.VERSION_NAME);
 
+        webView.addJavascriptInterface(new MapJsBridge(), "AtomSpectraAndroid");
+
         final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .addPathHandler("/map-data/", new MapDataPathHandler())
@@ -201,7 +204,25 @@ public class AtomSpectraMap extends Activity {
         pageReady = false;
         String mode = mapMode == MODE_SPECTROGRAM ? "spectrogram" : "spectrum";
         String centerLabel = Uri.encode(getString(R.string.map_center_location));
-        webView.loadUrl(ASSET_BASE + "?mode=" + mode + "&centerLabel=" + centerLabel);
+        String fitLabel = Uri.encode(getString(R.string.map_fit_track));
+        webView.loadUrl(ASSET_BASE + "?mode=" + mode
+                + "&centerLabel=" + centerLabel
+                + "&fitLabel=" + fitLabel);
+    }
+
+    private void snapshotViewState() {
+        if (webView == null || !pageReady) {
+            return;
+        }
+        webView.evaluateJavascript(
+                "(function(){try{"
+                        + "if(!window.AtomSpectraMapPage||!AtomSpectraMapPage.getViewState)return null;"
+                        + "var s=AtomSpectraMapPage.getViewState();"
+                        + "if(window.AtomSpectraAndroid&&AtomSpectraAndroid.saveViewState&&s)"
+                        + "AtomSpectraAndroid.saveViewState(s);"
+                        + "return s;"
+                        + "}catch(e){return null;}})()",
+                value -> MapViewSession.forMode(mapMode).saveFromJsResult(value));
     }
 
     private void scheduleTrackRefresh() {
@@ -285,6 +306,7 @@ public class AtomSpectraMap extends Activity {
 
     @Override
     protected void onPause() {
+        snapshotViewState();
         if (webView != null) {
             webView.onPause();
         }
@@ -314,6 +336,13 @@ public class AtomSpectraMap extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    private final class MapJsBridge {
+        @JavascriptInterface
+        public void saveViewState(@Nullable String json) {
+            MapViewSession.forMode(mapMode).saveFromJsResult(json);
+        }
+    }
+
     private final class MapDataPathHandler implements WebViewAssetLoader.PathHandler {
         @Nullable
         @Override
@@ -327,7 +356,20 @@ public class AtomSpectraMap extends Activity {
             if ("location.json".equals(path)) {
                 return jsonResponse(buildLocationJson());
             }
+            if ("view-state.json".equals(path)) {
+                return jsonResponse(buildViewStateJson());
+            }
             return null;
+        }
+
+        @Nullable
+        private byte[] buildViewStateJson() {
+            try {
+                return MapViewSession.forMode(mapMode).toJsonBytes();
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to build view-state payload", e);
+                return null;
+            }
         }
 
         @Nullable
