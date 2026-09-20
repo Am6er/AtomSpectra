@@ -429,7 +429,7 @@ public class AtomSpectraSpectrogramView extends View {
     public boolean isTouchInContentArea(float x, float y) {
         return x >= TIME_AXIS_WIDTH_PX
                 && x <= getWidth() - PADDING_RIGHT_PX
-                && y <= getHeight() - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX
+                && y <= spectrogramPlotBottomYpx(getHeight())
                 && y >= PADDING_TOP_PX;
     }
 
@@ -461,7 +461,7 @@ public class AtomSpectraSpectrogramView extends View {
                     isDragging = true;
                     lockHorizontalMove = true;
                 }
-                if (!lockHorizontalMove && lastTouchY > getHeight() - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX) {
+                if (!lockHorizontalMove && lastTouchY > spectrogramPlotBottomYpx(getHeight())) {
                     isDragging = true;
                     lockVerticalMove = true;
                 }
@@ -670,6 +670,14 @@ public class AtomSpectraSpectrogramView extends View {
         return (verticalOffsetPx / POINT_SIZE_PX) * POINT_SIZE_PX;
     }
 
+    private int spectrogramPlotHeightPx(int viewHeight) {
+        return viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX - PADDING_TOP_PX;
+    }
+
+    private int spectrogramPlotBottomYpx(int viewHeight) {
+        return PADDING_TOP_PX + spectrogramPlotHeightPx(viewHeight);
+    }
+
     private float rowToViewportYpx(SelectionBound row) {
         // sum full preceding segments plus one gap band per boundary, then the bin offset within the target segment
         int virtualRowIndex = getBinForRow(row.rowIndex, spectrumBinning);
@@ -682,9 +690,9 @@ public class AtomSpectraSpectrogramView extends View {
             y = PADDING_TOP_PX;
         }
 
-        int viewHeight = getHeight();
-        if (y > viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX) {
-            y = viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX;
+        int plotBottomY = spectrogramPlotBottomYpx(getHeight());
+        if (y > plotBottomY) {
+            y = plotBottomY;
         }
 
         return y;
@@ -774,6 +782,15 @@ public class AtomSpectraSpectrogramView extends View {
             this.renderSpectrogramToBitmap();
             this.invalidate();
             return;
+        }
+
+        // When spectrum binning changes, keep the viewport's center content stable (or stay pinned
+        // to the bottom if auto-scrolling). Capture before overwriting spectrumBinning / virtual rows.
+        boolean spectrumBinningChanged = spectrumBinning != this.spectrumBinning;
+        boolean pinToBottom = scrollToBottom || (spectrumBinningChanged && this.autoScroll);
+        SelectionBound viewportCenterAnchor = null;
+        if (!pinToBottom && spectrumBinningChanged) {
+            viewportCenterAnchor = captureViewportCenterAnchor();
         }
 
         // TODO: validate bin values, must be 2^n
@@ -913,12 +930,119 @@ public class AtomSpectraSpectrogramView extends View {
             energyTicks.put(channel, energy);
         }
 
-        if (scrollToBottom) {
+        if (pinToBottom) {
             verticalOffsetPx = this.virtualRowsMeta.length * POINT_SIZE_PX;
+        } else if (viewportCenterAnchor != null) {
+            restoreViewportCenter(viewportCenterAnchor);
         }
 
         this.renderSpectrogramToBitmap();
         this.invalidate();
+    }
+
+    // Capture the original (segment, row) under the vertical center of the spectrogram plot area.
+    // Gap rows are skipped by walking outward to the nearest segment row.
+    private SelectionBound captureViewportCenterAnchor() {
+        if (this.virtualRowsMeta == null || this.virtualRowsMeta.length == 0 || POINT_SIZE_PX <= 0) {
+            return null;
+        }
+
+        int viewHeight = getHeight();
+        if (viewHeight <= 0) {
+            return null;
+        }
+
+        int spgViewHeight = spectrogramPlotHeightPx(viewHeight);
+        if (spgViewHeight <= 0) {
+            return null;
+        }
+
+        int anchorVirtualRow = (snappedVerticalOffsetPx() + spgViewHeight / 2) / POINT_SIZE_PX;
+        if (anchorVirtualRow < 0) {
+            anchorVirtualRow = 0;
+        }
+        if (anchorVirtualRow >= this.virtualRowsMeta.length) {
+            anchorVirtualRow = this.virtualRowsMeta.length - 1;
+        }
+
+        VirtualRowMeta meta = this.virtualRowsMeta[anchorVirtualRow];
+        if (meta.segmentIndex < 0) {
+            int forward = anchorVirtualRow + 1;
+            int backward = anchorVirtualRow - 1;
+            meta = null;
+            while (forward < this.virtualRowsMeta.length || backward >= 0) {
+                if (forward < this.virtualRowsMeta.length) {
+                    VirtualRowMeta candidate = this.virtualRowsMeta[forward];
+                    if (candidate.segmentIndex >= 0) {
+                        meta = candidate;
+                        break;
+                    }
+                    forward++;
+                }
+                if (backward >= 0) {
+                    VirtualRowMeta candidate = this.virtualRowsMeta[backward];
+                    if (candidate.segmentIndex >= 0) {
+                        meta = candidate;
+                        break;
+                    }
+                    backward--;
+                }
+            }
+            if (meta == null) {
+                return null;
+            }
+        }
+
+        int originalRow = getBinStartRow(meta.segmentRowBinIndex, this.spectrumBinning);
+        return new SelectionBound(meta.segmentIndex, originalRow);
+    }
+
+    // Reposition verticalOffsetPx so the given original (segment, row) sits at plot-area center.
+    // Clamping is left to renderSpectrogramToBitmap.
+    private void restoreViewportCenter(SelectionBound anchor) {
+        if (anchor == null || this.virtualRowsMeta == null || this.virtualRowsMeta.length == 0 || POINT_SIZE_PX <= 0) {
+            return;
+        }
+
+        int viewHeight = getHeight();
+        if (viewHeight <= 0) {
+            return;
+        }
+
+        int spgViewHeight = spectrogramPlotHeightPx(viewHeight);
+        if (spgViewHeight <= 0) {
+            return;
+        }
+
+        int targetBin = getBinForRow(anchor.rowIndex, this.spectrumBinning);
+        int virtualRow = -1;
+        int nearestVirtualRow = -1;
+        int nearestDistance = Integer.MAX_VALUE;
+
+        for (int i = 0; i < this.virtualRowsMeta.length; i++) {
+            VirtualRowMeta meta = this.virtualRowsMeta[i];
+            if (meta.segmentIndex != anchor.segmentIndex) {
+                continue;
+            }
+            if (meta.segmentRowBinIndex == targetBin) {
+                virtualRow = i;
+                break;
+            }
+            int distance = Math.abs(meta.segmentRowBinIndex - targetBin);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestVirtualRow = i;
+            }
+        }
+
+        if (virtualRow < 0) {
+            virtualRow = nearestVirtualRow;
+        }
+        if (virtualRow < 0) {
+            return;
+        }
+
+        verticalOffsetPx = virtualRow * POINT_SIZE_PX - spgViewHeight / 2;
     }
 
     // Gap mismatch check:
@@ -1098,7 +1222,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
-        int spgViewHeight = viewHeight - CHANNEL_AXIS_HEIGHT_PX - COLOR_BAR_HEIGHT_PX - COLOR_BAR_MARGIN_TOP_PX - PADDING_TOP_PX;
+        int spgViewHeight = spectrogramPlotHeightPx(viewHeight);
 
         if (spgViewWidth <= 0 || spgViewHeight <= 0) {
             // view smaller than its axis/color-bar chrome (e.g. narrow split-window slot):
