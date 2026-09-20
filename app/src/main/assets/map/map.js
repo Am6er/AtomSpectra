@@ -38,6 +38,8 @@
   var legendHandleMinEl = legendEl.querySelector(".cps-legend-handle-min");
   var legendHandleMaxEl = legendEl.querySelector(".cps-legend-handle-max");
   var decimationModeBtn = document.getElementById("decimation-mode");
+  var scaleModeBtn = document.getElementById("scale-mode");
+  var clipModeBtn = document.getElementById("clip-mode");
   var popupEl = document.getElementById("point-popup");
   var centerBtn = document.getElementById("center-location");
   var measurementFocus = null; // { lat, lon } for country label preference
@@ -61,6 +63,12 @@
   var DECIMATION_MODES = ["max", "min", "avg"];
   // Per-cell aggregate when decimating: "max" | "min" | "avg"
   var DECIMATION_MODE = "max";
+  var SCALE_MODES = ["log1p", "lin"];
+  // Color scale transform: "log1p" | "lin"
+  var SCALE_MODE = "log1p";
+  var CLIP_MODES = ["p99", "p100"];
+  // Color scale data max: 99th percentile or absolute max
+  var CLIP_MODE = "p99";
   // Below this zoom, world cells shrink so zoomed-out tracks stay denser.
   var DECIMATION_REF_ZOOM = 15;
   // Base world cell at/above REF_ZOOM (~point radius → ~2x denser than diameter).
@@ -266,12 +274,68 @@
     return Math.log(1 + Math.max(0, x));
   }
 
+  function expm1(v) {
+    return Math.exp(v) - 1;
+  }
+
+  function scaleValue(cps) {
+    if (SCALE_MODE === "lin") {
+      return Math.max(0, cps);
+    }
+    return log1p(cps);
+  }
+
+  function valueToCps(v) {
+    if (SCALE_MODE === "lin") {
+      return Math.max(0, v);
+    }
+    return expm1(v);
+  }
+
+  function makeColorFor(minV, maxV) {
+    var span = maxV - minV;
+    if (span <= 0) {
+      span = 1e-6;
+    }
+    return function (cps) {
+      var v = (scaleValue(cps) - minV) / span;
+      if (v < 0) {
+        v = 0;
+      }
+      if (v > 1) {
+        v = 1;
+      }
+      var rgb = lerpColor(v);
+      return (
+        "rgba(" +
+        rgb[0] +
+        "," +
+        rgb[1] +
+        "," +
+        rgb[2] +
+        "," +
+        TRACK_POINT_FILL_ALPHA +
+        ")"
+      );
+    };
+  }
+
   function percentile(sorted, p) {
     if (!sorted.length) {
       return 0;
     }
     var idx = Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1));
     return sorted[idx];
+  }
+
+  function clipDataMax(sorted) {
+    if (!sorted.length) {
+      return 1;
+    }
+    if (CLIP_MODE === "p100") {
+      return sorted[sorted.length - 1];
+    }
+    return percentile(sorted, 99);
   }
 
   function lerpColor(t) {
@@ -298,14 +362,14 @@
     for (var t = 0; t < tracks.length; t++) {
       var track = tracks[t];
       for (var i = 0; i < track.length; i++) {
-        values.push(log1p(track[i][2]));
+        values.push(scaleValue(track[i][2]));
       }
     }
     values.sort(function (a, b) {
       return a - b;
     });
     var dataMinV = values.length ? values[0] : 0;
-    var dataMaxV = values.length ? percentile(values, 99) : 1;
+    var dataMaxV = values.length ? clipDataMax(values) : 1;
     if (dataMaxV <= dataMinV) {
       dataMaxV = dataMinV + 1e-6;
     }
@@ -315,40 +379,16 @@
     if (maxV <= minV) {
       maxV = minV + 1e-6;
     }
-    var minCps = Math.exp(minV) - 1;
-    var maxCps = Math.exp(maxV) - 1;
-    var dataMinCps = Math.exp(dataMinV) - 1;
-    var dataMaxCps = Math.exp(dataMaxV) - 1;
     return {
       dataMinV: dataMinV,
       dataMaxV: dataMaxV,
-      dataMinCps: dataMinCps,
-      dataMaxCps: dataMaxCps,
+      dataMinCps: valueToCps(dataMinV),
+      dataMaxCps: valueToCps(dataMaxV),
       minV: minV,
       maxV: maxV,
-      minCps: minCps,
-      maxCps: maxCps,
-      colorFor: function (cps) {
-        var v = (log1p(cps) - minV) / (maxV - minV);
-        if (v < 0) {
-          v = 0;
-        }
-        if (v > 1) {
-          v = 1;
-        }
-        var rgb = lerpColor(v);
-        return (
-          "rgba(" +
-          rgb[0] +
-          "," +
-          rgb[1] +
-          "," +
-          rgb[2] +
-          "," +
-          TRACK_POINT_FILL_ALPHA +
-          ")"
-        );
-      },
+      minCps: valueToCps(minV),
+      maxCps: valueToCps(maxV),
+      colorFor: makeColorFor(minV, maxV),
     };
   }
 
@@ -356,23 +396,25 @@
     if (!isFinite(value) || value < 0) {
       value = 0;
     }
-    if (value >= 1000) {
-      var kcps = value / 1000;
-      if (kcps >= 100) {
-        return kcps.toFixed(1) + "k";
-      }
-      if (kcps >= 10) {
-        return kcps.toFixed(2) + "k";
-      }
-      return kcps.toFixed(3) + "k";
+    var suffix = "";
+    var scaled = value;
+    if (value >= 1e9) {
+      scaled = value / 1e9;
+      suffix = "b";
+    } else if (value >= 1e6) {
+      scaled = value / 1e6;
+      suffix = "m";
+    } else if (value >= 1e3) {
+      scaled = value / 1e3;
+      suffix = "k";
     }
-    if (value >= 100) {
-      return value.toFixed(1);
+    if (scaled >= 100) {
+      return scaled.toFixed(1) + suffix;
     }
-    if (value >= 10) {
-      return value.toFixed(2);
+    if (scaled >= 10) {
+      return scaled.toFixed(2) + suffix;
     }
-    return value.toFixed(3);
+    return scaled.toFixed(3) + suffix;
   }
 
   function paintLegendSwatch() {
@@ -446,12 +488,26 @@
     }
     legendEl.hidden = false;
     syncDecimationModeButton();
+    syncScaleModeButton();
+    syncClipModeButton();
     if (isSpectrum) {
       legendColorbarEl.hidden = true;
+      if (scaleModeBtn) {
+        scaleModeBtn.hidden = true;
+      }
+      if (clipModeBtn) {
+        clipModeBtn.hidden = true;
+      }
       activeColorScale = null;
       return;
     }
     legendColorbarEl.hidden = false;
+    if (scaleModeBtn) {
+      scaleModeBtn.hidden = false;
+    }
+    if (clipModeBtn) {
+      clipModeBtn.hidden = false;
+    }
     activeColorScale = scale;
     legendMinEl.textContent = formatLegendCps(scale.minCps);
     legendMaxEl.textContent = formatLegendCps(scale.maxCps);
@@ -474,6 +530,30 @@
     );
   }
 
+  function syncScaleModeButton() {
+    if (!scaleModeBtn) {
+      return;
+    }
+    scaleModeBtn.textContent = SCALE_MODE;
+    scaleModeBtn.setAttribute(
+      "title",
+      "Scale: " + SCALE_MODE + " (tap to cycle)"
+    );
+    scaleModeBtn.setAttribute("aria-label", "Scale mode " + SCALE_MODE);
+  }
+
+  function syncClipModeButton() {
+    if (!clipModeBtn) {
+      return;
+    }
+    clipModeBtn.textContent = CLIP_MODE;
+    clipModeBtn.setAttribute(
+      "title",
+      "Clip: " + CLIP_MODE + " (tap to cycle)"
+    );
+    clipModeBtn.setAttribute("aria-label", "Clip mode " + CLIP_MODE);
+  }
+
   function cycleDecimationMode() {
     var idx = DECIMATION_MODES.indexOf(DECIMATION_MODE);
     if (idx < 0) {
@@ -484,6 +564,38 @@
     if (trackLayer) {
       trackLayer._reset();
     }
+  }
+
+  function rebuildColorScaleFromTracks() {
+    if (!trackLayer || trackLayer._isSpectrum) {
+      return;
+    }
+    var scale = buildColorScale(trackLayer._tracks || []);
+    trackLayer._scale = scale;
+    updateLegend(scale, false);
+    if (trackLayer._ctx) {
+      trackLayer._draw();
+    }
+  }
+
+  function cycleScaleMode() {
+    var idx = SCALE_MODES.indexOf(SCALE_MODE);
+    if (idx < 0) {
+      idx = 0;
+    }
+    SCALE_MODE = SCALE_MODES[(idx + 1) % SCALE_MODES.length];
+    syncScaleModeButton();
+    rebuildColorScaleFromTracks();
+  }
+
+  function cycleClipMode() {
+    var idx = CLIP_MODES.indexOf(CLIP_MODE);
+    if (idx < 0) {
+      idx = 0;
+    }
+    CLIP_MODE = CLIP_MODES[(idx + 1) % CLIP_MODES.length];
+    syncClipModeButton();
+    rebuildColorScaleFromTracks();
   }
 
   function applyColorBarRange() {
@@ -500,29 +612,9 @@
     }
     activeColorScale.minV = minV;
     activeColorScale.maxV = maxV;
-    activeColorScale.minCps = Math.exp(minV) - 1;
-    activeColorScale.maxCps = Math.exp(maxV) - 1;
-    activeColorScale.colorFor = function (cps) {
-      var v = (log1p(cps) - minV) / (maxV - minV);
-      if (v < 0) {
-        v = 0;
-      }
-      if (v > 1) {
-        v = 1;
-      }
-      var rgb = lerpColor(v);
-      return (
-        "rgba(" +
-        rgb[0] +
-        "," +
-        rgb[1] +
-        "," +
-        rgb[2] +
-        "," +
-        TRACK_POINT_FILL_ALPHA +
-        ")"
-      );
-    };
+    activeColorScale.minCps = valueToCps(minV);
+    activeColorScale.maxCps = valueToCps(maxV);
+    activeColorScale.colorFor = makeColorFor(minV, maxV);
     trackLayer._scale = activeColorScale;
     updateLegend(activeColorScale, false);
     if (trackLayer._ctx) {
@@ -1200,11 +1292,27 @@
   map.addControl(new CpsLegendControl());
 
   syncDecimationModeButton();
+  syncScaleModeButton();
+  syncClipModeButton();
   if (decimationModeBtn) {
     decimationModeBtn.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
       cycleDecimationMode();
+    });
+  }
+  if (scaleModeBtn) {
+    scaleModeBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      cycleScaleMode();
+    });
+  }
+  if (clipModeBtn) {
+    clipModeBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      cycleClipMode();
     });
   }
 
