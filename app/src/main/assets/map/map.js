@@ -4,6 +4,7 @@
   var params = new URLSearchParams(window.location.search);
   var mode = params.get("mode") === "spectrogram" ? "spectrogram" : "spectrum";
   var centerLabel = params.get("centerLabel") || "My location";
+  var fitLabel = params.get("fitLabel") || "View all";
 
   L.Icon.Default.imagePath = "leaflet/images/";
 
@@ -42,8 +43,13 @@
   var clipModeBtn = document.getElementById("clip-mode");
   var popupEl = document.getElementById("point-popup");
   var centerBtn = document.getElementById("center-location");
+  var fitBtn = document.getElementById("fit-track");
   var measurementFocus = null; // { lat, lon } for country label preference
   var trackLayer = null;
+  var lastTracks = null;
+  var lastIsSpectrum = false;
+  var lastRecordingId = null;
+  var pendingRestore = null;
   var initialFitDone = false;
   var colorBarMinFraction = 0;
   var colorBarMaxFraction = 1;
@@ -564,6 +570,7 @@
     if (trackLayer) {
       trackLayer._reset();
     }
+    persistViewState();
   }
 
   function rebuildColorScaleFromTracks() {
@@ -586,6 +593,7 @@
     SCALE_MODE = SCALE_MODES[(idx + 1) % SCALE_MODES.length];
     syncScaleModeButton();
     rebuildColorScaleFromTracks();
+    persistViewState();
   }
 
   function cycleClipMode() {
@@ -596,6 +604,7 @@
     CLIP_MODE = CLIP_MODES[(idx + 1) % CLIP_MODES.length];
     syncClipModeButton();
     rebuildColorScaleFromTracks();
+    persistViewState();
   }
 
   function applyColorBarRange() {
@@ -658,6 +667,7 @@
     }
     legendDragHandle = null;
     legendEl.classList.remove("cps-legend-dragging");
+    persistViewState();
   }
 
   function pickLegendHandle(clientY) {
@@ -861,6 +871,66 @@
       if (this._ctx) {
         this._draw();
       }
+      persistViewState();
+    },
+
+    _showSelectionPopup: function (pt) {
+      if (!pt) {
+        return;
+      }
+      var html =
+        formatCoords(pt.lat, pt.lon) +
+        "<br>" +
+        formatTimestamp(pt.ts);
+      if (!this._isSpectrum) {
+        html += "<br>CPS: " + pt.cps.toFixed(pt.cps >= 10 ? 1 : 2);
+      }
+      showPopup(pt.latlng, html);
+    },
+
+    /**
+     * Re-select a point by timestamp + coordinates from the full point list
+     * (not only the current decimated display set).
+     */
+    selectByIdentity: function (ts, lat, lon) {
+      var bestTs = null;
+      var bestTsDist = Infinity;
+      var bestGeo = null;
+      var bestGeoDist = Infinity;
+      var wantTs = ts != null ? Number(ts) : null;
+      for (var t = 0; t < this._points.length; t++) {
+        var track = this._points[t];
+        for (var i = 0; i < track.length; i++) {
+          var pt = track[i];
+          var dLat = pt.lat - lat;
+          var dLon = pt.lon - lon;
+          var d = dLat * dLat + dLon * dLon;
+          if (wantTs != null && wantTs !== 0 && pt.ts === wantTs && d < bestTsDist) {
+            bestTsDist = d;
+            bestTs = pt;
+          }
+          if (d < bestGeoDist) {
+            bestGeoDist = d;
+            bestGeo = pt;
+          }
+        }
+      }
+      // Prefer exact timestamp; otherwise require a near-exact coordinate match.
+      var best = bestTs;
+      if (!best && bestGeo && bestGeoDist <= 1e-10) {
+        best = bestGeo;
+      }
+      if (!best) {
+        this._selected = null;
+        hidePopup();
+        return false;
+      }
+      this._selected = best;
+      if (this._ctx) {
+        this._draw();
+      }
+      this._showSelectionPopup(best);
+      return true;
     },
 
     _prepare: function () {
@@ -1097,14 +1167,8 @@
       }
       this._selected = best;
       this._draw();
-      var html =
-        formatCoords(best.lat, best.lon) +
-        "<br>" +
-        formatTimestamp(best.ts);
-      if (!this._isSpectrum) {
-        html += "<br>CPS: " + best.cps.toFixed(best.cps >= 10 ? 1 : 2);
-      }
-      showPopup(best.latlng, html);
+      this._showSelectionPopup(best);
+      persistViewState();
     },
   });
 
@@ -1149,10 +1213,24 @@
     initialFitDone = true;
   }
 
+  function updateMapChromeButtons() {
+    if (fitBtn) {
+      fitBtn.setAttribute("aria-label", fitLabel);
+      fitBtn.setAttribute("title", fitLabel);
+      fitBtn.hidden = !lastTracks || !lastTracks.length;
+    }
+    if (centerBtn) {
+      centerBtn.setAttribute("aria-label", centerLabel);
+      centerBtn.setAttribute("title", centerLabel);
+      centerBtn.hidden = !deviceLatLng;
+      if (!centerBtn.hidden) {
+        centerBtn.style.top = fitBtn && !fitBtn.hidden ? "52px" : "10px";
+      }
+    }
+  }
+
   function updateCenterButton() {
-    centerBtn.setAttribute("aria-label", centerLabel);
-    centerBtn.setAttribute("title", centerLabel);
-    centerBtn.hidden = !deviceLatLng;
+    updateMapChromeButtons();
   }
 
   function centerOnDeviceLocation() {
@@ -1161,6 +1239,111 @@
     }
     var targetZoom = Math.max(map.getZoom(), 15);
     map.setView(deviceLatLng, targetZoom, { animate: true });
+  }
+
+  function fitToAllTracks() {
+    if (!lastTracks || !lastTracks.length) {
+      return;
+    }
+    if (trackLayer) {
+      trackLayer._selected = null;
+    }
+    hidePopup();
+    fitToTracks(lastTracks, lastIsSpectrum);
+    if (trackLayer && trackLayer._ctx) {
+      trackLayer._draw();
+    }
+    persistViewState();
+  }
+
+  function getViewState() {
+    if (!initialFitDone || !lastTracks || !lastTracks.length) {
+      return null;
+    }
+    var center = map.getCenter();
+    var state = {
+      mode: mode,
+      recordingId: lastRecordingId != null ? lastRecordingId : "",
+      lat: center.lat,
+      lon: center.lng,
+      zoom: map.getZoom(),
+      decimation: DECIMATION_MODE,
+      scale: SCALE_MODE,
+      clip: CLIP_MODE,
+      colorBarMinFraction: colorBarMinFraction,
+      colorBarMaxFraction: colorBarMaxFraction,
+      selection: null,
+    };
+    if (trackLayer && trackLayer._selected) {
+      var sel = trackLayer._selected;
+      state.selection = {
+        ts: sel.ts,
+        lat: sel.lat,
+        lon: sel.lon,
+      };
+    }
+    return JSON.stringify(state);
+  }
+
+  function persistViewState() {
+    try {
+      var state = getViewState();
+      if (
+        state &&
+        window.AtomSpectraAndroid &&
+        typeof AtomSpectraAndroid.saveViewState === "function"
+      ) {
+        AtomSpectraAndroid.saveViewState(state);
+      }
+    } catch (e) {
+      // Bridge may be unavailable during teardown.
+    }
+  }
+
+  function applyDisplayModesFromRestore(restore) {
+    if (!restore) {
+      return;
+    }
+    if (DECIMATION_MODES.indexOf(restore.decimation) >= 0) {
+      DECIMATION_MODE = restore.decimation;
+    }
+    if (SCALE_MODES.indexOf(restore.scale) >= 0) {
+      SCALE_MODE = restore.scale;
+    }
+    if (CLIP_MODES.indexOf(restore.clip) >= 0) {
+      CLIP_MODE = restore.clip;
+    }
+    var minF = Number(restore.colorBarMinFraction);
+    var maxF = Number(restore.colorBarMaxFraction);
+    if (isFinite(minF) && isFinite(maxF) && maxF - minF >= COLOR_BAR_MIN_SPAN) {
+      colorBarMinFraction = Math.max(0, Math.min(1, minF));
+      colorBarMaxFraction = Math.max(0, Math.min(1, maxF));
+    }
+    syncDecimationModeButton();
+    syncScaleModeButton();
+    syncClipModeButton();
+  }
+
+  function restoreCameraAndSelection(restore, tracks, isSpectrum) {
+    if (
+      !restore ||
+      !restore.valid ||
+      !isFinite(restore.lat) ||
+      !isFinite(restore.lon) ||
+      !isFinite(restore.zoom)
+    ) {
+      fitToTracks(tracks, isSpectrum);
+      return;
+    }
+    map.setView([restore.lat, restore.lon], restore.zoom, { animate: false });
+    initialFitDone = true;
+    if (restore.selection && trackLayer) {
+      trackLayer.selectByIdentity(
+        restore.selection.ts,
+        restore.selection.lat,
+        restore.selection.lon
+      );
+    }
   }
 
   function invalidateMapSize() {
@@ -1177,6 +1360,24 @@
   function applyPayload(payload) {
     var tracks = payload.tracks || [];
     var isSpectrum = payload.mode === "spectrum";
+    var recordingId = payload.recordingId != null ? String(payload.recordingId) : "";
+    if (lastRecordingId !== null && lastRecordingId !== recordingId) {
+      initialFitDone = false;
+      pendingRestore = null;
+    }
+    lastRecordingId = recordingId;
+    lastTracks = tracks;
+    lastIsSpectrum = isSpectrum;
+
+    var prevSelection = null;
+    if (trackLayer && trackLayer._selected) {
+      prevSelection = {
+        ts: trackLayer._selected.ts,
+        lat: trackLayer._selected.lat,
+        lon: trackLayer._selected.lon,
+      };
+    }
+
     if (trackLayer) {
       map.removeLayer(trackLayer);
       trackLayer = null;
@@ -1185,8 +1386,25 @@
       legendEl.hidden = true;
       measurementFocus = null;
       updateCountryLabel();
+      updateMapChromeButtons();
+      hidePopup();
       return;
     }
+
+    var restore = null;
+    if (
+      pendingRestore &&
+      pendingRestore.valid &&
+      String(pendingRestore.recordingId || "") === recordingId
+    ) {
+      restore = pendingRestore;
+    }
+    pendingRestore = null;
+
+    if (restore) {
+      applyDisplayModesFromRestore(restore);
+    }
+
     var scale = buildColorScale(tracks);
     updateLegend(scale, isSpectrum);
     trackLayer = new TrackCanvasLayer(tracks, {
@@ -1195,8 +1413,18 @@
     });
     map.addLayer(trackLayer);
     setMeasurementFocusFromTracks(tracks);
-    if (!initialFitDone) {
+    updateMapChromeButtons();
+
+    if (restore) {
+      restoreCameraAndSelection(restore, tracks, isSpectrum);
+    } else if (!initialFitDone) {
       fitToTracks(tracks, isSpectrum);
+    } else if (prevSelection) {
+      trackLayer.selectByIdentity(
+        prevSelection.ts,
+        prevSelection.lat,
+        prevSelection.lon
+      );
     }
   }
 
@@ -1250,6 +1478,23 @@
       .catch(function (err) {
         console.error(err);
         applyDeviceLocation(null);
+      });
+  }
+
+  function loadViewState() {
+    return fetch("/map-data/view-state.json?ts=" + Date.now(), { cache: "no-store" })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("view-state.json HTTP " + response.status);
+        }
+        return response.json();
+      })
+      .then(function (state) {
+        pendingRestore = state && state.valid ? state : null;
+      })
+      .catch(function (err) {
+        console.error(err);
+        pendingRestore = null;
       });
   }
 
@@ -1317,19 +1562,28 @@
   }
 
   drawGraticule();
-  updateCenterButton();
+  updateMapChromeButtons();
 
+  if (fitBtn) {
+    fitBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fitToAllTracks();
+    });
+  }
   centerBtn.addEventListener("click", centerOnDeviceLocation);
 
   map.on("moveend", function () {
     if (!measurementFocus) {
       updateCountryLabel();
     }
+    persistViewState();
   });
   map.on("zoomend", function () {
     if (!measurementFocus) {
       updateCountryLabel();
     }
+    persistViewState();
   });
 
   window.addEventListener("resize", invalidateMapSize);
@@ -1359,6 +1613,9 @@
       return loadTiles();
     })
     .then(function () {
+      return loadViewState();
+    })
+    .then(function () {
       return loadTrack();
     })
     .then(loadLocation);
@@ -1371,6 +1628,8 @@
     refreshLocation: loadLocation,
     refreshCountryLabel: updateCountryLabel,
     centerOnDeviceLocation: centerOnDeviceLocation,
+    fitToAllTracks: fitToAllTracks,
+    getViewState: getViewState,
     invalidateSize: invalidateMapSize,
   };
 })();

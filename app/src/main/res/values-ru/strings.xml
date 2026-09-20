@@ -534,6 +534,7 @@
     <string name="hist_view_map">Показать на карте</string>
     <string name="map_activity_title">Atom Spectra Карта</string>
     <string name="map_center_location">Моё местоположение</string>
+    <string name="map_fit_track">Показать всё</string>
     <string name="map_tile_basemap">Подложка карты</string>
     <string name="map_tile_provider_none">Нет (только контуры)</string>
     <string name="map_tile_provider_osm">OpenStreetMap</string>
