@@ -488,7 +488,7 @@
   }
 
   function updateLegend(scale, isSpectrum) {
-    if (!scale) {
+    if (!scale || isSpectrum) {
       legendEl.hidden = true;
       activeColorScale = null;
       return;
@@ -497,18 +497,10 @@
     syncDecimationModeButton();
     syncScaleModeButton();
     syncClipModeButton();
-    if (isSpectrum) {
-      legendColorbarEl.hidden = true;
-      if (scaleModeBtn) {
-        scaleModeBtn.hidden = true;
-      }
-      if (clipModeBtn) {
-        clipModeBtn.hidden = true;
-      }
-      activeColorScale = null;
-      return;
-    }
     legendColorbarEl.hidden = false;
+    if (decimationModeBtn) {
+      decimationModeBtn.hidden = false;
+    }
     if (scaleModeBtn) {
       scaleModeBtn.hidden = false;
     }
