@@ -78,7 +78,7 @@
   // Below this zoom, world cells shrink so zoomed-out tracks stay denser.
   var DECIMATION_REF_ZOOM = 15;
   // Base world cell at/above REF_ZOOM (~point radius → ~2x denser than diameter).
-  var DECIMATION_BASE_CELL = TRACK_POINT_RADIUS;
+  var DECIMATION_BASE_CELL = TRACK_POINT_RADIUS * 2;
   var DECIMATION_MIN_CELL = 2;
   var refreshInFlight = null;
   var refreshQueued = false;
