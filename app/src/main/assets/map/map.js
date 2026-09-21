@@ -13,6 +13,7 @@
     zoom: 2,
     minZoom: 1,
     maxZoom: 18,
+    bounceAtZoomLimits: false,
     zoomControl: true,
     attributionControl: true,
   });
