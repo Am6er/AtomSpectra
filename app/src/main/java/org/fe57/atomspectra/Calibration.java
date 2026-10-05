@@ -18,16 +18,6 @@ class Calibration {
         return calibration;
     }
 
-    //default constructor
-    public Calibration() {
-        num_hist_points = Constants.NUM_HIST_POINTS;
-        PointChannelList = new ArrayList<>();
-        PointEnergyList = new ArrayList<>();
-        ApproximationList = new double[num_hist_points + 1];
-        coeffArray = null;
-        Arrays.fill(ApproximationList, 0.0);
-    }
-
     public Calibration(int channelCount) {
         num_hist_points = channelCount;
         PointChannelList = new ArrayList<>();
@@ -474,8 +464,8 @@ class Calibration {
         //f=ax+b to convert from other energy to our energy
         //I shift data to another energy using linear function
         double e_l, e_m;
-        e_l = (otherCalibration.ApproximationList[0]-ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
-        e_m = (otherCalibration.ApproximationList[lastChannel - 1] - ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
+        e_l = (otherCalibration.ApproximationList[0]-ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (num_hist_points - 1);
+        e_m = (otherCalibration.ApproximationList[lastChannel - 1] - ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (num_hist_points - 1);
         double a = (e_m - e_l)/(num_hist_points - 1);
         double b = e_l;
         double energy_l, energy_r;
@@ -512,8 +502,8 @@ class Calibration {
         //f=ax+b to convert from other energy to our energy
         //I shift data to another energy using linear function
         double e_l, e_m;
-        e_l = (otherCalibration.ApproximationList[0]-ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
-        e_m = (otherCalibration.ApproximationList[lastChannel - 1] - ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (Constants.NUM_HIST_POINTS - 1);
+        e_l = (otherCalibration.ApproximationList[0]-ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (num_hist_points - 1);
+        e_m = (otherCalibration.ApproximationList[lastChannel - 1] - ApproximationList[0]) / (ApproximationList[lastChannel - 1] - ApproximationList[0]) * (num_hist_points - 1);
         double a = (e_m - e_l)/(num_hist_points - 1);
         double b = e_l;
         double energy_l, energy_r;

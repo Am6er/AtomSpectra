@@ -2,11 +2,16 @@
     xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/action_hist_freeze"
+        android:id="@+id/action_switch_device"
+        android:orderInCategory="101"
+        android:showAsAction="never"
+        android:title="@string/action_switch_device" />
+    <item
+        android:id="@+id/action_record_toggle"
         android:icon="@drawable/menu_block"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
-        android:title="@string/hist_freeze_update" />
+        android:title="@string/hist_pause_update" />
     <item
         android:id="@+id/action_isotopes"
         android:icon="@drawable/menu_agenda"
@@ -179,20 +184,10 @@
                 android:orderInCategory="502"
                 android:title="@string/calibration_store_device" />
             <item
-                android:id="@+id/action_cal_store_memory"
-                android:icon="@drawable/menu_agenda"
-                android:orderInCategory="503"
-                android:title="@string/calibration_store_memory" />
-            <item
                 android:id="@+id/action_cal_retrieve_device"
                 android:icon="@drawable/menu_set_as"
                 android:orderInCategory="504"
                 android:title="@string/calibration_revert_device" />
-            <item
-                android:id="@+id/action_cal_retrieve_memory"
-                android:icon="@drawable/menu_set_as"
-                android:orderInCategory="505"
-                android:title="@string/calibration_revert_memory" />
             <item
                 android:id="@+id/action_cal_add_point"
                 android:icon="@drawable/menu_add_point"
