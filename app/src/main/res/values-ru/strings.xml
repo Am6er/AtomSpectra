@@ -32,6 +32,39 @@
     <string name="action_usb_attached">USB подключён</string>
     <string name="action_usb_detached">USB отключён</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
+    <string name="device_default_microphone">Микрофон по умолчанию</string>
+    <string name="device_spectra_pro">Spectra Pro (USB)</string>
+    <string name="device_waiting_notification">Ожидание выбранного устройства</string>
+    <string name="device_none_selected_notification">Устройство не выбрано</string>
+    <string name="device_waiting_description">%1$s - ожидание устройства</string>
+    <string name="action_switch_device">Сменить устройство</string>
+    <string name="device_select_title">Выбор устройства</string>
+    <string name="device_select_offline">Работать без устройства (только файлы)</string>
+    <string name="device_select_connecting">Подключение…</string>
+    <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
+    <string name="device_select_none">Устройства не найдены</string>
+    <string name="device_connect_decision_title">Устройство подключено</string>
+    <string name="device_connect_decision_text">%1$s подключено, но в спектре на экране есть несохранённые данные. Показ спектра устройства заменит его.</string>
+    <string name="device_decision_save">Сохранить…</string>
+    <string name="device_decision_discard_switch">Не сохранять и переключиться</string>
+    <string name="device_decision_go_offline">Отключиться и работать без устройства</string>
+    <string name="start_continue_or_new_text">Спектр на экране записан не этим устройством. Продолжить его или начать новый?</string>
+    <string name="start_continue_or_discard_text">В спектре на экране есть несохранённые данные, и он записан не этим устройством. Продолжить его или не сохранять и начать новый?</string>
+    <string name="start_save_or_discard_text">В спектре на экране есть несохранённые данные, и это устройство не может его продолжить. Cохранить его или не сохранять и начать новый?</string>
+    <string name="start_continue_button">Продолжить</string>
+    <string name="start_new_button">Начать новый</string>
+    <string name="start_discard_button">Не сохранять и начать новый</string>
+    <string name="start_save_button">Сохранить…</string>
+    <string name="device_error_notification">Ошибка устройства</string>
+    <string name="device_permission_lost">Нет разрешения на выбранное устройство. Выберите устройство.</string>
+    <string name="device_spectrum_adopted">Устройство подключено, показан спектр устройства</string>
+    <string name="device_status_title">Состояние устройства</string>
+    <string name="device_status_select_other">Выбрать устройство</string>
+    <string name="device_status_retry">Повторить</string>
+    <string name="device_idle_description">%1$s - ожидание команды</string>
+    <string name="device_recording_description">%1$s - идёт запись</string>
+    <string name="device_busy_description">%1$s - выполняется команда</string>
+    <string name="device_error_description">%1$s - ошибка</string>
 
     <string name="nav_bar_spectrum">Спектр</string>
     <string name="nav_bar_spectrum_change">Изменение</string>
@@ -49,7 +82,7 @@
     <string name="hist_export_csv">Экспорт в CSV…</string>
     <string name="hist_export_with_energy">Экспорт (с энергией)…</string>
     <string name="hist_share_export">Поделиться</string>
-    <string name="hist_freeze_update">Пауза</string>
+    <string name="hist_pause_update">Пауза</string>
     <string name="hist_continue_update">Продолжить</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
     <string name="hist_ask_delete_text">Вы действительно хотите очистить данные спектра?</string>
@@ -81,8 +114,6 @@
     <string name="atom_swift_app_dr_non_compensated">AtomSwift МД: Некомпенсированная</string>
     <string name="atom_swift_app_dr_compensated">AtomSwift МД: Компенсированная</string>
     <string name="atom_swift_app_dr_interval">AtomSwift МД: Интервал</string>
-    <string name="input_sound">Вход:</string>
-    <string name="input_sound_absent">Нет выбранного аудио источника! Использую по-умолчанию.</string>
     <string name="interval_search_sound_disabled_label">сигнал выкл.</string>
     <string name="interval_search_output_sound_enabled">Включить звуковой сигнал</string>
     <string name="interval_search_energy_range_full">Диапазон энергий: Полный</string>
@@ -141,9 +172,7 @@
     <string name="calibration_calculate">Рассчитать</string>
     <string name="calibration_load_from_file">Загрузить из…</string>
     <string name="calibration_store_device">Запомнить в устройство</string>
-    <string name="calibration_store_memory">Запомнить в программу</string>
-    <string name="calibration_revert_device">Восстановить из устройства</string>
-    <string name="calibration_revert_memory">Восстановить из программы</string>
+    <string name="calibration_revert_device">Использовать калибровку устройства</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Устройство</string>
     <string name="calibration_load_device_energy">Загрузить с калибровкой…</string>
@@ -153,7 +182,6 @@
     <string name="calibration_add_nuclid_title">Добавить точку калибровки</string>
     <string name="calibration_add_nuclid_text">Добавить точку калибровки для канала %1$d с %2$s (%3$.2f кэВ)?</string>
     <string name="calibration_add_nuclid2_text">Введите энергию (в кэВ) для канала %1$d (сейчас %2$s, %3$.2f кэВ):</string>
-    <string name="calibration_stop_before_save_device_text">Для сохранения калибровки в устройство запись спектра будет остановлена</string>
     <string name="calibration_stop_before_load_device_text">Для чтения калибровки из устройства запись спектра будет остановлена</string>
 
     <string name="detector_sensitivity">Чувствительность прибора</string>
@@ -331,7 +359,7 @@
     <string name="ask_channel_title">Выбрать канал курсора</string>
     <string name="ask_channel_text">Новый канал (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
     <string name="ask_last_channel_title">Введите номер канала</string>
-    <string name="ask_last_channel_text">Новый канал (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+    <string name="ask_last_channel_text">Новый канал (<xliff:g id="min_channel">%1$d</xliff:g>-<xliff:g id="last_channel">%2$d</xliff:g>):</string>
     <string name="ask_delete_calibration_line_title">Удалить линию</string>
     <string name="ask_delete_calibration_line_text">Удалить канал %1$d (%2$.2f кэВ) из списка?</string>
     <string name="ask_select_interval_title">Выбрать интервал для поиска</string>
@@ -368,6 +396,9 @@
     <string name="hist_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
     <string name="background_load_success">Фон успешно загружен</string>
     <string name="background_load_error">Загрузка фона НЕУДАЧНА!</string>
+    <string name="background_channel_mismatch">Нельзя загрузить фон с другим числом каналов, чем в спектре</string>
+    <string name="hist_load_device_locked_title">Устройство используется</string>
+    <string name="hist_load_device_locked_text">Выбрано устройство. Чтобы открыть файл, отключитесь от него и работайте без устройства.</string>
     <string name="background_delete_error">Не могу удалить файл фона</string>
     <string name="background_no_data">Нет данных фона</string>
     <string name="background_save_success">Фон успешно сохранён</string>
@@ -376,13 +407,14 @@
     <string name="export_save_error">Экспортирование <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
     <string name="something_wrong">Что-то пошло не так!</string>
     <string name="unknown_code">Получен неизвестный код от устройства: <xliff:g id="code">%1$d</xliff:g></string>
-    <string name="cal_store_usb_wait">Подождите для сохранения калибровки в устройстве USB</string>
-    <string name="cal_apply_usb">Калибровка принята из устройства USB</string>
-    <string name="cal_wrong_usb">Неверная калибровка в устройстве USB</string>
+    <string name="cal_store_wait">Подождите для сохранения калибровки в устройстве</string>
+    <string name="cal_apply_usb">Калибровка принята из устройства</string>
+    <string name="cal_wrong_usb">Неверная калибровка в устройстве</string>
+    <string name="cal_none_stored">Для этого устройства калибровка не сохранена</string>
+    <string name="device_not_available">Устройство недоступно</string>
     <string name="cal_wrong_checksum">Неверная контрольная сумма в устройстве USB</string>
-    <string name="cal_store_usb">Калибровка сохранена в устройстве USB</string>
+    <string name="cal_stored">Калибровка сохранена в устройстве</string>
     <string name="cal_wrong_store_usb">Не могу сохранить калибровку в устройстве USB</string>
-    <string name="cal_load_anyway">Загрузить калибровку в любом случае?</string>
     <string name="usb_below_minimal_version">Обновите версию прошивки до <xliff:g id="version">%1$d</xliff:g> или выше</string>
     <string name="usb_version_read_error">Ошибка чтения версии прошивки</string>
     <string name="usb_version_unknown">Неизвестная версия прошивки</string>
@@ -392,7 +424,7 @@
     <string name="recording_suspended_dialog_usb_disconnected">USB устройство отключено в процессе чтения данных, подключите устройство для возобновления.</string>
     <string name="recording_suspended_dialog_audio_added">Внешний микрофон подключен в процессе чтения данных, отключите внешний микрофон для возобновления.</string>
     <string name="recording_suspended_dialog_audio_removed">Внешний микрофон отключен в процессе чтения данных, подключите внешний микрофон для возобновления.</string>
-    <string name="recording_suspended_dialog_dismiss">Проигнорировать и остановить чтение данных</string>
+    <string name="recording_suspended_dialog_dismiss">Остановить и работать без устройства</string>
     <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
     <string name="recording_suspended_notification_suspended_at">Чтение приостановлено: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Чтение возобновлено: <xliff:g id="time">%1$s</xliff:g></string>
@@ -407,6 +439,7 @@
     <string name="sens_discard_message">Изменения конфигурации не применены.</string>
 
     <string name="dialog_confirm_exit_while_recording_message">Запись спектра в процессе, завершение программы может привести к потере данных.</string>
+    <string name="dialog_confirm_exit_unsaved_message">Текущий спектр не сохранён. Завершение программы приведёт к его потере.</string>
 
     <string name="log_no_records">Нет записей</string>
     <string name="log_recording_suspended">Запись приостановлена</string>
@@ -423,6 +456,7 @@
     <string name="log_usb_device_version_unknown">Неизвестная версия USB устройства</string>
     <string name="log_usb_answer_unexpected_registers">Неожиданный ответ \"-cal\": %1$d регистров вместо %2$d</string>
     <string name="log_usb_answer_missing">Нет ответа от USB устройства</string>
+    <string name="log_usb_answer_malformed_calibration">Некорректный ответ \"-cal\": регистры не являются допустимым hex</string>
     <string name="log_usb_watchdog_no_data_triggered">Контроль USB данных: нет данных из USB в течение %1$d секунд. Попытка переподключения и выполнения команды -sta</string>
     <string name="log_usb_watchdog_unable_open_device">Контроль USB данных: не удалось открыть USB устройство</string>
     <string name="log_usb_watchdog_device_no_perm">Контроль USB данных: нет доступа к USB устройству</string>

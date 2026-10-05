@@ -31,7 +31,7 @@ final class MapPayload {
     }
 
     private static void writeSpectrum(JsonWriter writer) throws IOException {
-        Spectrum spectrum = AtomSpectraService.ForegroundSpectrum;
+        Spectrum spectrum = SpectrumData.instance.foreground;
         writer.name("mode").value("spectrum");
         writer.name("recordingId").value("");
         writer.name("rowCount").value(1);

@@ -2,6 +2,7 @@ package org.fe57.atomspectra;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
@@ -18,6 +19,8 @@ import java.util.Locale;
 
 //This is the main class to load and store own Atom Spectra spectrum
 public class SpectrumFileAS extends SpectrumFile {
+    private static final String TAG = "SpectrumFileAS";
+
     @Override
     public void loadSpectrum(@NonNull Uri spectrumFilePath, Context context) throws InvalidParameterException, IOException {
         validateLoadState();
@@ -47,7 +50,7 @@ public class SpectrumFileAS extends SpectrumFile {
         } catch (Exception e) {
             throw new InvalidParameterException(String.format("Unable to parse spectrum time: %s", version));
         }
-        spectrum.setRealSpectrumTime(spectrumTime);
+        spectrum.setSpectrumTime(spectrumTime);
 
         String poliFactorStr = fr.readLine();
         int poliFactor;
@@ -60,8 +63,8 @@ public class SpectrumFileAS extends SpectrumFile {
         if ((poliFactor < 1) || (poliFactor > Constants.MAX_POLI_SIZE)) {
             throw new InvalidParameterException(String.format("Unsupported polinom factor value: %d", poliFactor));
         }
-        Calibration save_calibration = new Calibration();
-        // V1 files carry no channel count, so they are assumed to hold exactly NUM_HIST_POINTS channels.
+        Calibration save_calibration = new Calibration(Constants.DEFAULT_CHANNEL_COUNT);
+        // V1 files carry no channel count, so they retain the legacy ADC-width assumption.
         int hist_compress = 1;
 
         double cal, cal_E;
@@ -93,8 +96,8 @@ public class SpectrumFileAS extends SpectrumFile {
         if (!save_calibration.isCorrect()) {
             throw new InvalidParameterException("Incorrect calibration");
         }
-        long[] tmp = new long[Constants.NUM_HIST_POINTS];
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
+        long[] tmp = new long[Constants.DEFAULT_CHANNEL_COUNT];
+        for (int i = 0; i < Constants.DEFAULT_CHANNEL_COUNT; i++) {
             for (int j = 0; j < hist_compress; j++) {
                 if ((i * hist_compress + j) < 65536) {
                     String countsStr = fr.readLine();
@@ -181,7 +184,7 @@ public class SpectrumFileAS extends SpectrumFile {
         } catch (Exception e) {
             throw new InvalidParameterException(String.format("Unable to parse spectrum time: %s", spectrumTimeStr));
         }
-        spectrum.setRealSpectrumTime(spectrumTime);
+        spectrum.setSpectrumTime(spectrumTime);
 
         String channelCountStr = fr.readLine();
         int channelCount;
@@ -190,7 +193,17 @@ public class SpectrumFileAS extends SpectrumFile {
         } catch (Exception e) {
             throw new InvalidParameterException(String.format("Unable to parse channel count: %s", channelCountStr));
         }
-        spectrum.setSourceChannelCount(channelCount);
+        if (channelCount <= 0 || channelCount > (1 << 30)) {
+            throw new InvalidParameterException(String.format("Unsupported channel count: %d", channelCount));
+        }
+        int declaredChannelCount = channelCount;
+        if (!Constants.isValidChannelCount(channelCount)) {
+            channelCount = nextSupportedChannelCount(channelCount);
+            Log.w(TAG, String.format(Locale.US,
+                    "Unsupported channel count %d; padding spectrum to %d channels",
+                    declaredChannelCount, channelCount));
+        }
+        spectrum.setSourceChannelCount(declaredChannelCount);
 
         String calPoliFactorStr = fr.readLine();
         int calPoliFactor;
@@ -204,14 +217,8 @@ public class SpectrumFileAS extends SpectrumFile {
             throw new InvalidParameterException(String.format("Unsupported calibration polinom factor: %d", calPoliFactor));
         }
 
-        Calibration save_calibration = new Calibration();
-        int num_points = StrictMath.min(channelCount, Constants.NUM_HIST_POINTS);
-        int compactness = num_points / Constants.NUM_HIST_POINTS;
-        if (num_points % Constants.NUM_HIST_POINTS != 0) {
-            compactness++;
-        }
+        Calibration save_calibration = new Calibration(channelCount);
         if (formatCode >= 3) {
-            double x = 1;
             double[] coeffs = new double[calPoliFactor + 1];
             for (int i = 0; i <= calPoliFactor; i++) {
                 String poliCoeffStr = fr.readLine();
@@ -222,8 +229,7 @@ public class SpectrumFileAS extends SpectrumFile {
                     throw new InvalidParameterException(String.format("Unable to parse calibration coefficient: %s", poliCoeffStr));
                 }
 
-                coeffs[i] = poliCoeff * x;
-                x *= compactness;
+                coeffs[i] = poliCoeff;
             }
             save_calibration.Calculate(coeffs);
         } else {
@@ -236,7 +242,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 } catch (Exception e) {
                     throw new InvalidParameterException(String.format("Unable to parse calibration channel: %s", channelStr));
                 }
-                cal = channel / compactness;
+                cal = channel;
 
                 String energyStr = fr.readLine();
                 double energy;
@@ -258,20 +264,13 @@ public class SpectrumFileAS extends SpectrumFile {
             throw new InvalidParameterException("Incorrect calibration");
         }
 
-        long[] tmp = new long[Constants.NUM_HIST_POINTS];
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i++) {
-            for (int j = 0; j < compactness; j++) {
-                if ((i * compactness + j) < num_points) {
-                    String countsStr = fr.readLine();
-                    long counts;
-                    try {
-                        counts = Long.parseLong(countsStr);
-                    } catch (Exception e) {
-                        throw new InvalidParameterException(String.format("Unable to parse channel counts: %s", countsStr));
-                    }
-
-                    tmp[i] += counts;
-                }
+        long[] tmp = new long[channelCount];
+        for (int i = 0; i < declaredChannelCount; i++) {
+            String countsStr = fr.readLine();
+            try {
+                tmp[i] = Long.parseLong(countsStr);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse channel counts: %s", countsStr));
             }
         }
 
@@ -282,13 +281,22 @@ public class SpectrumFileAS extends SpectrumFile {
         spectrumList.add(spectrum);
     }
 
+    private static int nextSupportedChannelCount(int channelCount) {
+        if (channelCount <= Constants.MIN_CHANNEL_COUNT) {
+            return Constants.MIN_CHANNEL_COUNT;
+        }
+
+        int highestPowerOfTwo = Integer.highestOneBit(channelCount);
+        return highestPowerOfTwo == channelCount ? channelCount : highestPowerOfTwo << 1;
+    }
+
     @Override
     public void saveSpectrumAndCloseStream(@NonNull OutputStreamWriter docStream, Context context) throws IOException, IllegalStateException {
         try (OutputStreamWriter fw = docStream) {
             validateSaveState();
             Spectrum spectrum = spectrumList.get(0);
             long[] tmp = spectrum.getDataArray();
-            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+            double time = StrictMath.max(spectrum.getSpectrumTime(), 1.0);
 
             fw.append("FORMAT: 3\n");
             fw.append(String.format(Locale.US, "%s\n", spectrum.getComments()));                           //version 2
@@ -303,7 +311,7 @@ public class SpectrumFileAS extends SpectrumFile {
             fw.append(spectrum.getSuffix()).append("\n");                                                         //version 3
             fw.append(spectrum.getDeviceInfo()).append("\n");                                                    //version 3
             fw.append(String.format(Locale.US, "%f\n", time));
-            fw.append(String.format(Locale.US, "%d\n", Constants.NUM_HIST_POINTS));
+            fw.append(String.format(Locale.US, "%d\n", tmp.length));
             fw.append(String.format(Locale.US, "%d\n", spectrum.getSpectrumCalibration().getFactor()));
             for (double coeff : spectrum.getSpectrumCalibration().getCoeffArray()) {
                 fw.append(Calibration.serializeCoefficient(coeff)).append("\n");
@@ -331,7 +339,10 @@ public class SpectrumFileAS extends SpectrumFile {
              BufferedReader fr = new BufferedReader(new InputStreamReader(in))) {
             String versionStr = fr.readLine();
             loadSpectrumV3(fr, versionStr);
-            target.addSegment(this.spectrumList.get(0), spectrogramFilePath);
+            Spectrum baseSpectrum = this.spectrumList.get(0);
+            int channelCount = baseSpectrum.getDataArray().length;
+            int sourceChannelCount = baseSpectrum.getSourceChannelCount();
+            target.addSegment(baseSpectrum, spectrogramFilePath);
             // load deltas
             while (true) {
                 if (cancellationToken.isCancelled()) {
@@ -339,11 +350,11 @@ public class SpectrumFileAS extends SpectrumFile {
                 }
 
                 if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
-                    ToastHelper.showToast(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
+                    ToastHelper.showToastAndLog(context, "WARNING: Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
                     break;
                 }
 
-                SpectrumDelta delta = readNextDelta(fr, Constants.NUM_HIST_POINTS / AtomSpectraSpectrogramData.CHANNEL_COUNT);
+                SpectrumDelta delta = readNextDelta(fr, sourceChannelCount, channelCount);
                 if (delta == null) {
                     break;
                 }
@@ -381,7 +392,7 @@ public class SpectrumFileAS extends SpectrumFile {
         }
 
         Spectrum baseSpectrum = null;
-        long[] combinedSpectrum = new long[Constants.NUM_HIST_POINTS];
+        long[] combinedSpectrum = null;
         double combinedDuration = 0;
         long lastDeltaDate = 0;
         int processedDeltaCount = 0;
@@ -407,10 +418,14 @@ public class SpectrumFileAS extends SpectrumFile {
                 String versionStr = fr.readLine();
                 onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_loading_base, spectrumName));
                 segmentFile.loadSpectrumV3(fr, versionStr);
+                Spectrum segmentBaseSpectrum = segmentFile.spectrumList.get(0);
                 if (baseSpectrum == null) {
-                    baseSpectrum = segmentFile.spectrumList.get(0);
+                    baseSpectrum = segmentBaseSpectrum;
+                    combinedSpectrum = new long[baseSpectrum.getDataArray().length];
+                } else if (segmentBaseSpectrum.getSourceChannelCount() != baseSpectrum.getSourceChannelCount()
+                        || segmentBaseSpectrum.getDataArray().length != baseSpectrum.getDataArray().length) {
+                    throw new InvalidParameterException("Cannot combine spectrogram segments with different channel counts");
                 }
-                // TODO: validate channel count
 
                 int deltaIndex = 0;
                 onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_seeking_deltas, spectrumName));
@@ -433,7 +448,8 @@ public class SpectrumFileAS extends SpectrumFile {
                         int progressPercent = processedDeltaCount * 100 / totalDeltaCount;
                         onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_combining_deltas_percent, spectrumName, progressPercent));
                     }
-                    SpectrumDelta delta = segmentFile.readNextDelta(fr, 1);
+                        SpectrumDelta delta = segmentFile.readNextDelta(fr,
+                            baseSpectrum.getSourceChannelCount(), baseSpectrum.getDataArray().length);
                     if (delta == null) {
                         throw new InvalidParameterException(String.format("Null delta for index: %d", deltaIndex));
                     }
@@ -455,7 +471,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
         onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_saving_spectrum, spectrumName));
         Spectrum spectrumToSave = new Spectrum(baseSpectrum);
-        spectrumToSave.setRealSpectrumTime(combinedDuration);
+        spectrumToSave.setSpectrumTime(combinedDuration);
         spectrumToSave.setSuffix(spectrumName);
         spectrumToSave.setLocation(0, 0, 0);
         spectrumToSave.setSpectrumDate(lastDeltaDate);
@@ -480,7 +496,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
             Spectrum spectrum = spectrumList.get(0);
             long[] tmp = spectrum.getDataArray();
-            double time = StrictMath.max(spectrum.getRealSpectrumTime(), 1.0);
+            double time = StrictMath.max(spectrum.getSpectrumTime(), 1.0);
 
             if (spectrum.getSpectrumDate() == 0) {
                 fw.append(String.format(Locale.US, "%d\n", new Date().getTime()));
@@ -499,7 +515,7 @@ public class SpectrumFileAS extends SpectrumFile {
         }
     }
 
-    private SpectrumDelta readNextDelta(BufferedReader buffer, int channelBinning) throws InvalidParameterException, IOException {
+    private SpectrumDelta readNextDelta(BufferedReader buffer, int sourceChannelCount, int channelCount) throws InvalidParameterException, IOException {
         String dateStr = buffer.readLine();
         if (dateStr == null || dateStr.isEmpty()) {
             // EOF
@@ -532,23 +548,17 @@ public class SpectrumFileAS extends SpectrumFile {
         }
 
         String[] channelsStr = channelStr.split("\t");
-        if (channelsStr.length != Constants.NUM_HIST_POINTS) {
+        if (channelsStr.length != sourceChannelCount) {
             throw new InvalidParameterException(String.format("Unsupported delta channels count: %d", channelsStr.length));
         }
 
-        int channelCount = Constants.NUM_HIST_POINTS / channelBinning;
         long[] channels = new long[channelCount];
-        for (int i = 0; i < Constants.NUM_HIST_POINTS; i += channelBinning) {
-            long summ = 0;
-            for (int j = 0; j < channelBinning && (i + j) < channelsStr.length; j++) {
-                try {
-                    summ += Long.parseLong(channelsStr[i + j]);
-                } catch (Exception e) {
-                    throw new InvalidParameterException(String.format("Unable to parse channel value: %s", channelsStr[i + j]));
-                }
+        for (int i = 0; i < sourceChannelCount; i++) {
+            try {
+                channels[i] = Long.parseLong(channelsStr[i]);
+            } catch (Exception e) {
+                throw new InvalidParameterException(String.format("Unable to parse channel value: %s", channelsStr[i]));
             }
-
-            channels[i / channelBinning] = summ;
         }
 
         return new SpectrumDelta(duration, channels, date, latitude, longitude);

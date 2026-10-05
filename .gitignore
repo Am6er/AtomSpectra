@@ -5,5 +5,3 @@
 /.idea/*
 /app/debug/*
 /app/release/*
-/docs/
-.gitignore
