@@ -68,6 +68,10 @@ final class BluZBleSource implements SpectrumSource {
     private boolean resetSent;
     private double resetTime;
     private long resetPulses;
+    private byte[] latestSettings;
+    private double[] pendingCalibration;
+    private boolean calibrationPending;
+    private boolean calibrationSent;
     private boolean resolutionAttempted;
     private boolean resolutionPending;
     private boolean resolutionSent;
@@ -371,6 +375,7 @@ final class BluZBleSource implements SpectrumSource {
             if (decoder.takeDroppedFrames() > 0) skipped("BluZ frame was interrupted");
             if (frame == null) return;
             handler.removeCallbacks(assemblyDeadline);
+            latestSettings = frame.settings.clone();
             if (!frame.isNormal()) return;
             latest = frame;
             if (!ready) {
@@ -405,16 +410,26 @@ final class BluZBleSource implements SpectrumSource {
                 handler.removeCallbacks(resolutionDeadline);
                 recover();
             }
+            if (calibrationPending && calibrationSent && calibrationMatches(frame.calibration())) {
+                handler.removeCallbacks(calibrationDeadline);
+                calibrationPending = false;
+                calibrationSent = false;
+                pendingCalibration = null;
+                coefficients = frame.calibration();
+                recover();
+                reply(new Intent(ACTION_SOURCE_CALIBRATION_SAVED));
+            }
             if (frame.channels == 4096 && !resolutionPending
                     && (lastError == null || lastError.op != OP_SETTINGS_SAVE)) {
                 resolutionAttempted = false;
             }
             if (lastError == null) updateObservedStatus();
             if (frame.isCollecting()) broadcastData(frame);
-            if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted) {
+            if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted
+                    && !calibrationPending) {
                 resolutionAttempted = true;
                 resolutionPending = true;
-                enqueue(BluZCommandCodec.resolution4096(frame.settings), OP_SETTINGS_SAVE, () -> {
+                enqueue(BluZCommandCodec.resolution4096(latestSettings), OP_SETTINGS_SAVE, () -> {
                     resolutionSent = true;
                     handler.postDelayed(resolutionDeadline, COMMAND_MS);
                 });
@@ -427,7 +442,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void updateObservedStatus() {
         if (latest == null) return;
-        setStatus(toggleOp != 0 || resetPending ? STATUS_CONNECTED_EXECUTING_COMMAND
+        setStatus(toggleOp != 0 || resetPending || calibrationPending ? STATUS_CONNECTED_EXECUTING_COMMAND
                 : latest.isCollecting() ? STATUS_CONNECTED_COLLECTING : STATUS_CONNECTED_IDLE);
     }
 
@@ -435,8 +450,17 @@ final class BluZBleSource implements SpectrumSource {
         if (lastError == null) return;
         if ((lastError.op == OP_SETTINGS_SAVE && resolutionPending)
                 || ((lastError.op == OP_START || lastError.op == OP_STOP) && toggleOp != 0)
-                || (lastError.op == OP_RESET && resetPending)) return;
+                || (lastError.op == OP_RESET && resetPending)
+                || (lastError.op == OP_CALIBRATION_SAVE && calibrationPending)) return;
         lastError = null;
+    }
+
+    private boolean calibrationMatches(double[] observed) {
+        if (pendingCalibration == null || observed.length != pendingCalibration.length) return false;
+        for (int index = 0; index < observed.length; index++) {
+            if (Double.compare(observed[index], pendingCalibration[index]) != 0) return false;
+        }
+        return true;
     }
 
     private void broadcastData(BluZFrameDecoder.Frame frame) {
@@ -526,6 +550,14 @@ final class BluZBleSource implements SpectrumSource {
         error(OP_SETTINGS_SAVE, REASON_TIMEOUT, "BluZ resolution change was not confirmed");
     };
 
+    private final Runnable calibrationDeadline = () -> {
+        if (!calibrationPending || !calibrationSent) return;
+        calibrationPending = false;
+        calibrationSent = false;
+        pendingCalibration = null;
+        error(OP_CALIBRATION_SAVE, REASON_TIMEOUT, "BluZ calibration change was not confirmed");
+    };
+
     private boolean usable(int op) {
         if (closed) return false;
         if (ready && gatt != null && latest != null) return true;
@@ -589,18 +621,24 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(toggleDeadline);
         handler.removeCallbacks(resetDeadline);
         handler.removeCallbacks(resolutionDeadline);
+        handler.removeCallbacks(calibrationDeadline);
         int pendingToggle = toggleOp;
         boolean pendingReset = resetPending;
         boolean pendingResolution = resolutionPending;
+        boolean pendingCalibration = calibrationPending;
         toggleOp = 0;
         toggleSent = false;
         resetPending = false;
         resetSent = false;
         resolutionPending = false;
         resolutionSent = false;
+        calibrationPending = false;
+        calibrationSent = false;
+        this.pendingCalibration = null;
         if (pendingToggle != 0 && pendingToggle != op) error(pendingToggle, REASON_ERROR, text);
         if (pendingReset && op != OP_RESET) error(OP_RESET, REASON_ERROR, text);
         if (pendingResolution && op != OP_SETTINGS_SAVE) error(OP_SETTINGS_SAVE, REASON_ERROR, text);
+        if (pendingCalibration && op != OP_CALIBRATION_SAVE) error(OP_CALIBRATION_SAVE, REASON_ERROR, text);
         error(op, REASON_ERROR, text);
     }
 
@@ -630,6 +668,7 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(toggleDeadline);
         handler.removeCallbacks(resetDeadline);
         handler.removeCallbacks(resolutionDeadline);
+        handler.removeCallbacks(calibrationDeadline);
         BluetoothGatt previous = gatt;
         gatt = null;
         ready = false;
@@ -637,11 +676,15 @@ final class BluZBleSource implements SpectrumSource {
         subscribed = false;
         writing = false;
         latest = null;
+        latestSettings = null;
         writeCharacteristic = null;
         notifyCharacteristic = null;
         toggleOp = 0;
         resetPending = false;
         resolutionPending = false;
+        calibrationPending = false;
+        calibrationSent = false;
+        pendingCalibration = null;
         resolutionAttempted = false;
         resolutionSent = false;
         writes.clear();
@@ -693,7 +736,30 @@ final class BluZBleSource implements SpectrumSource {
 
     @Override
     public void requestSaveCalibration(double[] coeffs) {
-        dispatch(() -> { if (usable(OP_CALIBRATION_SAVE)) error(OP_CALIBRATION_SAVE, REASON_ERROR, "BluZ calibration writing is not supported"); });
+        double[] requested = coeffs == null ? null : coeffs.clone();
+        dispatch(() -> {
+            if (!usable(OP_CALIBRATION_SAVE)) return;
+            if (resolutionPending || calibrationPending) {
+                error(OP_CALIBRATION_SAVE, REASON_ERROR, "BluZ settings write is already pending");
+                return;
+            }
+            try {
+                byte[] command = BluZCommandCodec.calibration4096(latestSettings, requested);
+                pendingCalibration = new double[requested.length];
+                for (int index = 0; index < requested.length; index++) {
+                    pendingCalibration[index] = (float) requested[index];
+                }
+                calibrationPending = true;
+                calibrationSent = false;
+                setStatus(STATUS_CONNECTED_EXECUTING_COMMAND);
+                enqueue(command, OP_CALIBRATION_SAVE, () -> {
+                    calibrationSent = true;
+                    handler.postDelayed(calibrationDeadline, COMMAND_MS);
+                });
+            } catch (IllegalArgumentException invalid) {
+                error(OP_CALIBRATION_SAVE, REASON_ERROR, invalid.getMessage());
+            }
+        });
     }
 
     @Override

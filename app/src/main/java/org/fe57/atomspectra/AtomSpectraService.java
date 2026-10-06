@@ -1062,9 +1062,9 @@ public class AtomSpectraService extends Service {
             updateMenu();
         }
 
-        if (op == SpectrumSource.OP_CALIBRATION_SAVE) {
-            showToastInMainLooper(lockedSourceType() == SpectrumSource.TYPE_BLUZ
-                    ? R.string.cal_store_bluetooth_unsupported : R.string.cal_wrong_store_usb, Toast.LENGTH_SHORT);
+        if (op == SpectrumSource.OP_CALIBRATION_SAVE
+                && lockedSourceType() != SpectrumSource.TYPE_BLUZ) {
+            showToastInMainLooper(R.string.cal_wrong_store_usb, Toast.LENGTH_SHORT);
             return;
         }
 

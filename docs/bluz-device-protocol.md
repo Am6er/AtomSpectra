@@ -321,6 +321,18 @@ sets byte 37 to 2 and preserves every other writable setting. **Changing sample
 time clears the live spectrum and time**, even if the caller only meant to
 change resolution. There is no dedicated set-resolution or flash-read command.
 
+AtomSpectra retains the 100-byte settings header from every checksum-validated
+complete frame, including history frames; history still does not change the
+observed acquisition state. A calibration save uses the latest retained header
+as its command-0 read-modify-write base. The five app coefficients `{E0, D, C,
+B, A}` are encoded as float32 values at command offsets `47, 43, 59, 55, 51`;
+the other four raw calibration slots and all unrelated settings are preserved.
+The save sets byte 37 to 2, so saving while idle may change the configured
+resolution to 4096. A later normal frame (type 0-3) must report the requested
+float32 coefficients before AtomSpectra reports the save as successful. A type-0
+frame can confirm the coefficients while idle, but cannot confirm the selected
+resolution; that is visible only in a live frame type.
+
 Command 0 rewrites flash on every accepted call, even if settings already match.
 The local firmware has a warning that flash writing may require a second call;
 this is not permission to retry automatically. Observe effects and verify normal
