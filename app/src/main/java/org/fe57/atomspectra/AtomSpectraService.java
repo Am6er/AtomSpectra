@@ -1688,10 +1688,14 @@ private void onSourceData(Intent intent) {
         }
 
         if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
-            MeasurementData.instance.cp1sInterval = interval_counts;
-            MeasurementData.instance.doseRate = doseRateSearch(interval_counts, binned_counts, new_time - old_time);
-            isReliableData = true;
+            double delta_time = new_time - old_time;
+            if (delta_time > 0) {
+                MeasurementData.instance.cp1sInterval = updateIntervalCps(interval_counts, delta_time);
+                MeasurementData.instance.doseRate = doseRateSearch(interval_counts, binned_counts, delta_time);
+                isReliableData = true;
+            }
         } else {
+            resetIntervalCpsWindow();
             MeasurementData.instance.cp1sInterval = 0;
             MeasurementData.instance.doseRate = new MeasurementData.DoseRate();
         }
@@ -1934,12 +1938,50 @@ private static final LinkedList<int[]> windowBinnedCounts = new LinkedList<>();
 private static final LinkedList<int[]> windowIntervalCounts = new LinkedList<>();
 private static final LinkedList<Double> windowDeltaTime = new LinkedList<>();
 
+// ~1 s rolling window for displayed energy-interval CPS (keeps 2/5/10 Hz audio from flickering to 0)
+private static final LinkedList<Integer> intervalCpsCounts = new LinkedList<>();
+private static final LinkedList<Double> intervalCpsDelta = new LinkedList<>();
+
+private static void resetIntervalCpsWindow() {
+    synchronized (intervalCpsCounts) {
+        intervalCpsCounts.clear();
+        intervalCpsDelta.clear();
+    }
+}
+
+// Append a frame and return energy-gated CPS over the last ~1 s of sample time.
+private static int updateIntervalCps(int interval_counts, double delta_time) {
+    synchronized (intervalCpsCounts) {
+        intervalCpsCounts.addLast(interval_counts);
+        intervalCpsDelta.addLast(delta_time);
+
+        double sumTime = 0;
+        for (double t : intervalCpsDelta) {
+            sumTime += t;
+        }
+        while (sumTime > 1.0 && intervalCpsDelta.size() > 1) {
+            sumTime -= intervalCpsDelta.removeFirst();
+            intervalCpsCounts.removeFirst();
+        }
+
+        long sumCounts = 0;
+        for (int c : intervalCpsCounts) {
+            sumCounts += c;
+        }
+        if (sumTime <= 0) {
+            return 0;
+        }
+        return (int) Math.round(sumCounts / sumTime);
+    }
+}
+
 private static void resetSearchWindow() {
     synchronized (windowBinnedCounts) {
         windowDeltaTime.clear();
         windowBinnedCounts.clear();
         windowIntervalCounts.clear();
     }
+    resetIntervalCpsWindow();
 }
 
 private static void resetDoseRateData() {
