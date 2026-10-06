@@ -88,7 +88,6 @@ public class AtomSpectraService extends Service {
     private static final LinkedList<long[]> histogram_all_queue = new LinkedList<long[]>();      //array to store delta window
     private static boolean is_recording = false;
 
-    private boolean allowPartialHistogram = Constants.ALLOW_PARTIAL_HISTOGRAM_DEFAULT;
     private int skippedIncompleteHistogramCount = 0;
 
     private final Object spgAutosaveSync = new Object();
@@ -135,6 +134,7 @@ public class AtomSpectraService extends Service {
     public static int recordingSuspendSourceType = SpectrumSource.TYPE_NONE;
     public static final int RECORDING_SUSPEND_REASON_NONE = 0;
     public static final int RECORDING_SUSPEND_REASON_AUDIO_REMOVED = 1;
+    public static final int RECORDING_SUSPEND_REASON_BT_DISCONNECT = 2;
     public static final int RECORDING_SUSPEND_REASON_USB_DISCONNECT = 3;
     public static int recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
     public static boolean isRecordingSuspended = false;
@@ -265,12 +265,14 @@ public class AtomSpectraService extends Service {
         return locked == null ? SpectrumSource.TYPE_NONE : locked.type;
     }
 
-    private static String lockedSourceName(String audio, String usb, String none) {
+    private static String lockedSourceName(String audio, String usb, String bluetooth, String none) {
         switch (lockedSourceType()) {
             case SpectrumSource.TYPE_AUDIO:
                 return audio;
             case SpectrumSource.TYPE_SPECTRA_PRO:
                 return usb;
+            case SpectrumSource.TYPE_BLUZ:
+                return bluetooth;
             default:
                 return none;
         }
@@ -383,6 +385,9 @@ public class AtomSpectraService extends Service {
             if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
                 notifyString = getStringOrDefaultLocale(R.string.app_bar_usb_action);
             }
+            if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
+                notifyString = getStringOrDefaultLocale(R.string.app_bar_bluetooth_action);
+            }
             notifyString += " " + getStringOrDefaultLocale(R.string.app_bar_spectrum_update);
         } else {
             notifyString = getStringOrDefaultLocale(R.string.app_bar_pause);
@@ -429,8 +434,13 @@ public class AtomSpectraService extends Service {
 
     private final SharedPreferences.OnSharedPreferenceChangeListener onSharedPreferenceChangeListener = (sharedPreferences, s) -> {
         loadSettings();
-        SpectrumSource source = activeSource;
-        if (source != null) source.onAppPreferencesChanged();
+        postToInputThread(() -> {
+            final SpectrumSource source;
+            synchronized (inputSync) {
+                source = activeSource;
+            }
+            if (source != null) source.onAppPreferencesChanged();
+        });
     };
 
     private void loadSettings() {
@@ -451,7 +461,6 @@ public class AtomSpectraService extends Service {
         addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
-        allowPartialHistogram = sp.getBoolean(Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM, Constants.ALLOW_PARTIAL_HISTOGRAM_DEFAULT);
 
         activeProfile = PrefHelper.getActiveSensitivityProfile(service_context);
 
@@ -637,6 +646,16 @@ public class AtomSpectraService extends Service {
                 return new AtomSpectraAudioSource(this, identity);
             case SpectrumSource.TYPE_SPECTRA_PRO:
                 return new AtomSpectraProSource(this, identity);
+            case SpectrumSource.TYPE_BLUZ:
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && AppPermissions.isBluetoothGranted(this)) {
+                    try {
+                        startForeground(FOREGROUND_PROCESS_ID, createNewServiceNotification(),
+                                AppPermissions.foregroundServiceType(this));
+                    } catch (SecurityException error) {
+                        Log.e(TAG, "Cannot update Bluetooth foreground service type", error);
+                    }
+                }
+                return new BluZBleSource(this, identity, inputHandler);
             default:
                 return null;
         }
@@ -785,7 +804,8 @@ public class AtomSpectraService extends Service {
             } else {
                 inputDeviceInfo = locked.type == SpectrumSource.TYPE_AUDIO
                         ? getAudioDeviceInfoText(connected.deviceId())
-                        : getUsbDeviceInfoText(connected.deviceId());
+                    : locked.type == SpectrumSource.TYPE_BLUZ ? connected.deviceId()
+                    : getUsbDeviceInfoText(connected.deviceId());
             }
         }
     }
@@ -947,6 +967,8 @@ public class AtomSpectraService extends Service {
         deviceReady = true;
         if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
             showToastInMainLooper(R.string.action_usb_attached, Toast.LENGTH_SHORT);
+        } else if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
+            showToastInMainLooper(R.string.action_bluetooth_attached, Toast.LENGTH_SHORT);
         }
 
         final boolean collecting = deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING;
@@ -992,6 +1014,7 @@ public class AtomSpectraService extends Service {
                 isRecordingSuspended = true;
                 recordingSuspendReason = lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO
                         ? RECORDING_SUSPEND_REASON_USB_DISCONNECT
+                    : lockedSourceType() == SpectrumSource.TYPE_BLUZ ? RECORDING_SUSPEND_REASON_BT_DISCONNECT
                         : RECORDING_SUSPEND_REASON_AUDIO_REMOVED;
                 recordingSuspendSourceType = lockedSourceType();
                 onRecordingSuspended();
@@ -1038,15 +1061,18 @@ public class AtomSpectraService extends Service {
         }
 
         if (op == SpectrumSource.OP_CALIBRATION_SAVE) {
-            showToastInMainLooper(R.string.cal_wrong_store_usb, Toast.LENGTH_SHORT);
+            showToastInMainLooper(lockedSourceType() == SpectrumSource.TYPE_BLUZ
+                    ? R.string.cal_store_bluetooth_unsupported : R.string.cal_wrong_store_usb, Toast.LENGTH_SHORT);
             return;
         }
 
         if (label != null) {
             showToastInMainLooper(getStringOrDefaultLocale(
                     reason == SpectrumSource.REASON_TIMEOUT
-                            ? R.string.log_usb_command_timeout
-                            : R.string.log_usb_command_failed,
+                            ? (lockedSourceType() == SpectrumSource.TYPE_BLUZ
+                                ? R.string.log_bluetooth_command_timeout : R.string.log_usb_command_timeout)
+                            : (lockedSourceType() == SpectrumSource.TYPE_BLUZ
+                                ? R.string.log_bluetooth_command_failed : R.string.log_usb_command_failed),
                     label), Toast.LENGTH_SHORT);
         }
     }
@@ -1819,7 +1845,7 @@ private void startStopRecording(boolean recording) {
 private void setRecordingState(boolean recording) {
     if (recording != is_recording) {
         // log event to debug view
-        String inputTypeText = lockedSourceName("audio", "usb", "none");
+        String inputTypeText = lockedSourceName("audio", "usb", "bluz", "none");
 
         if (recording) {
             AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_start_recording, inputTypeText));
@@ -2282,7 +2308,7 @@ private void sendDataToAtomSwift(int cps, MeasurementData.DoseRate doseRate) {
             break;
     }
 
-    String inputTypeStr = lockedSourceName("MIC", "USB", "NONE");
+    String inputTypeStr = lockedSourceName("MIC", "USB", "BLUZ", "NONE");
 
     resetAtomSwiftIntermediateData();
 

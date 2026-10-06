@@ -6,8 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.bluetooth.BluetoothAdapter;
 import android.hardware.usb.UsbDevice;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.Gravity;
@@ -19,6 +19,9 @@ import android.widget.Toast;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +38,11 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private boolean connecting = false;
     private OnBackPressedCallback backCallback;
     private List<DeviceDescriptor> devices = new ArrayList<>();
+    private AppPermissions permissions;
+    private final ActivityResultLauncher<Intent> bluetoothEnable = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (scanner != null) scanner.restartBluetoothScan();
+            });
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -48,6 +56,8 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         setContentView(R.layout.activity_atom_spectra_device_select);
         startRecordingAfter = getIntent().getBooleanExtra(EXTRA_START_RECORDING_AFTER, false);
         scanner = new DeviceScanner(this);
+        permissions = new AppPermissions(this, null);
+        findViewById(R.id.bluetoothAction).setOnClickListener(view -> onBluetoothAction());
         backCallback = new OnBackPressedCallback(false) {
             @Override
             public void handleOnBackPressed() {
@@ -81,18 +91,20 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
         IntentFilter filter = new IntentFilter(Constants.ACTION.ACTION_DEVICE_SELECTED);
         filter.addAction(Constants.ACTION.ACTION_DEVICE_SELECTION_REQUIRED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(resultReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            registerReceiver(resultReceiver, filter, 0);
-        } else {
-            registerReceiver(resultReceiver, filter);
-        }
+        ContextCompat.registerReceiver(this, resultReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         receiverRegistered = true;
 
-        scanner.start(list -> {
-            devices = list;
-            renderDevices();
+        scanner.start(new DeviceScanner.Listener() {
+            @Override
+            public void onDevicesChanged(List<DeviceDescriptor> list) {
+                devices = list;
+                renderDevices();
+            }
+
+            @Override
+            public void onBluetoothStateChanged(DeviceScanner.BluetoothState state) {
+                updateBluetoothState(state);
+            }
         });
     }
 
@@ -208,9 +220,43 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     }
 
     private void requestPermission(DeviceDescriptor device) {
+        if (device.type == SpectrumSource.TYPE_BLUZ) {
+            permissions.ensure(AppPermissions.Capability.BLUETOOTH,
+                    () -> scanner.restartBluetoothScan(), () -> scanner.refresh());
+            return;
+        }
         if (device.token instanceof UsbDevice) {
             scanner.requestUsbPermission((UsbDevice) device.token);
         }
+    }
+
+    private void updateBluetoothState(DeviceScanner.BluetoothState state) {
+        TextView warning = findViewById(R.id.bluetoothWarning);
+        android.widget.Button action = findViewById(R.id.bluetoothAction);
+        warning.setVisibility(state == DeviceScanner.BluetoothState.OFF
+                || state == DeviceScanner.BluetoothState.LOCATION_DISABLED
+                || state == DeviceScanner.BluetoothState.SCAN_FAILED ? View.VISIBLE : View.GONE);
+        if (state == DeviceScanner.BluetoothState.OFF) warning.setText(R.string.bluetooth_off);
+        else if (state == DeviceScanner.BluetoothState.LOCATION_DISABLED) warning.setText(R.string.bluetooth_location_off);
+        else if (state == DeviceScanner.BluetoothState.SCAN_FAILED) warning.setText(R.string.bluetooth_scan_failed);
+        action.setVisibility(state == DeviceScanner.BluetoothState.UNSUPPORTED ? View.GONE : View.VISIBLE);
+        action.setText(state == DeviceScanner.BluetoothState.PERMISSION_REQUIRED ? R.string.bluetooth_allow
+                : state == DeviceScanner.BluetoothState.OFF ? R.string.bluetooth_enable
+                : state == DeviceScanner.BluetoothState.LOCATION_DISABLED ? R.string.bluetooth_location_enable
+                : R.string.bluetooth_scan);
+    }
+
+    private void onBluetoothAction() {
+        permissions.ensure(AppPermissions.Capability.BLUETOOTH, () -> {
+            DeviceScanner.BluetoothState state = scanner.bluetoothState();
+            if (state == DeviceScanner.BluetoothState.OFF) {
+                bluetoothEnable.launch(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));
+            } else if (state == DeviceScanner.BluetoothState.LOCATION_DISABLED) {
+                bluetoothEnable.launch(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            } else {
+                scanner.restartBluetoothScan();
+            }
+        }, () -> scanner.refresh());
     }
 
     private void connect(DeviceDescriptor device) {

@@ -1,10 +1,13 @@
 # Device session state machine
 
-How `AtomSpectraService` and the spectrum sources (`AtomSpectraAudioSource`, `AtomSpectraProSource`) decide which device the app works with, whether it is there, and what happens to the spectrum on the screen when a device comes, goes or starts recording.
+How `AtomSpectraService` and the spectrum sources (`AtomSpectraAudioSource`, `AtomSpectraProSource`, `BluZBleSource`) decide which device the app works with, whether it is there, and what happens to the spectrum on the screen when a device comes, goes or starts recording.
 
 Diagrams are Mermaid; they render on GitHub and in most IDE markdown previews.
 
-> Not compiled or run: there is no JDK/Android SDK on the development machine. Treat the implementation as unverified until it is built.
+> Updated 2026-10-06: debug compilation and assembly succeeded using the existing
+> JDK/Android SDK. Project-wide lint remains blocked by existing menu and receiver
+> errors. No tests were added or run. Device behaviour and indicator screenshots
+> remain unverified; no ADB device/emulator was attached.
 
 ## 1. The idea in one picture
 
@@ -53,6 +56,36 @@ Responsibilities:
 | Source | Talking to the hardware, waiting for an absent device, noticing loss and return, `status()`, `lastError()` | Decide what the user wants, touch the screen spectrum |
 | Service | The lock, the remembered choice, recording intent, who produced the screen spectrum, mirrors for the UI | Scan for devices, retry failed connects |
 | UI | Showing the pair, asking the user, the selection screen | Any state of its own |
+
+### BluZ Source
+
+Wire states, transmission timing, frame headers and command payloads are in
+[bluz-device-protocol.md](bluz-device-protocol.md). This document covers the
+application's session and source lifecycle, not firmware command layouts.
+
+`BluZBleSource` owns its locked-MAC waiting scan and GATT connection; callbacks
+and operations are serialized on the service input handler. Every reply carries
+the instance ID, and callbacks from old GATT connections are ignored. Physical
+loss or Bluetooth-off emits `DISCONNECTED`, clears the scan/GATT and waits again.
+The service uses `RECORDING_SUSPEND_REASON_BT_DISCONNECT` and its existing resume
+flow when the source returns. Failed handshake is terminal until Retry; missing
+permission returns the session to UNSELECTED.
+
+First checksum-valid normal frame supplies status, calibration and `READY` with
+4096 output channels. Lower-resolution live frames are count-preservingly
+expanded, including while a bounded settings change is pending. Idle connection
+does not probe resolution, write settings or start acquisition. Only a proven
+live mismatch queues a preserving resolution change; a type 3 frame confirms it.
+Repeated mismatched frames do not cause repeated flash writes. Start/stop and
+reset also require frame confirmation; failures use the existing operation error
+flow. Explicit Retry reconnects with a fresh snapshot. Idle show returns an
+empty histogram, and calibration writing is explicitly unsupported.
+
+Selection discovery is separate from source waiting and never owns a GATT.
+Bluetooth-off produces a persistent selection-screen warning and enable action;
+permission denial or absent BLE hardware are distinct states. Audio, USB and
+offline choices remain usable. Device-type icons are vectors with existing
+status badges above them; WAITING dims only the base icon.
 
 ## 2. Session state (what the user chose)
 

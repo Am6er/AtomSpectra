@@ -4,6 +4,7 @@
     <string name="app_name">Atom Spectra</string>
     <string name="app_bar_audio_action">Reading data from audio</string>
     <string name="app_bar_usb_action">Reading data from USB</string>
+    <string name="app_bar_bluetooth_action">Reading data from Bluetooth</string>
     <string name="app_bar_spectrum_update">(updating spectrum)</string>
     <string name="app_bar_pause">Data reading stopped</string>
     <string name="app_channel">Atom Spectra Service</string>
@@ -34,6 +35,19 @@
     <string name="action_usb_no_access">Can\'t open USB device</string>
     <string name="device_default_microphone">Default microphone</string>
     <string name="device_spectra_pro">Spectra Pro (USB)</string>
+    <string name="device_bluz">BluZ (Bluetooth)</string>
+    <string name="action_bluetooth_attached">BluZ reconnected</string>
+    <string name="cal_store_bluetooth_unsupported">Writing BluZ calibration is not supported</string>
+    <string name="log_bluetooth_command_failed">%1$s Bluetooth command failed</string>
+    <string name="log_bluetooth_command_timeout">%1$s Bluetooth command timed out</string>
+    <string name="recording_suspended_dialog_bluetooth_disconnected">BluZ disconnected during recording. Turn on Bluetooth and reconnect the device to resume.</string>
+    <string name="bluetooth_off">Bluetooth is off</string>
+    <string name="bluetooth_allow">Allow Bluetooth access</string>
+    <string name="bluetooth_enable">Enable Bluetooth</string>
+    <string name="bluetooth_scan">Scan for Bluetooth devices</string>
+    <string name="bluetooth_location_off">Location services are off; Bluetooth discovery is unavailable</string>
+    <string name="bluetooth_location_enable">Enable location services</string>
+    <string name="bluetooth_scan_failed">Bluetooth discovery failed</string>
     <string name="device_waiting_notification">Waiting for the selected device</string>
     <string name="device_none_selected_notification">No device selected</string>
     <string name="device_waiting_description">%1$s - waiting for the device</string>

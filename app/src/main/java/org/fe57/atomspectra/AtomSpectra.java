@@ -3410,6 +3410,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             case SpectrumSource.TYPE_AUDIO:
                 baseRes = R.drawable.input_mic;
                 break;
+            case SpectrumSource.TYPE_BLUZ:
+                baseRes = R.drawable.input_bt;
+                break;
             default:
                 baseRes = R.drawable.input_none;
                 break;
@@ -3417,14 +3420,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         Drawable icon = ContextCompat.getDrawable(this, baseRes);
         if (icon != null) {
             icon = icon.mutate();
-            if (state == AtomSpectraService.DeviceState.WAITING) {
-                icon.setAlpha(INPUT_WAITING_ALPHA);
-            }
+            icon.setAlpha(state == AtomSpectraService.DeviceState.WAITING ? INPUT_WAITING_ALPHA : 255);
             Drawable badge = inputStateBadge(state);
             if (badge != null) {
                 icon = new LayerDrawable(new Drawable[]{icon, badge});
             }
             inputType.setBackground(icon);
+            inputType.setBackgroundTintList(null);
         }
 
         final String info = AtomSpectraService.inputDeviceInfo;
@@ -3681,6 +3683,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 break;
             case AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT:
                 message = getString(R.string.recording_suspended_dialog_usb_disconnected);
+                break;
+            case AtomSpectraService.RECORDING_SUSPEND_REASON_BT_DISCONNECT:
+                message = getString(R.string.recording_suspended_dialog_bluetooth_disconnected);
                 break;
             default:
                 message = "Unknown reason.";

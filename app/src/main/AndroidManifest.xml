@@ -10,6 +10,12 @@
     <uses-feature
         android:name="android.hardware.location"
         android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -24,6 +30,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <queries>
@@ -146,11 +153,11 @@
             android:name=".AtomSpectraService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="specialUse|microphone|location"
+            android:foregroundServiceType="specialUse|microphone|location|connectedDevice"
             android:launchMode="singleInstance">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="usb_serial_spectrometer_data_acquisition" />
+                android:value="audio_usb_ble_spectrometer_data_acquisition" />
         </service>
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
