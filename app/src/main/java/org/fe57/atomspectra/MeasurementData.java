@@ -9,12 +9,18 @@ import java.util.LinkedList;
 public final class MeasurementData {
     public static final MeasurementData instance = new MeasurementData();
 
-    /** Number of samples kept in the search histories. */
+    /**
+     * Number of samples kept in the search histories.
+     */
     public final static int SEARCH_WINDOW_SIZE = 240;
 
-    /** cps during the last second. */
+    /**
+     * cps during the last second.
+     */
     public volatile int cp1s = 0;
-    /** cps in the user defined energy range during the last second. */
+    /**
+     * cps in the user defined energy range during the last second.
+     */
     public volatile int cp1sInterval = 0;
 
     public volatile DoseRate doseRate = new DoseRate();
@@ -54,7 +60,9 @@ public final class MeasurementData {
 
     // --- search histories ----------------------------------------------------------------------
 
-    /** Append one sample to every search history. */
+    /**
+     * Append one sample to every search history.
+     */
     public void appendSearchSample(long timestamp, double nonCompensated, double compensated,
                                    double intervalCps, double highAlarm, double lowAlarm, double baseline) {
         synchronized (historyLock) {

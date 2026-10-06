@@ -44,7 +44,7 @@ final class DeviceScanner {
         }
     }
 
-    enum BluetoothState { UNSUPPORTED, PERMISSION_REQUIRED, OFF, LOCATION_DISABLED, READY, SCAN_FAILED }
+    enum BluetoothState {UNSUPPORTED, PERMISSION_REQUIRED, OFF, LOCATION_DISABLED, READY, SCAN_FAILED}
 
     private static final String ACTION_USB_PERMISSION_RESULT = "org.fe57.atomspectra.ACTION_SCANNER_USB_PERMISSION";
 
@@ -90,7 +90,9 @@ final class DeviceScanner {
         return devices;
     }
 
-    /** Delivers the current list at once and again on every change, until {@link #stop()}. */
+    /**
+     * Delivers the current list at once and again on every change, until {@link #stop()}.
+     */
     void start(Listener listener) {
         this.stop();
         this.listener = listener;
@@ -126,7 +128,9 @@ final class DeviceScanner {
         }
     }
 
-    /** Re-scan and notify the listener, e.g. after a permission was granted. */
+    /**
+     * Re-scan and notify the listener, e.g. after a permission was granted.
+     */
     void refresh() {
         final Listener current = this.listener;
         if (current != null) {
@@ -134,7 +138,9 @@ final class DeviceScanner {
         }
     }
 
-    /** Asks the system for permission to use the USB device; the list is refreshed when the user answers. */
+    /**
+     * Asks the system for permission to use the USB device; the list is refreshed when the user answers.
+     */
     void requestUsbPermission(UsbDevice device) {
         UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
         if (manager == null) return;
@@ -219,13 +225,15 @@ final class DeviceScanner {
         }
         try {
             for (BluetoothDevice device : bluetoothAdapter.getBondedDevices()) {
-                if ("BluZ".equals(device.getName())) addBluetoothDevice(device, device.getName(), false);
+                if ("BluZ".equals(device.getName()))
+                    addBluetoothDevice(device, device.getName(), false);
             }
             if (listener != null && bluetoothScan == null && !scanFailed) startBluetoothScan();
             result.addAll(bluetoothDevices.values());
         } catch (SecurityException error) {
             stopBluetoothScan();
-            if (listener != null) listener.onBluetoothStateChanged(BluetoothState.PERMISSION_REQUIRED);
+            if (listener != null)
+                listener.onBluetoothStateChanged(BluetoothState.PERMISSION_REQUIRED);
         }
         return result;
     }
@@ -310,7 +318,8 @@ final class DeviceScanner {
         bluetoothScan = null;
         if (previous == null || bluetoothAdapter == null) return;
         try {
-            if (bluetoothAdapter.getBluetoothLeScanner() != null) bluetoothAdapter.getBluetoothLeScanner().stopScan(previous);
+            if (bluetoothAdapter.getBluetoothLeScanner() != null)
+                bluetoothAdapter.getBluetoothLeScanner().stopScan(previous);
         } catch (SecurityException | IllegalStateException ignored) {
         }
     }

@@ -598,7 +598,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                         }
                     }).start();
                 })
-                .setNegativeButton(R.string.dialog_cancel_button, (dialog, whichButton) -> {})
+                .setNegativeButton(R.string.dialog_cancel_button, (dialog, whichButton) -> {
+                })
                 .show();
     }
 

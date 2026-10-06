@@ -42,22 +42,22 @@ public class LocaleContextWrapper extends ContextWrapper {
     }
 
     @SuppressWarnings("deprecation")
-    public static Locale getSystemLocaleLegacy(Configuration config){
+    public static Locale getSystemLocaleLegacy(Configuration config) {
         return config.locale;
     }
 
     @TargetApi(Build.VERSION_CODES.N)
-    public static Locale getSystemLocale(Configuration config){
+    public static Locale getSystemLocale(Configuration config) {
         return config.getLocales().get(0);
     }
 
     @SuppressWarnings("deprecation")
-    public static void setSystemLocaleLegacy(Configuration config, Locale locale){
+    public static void setSystemLocaleLegacy(Configuration config, Locale locale) {
         config.locale = locale;
     }
 
     @TargetApi(Build.VERSION_CODES.N)
-    public static void setSystemLocale(Configuration config, Locale locale){
+    public static void setSystemLocale(Configuration config, Locale locale) {
         config.setLocale(locale);
     }
 }

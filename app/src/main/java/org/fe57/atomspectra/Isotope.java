@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Objects;
 
-public class Isotope implements Comparable<Isotope>{
+public class Isotope implements Comparable<Isotope> {
     public static final String NonElement = "ND-0";
     public static final double Stable = -0.5;
     public static final double ChainSign = -1.0;
@@ -23,13 +23,13 @@ public class Isotope implements Comparable<Isotope>{
     private static final double MIN_INTENSITY = 1.0;
     private static final double MAX_INTENSITY = 100.0;
     private static final String[] Names = {
-            "H",  "He",
-            "Li", "Be", "B",  "C",  "N",  "O",  "F",  "Ne",
-            "Na", "Mg", "Al", "Si", "P",  "S",  "Cl", "Ar",
-            "K",  "Ca", "Sc", "Ti", "V",  "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr",
-            "Rb", "Sr", "Y",  "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I",  "Xe",
-            "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W",  "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn",
-            "Fr", "Ra", "Ac", "Th", "Pa", "U",  "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Me", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
+            "H", "He",
+            "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+            "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar",
+            "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr",
+            "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe",
+            "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn",
+            "Fr", "Ra", "Ac", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Me", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
     };
     private static final int ColorIsotope = 0xFFB9DDDD;  //0xFFC8FDC4
     private static final int[] ColorImportances = new int[]{
@@ -56,13 +56,13 @@ public class Isotope implements Comparable<Isotope>{
     private RectF Coord = new RectF(0, 0, 0, 0);
 
     //copy constructor
-    public Isotope (Isotope i) {
+    public Isotope(Isotope i) {
         Name = i.Name;
         Weight = i.Weight;
         Addon = i.Addon;
         Index = i.Index;
         Chain = new LinkedList<>();
-        for (String s: i.Chain)
+        for (String s : i.Chain)
             Chain.addLast(s);
         Coord = new RectF(i.Coord);
         HalfLife = i.HalfLife;
@@ -76,46 +76,46 @@ public class Isotope implements Comparable<Isotope>{
         ChildrenList.addAll(i.ChildrenList);
     }
 
-//Example: Isotope("Ra-226", 223.10, 100.0)
-public Isotope(@NonNull String name, double halfLife){
-    int idx = name.indexOf("-");
-    if ((idx > 0) && idx < (name.length() - 1)) {
-        Name = name.substring(0, name.indexOf("-"));
-        String s = "";
-        Addon = "";
-        for (int i  = idx + 1; i < name.length(); i++)
-            if ((name.substring(i, i + 1).compareTo("0")) >=0 && (name.substring(i, i + 1).compareTo("9") <=0))
-                s += name.substring(i, i + 1);
-            else {
-                Addon = name.substring(i);
-                break;
-            }
-        if (s.length() > 0)
-            Weight = Integer.parseInt(s);
-        else
+    //Example: Isotope("Ra-226", 223.10, 100.0)
+    public Isotope(@NonNull String name, double halfLife) {
+        int idx = name.indexOf("-");
+        if ((idx > 0) && idx < (name.length() - 1)) {
+            Name = name.substring(0, name.indexOf("-"));
+            String s = "";
+            Addon = "";
+            for (int i = idx + 1; i < name.length(); i++)
+                if ((name.substring(i, i + 1).compareTo("0")) >= 0 && (name.substring(i, i + 1).compareTo("9") <= 0))
+                    s += name.substring(i, i + 1);
+                else {
+                    Addon = name.substring(i);
+                    break;
+                }
+            if (s.length() > 0)
+                Weight = Integer.parseInt(s);
+            else
+                Weight = 0;
+        } else {
+            Name = name;
             Weight = 0;
-    } else {
-        Name = name;
-        Weight = 0;
-        Addon = "";
+            Addon = "";
+        }
+        HalfLife = halfLife;
+        Index = -1;
+        for (int i = 0; i < Names.length; i++) {
+            if (Names[i].equals(Name))
+                Index = i;
+        }
+        Chain = new LinkedList<>();
+        if (halfLife == ChainSign)
+            Chain.add(name);
+        EnergyChain = new LinkedList<>();
+        IntensityChain = new LinkedList<>();
+        maxIntensity = MIN_INTENSITY;
+        ChildrenList = new LinkedList<>();
     }
-    HalfLife = halfLife;
-    Index = -1;
-    for (int i = 0; i < Names.length; i++) {
-        if (Names[i].equals(Name))
-            Index = i;
-    }
-    Chain = new LinkedList<>();
-    if (halfLife == ChainSign)
-        Chain.add(name);
-    EnergyChain = new LinkedList<>();
-    IntensityChain = new LinkedList<>();
-    maxIntensity = MIN_INTENSITY;
-    ChildrenList = new LinkedList<>();
-}
 
     //Example: Isotope("Ra", 226, "", 223.10, 100.0)
-    public Isotope(@NonNull String name, int weight, @NonNull String addon, double halfLife){
+    public Isotope(@NonNull String name, int weight, @NonNull String addon, double halfLife) {
         Name = name;
         Weight = weight;
         Addon = addon;
@@ -166,7 +166,7 @@ public Isotope(@NonNull String name, double halfLife){
     }
 
     public Isotope setMaxIntensity(double max) {
-        maxIntensity = Constants.MinMax(max,MIN_INTENSITY,MAX_INTENSITY);
+        maxIntensity = Constants.MinMax(max, MIN_INTENSITY, MAX_INTENSITY);
         for (int j = 0; j < IntensityChain.size(); j++) {
             maxIntensity = StrictMath.max(maxIntensity, IntensityChain.get(j));
         }
@@ -175,19 +175,19 @@ public Isotope(@NonNull String name, double halfLife){
 
     public void addChild(@NonNull String name, double variability) {
         boolean add = true;
-        for(Pair<String, Double> p: ChildrenList) {
+        for (Pair<String, Double> p : ChildrenList) {
             if (name.equals(p.first)) {
                 add = false;
                 break;
             }
         }
-        if(add)
+        if (add)
             ChildrenList.add(new Pair<>(name, variability));
     }
 
     Isotope getChain() {
         Isotope i = new Isotope(getName(), Isotope.ChainSign);
-        for(Pair<String, Double> p: ChildrenList) {
+        for (Pair<String, Double> p : ChildrenList) {
             i.addToChain(p.first);
         }
         return i;
@@ -198,7 +198,7 @@ public Isotope(@NonNull String name, double halfLife){
         for (int i = 0; i < EnergyChain.size(); i++) {
             newList.add(new Pair<>(EnergyChain.get(i), IntensityChain.get(i)));
         }
-        return  newList;
+        return newList;
     }
 
     public String getName() {
@@ -267,7 +267,7 @@ public Isotope(@NonNull String name, double halfLife){
             return ColorIsotope;
         //use square to lower the function
         double temp = 1.0 * IntensityChain.getFirst() / maxIntensity;
-        return ColorImportances[(int)(temp*temp*(ColorImportances.length - 1))];
+        return ColorImportances[(int) (temp * temp * (ColorImportances.length - 1))];
     }
 
     public int getColor(int line) {
@@ -276,7 +276,7 @@ public Isotope(@NonNull String name, double halfLife){
         if (maxIntensity < MIN_INTENSITY || line < 0 || line >= IntensityChain.size() || ColorImportances.length < 2)
             return ColorIsotope;
         double temp = 1.0 * IntensityChain.get(line) / maxIntensity;
-        return ColorImportances[(int)(temp*temp*(ColorImportances.length - 1))];
+        return ColorImportances[(int) (temp * temp * (ColorImportances.length - 1))];
     }
 
     public static int getColorForIsotope() {
@@ -296,7 +296,7 @@ public Isotope(@NonNull String name, double halfLife){
     }
 
     public Isotope addToChain(@NonNull String s) {
-        if(!Chain.contains(s))
+        if (!Chain.contains(s))
             Chain.addLast(s);
         return this;
     }
@@ -304,7 +304,7 @@ public Isotope(@NonNull String name, double halfLife){
     public boolean isInChain(@NonNull String s) {
         if (Chain.isEmpty())
             return false;
-        for (String isotope: Chain)
+        for (String isotope : Chain)
             if (s.equals(isotope))
                 return true;
         return false;
@@ -335,7 +335,7 @@ public Isotope(@NonNull String name, double halfLife){
         }
         EnergyChain.add(pos, energy);
         IntensityChain.add(pos, intensity);
-        maxIntensity = StrictMath.max(maxIntensity, Constants.MinMax(intensity,MIN_INTENSITY,MAX_INTENSITY));
+        maxIntensity = StrictMath.max(maxIntensity, Constants.MinMax(intensity, MIN_INTENSITY, MAX_INTENSITY));
         return this;
     }
 
@@ -372,7 +372,7 @@ public Isotope(@NonNull String name, double halfLife){
         }
 
         if (HalfLife > 0) {
-            if(EnergyChain.size() < 1) {
+            if (EnergyChain.size() < 1) {
                 return String.format(Locale.US, "%s-%d%s (%.4g %s)", Name, Weight, Addon, half, halfDimension);
             }
             StringBuilder s = new StringBuilder(String.format(Locale.US, "%s-%d%s (%.4g %s) (%.2f", Name, Weight, Addon, half, halfDimension, EnergyChain.getFirst()));
@@ -407,7 +407,7 @@ public Isotope(@NonNull String name, double halfLife){
         }
 
         if (HalfLife > 0) {
-            if(EnergyChain.size() < 1) {
+            if (EnergyChain.size() < 1) {
                 return res.getString(R.string.isotope_show_name_halflife, Name, Weight, Addon, half, halfDimension);
 //                return String.format(Locale.US, "%s-%d%s", Name, Weight, Addon);
             }

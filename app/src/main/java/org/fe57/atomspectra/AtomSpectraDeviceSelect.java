@@ -33,7 +33,9 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Lets the user pick the device to record from, or work offline. */
+/**
+ * Lets the user pick the device to record from, or work offline.
+ */
 public class AtomSpectraDeviceSelect extends ComponentActivity {
     public static final String EXTRA_START_RECORDING_AFTER = "start_recording_after";
 
@@ -188,7 +190,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             if (Constants.ACTION.ACTION_DEVICE_SELECTED.equals(intent.getAction())) {
                 // a spectrum that needs the user's decision before recording is settled by the record button, not here
                 if (startRecordingAfter && service != null && !AtomSpectraService.isRecording()
-                    && AtomSpectraService.isDeviceConnected() && !AtomSpectraService.isConnectDecisionPending()
+                        && AtomSpectraService.isDeviceConnected() && !AtomSpectraService.isConnectDecisionPending()
                         && service.startDecision() == AtomSpectraService.START_FREE) {
                     sendBroadcast(new Intent(Constants.ACTION.ACTION_START_RECORDING).setPackage(Constants.PACKAGE_NAME));
                 }
@@ -220,7 +222,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         status.setText(suspended && deviceState == AtomSpectraService.DeviceState.ERROR
                 ? R.string.device_error_notification
                 : suspended && deviceState != AtomSpectraService.DeviceState.BUSY
-                    ? R.string.device_select_waiting : R.string.device_select_connecting);
+                  ? R.string.device_select_waiting : R.string.device_select_connecting);
         status.setVisibility(show || suspended ? View.VISIBLE : View.INVISIBLE);
     }
 
@@ -300,7 +302,8 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 && AtomSpectraService.isDeviceConnected());
         String text = device.displayName;
         if (!available) text += "\n" + getString(R.string.device_select_unavailable);
-        if (!device.permissionGranted) text += "\n" + getString(R.string.device_select_permission_needed);
+        if (!device.permissionGranted)
+            text += "\n" + getString(R.string.device_select_permission_needed);
         SpannableString label = new SpannableString(text);
         if (text.length() > device.displayName.length()) {
             label.setSpan(new AbsoluteSizeSpan(14, true), device.displayName.length(), text.length(),
@@ -372,13 +375,15 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 || state == DeviceScanner.BluetoothState.LOCATION_DISABLED
                 || state == DeviceScanner.BluetoothState.SCAN_FAILED ? View.VISIBLE : View.INVISIBLE);
         if (state == DeviceScanner.BluetoothState.OFF) warning.setText(R.string.bluetooth_off);
-        else if (state == DeviceScanner.BluetoothState.LOCATION_DISABLED) warning.setText(R.string.bluetooth_location_off);
-        else if (state == DeviceScanner.BluetoothState.SCAN_FAILED) warning.setText(R.string.bluetooth_scan_failed);
+        else if (state == DeviceScanner.BluetoothState.LOCATION_DISABLED)
+            warning.setText(R.string.bluetooth_location_off);
+        else if (state == DeviceScanner.BluetoothState.SCAN_FAILED)
+            warning.setText(R.string.bluetooth_scan_failed);
         action.setVisibility(state == DeviceScanner.BluetoothState.UNSUPPORTED ? View.INVISIBLE : View.VISIBLE);
         action.setText(state == DeviceScanner.BluetoothState.PERMISSION_REQUIRED ? R.string.bluetooth_allow
                 : state == DeviceScanner.BluetoothState.OFF ? R.string.bluetooth_enable
-                : state == DeviceScanner.BluetoothState.LOCATION_DISABLED ? R.string.bluetooth_location_enable
-                : R.string.bluetooth_scan);
+                  : state == DeviceScanner.BluetoothState.LOCATION_DISABLED ? R.string.bluetooth_location_enable
+                    : R.string.bluetooth_scan);
     }
 
     private void onBluetoothAction() {

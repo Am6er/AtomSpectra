@@ -6,12 +6,16 @@ import android.os.Build;
 
 import java.util.Locale;
 
-/** Best-effort device identity strings, shared by the scanner and the sources so they always agree. */
+/**
+ * Best-effort device identity strings, shared by the scanner and the sources so they always agree.
+ */
 final class DeviceIdentity {
     private DeviceIdentity() {
     }
 
-    /** Pre-M there is a single default microphone. */
+    /**
+     * Pre-M there is a single default microphone.
+     */
     static final String AUDIO_DEFAULT = "audio:default";
 
     static String audio(AudioDeviceInfo device) {

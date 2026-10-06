@@ -111,7 +111,9 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         this(context, device, DeviceIdentity.audio(device));
     }
 
-    /** Waits for this identity if the token is not on the system yet. */
+    /**
+     * Waits for this identity if the token is not on the system yet.
+     */
     public AtomSpectraAudioSource(Context context, String identity) {
         this(context, findAudioDevice(context, identity), identity);
     }
@@ -198,7 +200,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     @TargetApi(Build.VERSION_CODES.M)
     private static AudioDeviceInfo findAudioDevice(Context ctx, String identity) {
-        if (ctx == null || identity == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null;
+        if (ctx == null || identity == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+            return null;
         AudioManager manager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
         if (manager == null) return null;
         AudioDeviceInfo[] devices = manager.getDevices(AudioManager.GET_DEVICES_INPUTS);
@@ -239,7 +242,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     @Override
     public void onAppPreferencesChanged() {
         final Context ctx = this.context;
-        if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED) return;
+        if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+            return;
 
         final int oldFrontMin = this.frontCountsMin;
         final int oldFrontMax = this.frontCountsMax;
@@ -320,7 +324,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     private void onSelectedDeviceLost() {
         synchronized (this.stateLock) {
-            if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED) return;
+            if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+                return;
 
             this.stopTimersAndCapture();
             this.status = SpectrumSource.STATUS_DISCONNECTED;
@@ -473,7 +478,9 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         return legacy == null ? null : legacy.getCoeffArray(legacy.getFactor() + 1);
     }
 
-    /** Publish the latest captured samples and the averaged reference pulse for the raw audio views. */
+    /**
+     * Publish the latest captured samples and the averaged reference pulse for the raw audio views.
+     */
     private void publishScopeSnapshot() {
         if (!AudioScopeData.instance.wanted) return;
 

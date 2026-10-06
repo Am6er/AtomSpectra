@@ -572,16 +572,16 @@ public class AtomSpectraService extends Service {
     }
 
     /**
-    * Asynchronous; the outcome is sent as ACTION_DEVICE_SELECTED or ACTION_DEVICE_SELECTION_REQUIRED.
-    * Once connected, the choice is remembered only if the user opted in.
+     * Asynchronous; the outcome is sent as ACTION_DEVICE_SELECTED or ACTION_DEVICE_SELECTION_REQUIRED.
+     * Once connected, the choice is remembered only if the user opted in.
      */
     public void selectDevice(DeviceDescriptor device) {
         postToInputThread(() -> doSelectDevice(device));
     }
 
     /**
-    * Stops any recording, releases the device and leaves the loaded spectrum as it is.
-    * The next launch starts offline too only if the user opted in to remembering the choice.
+     * Stops any recording, releases the device and leaves the loaded spectrum as it is.
+     * The next launch starts offline too only if the user opted in to remembering the choice.
      */
     public void selectOffline() {
         sessionState = DeviceSessionState.OFFLINE;
@@ -840,8 +840,8 @@ public class AtomSpectraService extends Service {
             } else {
                 inputDeviceInfo = locked.type == SpectrumSource.TYPE_AUDIO
                         ? getAudioDeviceInfoText(connected.deviceId())
-                    : locked.type == SpectrumSource.TYPE_BLUZ ? connected.deviceId()
-                    : getUsbDeviceInfoText(connected.deviceId());
+                        : locked.type == SpectrumSource.TYPE_BLUZ ? connected.deviceId()
+                          : getUsbDeviceInfoText(connected.deviceId());
             }
         }
     }
@@ -1058,8 +1058,8 @@ public class AtomSpectraService extends Service {
                     isRecordingSuspended = true;
                     recordingSuspendReason = lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO
                             ? RECORDING_SUSPEND_REASON_USB_DISCONNECT
-                        : lockedSourceType() == SpectrumSource.TYPE_BLUZ ? RECORDING_SUSPEND_REASON_BT_DISCONNECT
-                            : RECORDING_SUSPEND_REASON_AUDIO_REMOVED;
+                            : lockedSourceType() == SpectrumSource.TYPE_BLUZ ? RECORDING_SUSPEND_REASON_BT_DISCONNECT
+                              : RECORDING_SUSPEND_REASON_AUDIO_REMOVED;
                     recordingSuspendSourceType = lockedSourceType();
                     onRecordingSuspended();
                 }
@@ -1112,110 +1112,110 @@ public class AtomSpectraService extends Service {
         }
 
         if (label != null) {
-        showToastInMainLooper(getStringOrDefaultLocale(
-            reason == SpectrumSource.REASON_TIMEOUT
-                ? R.string.log_source_operation_timeout
-                : R.string.log_source_operation_failed,
-            label), Toast.LENGTH_SHORT);
+            showToastInMainLooper(getStringOrDefaultLocale(
+                    reason == SpectrumSource.REASON_TIMEOUT
+                            ? R.string.log_source_operation_timeout
+                            : R.string.log_source_operation_failed,
+                    label), Toast.LENGTH_SHORT);
         }
     }
 
-private Timer intervalSearchAlarmTimer;
+    private Timer intervalSearchAlarmTimer;
 
-private void startIntervalSearchAlarmTimer() {
-    synchronized (intervalSearchAlarmSync) {
-        if (intervalSearchAlarmTimer != null) {
-            // TODO: localize
-            String message = "ERROR: trying to start interval search alarm timer while timer is already in progress";
-            showToastInMainLooper(message, Toast.LENGTH_SHORT);
-            AtomSpectraLog.addMessage(service_context, message);
-            return;
-        }
-        intervalSearchAlarmTimer = new Timer();
-        TimerTask intervalSearchAlarmTask = new TimerTask() {
-            @Override
-            public void run() {
-                synchronized (intervalSearchAlarmSync) {
-                    if (intervalSearchAlarmEnabled && is_recording && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        if (intervalSearchAlarmAudioTrack != null) {
-                            double currentCps = MeasurementData.instance.doseRate.intervalCps;
-                            boolean isStable = intervalSearchAlarmBaseline.isStable();
-                            double baseCps = intervalSearchAlarmBaseline.getBaseline();
-                            double levelLow = intervalSearchAlarmBaseline.getAlarmLevelLow();
-                            double levelHigh = intervalSearchAlarmBaseline.getAlarmLevelHigh();
-                            if (!isStable || baseCps == 0 || (currentCps > levelLow && currentCps < levelHigh)) {
-                                return;
-                            }
+    private void startIntervalSearchAlarmTimer() {
+        synchronized (intervalSearchAlarmSync) {
+            if (intervalSearchAlarmTimer != null) {
+                // TODO: localize
+                String message = "ERROR: trying to start interval search alarm timer while timer is already in progress";
+                showToastInMainLooper(message, Toast.LENGTH_SHORT);
+                AtomSpectraLog.addMessage(service_context, message);
+                return;
+            }
+            intervalSearchAlarmTimer = new Timer();
+            TimerTask intervalSearchAlarmTask = new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (intervalSearchAlarmSync) {
+                        if (intervalSearchAlarmEnabled && is_recording && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            if (intervalSearchAlarmAudioTrack != null) {
+                                double currentCps = MeasurementData.instance.doseRate.intervalCps;
+                                boolean isStable = intervalSearchAlarmBaseline.isStable();
+                                double baseCps = intervalSearchAlarmBaseline.getBaseline();
+                                double levelLow = intervalSearchAlarmBaseline.getAlarmLevelLow();
+                                double levelHigh = intervalSearchAlarmBaseline.getAlarmLevelHigh();
+                                if (!isStable || baseCps == 0 || (currentCps > levelLow && currentCps < levelHigh)) {
+                                    return;
+                                }
 
-                            int totalDurationFrames = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
-                            int[] beeps;
-                            int[] beepStartFrames;
-                            double ratio = currentCps / baseCps;
-                            int pow = 0;
-                            if (ratio >= 1) {
-                                if (ratio >= 2) pow = 1;
-                                if (ratio >= 4) pow = 2;
-                                if (ratio >= 8) pow = 3;
-                                if (ratio >= 16) pow = 4;
-                                if (ratio >= 32) pow = 5;
-                                if (ratio >= 64) pow = 6;
-                                if (ratio >= 128) pow = 7;
-                                if (ratio >= 256) pow = 8;
-                                if (ratio >= 512) pow = 9;
-                                if (ratio >= 1024) pow = 10;
-                                if (pow < 10) {
-                                    beeps = new int[]{
-                                            intervalSearchBaseFreq,
-                                            intervalSearchHighFreq + pow * 200,
-                                            0,
-                                    };
-                                    beepStartFrames = new int[]{
-                                            0,                                // beep
-                                            totalDurationFrames * 150 / 500,  // short beep
-                                            totalDurationFrames * 250 / 500,  // silence
-                                    };
+                                int totalDurationFrames = intervalSearchAlarmAudioTrack.getBufferSizeInFrames();
+                                int[] beeps;
+                                int[] beepStartFrames;
+                                double ratio = currentCps / baseCps;
+                                int pow = 0;
+                                if (ratio >= 1) {
+                                    if (ratio >= 2) pow = 1;
+                                    if (ratio >= 4) pow = 2;
+                                    if (ratio >= 8) pow = 3;
+                                    if (ratio >= 16) pow = 4;
+                                    if (ratio >= 32) pow = 5;
+                                    if (ratio >= 64) pow = 6;
+                                    if (ratio >= 128) pow = 7;
+                                    if (ratio >= 256) pow = 8;
+                                    if (ratio >= 512) pow = 9;
+                                    if (ratio >= 1024) pow = 10;
+                                    if (pow < 10) {
+                                        beeps = new int[]{
+                                                intervalSearchBaseFreq,
+                                                intervalSearchHighFreq + pow * 200,
+                                                0,
+                                        };
+                                        beepStartFrames = new int[]{
+                                                0,                                // beep
+                                                totalDurationFrames * 150 / 500,  // short beep
+                                                totalDurationFrames * 250 / 500,  // silence
+                                        };
+                                    } else {
+                                        beeps = new int[]{
+                                                intervalSearchBaseFreq,
+                                                intervalSearchHighFreq + 2000,
+                                        };
+                                        beepStartFrames = new int[]{
+                                                0,                                // beep
+                                                totalDurationFrames * 150 / 500,  // long beep
+                                        };
+                                    }
                                 } else {
-                                    beeps = new int[]{
-                                            intervalSearchBaseFreq,
-                                            intervalSearchHighFreq + 2000,
-                                    };
-                                    beepStartFrames = new int[]{
-                                            0,                                // beep
-                                            totalDurationFrames * 150 / 500,  // long beep
-                                    };
-                                }
-                            } else {
-                                if (ratio <= 1.0 / 2) pow = 1;
-                                if (ratio <= 1.0 / 4) pow = 2;
-                                if (ratio <= 1.0 / 8) pow = 3;
-                                if (ratio <= 1.0 / 16) pow = 4;
-                                if (ratio <= 1.0 / 32) pow = 5;
-                                if (ratio <= 1.0 / 64) pow = 6;
-                                if (ratio <= 1.0 / 128) pow = 7;
-                                if (ratio <= 1.0 / 256) pow = 8;
-                                if (ratio <= 1.0 / 512) pow = 9;
-                                if (ratio <= 1.0 / 1024) pow = 10;
-                                if (pow < 10) {
-                                    beeps = new int[]{
-                                            intervalSearchBaseFreq,
-                                            intervalSearchLowFreq - pow * 20,
-                                            0
-                                    };
-                                    beepStartFrames = new int[]{
-                                            0,                                // beep
-                                            totalDurationFrames * 150 / 400,  // longer beep
-                                            totalDurationFrames * 400 / 500,  // silence
-                                    };
-                                } else {
-                                    beeps = new int[]{
-                                            intervalSearchBaseFreq,
-                                            intervalSearchHighFreq - 200,
-                                    };
-                                    beepStartFrames = new int[]{
-                                            0,                                // beep
-                                            totalDurationFrames * 150 / 500,  // long beep
-                                    };
-                                }
+                                    if (ratio <= 1.0 / 2) pow = 1;
+                                    if (ratio <= 1.0 / 4) pow = 2;
+                                    if (ratio <= 1.0 / 8) pow = 3;
+                                    if (ratio <= 1.0 / 16) pow = 4;
+                                    if (ratio <= 1.0 / 32) pow = 5;
+                                    if (ratio <= 1.0 / 64) pow = 6;
+                                    if (ratio <= 1.0 / 128) pow = 7;
+                                    if (ratio <= 1.0 / 256) pow = 8;
+                                    if (ratio <= 1.0 / 512) pow = 9;
+                                    if (ratio <= 1.0 / 1024) pow = 10;
+                                    if (pow < 10) {
+                                        beeps = new int[]{
+                                                intervalSearchBaseFreq,
+                                                intervalSearchLowFreq - pow * 20,
+                                                0
+                                        };
+                                        beepStartFrames = new int[]{
+                                                0,                                // beep
+                                                totalDurationFrames * 150 / 400,  // longer beep
+                                                totalDurationFrames * 400 / 500,  // silence
+                                        };
+                                    } else {
+                                        beeps = new int[]{
+                                                intervalSearchBaseFreq,
+                                                intervalSearchHighFreq - 200,
+                                        };
+                                        beepStartFrames = new int[]{
+                                                0,                                // beep
+                                                totalDurationFrames * 150 / 500,  // long beep
+                                        };
+                                    }
 
 //                                    beeps = new int[] {
 //                                            intervalSearchBaseFreq,
@@ -1225,1422 +1225,1422 @@ private void startIntervalSearchAlarmTimer() {
 //                                            0,                                // beep
 //                                            totalDurationFrames * 150 / 400,  // long beep
 //                                    };
-                            }
-
-                            int beepIndex = 0;
-                            int previousBeepsDuration = 0;
-                            float[] outputAudioBuffer = new float[totalDurationFrames];
-                            for (int i = 0; i < totalDurationFrames; i++) {
-                                // silent noise
-                                outputAudioBuffer[i] = ((float) Math.random() - 0.5f) * 0.0001f;
-
-                                int j = i - previousBeepsDuration; // beep timeline
-                                int beepDuration;
-                                if (beepIndex + 1 < beeps.length) {
-                                    beepDuration = beepStartFrames[beepIndex + 1] - previousBeepsDuration;
-                                } else {
-                                    beepDuration = totalDurationFrames - previousBeepsDuration;
                                 }
-                                int beepFrequency = beeps[beepIndex];
 
-                                if (j < beepDuration && beepFrequency > 0) {
-                                    // beep
-                                    outputAudioBuffer[i] = (float) generateTriangleWave((double) i / intervalSearchAlarmAudioTrackSampleRate, beepFrequency, 0.05, 0);
+                                int beepIndex = 0;
+                                int previousBeepsDuration = 0;
+                                float[] outputAudioBuffer = new float[totalDurationFrames];
+                                for (int i = 0; i < totalDurationFrames; i++) {
+                                    // silent noise
+                                    outputAudioBuffer[i] = ((float) Math.random() - 0.5f) * 0.0001f;
 
-                                    int fadeInOutDuration = beepDuration / 20;
-                                    if (j < fadeInOutDuration) {
-                                        outputAudioBuffer[i] *= (float) (j + 1) / fadeInOutDuration;
+                                    int j = i - previousBeepsDuration; // beep timeline
+                                    int beepDuration;
+                                    if (beepIndex + 1 < beeps.length) {
+                                        beepDuration = beepStartFrames[beepIndex + 1] - previousBeepsDuration;
+                                    } else {
+                                        beepDuration = totalDurationFrames - previousBeepsDuration;
                                     }
-                                    if (beepDuration - j < fadeInOutDuration) {
-                                        outputAudioBuffer[i] *= (float) (beepDuration - j) / fadeInOutDuration;
+                                    int beepFrequency = beeps[beepIndex];
+
+                                    if (j < beepDuration && beepFrequency > 0) {
+                                        // beep
+                                        outputAudioBuffer[i] = (float) generateTriangleWave((double) i / intervalSearchAlarmAudioTrackSampleRate, beepFrequency, 0.05, 0);
+
+                                        int fadeInOutDuration = beepDuration / 20;
+                                        if (j < fadeInOutDuration) {
+                                            outputAudioBuffer[i] *= (float) (j + 1) / fadeInOutDuration;
+                                        }
+                                        if (beepDuration - j < fadeInOutDuration) {
+                                            outputAudioBuffer[i] *= (float) (beepDuration - j) / fadeInOutDuration;
+                                        }
+                                    }
+
+                                    if (beepIndex + 1 < beeps.length && i >= beepStartFrames[beepIndex + 1]) {
+                                        beepIndex++;
+                                        previousBeepsDuration = i;
                                     }
                                 }
 
-                                if (beepIndex + 1 < beeps.length && i >= beepStartFrames[beepIndex + 1]) {
-                                    beepIndex++;
-                                    previousBeepsDuration = i;
+                                setAlarmAudioTrackDevice();
+                                intervalSearchAlarmAudioTrack.setVolume(intervalSearchAlarmVolume);
+                                int playState = intervalSearchAlarmAudioTrack.getPlayState();
+                                if (playState == AudioTrack.PLAYSTATE_PAUSED || playState == AudioTrack.PLAYSTATE_PLAYING) {
+                                    intervalSearchAlarmAudioTrack.stop();
                                 }
+                                intervalSearchAlarmAudioTrack.reloadStaticData();
+                                intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, totalDurationFrames, AudioTrack.WRITE_NON_BLOCKING);
+                                intervalSearchAlarmAudioTrack.play();
                             }
-
-                            setAlarmAudioTrackDevice();
-                            intervalSearchAlarmAudioTrack.setVolume(intervalSearchAlarmVolume);
-                            int playState = intervalSearchAlarmAudioTrack.getPlayState();
-                            if (playState == AudioTrack.PLAYSTATE_PAUSED || playState == AudioTrack.PLAYSTATE_PLAYING) {
-                                intervalSearchAlarmAudioTrack.stop();
-                            }
-                            intervalSearchAlarmAudioTrack.reloadStaticData();
-                            intervalSearchAlarmAudioTrack.write(outputAudioBuffer, 0, totalDurationFrames, AudioTrack.WRITE_NON_BLOCKING);
-                            intervalSearchAlarmAudioTrack.play();
                         }
                     }
                 }
-            }
-        };
+            };
 
-        intervalSearchAlarmTimer.schedule(intervalSearchAlarmTask, 1000, 1000);
-    }
-}
-
-private static double generateTriangleWave(double time, double frequency, double amplitude, double offset) {
-    double phase = (time * frequency) % 1.0;
-
-    double waveValue;
-    if (phase < 0.5) {
-        waveValue = phase * 2.0;
-    } else {
-        waveValue = 1.0 - ((phase - 0.5) * 2.0);
-    }
-
-    return (waveValue * 2.0 - 1.0) * amplitude + offset;
-}
-
-private void stopIntervalSearchAlarmTimer() {
-    synchronized (intervalSearchAlarmSync) {
-        if (intervalSearchAlarmTimer != null) {
-            intervalSearchAlarmTimer.cancel();
-            intervalSearchAlarmTimer.purge();
-            intervalSearchAlarmTimer = null;
+            intervalSearchAlarmTimer.schedule(intervalSearchAlarmTask, 1000, 1000);
         }
-
-        intervalSearchAlarmBaseline.reset();
     }
-}
 
-private Context service_context = null;
+    private static double generateTriangleWave(double time, double frequency, double amplitude, double offset) {
+        double phase = (time * frequency) % 1.0;
 
-@SuppressLint({"UnspecifiedRegisterReceiverFlag", "DiscouragedApi"})
-public void Start(final Context context) {
-    setLocaleFromPreferences(context);
-    this.service_context = context;
-
-    boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
-    boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-    if (Locator == null) {
-        Locator = new GPSLocator(getApplicationContext());
-    }
-    if ((hasFeatureGPS || hasFeatureNetwork) && PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT)) {
-        if (!AppPermissions.isLocationGranted(this)) {
-            Locator.stopUsingGPS();
-            addGPS = false;
+        double waveValue;
+        if (phase < 0.5) {
+            waveValue = phase * 2.0;
         } else {
-            Locator.startUsingGPS();
-            if (!Locator.hasGPS) {
-                Locator.stopUsingGPS();
-                addGPS = false;
-            }
+            waveValue = 1.0 - ((phase - 0.5) * 2.0);
         }
-    }
-    publishDeviceLocationSnapshot();
 
-    SpectrumData.instance.foreground.setSuffix(getStringOrDefaultLocale(R.string.hist_suffix));
-    SpectrumData.instance.background.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
-    sp = PrefHelper.getASSharedPreferences(this);
-    sp.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
-
-    initOutputAudioTrack();
-    loadSettings();
-    SpectrumData.instance.lastCalibrationChannel = PrefHelper.getLastCalibrationChannel(this, SpectrumData.instance.getChannelCount());
-
-    inputThread = new HandlerThread("AtomSpectraInput");
-    inputThread.start();
-    inputHandler = new Handler(inputThread.getLooper());
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        registerReceiver(broadcastReceiver,
-                makeAtomSpectraServiceIntentFilter(), null, inputHandler, Context.RECEIVER_NOT_EXPORTED);
-    } else {
-        registerReceiver(broadcastReceiver,
-                makeAtomSpectraServiceIntentFilter(), null, inputHandler);
+        return (waveValue * 2.0 - 1.0) * amplitude + offset;
     }
 
-    releaseLock();
-    sessionState = DeviceSessionState.UNSELECTED;
-    updateInputDeviceInfo(null);
-    Log.d(TAG, "AtomSpectraService START");
-}
-
-private void initOutputAudioTrack() {
-    synchronized (intervalSearchAlarmSync) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                int durationSamples = (int) (intervalSearchAlarmAudioTrackSampleRate * intervalSearchAlarmDuration);
-                intervalSearchAlarmAudioTrack = new AudioTrack.Builder().
-                        setAudioAttributes(new AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_ALARM)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
-                                .build())
-                        .setAudioFormat(new AudioFormat.Builder()
-                                .setSampleRate(intervalSearchAlarmAudioTrackSampleRate)
-                                .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                                .build())
-                        .setTransferMode(AudioTrack.MODE_STATIC)
-                        .setBufferSizeInBytes(durationSamples * 4)
-                        .build();
-            } catch (Exception ignored) {
-                intervalSearchAlarmAudioTrack = null;
-                AtomSpectraLog.addMessage(service_context, "Unable to configure output audio: " + ignored.getMessage());
-                showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_SHORT);
-            }
-            if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_NO_STATIC_DATA) {
-                intervalSearchAlarmAudioTrack.release();
-                intervalSearchAlarmAudioTrack = null;
-                showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_SHORT);
-            }
-        }
-    }
-}
-
-private static void releaseOutputAudioTrack() {
-    synchronized (intervalSearchAlarmSync) {
-        if (intervalSearchAlarmAudioTrack != null) {
-            int playState = intervalSearchAlarmAudioTrack.getPlayState();
-            if (playState == AudioTrack.PLAYSTATE_PAUSED || playState == AudioTrack.PLAYSTATE_PLAYING) {
-                intervalSearchAlarmAudioTrack.stop();
-            }
-            intervalSearchAlarmAudioTrack.release();
-            intervalSearchAlarmAudioTrack = null;
-        }
-    }
-}
-
-private static void setLocaleFromPreferences(Context context) {
-    String lang = PrefHelper.getLocale(context);
-    Locale locale = new Locale(lang);
-    Locale.setDefault(locale);
-    Resources resources = context.getResources();
-    Configuration config = resources.getConfiguration();
-    config.setLocale(locale);
-    resources.updateConfiguration(config, resources.getDisplayMetrics());
-}
-
-private void setAlarmAudioTrackDevice() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
-        if (intervalSearchAlarmAudioTrack != null) {
-            AudioDeviceInfo deviceOut = getDeviceOutput(service_context, outputSoundID, outputSoundName, true);
-            if (deviceOut == null) {
-                deviceOut = getDeviceOutput(service_context, -1, null, false);
-            }
-            if (deviceOut != null) {
-                synchronized (intervalSearchAlarmSync) {
-                    outputSoundID = deviceOut.getId();
-                    outputSoundName = deviceOut.getProductName().toString();
-                    intervalSearchAlarmAudioTrack.setPreferredDevice(deviceOut);
-                }
-            }
-        }
-    }
-}
-
-public static final String[] audioDeviceNames = new String[]{
-        "UNKNOWN",      //0
-        "EAR",          //1
-        "SPEAKER",      //2
-        "WIRED HEADSET",//3
-        "WIRED PHONES", //4
-        "ANALOG",       //5
-        "DIGITAL",      //6
-        "SCO",          //7
-        "A2DP",         //8
-        "HDMI",         //9
-        "ARC HDMI",     //10
-        "USB DEV",      //11
-        "USB ACC",      //12
-        "DOCK",         //13
-        "FM",           //14
-        "MIC",          //15
-        "TUNER",        //16
-        "TV",           //17
-        "PHONE",        //18
-        "AUX",          //19
-        "IP",           //20
-        "BUS",          //21
-        "USB HEADSET",  //22
-        "AID",          //23
-        "SAFE SPEAKER", //24
-        "UNKNOWN"       //25
-};
-
-public static AudioDeviceInfo getDeviceOutput(Context context, int lastID, String lastName, boolean same) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        AudioDeviceInfo deviceOut = null;
-        AudioDeviceInfo deviceEmptyOut = null;
-        int newID = -1;
-        int newEmptyID = -1;
-        AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        AudioDeviceInfo[] devices = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
-        if (devices != null && devices.length > 0) {
-            for (AudioDeviceInfo device : devices) {
-                if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
-                        device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
-                        device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET ||
-                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
-                    //find device with minimal id not less than desired
-                    if (same) {
-                        if (lastID == device.getId() || device.getProductName().equals(lastName)) {
-                            return device;   //Return the device we want to find
-                        }
-                    } else {
-                        if (lastID < device.getId()) {
-                            if (newID == -1 || newID > device.getId()) {
-                                newID = device.getId();
-                                deviceOut = device;
-                            }
-                        }
-                        //find the smallest device id
-                        if (newEmptyID == -1 || newEmptyID > device.getId()) {
-                            newEmptyID = device.getId();
-                            deviceEmptyOut = device;
-                        }
-                    }
-                }
-            }
-            if (same) {
-                return null;
-            }
-            if (newID == -1) {
-                //no more devices
-                return deviceEmptyOut;
-            }
-        }
-        return deviceOut;
-    } else {
-        return null;
-    }
-}
-
-private static IntentFilter makeAtomSpectraServiceIntentFilter() {
-    final IntentFilter intentFilter = new IntentFilter();
-    intentFilter.addAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
-    intentFilter.addAction(Constants.ACTION.ACTION_START_FOREGROUND);
-    intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_NOTIFICATION);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_READY);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_STATUS);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_ERROR);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DISCONNECTED);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED);
-    intentFilter.addAction(SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED);
-    intentFilter.addAction(Constants.ACTION.ACTION_START_RECORDING);
-    intentFilter.addAction(Constants.ACTION.ACTION_STOP_RECORDING);
-    intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);
-    intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
-    intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
-    intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
-    intentFilter.addAction(Constants.ACTION.ACTION_LOAD_CALIBRATION);
-    intentFilter.addAction(Constants.ACTION.ACTION_STORE_CALIBRATION);
-    return intentFilter;
-}
-
-// Everything broadcastReceiver handles runs on this thread, which keeps the data path and the
-// control actions serialized against each other without additional locks.
-private HandlerThread inputThread = null;
-private Handler inputHandler = null;
-
-private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        if (intent == null)
-            return;
-        String action = intent.getAction();
-        if (action == null)
-            return;
-        if (Constants.ACTION.ACTION_UPDATE_NOTIFICATION.equals(action)) {
-            refreshServiceNotification();
-            return;
-        }
-        if (Constants.ACTION.ACTION_CLEAR_SPECTRUM.equals(action)) {
-            startStopRecording(false);
-            DeleteSpc();
-            updateMenu();
-            // DeleteSpc() resets the spectrum to the default calibration, restore the device's one
-            restoreDeviceCalibration();
-            if (connectDecisionPending) {
-                doAdoptWaitingDevice();
-            }
-            notifyDataAvailable();
-            return;
-        }
-        if (Constants.ACTION.ACTION_START_RECORDING.equals(action)) {
-            if (isDeviceConnected() && deviceState() != DeviceState.BUSY && !is_recording && !connectDecisionPending
-                    && settleForeignSpectrumForStart(intent.getIntExtra(Constants.ACTION_PARAMETERS.START_FOREIGN_SPECTRUM,
-                    Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_UNDECIDED))) {
-                startStopRecording(true);
-            }
-            return;
-        }
-        if (Constants.ACTION.ACTION_STOP_RECORDING.equals(action)) {
-            if (deviceState() != DeviceState.BUSY) {
-                startStopRecording(false);
-            }
-            return;
-        }
-        if (action.startsWith("org.fe57.atomspectra.ACTION_SOURCE_")) {
-            onSourceReply(action, intent);
-            return;
-        }
-        if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
-            Log.i(TAG, "Received Stop Foreground Intent");
-            releaseOutputAudioTrack();
-            Log.d(TAG, "recording Stop");
-            Stop();
-            return;
-        }
-        if (Constants.ACTION.ACTION_START_FOREGROUND.equals(action)) {
-            Log.d(TAG, "Received Start Foreground Intent");
-            return;
-        }
-        if (Intent.ACTION_BATTERY_LOW.equals(action) && SpectrumData.instance.foreground.isChanged()) {
-            saveCurrentSpectrum("battery_low");
-        }
-        if (Constants.ACTION.ACTION_LOAD_CALIBRATION.equals(action)) {
-            loadCalibration();
-            return;
-        }
-        if (Constants.ACTION.ACTION_STORE_CALIBRATION.equals(action)) {
-            storeCalibration();
-            return;
-        }
-        if (Constants.ACTION.ACTION_UPDATE_GPS.equals(action)) {
-            if (is_recording) {
-                SpectrumData.instance.foreground.setLocation(Locator.getLocation()).updateComments();
-            }
-            publishDeviceLocationSnapshot();
-        }
-    }
-};
-
-private void onSourceDataSkipped() {
-    if (!is_recording) {
-        return;
-    }
-
-    skippedIncompleteHistogramCount++;
-    if (skippedIncompleteHistogramCount >= 3) {
-        sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
-                .setPackage(Constants.PACKAGE_NAME)
-                .putExtra(EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, skippedIncompleteHistogramCount));
-    }
-}
-
-// the integration seam: a cumulative snapshot from the active source drives dose rate, spectrogram and search
-private void onSourceData(Intent intent) {
-    if (!isDeviceConnected() || connectDecisionPending) {
-        return;
-    }
-    if (!is_recording) {
-        showIdleSnapshot(intent);
-        return;
-    }
-
-    final long[] frame = intent.getLongArrayExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM);
-    if (frame != null && !isFrameSizeValid(frame)) {
-        return;
-    }
-
-    skippedIncompleteHistogramCount = 0;
-    double new_time;
-    double old_time;
-    long[] new_histogram;
-    long[] old_histogram;
-    Spectrum foregroundSpectrumCopy;
-    synchronized (SpectrumData.instance.lock) {
-        old_time = SpectrumData.instance.foreground.getSpectrumTime();
-        old_histogram = SpectrumData.instance.foreground.getDataArray();
-        old_histogram = Arrays.copyOf(old_histogram, old_histogram.length);
-
-        new_time = intent.getDoubleExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, 1);
-        new_histogram = intent.getLongArrayExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM);
-        if (new_histogram != null) {
-            new_histogram = Arrays.copyOf(new_histogram, new_histogram.length);
-            SpectrumData.instance.foreground
-                    .setSpectrum(new_histogram)
-                    .setSpectrumTime(new_time)
-                    .setDeviceInfo(inputDeviceInfo)
-                    .updateComments();
-            screenFromDevice = true;
-            screenFromFile = false;
-        }
-
-        foregroundSpectrumCopy = new Spectrum(SpectrumData.instance.foreground);
-    }
-
-    MeasurementData.instance.cp1s = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_DATA_CP1S, 0);
-    boolean isReliableData = false;
-
-    if (new_histogram != null && new_time > old_time) {
-        int interval_counts = 0;
-        int[] binned_counts = new int[SensitivityProfile.MAX_BINS];
-        EnergyIntervalData.Snapshot interval = EnergyIntervalData.instance.get();
-        for (int i = 0; i < StrictMath.min(old_histogram.length, new_histogram.length); i++) {
-            int value = (int) (new_histogram[i] - old_histogram[i]);
-
-            if (i >= interval.leftChannel && i <= interval.rightChannel) {
-                interval_counts += value;
+    private void stopIntervalSearchAlarmTimer() {
+        synchronized (intervalSearchAlarmSync) {
+            if (intervalSearchAlarmTimer != null) {
+                intervalSearchAlarmTimer.cancel();
+                intervalSearchAlarmTimer.purge();
+                intervalSearchAlarmTimer = null;
             }
 
-            int bin_index = getEnergyBinIndex(SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy(i));
-            if (bin_index != -1) {
-                binned_counts[bin_index] += value;
-            }
-        }
-
-        if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
-            double delta_time = new_time - old_time;
-            if (delta_time > 0) {
-                MeasurementData.instance.cp1sInterval = updateIntervalCps(interval_counts, delta_time);
-                MeasurementData.instance.doseRate = doseRateSearch(interval_counts, binned_counts, delta_time);
-                isReliableData = true;
-            }
-        } else {
-            resetIntervalCpsWindow();
-            MeasurementData.instance.cp1sInterval = 0;
-            MeasurementData.instance.doseRate = new MeasurementData.DoseRate();
-        }
-    }
-
-    calcAndSendFoundIsotopesData();
-    if (isReliableData) {
-        calcSpectrumChangeData();
-    }
-    notifyDataAvailable();
-    if (isReliableData) {
-        sendDataToAtomSwift(MeasurementData.instance.cp1s, MeasurementData.instance.doseRate);
-        handleSpectrogramRecording(foregroundSpectrumCopy);
-    }
-}
-
-// an idle device shows what it holds right now; nothing is derived from it (dose rate, spectrogram, search)
-private void showIdleSnapshot(Intent intent) {
-    long[] histogram = intent.getLongArrayExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM);
-    if (histogram == null || !isFrameSizeValid(histogram)) {
-        return;
-    }
-
-    final double deviceTime = intent.getDoubleExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, 1);
-    synchronized (SpectrumData.instance.lock) {
-        // mirroring the device is not a change the user made
-        boolean wasChanged = SpectrumData.instance.foreground.isChanged();
-        // a loaded file, or unsaved data that did not come from the device, is never overwritten by a snapshot
-        if (screenFromFile || (!screenFromDevice && wasChanged)) {
-            return;
-        }
-        SpectrumData.instance.foreground
-                .setSpectrum(Arrays.copyOf(histogram, histogram.length))
-                .setSpectrumTime(deviceTime)
-                .setDeviceInfo(inputDeviceInfo)
-                .updateComments()
-                .setChanged(wasChanged);
-        screenFromDevice = true;
-    }
-    notifyDataAvailable();
-}
-
-public void notify_cancel_all() {
-    if (service_context != null) {
-        NotificationManager nm = (NotificationManager) service_context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null)
-            nm.cancelAll();
-    }
-}
-
-public void Stop() {
-    notify_cancel_all();
-    isStarted = false;
-    try {
-        unregisterReceiver(broadcastReceiver);
-    } catch (IllegalArgumentException ignored) {
-        // receiver was not registered or already unregistered
-    }
-
-    resetRecordingSuspendedStatus(true);
-
-    Log.d(TAG, "recording Stop");
-    completeSpectrogramRecording();
-    closeSources();
-    releaseLock();
-    if (AtomSpectraIsotopes.checkedChains != null) {
-        Arrays.fill(AtomSpectraIsotopes.checkedChains, false);
-    }
-    if (AtomSpectraIsotopes.checkedIsotope != null) {
-        Arrays.fill(AtomSpectraIsotopes.checkedIsotope, false);
-    }
-    if (AtomSpectraIsotopes.checkedIsotopeLine != null) {
-        Arrays.fill(AtomSpectraIsotopes.checkedIsotopeLine, false);
-    }
-    AtomSpectraIsotopes.foundList.clear();
-    AtomSpectraIsotopes.showFoundIsotopes = false;
-    SpectrumData.instance.newCalibration.clear();
-    AtomSpectraLog.clear(service_context);
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_HELP).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_LOG).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SENSITIVITY).setPackage(Constants.PACKAGE_NAME));
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_APP).setPackage(Constants.PACKAGE_NAME));
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        stopForeground(STOP_FOREGROUND_REMOVE);
-    } else {
-        stopForeground(true);
-    }
-    stopSelf();
-
-    // after the receiver is unregistered nothing else posts to this thread; quitSafely() lets the
-    // current dispatch finish, which matters because Stop() itself may run on it
-    if (inputThread != null) {
-        inputThread.quitSafely();
-        inputThread = null;
-        inputHandler = null;
-    }
-}
-
-// false when the start must not go ahead: the screen spectrum is not the device's and the user has not said what to do with it
-private boolean settleForeignSpectrumForStart(int policy) {
-    if (startDecision() == START_FREE) {
-        // a saved spectrum the device cannot continue makes way for the device's own, with its calibration and channel count
-        if (!screenFromDevice && !SpectrumData.instance.foreground.isEmpty() && !canContinueScreenSpectrum()) {
-            resetServiceSpectrum();
-            restoreDeviceCalibration();
-            showToastInMainLooper(R.string.start_screen_replaced, Toast.LENGTH_SHORT);
-        }
-        return true;
-    }
-    switch (policy) {
-        case Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE:
-            resetServiceSpectrum();
-            restoreDeviceCalibration();
-            return true;
-        case Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE:
-            // the start hands the screen spectrum to the device
-            return canContinueScreenSpectrum();
-        default:
-            return false;
-    }
-}
-
-public void DeleteSpc() {
-    if (activeSource != null && isDeviceConnected()) {
-        activeSource.requestReset();
-    }
-    resetServiceSpectrum();
-}
-
-// clears the service's own spectrum and baselines without touching the source
-private void resetServiceSpectrum() {
-    screenFromDevice = false;
-    screenFromFile = false;
-    completeSpectrogramRecording();
-    AtomSpectraSpectrogramData.instance.clear();
-    notifySpectrogramUpdated();
-
-    MeasurementData.instance.resetCp1s();
-    resetDoseRateData();
-
-    // once the device has reported ready its count rules, otherwise the screen keeps its own
-    final int channelCount = deviceChannelCount > 0 ? deviceChannelCount : SpectrumData.instance.getChannelCount();
-    final boolean resized = SpectrumData.instance.reset(channelCount);
-    UIViewState.instance.backgroundShow = false;
-    UIViewState.instance.backgroundSubtract = false;
-    if (resized) {
-        UIViewState.instance.onChannelCountChanged(channelCount);
-    }
-    SpectrumData.instance.foreground
-            .setSuffix(getStringOrDefaultLocale(R.string.hist_suffix))
-            .setDeviceInfo(inputDeviceInfo)
-            .updateComments();
-    SpectrumData.instance.background.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
-    AtomSpectraIsotopes.foundList.clear();
-    AtomSpectraIsotopes.showFoundIsotopes = false;
-
-    resetSpectrumChangeWindow();
-    skippedIncompleteHistogramCount = 0;
-    updateMenu();
-}
-
-// data never resizes the screen: a frame of another length than the screen's is dropped and reported as skipped
-private boolean isFrameSizeValid(long[] histogram) {
-    if (histogram.length == SpectrumData.instance.getChannelCount()) {
-        return true;
-    }
-    if (!wrongFrameLogged) {
-        wrongFrameLogged = true;
-        AtomSpectraLog.addMessage(service_context, "Error: histogram of " + histogram.length
-                + " channels ignored, the screen has " + SpectrumData.instance.getChannelCount());
-    }
-    onSourceDataSkipped();
-    return false;
-}
-
-public static boolean isRecording() {
-    return is_recording;
-}
-
-// starts/stops data collecting: updates the recording state and commands the active source
-private void startStopRecording(boolean recording) {
-    setRecordingState(recording);
-
-    synchronized (inputSync) {
-        if (activeSource != null) {
-            if (recording) {
-                resetSkippedHistogramCount();
-                pushSpectrumToSource();
-                activeSource.requestStart();
-            } else {
-                activeSource.requestStop();
-            }
-        }
-    }
-}
-
-// updates the recording state and everything derived from it, without commanding the source
-private void setRecordingState(boolean recording) {
-    if (recording != is_recording) {
-        // log event to debug view
-        String inputTypeText = lockedSourceName("audio", "usb", "bluz", "none");
-
-        if (recording) {
-            AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_start_recording, inputTypeText));
-        } else {
-            AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_stop_recording, inputTypeText));
-        }
-    }
-
-    is_recording = recording;
-
-    if (recording) {
-        startIntervalSearchAlarmTimer();
-    } else {
-        skippedIncompleteHistogramCount = 0;
-        resetSearchWindow();
-        resetSpectrumChangeWindow();
-        resetRecordingSuspendedStatus(false);
-        stopIntervalSearchAlarmTimer();
-        completeSpectrogramRecording();
-        SpectrumData.instance.foreground.updateComments();
-    }
-
-    updateMenu();
-    refreshServiceNotification();
-    notifyDeviceStateChanged();
-}
-
-// when new data arrives either from audio or USB we preserve it in historical sliding time window
-// used to calculate dose rate
-private static final int SEARCH_WINDOW_SIZE = MeasurementData.SEARCH_WINDOW_SIZE;
-// per-sample energy-binned counts; also the total-count source since total == sum of bins
-// (every detected event is assigned to a bin, see getEnergyBinIndex)
-private static final LinkedList<int[]> windowBinnedCounts = new LinkedList<>();
-// per-sample interval counts (channel-range subset) as a single-bin array
-private static final LinkedList<int[]> windowIntervalCounts = new LinkedList<>();
-private static final LinkedList<Double> windowDeltaTime = new LinkedList<>();
-
-// ~1 s rolling window for displayed energy-interval CPS (keeps 2/5/10 Hz audio from flickering to 0)
-private static final LinkedList<Integer> intervalCpsCounts = new LinkedList<>();
-private static final LinkedList<Double> intervalCpsDelta = new LinkedList<>();
-
-private static void resetIntervalCpsWindow() {
-    synchronized (intervalCpsCounts) {
-        intervalCpsCounts.clear();
-        intervalCpsDelta.clear();
-    }
-}
-
-// Append a frame and return energy-gated CPS over the last ~1 s of sample time.
-private static int updateIntervalCps(int interval_counts, double delta_time) {
-    synchronized (intervalCpsCounts) {
-        intervalCpsCounts.addLast(interval_counts);
-        intervalCpsDelta.addLast(delta_time);
-
-        double sumTime = 0;
-        for (double t : intervalCpsDelta) {
-            sumTime += t;
-        }
-        while (sumTime > 1.0 && intervalCpsDelta.size() > 1) {
-            sumTime -= intervalCpsDelta.removeFirst();
-            intervalCpsCounts.removeFirst();
-        }
-
-        long sumCounts = 0;
-        for (int c : intervalCpsCounts) {
-            sumCounts += c;
-        }
-        if (sumTime <= 0) {
-            return 0;
-        }
-        return (int) Math.round(sumCounts / sumTime);
-    }
-}
-
-private static void resetSearchWindow() {
-    synchronized (windowBinnedCounts) {
-        windowDeltaTime.clear();
-        windowBinnedCounts.clear();
-        windowIntervalCounts.clear();
-    }
-    resetIntervalCpsWindow();
-}
-
-private static void resetDoseRateData() {
-    resetSearchWindow();
-    MeasurementData.instance.resetDoseRate();
-}
-
-// called each [0.1, 0.2, 0.5, 1] sec for audio, each 1 sec for USB
-private MeasurementData.DoseRate doseRateSearch(int interval_counts, int[] binned_counts, double delta_time) {
-    if (delta_time == 0) {
-        return MeasurementData.instance.doseRate;
-    }
-
-    synchronized (windowBinnedCounts) {
-        windowDeltaTime.addLast(delta_time);
-        if (windowDeltaTime.size() > SEARCH_WINDOW_SIZE) {
-            windowDeltaTime.removeFirst();
-        }
-
-        windowBinnedCounts.addLast(binned_counts);
-        if (windowBinnedCounts.size() > SEARCH_WINDOW_SIZE) {
-            windowBinnedCounts.removeFirst();
-        }
-
-        windowIntervalCounts.addLast(new int[]{interval_counts});
-        if (windowIntervalCounts.size() > SEARCH_WINDOW_SIZE) {
-            windowIntervalCounts.removeFirst();
-        }
-
-        if (intervalSearchAlarmEnabled) {
-            intervalSearchAlarmBaseline.updateBaseline(interval_counts, delta_time);
-        } else {
             intervalSearchAlarmBaseline.reset();
         }
     }
 
-    // shared active mode selects the minimum integration period; count targets differ per dose rate
-    double min_period;
-    switch (SearchFSM) {
-        case 1:
-            min_period = 1;
-            break;
-        case 2:
-            min_period = 2;
-            break;
-        default:
-            min_period = 0.2;
-            break;
-    }
+    private Context service_context = null;
 
-    SensitivityProfile profile = activeProfile;
-    int bins = Math.min(profile.binEdges.length, SensitivityProfile.MAX_BINS);
+    @SuppressLint({"UnspecifiedRegisterReceiverFlag", "DiscouragedApi"})
+    public void Start(final Context context) {
+        setLocaleFromPreferences(context);
+        this.service_context = context;
 
-    WindowSum nonComp = accumulateWindow(windowBinnedCounts, profile.searchTargetNonComp(SearchFSM), min_period);
-    if (nonComp.time < min_period) {
-        return MeasurementData.instance.doseRate;
-    }
-    WindowSum comp = accumulateWindow(windowBinnedCounts, profile.searchTargetComp(SearchFSM), min_period);
-    WindowSum interval = accumulateWindow(windowIntervalCounts, profile.searchTargetNonComp(SearchFSM), min_period);
-
-    // compensated dose rate: sum over energy bins of counts * pSv/count, converted to uSv/h
-    double comp_dose_rate = 0;
-    double comp_dose_rate_error_sum_of_squares = 0;
-    for (int bin = 0; bin < bins; bin++) {
-        int bin_counts = comp.binned[bin];
-        double bin_psv = profile.compPsvPerCount[bin];
-        double bin_dose_rate = bin_counts * bin_psv / comp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
-        comp_dose_rate += bin_dose_rate;
-        if (bin_counts > 0) {
-            double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
-            comp_dose_rate_error_sum_of_squares += bin_dose_rate_error * bin_dose_rate_error;
-        } else {
-            // no counts in bin: bound the error by the dose rate of a single count
-            double upper_dose_rate_bound = bin_psv / comp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
-            comp_dose_rate_error_sum_of_squares += upper_dose_rate_bound * upper_dose_rate_bound;
+        boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+        boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+        if (Locator == null) {
+            Locator = new GPSLocator(getApplicationContext());
         }
-    }
-    double comp_dose_rate_error = 0;
-    if (comp_dose_rate > 0) {
-        comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_sum_of_squares) / comp_dose_rate * 100.0;
-    }
-
-    // non-compensated dose rate: total counts * pSv/count, converted to uSv/h
-    double dose_rate = 0;
-    if (profile.nonCompPsvPerCount > 0) {
-        dose_rate = nonComp.counts * profile.nonCompPsvPerCount / nonComp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
-    }
-    double dose_rate_error = nonComp.counts > 0 ? Math.sqrt(nonComp.counts) / nonComp.counts * 100.0 : 0;
-
-    double interval_cps = interval.time > 0 ? (interval.counts / interval.time) : 0;
-    double interval_cps_error = interval.counts > 0 ? Math.sqrt(interval.counts) / interval.counts * 100.0 : 0;
-    if (intervalSearchAlarmEnabled) {
-        intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
-    }
-
-    MeasurementData.instance.appendSearchSample(System.currentTimeMillis(), dose_rate, comp_dose_rate, interval_cps,
-            intervalSearchAlarmBaseline.getAlarmLevelHigh(), intervalSearchAlarmBaseline.getAlarmLevelLow(),
-            intervalSearchAlarmBaseline.getBaseline());
-
-    return new MeasurementData.DoseRate(
-            comp_dose_rate, comp_dose_rate_error, comp.time,
-            dose_rate, dose_rate_error, nonComp.time,
-            interval_cps, interval_cps_error, interval.time);
-}
-
-private static final class WindowSum {
-    int counts;
-    double time;
-    final int[] binned = new int[SensitivityProfile.MAX_BINS];
-}
-
-// Sum the most-recent samples until both the count target and the minimum period are reached.
-// Each sample is an array of per-bin counts (a single-element array for the interval source);
-// counts is the sum across the sample's bins - for the energy-binned source this equals the
-// total count, since every detected event is assigned to a bin (see getEnergyBinIndex).
-private WindowSum accumulateWindow(LinkedList<int[]> source, int target, double minPeriod) {
-    WindowSum s = new WindowSum();
-    synchronized (windowBinnedCounts) {
-        for (int i = source.size() - 1; i >= 0; i--) {
-            int[] sample = source.get(i);
-            int n = Math.min(sample.length, s.binned.length);
-            for (int bin = 0; bin < n; bin++) {
-                s.binned[bin] += sample[bin];
-                s.counts += sample[bin];
-            }
-            s.time += windowDeltaTime.get(i);
-            if (s.counts >= target && s.time >= minPeriod) {
-                break;
-            }
-        }
-    }
-    return s;
-}
-
-private static int getEnergyBinIndex(double energy) {
-    float[] edges = activeProfile.binEdges;
-    if (edges.length == 0) {
-        return -1;
-    }
-    for (int i = 0; i < edges.length; i++) {
-        if (energy <= edges[i]) {
-            return i;
-        }
-    }
-    return edges.length - 1; // above the last edge: top band
-}
-
-// finds isotopes and sends data to UI
-// should to be called each second
-private final void calcAndSendFoundIsotopesData() {
-    if (AtomSpectraIsotopes.autoUpdateIsotopes && is_recording && AtomSpectraIsotopes.showFoundIsotopes) {
-        AtomSpectraFindIsotope.updateFoundIsotopes(this);
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST).setPackage(Constants.PACKAGE_NAME));
-    }
-}
-
-// spectrum change mode
-// shows spectrum for the last n seconds (sliding window)
-// window size - delta_time
-private final void calcSpectrumChangeData() {
-    long[] currentState = Arrays.copyOf(SpectrumData.instance.foreground.getDataArray(), SpectrumData.instance.foreground.getDataArray().length);
-    long[] previousState = currentState;
-    long[] backState = currentState;
-    int queueSize;
-    synchronized (histogram_all_queue) {
-        if (!histogram_all_queue.isEmpty() && histogram_all_queue.peek().length != currentState.length) {
-            histogram_all_queue.clear();
-        }
-        histogram_all_queue.add(currentState);
-        while (histogram_all_queue.size() > delta_time * delta_back_time_ratio + 1) {
-            histogram_all_queue.remove();
-        }
-
-        if (histogram_all_queue.size() <= delta_time + 1) {
-            previousState = histogram_all_queue.peek();
-            backState = previousState;
-        } else {
-            previousState = histogram_all_queue.get(histogram_all_queue.size() - delta_time);
-            backState = histogram_all_queue.peek();
-        }
-        queueSize = histogram_all_queue.size();
-    }
-
-    long[] deltaFg = new long[currentState.length];
-    long[] deltaBg = new long[currentState.length];
-    for (int i = 0; i < currentState.length; i++) {
-        deltaFg[i] = currentState[i] - previousState[i];
-        deltaBg[i] = currentState[i] - backState[i];
-    }
-
-    SpectrumChangeData.instance.set(deltaFg, deltaBg, Math.min(queueSize - 1, delta_time), queueSize - 1);
-}
-
-private void notifyDataAvailable() {
-    if (service_context != null) {
-        service_context.sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
-    }
-}
-
-public class LocalBinder extends Binder {
-    AtomSpectraService getService() {
-        return AtomSpectraService.this;
-    }
-}
-
-@Override
-public IBinder onBind(Intent intent) {
-
-//        timerTask_started = true;
-
-    return new LocalBinder();
-}
-
-@Override
-public boolean onUnbind(Intent intent) {
-    // After using a given device, you should make sure that this.close() is called
-    // such that resources are cleaned up properly.  In this particular example, close() is
-    // invoked when the UI is disconnected from the Service.
-    //close();
-    return super.onUnbind(intent);
-}
-
-private void saveCurrentSpectrum(String suffix) {
-    try {
-        Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, getStringOrDefaultLocale(R.string.file_atomspectra_spectrum_prefix), SpectrumData.instance.foreground.getSpectrumDate(), suffix, ".txt", "text/plain", false);
-        OutputStreamWriter docStream = streamInfo.first;
-        Spectrum spectrum = new Spectrum(SpectrumData.instance.foreground);
-        if (!addGPS) {
-            spectrum.setLocation(null).updateComments();
-        }
-
-        SpectrumFileAS saveFile = new SpectrumFileAS();
-        saveFile.addSpectrum(spectrum)
-                .setChannelCompression(1)
-                .saveSpectrumAndCloseStream(docStream, this);
-    } catch (Exception e) {
-        AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
-        showToastInMainLooper(getStringOrDefaultLocale(R.string.hist_save_error, suffix), Toast.LENGTH_SHORT);
-    }
-}
-
-private void handleSpectrogramRecording(Spectrum foregroundSpectrumCopy) {
-    if (spgInterval > 0) {
-        boolean updateIsRequired = false;
-        synchronized (spgAutosaveSync) {
-            if (spgAutosaveSpectrum == null) {
-                updateIsRequired = true;
+        if ((hasFeatureGPS || hasFeatureNetwork) && PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT)) {
+            if (!AppPermissions.isLocationGranted(this)) {
+                Locator.stopUsingGPS();
+                addGPS = false;
             } else {
-                double elapsedTime = foregroundSpectrumCopy.getSpectrumTime() - spgAutosaveSpectrum.getSpectrumTime();
-                updateIsRequired = elapsedTime >= spgInterval;
+                Locator.startUsingGPS();
+                if (!Locator.hasGPS) {
+                    Locator.stopUsingGPS();
+                    addGPS = false;
+                }
             }
         }
+        publishDeviceLocationSnapshot();
 
-        if (updateIsRequired) {
-            new Thread(() -> createOrUpdateSpectrogramFile(foregroundSpectrumCopy)).start();
+        SpectrumData.instance.foreground.setSuffix(getStringOrDefaultLocale(R.string.hist_suffix));
+        SpectrumData.instance.background.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
+        sp = PrefHelper.getASSharedPreferences(this);
+        sp.registerOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
+
+        initOutputAudioTrack();
+        loadSettings();
+        SpectrumData.instance.lastCalibrationChannel = PrefHelper.getLastCalibrationChannel(this, SpectrumData.instance.getChannelCount());
+
+        inputThread = new HandlerThread("AtomSpectraInput");
+        inputThread.start();
+        inputHandler = new Handler(inputThread.getLooper());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(broadcastReceiver,
+                    makeAtomSpectraServiceIntentFilter(), null, inputHandler, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(broadcastReceiver,
+                    makeAtomSpectraServiceIntentFilter(), null, inputHandler);
         }
-    } else {
-        completeSpectrogramRecording();
+
+        releaseLock();
+        sessionState = DeviceSessionState.UNSELECTED;
+        updateInputDeviceInfo(null);
+        Log.d(TAG, "AtomSpectraService START");
     }
-}
 
-private void notifySpectrogramUpdated() {
-    sendBroadcast(new Intent(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED).setPackage(Constants.PACKAGE_NAME));
-}
-
-private void createOrUpdateSpectrogramFile(Spectrum foregroundSpectrumCopy) {
-    synchronized (spgAutosaveSync) {
-        // reset spectrogram file if midnight has passed
-        if (spgMidnightReset && spgAutosaveFilePath != null && spgAutosaveFileCreated != null) {
-            Date now = new Date();
-            if (now.getDate() != spgAutosaveFileCreated.getDate()) {
-                appendDeltaToSpectrogram(foregroundSpectrumCopy);
-                completeSpectrogramRecording();
-                showToastInMainLooper(R.string.log_spg_midnight_restart, Toast.LENGTH_SHORT);
+    private void initOutputAudioTrack() {
+        synchronized (intervalSearchAlarmSync) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    int durationSamples = (int) (intervalSearchAlarmAudioTrackSampleRate * intervalSearchAlarmDuration);
+                    intervalSearchAlarmAudioTrack = new AudioTrack.Builder().
+                            setAudioAttributes(new AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_ALARM)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                                    .build())
+                            .setAudioFormat(new AudioFormat.Builder()
+                                    .setSampleRate(intervalSearchAlarmAudioTrackSampleRate)
+                                    .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                                    .build())
+                            .setTransferMode(AudioTrack.MODE_STATIC)
+                            .setBufferSizeInBytes(durationSamples * 4)
+                            .build();
+                } catch (Exception ignored) {
+                    intervalSearchAlarmAudioTrack = null;
+                    AtomSpectraLog.addMessage(service_context, "Unable to configure output audio: " + ignored.getMessage());
+                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_SHORT);
+                }
+                if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_NO_STATIC_DATA) {
+                    intervalSearchAlarmAudioTrack.release();
+                    intervalSearchAlarmAudioTrack = null;
+                    showToastInMainLooper(R.string.no_audio_output_available, Toast.LENGTH_SHORT);
+                }
             }
         }
+    }
 
-        // spectrogram recording is starting or restarting
-        if (spgAutosaveSpectrum == null) {
-            spgAutosaveSpectrum = foregroundSpectrumCopy;
-            spgAutosaveSpectrum.updateComments();
-
-            try {
-                Pair<OutputStreamWriter, Uri> spgAutosaveFileStreamInfo = SpectrumFile.prepareOutputFileStream(this, "Spectrogram-" + spgAutosaveSpectrum.getSuffix(), System.currentTimeMillis(), "", ".txt", "text/plain", true, true, true, false);
-                spgAutosaveFilePath = spgAutosaveFileStreamInfo.second;
-                spgAutosaveFileCreated = new Date();
-                OutputStreamWriter docStream = spgAutosaveFileStreamInfo.first;
-                SpectrumFileAS saveFile = new SpectrumFileAS();
-                saveFile.addSpectrum(spgAutosaveSpectrum)
-                        .setChannelCompression(1)
-                        .saveSpectrumAndCloseStream(docStream, this);
-
-                AtomSpectraSpectrogramData.instance.addSegment(spgAutosaveSpectrum, spgAutosaveFilePath);
-                notifySpectrogramUpdated();
-                this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_SHORT);
-            } catch (Exception e) {
-                AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
-                showToastInMainLooper(getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()), Toast.LENGTH_SHORT);
+    private static void releaseOutputAudioTrack() {
+        synchronized (intervalSearchAlarmSync) {
+            if (intervalSearchAlarmAudioTrack != null) {
+                int playState = intervalSearchAlarmAudioTrack.getPlayState();
+                if (playState == AudioTrack.PLAYSTATE_PAUSED || playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    intervalSearchAlarmAudioTrack.stop();
+                }
+                intervalSearchAlarmAudioTrack.release();
+                intervalSearchAlarmAudioTrack = null;
             }
+        }
+    }
 
+    private static void setLocaleFromPreferences(Context context) {
+        String lang = PrefHelper.getLocale(context);
+        Locale locale = new Locale(lang);
+        Locale.setDefault(locale);
+        Resources resources = context.getResources();
+        Configuration config = resources.getConfiguration();
+        config.setLocale(locale);
+        resources.updateConfiguration(config, resources.getDisplayMetrics());
+    }
+
+    private void setAlarmAudioTrackDevice() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && service_context != null) {
+            if (intervalSearchAlarmAudioTrack != null) {
+                AudioDeviceInfo deviceOut = getDeviceOutput(service_context, outputSoundID, outputSoundName, true);
+                if (deviceOut == null) {
+                    deviceOut = getDeviceOutput(service_context, -1, null, false);
+                }
+                if (deviceOut != null) {
+                    synchronized (intervalSearchAlarmSync) {
+                        outputSoundID = deviceOut.getId();
+                        outputSoundName = deviceOut.getProductName().toString();
+                        intervalSearchAlarmAudioTrack.setPreferredDevice(deviceOut);
+                    }
+                }
+            }
+        }
+    }
+
+    public static final String[] audioDeviceNames = new String[]{
+            "UNKNOWN",      //0
+            "EAR",          //1
+            "SPEAKER",      //2
+            "WIRED HEADSET",//3
+            "WIRED PHONES", //4
+            "ANALOG",       //5
+            "DIGITAL",      //6
+            "SCO",          //7
+            "A2DP",         //8
+            "HDMI",         //9
+            "ARC HDMI",     //10
+            "USB DEV",      //11
+            "USB ACC",      //12
+            "DOCK",         //13
+            "FM",           //14
+            "MIC",          //15
+            "TUNER",        //16
+            "TV",           //17
+            "PHONE",        //18
+            "AUX",          //19
+            "IP",           //20
+            "BUS",          //21
+            "USB HEADSET",  //22
+            "AID",          //23
+            "SAFE SPEAKER", //24
+            "UNKNOWN"       //25
+    };
+
+    public static AudioDeviceInfo getDeviceOutput(Context context, int lastID, String lastName, boolean same) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            AudioDeviceInfo deviceOut = null;
+            AudioDeviceInfo deviceEmptyOut = null;
+            int newID = -1;
+            int newEmptyID = -1;
+            AudioManager manager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            AudioDeviceInfo[] devices = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+            if (devices != null && devices.length > 0) {
+                for (AudioDeviceInfo device : devices) {
+                    if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
+                            device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                            device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET ||
+                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                            device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
+                        //find device with minimal id not less than desired
+                        if (same) {
+                            if (lastID == device.getId() || device.getProductName().equals(lastName)) {
+                                return device;   //Return the device we want to find
+                            }
+                        } else {
+                            if (lastID < device.getId()) {
+                                if (newID == -1 || newID > device.getId()) {
+                                    newID = device.getId();
+                                    deviceOut = device;
+                                }
+                            }
+                            //find the smallest device id
+                            if (newEmptyID == -1 || newEmptyID > device.getId()) {
+                                newEmptyID = device.getId();
+                                deviceEmptyOut = device;
+                            }
+                        }
+                    }
+                }
+                if (same) {
+                    return null;
+                }
+                if (newID == -1) {
+                    //no more devices
+                    return deviceEmptyOut;
+                }
+            }
+            return deviceOut;
+        } else {
+            return null;
+        }
+    }
+
+    private static IntentFilter makeAtomSpectraServiceIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Constants.ACTION.ACTION_STOP_FOREGROUND);
+        intentFilter.addAction(Constants.ACTION.ACTION_START_FOREGROUND);
+        intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_NOTIFICATION);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_READY);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_STATUS);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_ERROR);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DISCONNECTED);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED);
+        intentFilter.addAction(Constants.ACTION.ACTION_START_RECORDING);
+        intentFilter.addAction(Constants.ACTION.ACTION_STOP_RECORDING);
+        intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);
+        intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
+        intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
+        intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
+        intentFilter.addAction(Constants.ACTION.ACTION_LOAD_CALIBRATION);
+        intentFilter.addAction(Constants.ACTION.ACTION_STORE_CALIBRATION);
+        return intentFilter;
+    }
+
+    // Everything broadcastReceiver handles runs on this thread, which keeps the data path and the
+// control actions serialized against each other without additional locks.
+    private HandlerThread inputThread = null;
+    private Handler inputHandler = null;
+
+    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null)
+                return;
+            String action = intent.getAction();
+            if (action == null)
+                return;
+            if (Constants.ACTION.ACTION_UPDATE_NOTIFICATION.equals(action)) {
+                refreshServiceNotification();
+                return;
+            }
+            if (Constants.ACTION.ACTION_CLEAR_SPECTRUM.equals(action)) {
+                startStopRecording(false);
+                DeleteSpc();
+                updateMenu();
+                // DeleteSpc() resets the spectrum to the default calibration, restore the device's one
+                restoreDeviceCalibration();
+                if (connectDecisionPending) {
+                    doAdoptWaitingDevice();
+                }
+                notifyDataAvailable();
+                return;
+            }
+            if (Constants.ACTION.ACTION_START_RECORDING.equals(action)) {
+                if (isDeviceConnected() && deviceState() != DeviceState.BUSY && !is_recording && !connectDecisionPending
+                        && settleForeignSpectrumForStart(intent.getIntExtra(Constants.ACTION_PARAMETERS.START_FOREIGN_SPECTRUM,
+                        Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_UNDECIDED))) {
+                    startStopRecording(true);
+                }
+                return;
+            }
+            if (Constants.ACTION.ACTION_STOP_RECORDING.equals(action)) {
+                if (deviceState() != DeviceState.BUSY) {
+                    startStopRecording(false);
+                }
+                return;
+            }
+            if (action.startsWith("org.fe57.atomspectra.ACTION_SOURCE_")) {
+                onSourceReply(action, intent);
+                return;
+            }
+            if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
+                Log.i(TAG, "Received Stop Foreground Intent");
+                releaseOutputAudioTrack();
+                Log.d(TAG, "recording Stop");
+                Stop();
+                return;
+            }
+            if (Constants.ACTION.ACTION_START_FOREGROUND.equals(action)) {
+                Log.d(TAG, "Received Start Foreground Intent");
+                return;
+            }
+            if (Intent.ACTION_BATTERY_LOW.equals(action) && SpectrumData.instance.foreground.isChanged()) {
+                saveCurrentSpectrum("battery_low");
+            }
+            if (Constants.ACTION.ACTION_LOAD_CALIBRATION.equals(action)) {
+                loadCalibration();
+                return;
+            }
+            if (Constants.ACTION.ACTION_STORE_CALIBRATION.equals(action)) {
+                storeCalibration();
+                return;
+            }
+            if (Constants.ACTION.ACTION_UPDATE_GPS.equals(action)) {
+                if (is_recording) {
+                    SpectrumData.instance.foreground.setLocation(Locator.getLocation()).updateComments();
+                }
+                publishDeviceLocationSnapshot();
+            }
+        }
+    };
+
+    private void onSourceDataSkipped() {
+        if (!is_recording) {
             return;
         }
 
-        // spectrogram recording is ongoing
-        double elapsedTime = foregroundSpectrumCopy.getSpectrumTime() - spgAutosaveSpectrum.getSpectrumTime();
-        if (elapsedTime >= spgInterval) {
-            appendDeltaToSpectrogram(foregroundSpectrumCopy);
+        skippedIncompleteHistogramCount++;
+        if (skippedIncompleteHistogramCount >= 3) {
+            sendBroadcast(new Intent(ACTION_HISTOGRAM_SKIPPED)
+                    .setPackage(Constants.PACKAGE_NAME)
+                    .putExtra(EXTRA_DATA_INT_HISTOGRAM_SKIPPED_COUNT, skippedIncompleteHistogramCount));
         }
     }
-}
 
-private void appendDeltaToSpectrogram(Spectrum foregroundSpectrumCopy) {
-    try {
-        Spectrum deltaSpectrum = new Spectrum(foregroundSpectrumCopy).convertToDeltaSpectrum(spgAutosaveSpectrum);
-
-        // Persist to the file system first. The in-memory spectrogram and the
-        // baseline are only advanced if the write succeeds, so a failed write
-        // leaves the baseline intact and the missed interval is folded into the
-        // next delta instead of being permanently lost from the file.
-        if (!addGPS) {
-            deltaSpectrum.setLocation(null);
+    // the integration seam: a cumulative snapshot from the active source drives dose rate, spectrogram and search
+    private void onSourceData(Intent intent) {
+        if (!isDeviceConnected() || connectDecisionPending) {
+            return;
         }
-        deltaSpectrum.updateComments();
-        SpectrumFileAS saveFile = new SpectrumFileAS();
-        saveFile.addSpectrum(deltaSpectrum)
-                .setChannelCompression(1);
-        OutputStream out = service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa");
-        if (out == null) {
-            throw new IOException("Unable to open spectrogram file for append: " + spgAutosaveFilePath);
+        if (!is_recording) {
+            showIdleSnapshot(intent);
+            return;
         }
-        OutputStreamWriter docStream = new OutputStreamWriter(out);
-        saveFile.saveDeltaSpectrumAndCloseStream(docStream);
 
-        // Write succeeded: commit to memory and advance the baseline.
-        AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
+        final long[] frame = intent.getLongArrayExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM);
+        if (frame != null && !isFrameSizeValid(frame)) {
+            return;
+        }
+
+        skippedIncompleteHistogramCount = 0;
+        double new_time;
+        double old_time;
+        long[] new_histogram;
+        long[] old_histogram;
+        Spectrum foregroundSpectrumCopy;
+        synchronized (SpectrumData.instance.lock) {
+            old_time = SpectrumData.instance.foreground.getSpectrumTime();
+            old_histogram = SpectrumData.instance.foreground.getDataArray();
+            old_histogram = Arrays.copyOf(old_histogram, old_histogram.length);
+
+            new_time = intent.getDoubleExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, 1);
+            new_histogram = intent.getLongArrayExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM);
+            if (new_histogram != null) {
+                new_histogram = Arrays.copyOf(new_histogram, new_histogram.length);
+                SpectrumData.instance.foreground
+                        .setSpectrum(new_histogram)
+                        .setSpectrumTime(new_time)
+                        .setDeviceInfo(inputDeviceInfo)
+                        .updateComments();
+                screenFromDevice = true;
+                screenFromFile = false;
+            }
+
+            foregroundSpectrumCopy = new Spectrum(SpectrumData.instance.foreground);
+        }
+
+        MeasurementData.instance.cp1s = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_DATA_CP1S, 0);
+        boolean isReliableData = false;
+
+        if (new_histogram != null && new_time > old_time) {
+            int interval_counts = 0;
+            int[] binned_counts = new int[SensitivityProfile.MAX_BINS];
+            EnergyIntervalData.Snapshot interval = EnergyIntervalData.instance.get();
+            for (int i = 0; i < StrictMath.min(old_histogram.length, new_histogram.length); i++) {
+                int value = (int) (new_histogram[i] - old_histogram[i]);
+
+                if (i >= interval.leftChannel && i <= interval.rightChannel) {
+                    interval_counts += value;
+                }
+
+                int bin_index = getEnergyBinIndex(SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy(i));
+                if (bin_index != -1) {
+                    binned_counts[bin_index] += value;
+                }
+            }
+
+            if (old_time > 0) { // comparing to zero spectrum will produce large CPS in case collecting device attached
+                double delta_time = new_time - old_time;
+                if (delta_time > 0) {
+                    MeasurementData.instance.cp1sInterval = updateIntervalCps(interval_counts, delta_time);
+                    MeasurementData.instance.doseRate = doseRateSearch(interval_counts, binned_counts, delta_time);
+                    isReliableData = true;
+                }
+            } else {
+                resetIntervalCpsWindow();
+                MeasurementData.instance.cp1sInterval = 0;
+                MeasurementData.instance.doseRate = new MeasurementData.DoseRate();
+            }
+        }
+
+        calcAndSendFoundIsotopesData();
+        if (isReliableData) {
+            calcSpectrumChangeData();
+        }
+        notifyDataAvailable();
+        if (isReliableData) {
+            sendDataToAtomSwift(MeasurementData.instance.cp1s, MeasurementData.instance.doseRate);
+            handleSpectrogramRecording(foregroundSpectrumCopy);
+        }
+    }
+
+    // an idle device shows what it holds right now; nothing is derived from it (dose rate, spectrogram, search)
+    private void showIdleSnapshot(Intent intent) {
+        long[] histogram = intent.getLongArrayExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM);
+        if (histogram == null || !isFrameSizeValid(histogram)) {
+            return;
+        }
+
+        final double deviceTime = intent.getDoubleExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, 1);
+        synchronized (SpectrumData.instance.lock) {
+            // mirroring the device is not a change the user made
+            boolean wasChanged = SpectrumData.instance.foreground.isChanged();
+            // a loaded file, or unsaved data that did not come from the device, is never overwritten by a snapshot
+            if (screenFromFile || (!screenFromDevice && wasChanged)) {
+                return;
+            }
+            SpectrumData.instance.foreground
+                    .setSpectrum(Arrays.copyOf(histogram, histogram.length))
+                    .setSpectrumTime(deviceTime)
+                    .setDeviceInfo(inputDeviceInfo)
+                    .updateComments()
+                    .setChanged(wasChanged);
+            screenFromDevice = true;
+        }
+        notifyDataAvailable();
+    }
+
+    public void notify_cancel_all() {
+        if (service_context != null) {
+            NotificationManager nm = (NotificationManager) service_context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null)
+                nm.cancelAll();
+        }
+    }
+
+    public void Stop() {
+        notify_cancel_all();
+        isStarted = false;
+        try {
+            unregisterReceiver(broadcastReceiver);
+        } catch (IllegalArgumentException ignored) {
+            // receiver was not registered or already unregistered
+        }
+
+        resetRecordingSuspendedStatus(true);
+
+        Log.d(TAG, "recording Stop");
+        completeSpectrogramRecording();
+        closeSources();
+        releaseLock();
+        if (AtomSpectraIsotopes.checkedChains != null) {
+            Arrays.fill(AtomSpectraIsotopes.checkedChains, false);
+        }
+        if (AtomSpectraIsotopes.checkedIsotope != null) {
+            Arrays.fill(AtomSpectraIsotopes.checkedIsotope, false);
+        }
+        if (AtomSpectraIsotopes.checkedIsotopeLine != null) {
+            Arrays.fill(AtomSpectraIsotopes.checkedIsotopeLine, false);
+        }
+        AtomSpectraIsotopes.foundList.clear();
+        AtomSpectraIsotopes.showFoundIsotopes = false;
+        SpectrumData.instance.newCalibration.clear();
+        AtomSpectraLog.clear(service_context);
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SETTINGS).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SEARCH).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_ISOTOPES).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_HELP).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_LOG).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_SENSITIVITY).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLOSE_APP).setPackage(Constants.PACKAGE_NAME));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
+        stopSelf();
+
+        // after the receiver is unregistered nothing else posts to this thread; quitSafely() lets the
+        // current dispatch finish, which matters because Stop() itself may run on it
+        if (inputThread != null) {
+            inputThread.quitSafely();
+            inputThread = null;
+            inputHandler = null;
+        }
+    }
+
+    // false when the start must not go ahead: the screen spectrum is not the device's and the user has not said what to do with it
+    private boolean settleForeignSpectrumForStart(int policy) {
+        if (startDecision() == START_FREE) {
+            // a saved spectrum the device cannot continue makes way for the device's own, with its calibration and channel count
+            if (!screenFromDevice && !SpectrumData.instance.foreground.isEmpty() && !canContinueScreenSpectrum()) {
+                resetServiceSpectrum();
+                restoreDeviceCalibration();
+                showToastInMainLooper(R.string.start_screen_replaced, Toast.LENGTH_SHORT);
+            }
+            return true;
+        }
+        switch (policy) {
+            case Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE:
+                resetServiceSpectrum();
+                restoreDeviceCalibration();
+                return true;
+            case Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE:
+                // the start hands the screen spectrum to the device
+                return canContinueScreenSpectrum();
+            default:
+                return false;
+        }
+    }
+
+    public void DeleteSpc() {
+        if (activeSource != null && isDeviceConnected()) {
+            activeSource.requestReset();
+        }
+        resetServiceSpectrum();
+    }
+
+    // clears the service's own spectrum and baselines without touching the source
+    private void resetServiceSpectrum() {
+        screenFromDevice = false;
+        screenFromFile = false;
+        completeSpectrogramRecording();
+        AtomSpectraSpectrogramData.instance.clear();
         notifySpectrogramUpdated();
-        spgAutosaveSpectrum = foregroundSpectrumCopy;
-    } catch (Exception e) {
-        this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_SHORT);
-        AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
-    }
-}
 
-private void completeSpectrogramRecording() {
-    synchronized (spgAutosaveSync) {
-        spgAutosaveSpectrum = null;
-        if (spgAutosaveFilePath != null) {
-            showToastInMainLooper(R.string.log_spg_autosave_completed, Toast.LENGTH_SHORT);
+        MeasurementData.instance.resetCp1s();
+        resetDoseRateData();
+
+        // once the device has reported ready its count rules, otherwise the screen keeps its own
+        final int channelCount = deviceChannelCount > 0 ? deviceChannelCount : SpectrumData.instance.getChannelCount();
+        final boolean resized = SpectrumData.instance.reset(channelCount);
+        UIViewState.instance.backgroundShow = false;
+        UIViewState.instance.backgroundSubtract = false;
+        if (resized) {
+            UIViewState.instance.onChannelCountChanged(channelCount);
+        }
+        SpectrumData.instance.foreground
+                .setSuffix(getStringOrDefaultLocale(R.string.hist_suffix))
+                .setDeviceInfo(inputDeviceInfo)
+                .updateComments();
+        SpectrumData.instance.background.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
+        AtomSpectraIsotopes.foundList.clear();
+        AtomSpectraIsotopes.showFoundIsotopes = false;
+
+        resetSpectrumChangeWindow();
+        skippedIncompleteHistogramCount = 0;
+        updateMenu();
+    }
+
+    // data never resizes the screen: a frame of another length than the screen's is dropped and reported as skipped
+    private boolean isFrameSizeValid(long[] histogram) {
+        if (histogram.length == SpectrumData.instance.getChannelCount()) {
+            return true;
+        }
+        if (!wrongFrameLogged) {
+            wrongFrameLogged = true;
+            AtomSpectraLog.addMessage(service_context, "Error: histogram of " + histogram.length
+                    + " channels ignored, the screen has " + SpectrumData.instance.getChannelCount());
+        }
+        onSourceDataSkipped();
+        return false;
+    }
+
+    public static boolean isRecording() {
+        return is_recording;
+    }
+
+    // starts/stops data collecting: updates the recording state and commands the active source
+    private void startStopRecording(boolean recording) {
+        setRecordingState(recording);
+
+        synchronized (inputSync) {
+            if (activeSource != null) {
+                if (recording) {
+                    resetSkippedHistogramCount();
+                    pushSpectrumToSource();
+                    activeSource.requestStart();
+                } else {
+                    activeSource.requestStop();
+                }
+            }
+        }
+    }
+
+    // updates the recording state and everything derived from it, without commanding the source
+    private void setRecordingState(boolean recording) {
+        if (recording != is_recording) {
+            // log event to debug view
+            String inputTypeText = lockedSourceName("audio", "usb", "bluz", "none");
+
+            if (recording) {
+                AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_start_recording, inputTypeText));
+            } else {
+                AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_stop_recording, inputTypeText));
+            }
         }
 
-        spgAutosaveFilePath = null;
-        spgAutosaveFileCreated = null;
+        is_recording = recording;
+
+        if (recording) {
+            startIntervalSearchAlarmTimer();
+        } else {
+            skippedIncompleteHistogramCount = 0;
+            resetSearchWindow();
+            resetSpectrumChangeWindow();
+            resetRecordingSuspendedStatus(false);
+            stopIntervalSearchAlarmTimer();
+            completeSpectrogramRecording();
+            SpectrumData.instance.foreground.updateComments();
+        }
+
+        updateMenu();
+        refreshServiceNotification();
+        notifyDeviceStateChanged();
     }
-}
 
-private void ensureGPSConfigured() {
-    boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
-    boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+    // when new data arrives either from audio or USB we preserve it in historical sliding time window
+// used to calculate dose rate
+    private static final int SEARCH_WINDOW_SIZE = MeasurementData.SEARCH_WINDOW_SIZE;
+    // per-sample energy-binned counts; also the total-count source since total == sum of bins
+// (every detected event is assigned to a bin, see getEnergyBinIndex)
+    private static final LinkedList<int[]> windowBinnedCounts = new LinkedList<>();
+    // per-sample interval counts (channel-range subset) as a single-bin array
+    private static final LinkedList<int[]> windowIntervalCounts = new LinkedList<>();
+    private static final LinkedList<Double> windowDeltaTime = new LinkedList<>();
 
-    if ((hasFeatureGPS || hasFeatureNetwork) && addGPS && AppPermissions.isLocationGranted(this)) {
-        Locator.startUsingGPS();
-        addGPS = Locator.hasGPS; // only stamp coordinates once a provider is actually available
-        if (!Locator.hasGPS) {
+    // ~1 s rolling window for displayed energy-interval CPS (keeps 2/5/10 Hz audio from flickering to 0)
+    private static final LinkedList<Integer> intervalCpsCounts = new LinkedList<>();
+    private static final LinkedList<Double> intervalCpsDelta = new LinkedList<>();
+
+    private static void resetIntervalCpsWindow() {
+        synchronized (intervalCpsCounts) {
+            intervalCpsCounts.clear();
+            intervalCpsDelta.clear();
+        }
+    }
+
+    // Append a frame and return energy-gated CPS over the last ~1 s of sample time.
+    private static int updateIntervalCps(int interval_counts, double delta_time) {
+        synchronized (intervalCpsCounts) {
+            intervalCpsCounts.addLast(interval_counts);
+            intervalCpsDelta.addLast(delta_time);
+
+            double sumTime = 0;
+            for (double t : intervalCpsDelta) {
+                sumTime += t;
+            }
+            while (sumTime > 1.0 && intervalCpsDelta.size() > 1) {
+                sumTime -= intervalCpsDelta.removeFirst();
+                intervalCpsCounts.removeFirst();
+            }
+
+            long sumCounts = 0;
+            for (int c : intervalCpsCounts) {
+                sumCounts += c;
+            }
+            if (sumTime <= 0) {
+                return 0;
+            }
+            return (int) Math.round(sumCounts / sumTime);
+        }
+    }
+
+    private static void resetSearchWindow() {
+        synchronized (windowBinnedCounts) {
+            windowDeltaTime.clear();
+            windowBinnedCounts.clear();
+            windowIntervalCounts.clear();
+        }
+        resetIntervalCpsWindow();
+    }
+
+    private static void resetDoseRateData() {
+        resetSearchWindow();
+        MeasurementData.instance.resetDoseRate();
+    }
+
+    // called each [0.1, 0.2, 0.5, 1] sec for audio, each 1 sec for USB
+    private MeasurementData.DoseRate doseRateSearch(int interval_counts, int[] binned_counts, double delta_time) {
+        if (delta_time == 0) {
+            return MeasurementData.instance.doseRate;
+        }
+
+        synchronized (windowBinnedCounts) {
+            windowDeltaTime.addLast(delta_time);
+            if (windowDeltaTime.size() > SEARCH_WINDOW_SIZE) {
+                windowDeltaTime.removeFirst();
+            }
+
+            windowBinnedCounts.addLast(binned_counts);
+            if (windowBinnedCounts.size() > SEARCH_WINDOW_SIZE) {
+                windowBinnedCounts.removeFirst();
+            }
+
+            windowIntervalCounts.addLast(new int[]{interval_counts});
+            if (windowIntervalCounts.size() > SEARCH_WINDOW_SIZE) {
+                windowIntervalCounts.removeFirst();
+            }
+
+            if (intervalSearchAlarmEnabled) {
+                intervalSearchAlarmBaseline.updateBaseline(interval_counts, delta_time);
+            } else {
+                intervalSearchAlarmBaseline.reset();
+            }
+        }
+
+        // shared active mode selects the minimum integration period; count targets differ per dose rate
+        double min_period;
+        switch (SearchFSM) {
+            case 1:
+                min_period = 1;
+                break;
+            case 2:
+                min_period = 2;
+                break;
+            default:
+                min_period = 0.2;
+                break;
+        }
+
+        SensitivityProfile profile = activeProfile;
+        int bins = Math.min(profile.binEdges.length, SensitivityProfile.MAX_BINS);
+
+        WindowSum nonComp = accumulateWindow(windowBinnedCounts, profile.searchTargetNonComp(SearchFSM), min_period);
+        if (nonComp.time < min_period) {
+            return MeasurementData.instance.doseRate;
+        }
+        WindowSum comp = accumulateWindow(windowBinnedCounts, profile.searchTargetComp(SearchFSM), min_period);
+        WindowSum interval = accumulateWindow(windowIntervalCounts, profile.searchTargetNonComp(SearchFSM), min_period);
+
+        // compensated dose rate: sum over energy bins of counts * pSv/count, converted to uSv/h
+        double comp_dose_rate = 0;
+        double comp_dose_rate_error_sum_of_squares = 0;
+        for (int bin = 0; bin < bins; bin++) {
+            int bin_counts = comp.binned[bin];
+            double bin_psv = profile.compPsvPerCount[bin];
+            double bin_dose_rate = bin_counts * bin_psv / comp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
+            comp_dose_rate += bin_dose_rate;
+            if (bin_counts > 0) {
+                double bin_dose_rate_error = (Math.sqrt(bin_counts) / bin_counts) * bin_dose_rate;
+                comp_dose_rate_error_sum_of_squares += bin_dose_rate_error * bin_dose_rate_error;
+            } else {
+                // no counts in bin: bound the error by the dose rate of a single count
+                double upper_dose_rate_bound = bin_psv / comp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
+                comp_dose_rate_error_sum_of_squares += upper_dose_rate_bound * upper_dose_rate_bound;
+            }
+        }
+        double comp_dose_rate_error = 0;
+        if (comp_dose_rate > 0) {
+            comp_dose_rate_error = Math.sqrt(comp_dose_rate_error_sum_of_squares) / comp_dose_rate * 100.0;
+        }
+
+        // non-compensated dose rate: total counts * pSv/count, converted to uSv/h
+        double dose_rate = 0;
+        if (profile.nonCompPsvPerCount > 0) {
+            dose_rate = nonComp.counts * profile.nonCompPsvPerCount / nonComp.time * SensitivityProfile.PSV_PER_COUNT_TO_USV_H;
+        }
+        double dose_rate_error = nonComp.counts > 0 ? Math.sqrt(nonComp.counts) / nonComp.counts * 100.0 : 0;
+
+        double interval_cps = interval.time > 0 ? (interval.counts / interval.time) : 0;
+        double interval_cps_error = interval.counts > 0 ? Math.sqrt(interval.counts) / interval.counts * 100.0 : 0;
+        if (intervalSearchAlarmEnabled) {
+            intervalSearchAlarmBaseline.updateAlarmLevels(interval_cps, interval_cps_error, intervalSearchAlarmDetectionLevel);
+        }
+
+        MeasurementData.instance.appendSearchSample(System.currentTimeMillis(), dose_rate, comp_dose_rate, interval_cps,
+                intervalSearchAlarmBaseline.getAlarmLevelHigh(), intervalSearchAlarmBaseline.getAlarmLevelLow(),
+                intervalSearchAlarmBaseline.getBaseline());
+
+        return new MeasurementData.DoseRate(
+                comp_dose_rate, comp_dose_rate_error, comp.time,
+                dose_rate, dose_rate_error, nonComp.time,
+                interval_cps, interval_cps_error, interval.time);
+    }
+
+    private static final class WindowSum {
+        int counts;
+        double time;
+        final int[] binned = new int[SensitivityProfile.MAX_BINS];
+    }
+
+    // Sum the most-recent samples until both the count target and the minimum period are reached.
+// Each sample is an array of per-bin counts (a single-element array for the interval source);
+// counts is the sum across the sample's bins - for the energy-binned source this equals the
+// total count, since every detected event is assigned to a bin (see getEnergyBinIndex).
+    private WindowSum accumulateWindow(LinkedList<int[]> source, int target, double minPeriod) {
+        WindowSum s = new WindowSum();
+        synchronized (windowBinnedCounts) {
+            for (int i = source.size() - 1; i >= 0; i--) {
+                int[] sample = source.get(i);
+                int n = Math.min(sample.length, s.binned.length);
+                for (int bin = 0; bin < n; bin++) {
+                    s.binned[bin] += sample[bin];
+                    s.counts += sample[bin];
+                }
+                s.time += windowDeltaTime.get(i);
+                if (s.counts >= target && s.time >= minPeriod) {
+                    break;
+                }
+            }
+        }
+        return s;
+    }
+
+    private static int getEnergyBinIndex(double energy) {
+        float[] edges = activeProfile.binEdges;
+        if (edges.length == 0) {
+            return -1;
+        }
+        for (int i = 0; i < edges.length; i++) {
+            if (energy <= edges[i]) {
+                return i;
+            }
+        }
+        return edges.length - 1; // above the last edge: top band
+    }
+
+    // finds isotopes and sends data to UI
+// should to be called each second
+    private final void calcAndSendFoundIsotopesData() {
+        if (AtomSpectraIsotopes.autoUpdateIsotopes && is_recording && AtomSpectraIsotopes.showFoundIsotopes) {
+            AtomSpectraFindIsotope.updateFoundIsotopes(this);
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_ISOTOPE_LIST).setPackage(Constants.PACKAGE_NAME));
+        }
+    }
+
+    // spectrum change mode
+// shows spectrum for the last n seconds (sliding window)
+// window size - delta_time
+    private final void calcSpectrumChangeData() {
+        long[] currentState = Arrays.copyOf(SpectrumData.instance.foreground.getDataArray(), SpectrumData.instance.foreground.getDataArray().length);
+        long[] previousState = currentState;
+        long[] backState = currentState;
+        int queueSize;
+        synchronized (histogram_all_queue) {
+            if (!histogram_all_queue.isEmpty() && histogram_all_queue.peek().length != currentState.length) {
+                histogram_all_queue.clear();
+            }
+            histogram_all_queue.add(currentState);
+            while (histogram_all_queue.size() > delta_time * delta_back_time_ratio + 1) {
+                histogram_all_queue.remove();
+            }
+
+            if (histogram_all_queue.size() <= delta_time + 1) {
+                previousState = histogram_all_queue.peek();
+                backState = previousState;
+            } else {
+                previousState = histogram_all_queue.get(histogram_all_queue.size() - delta_time);
+                backState = histogram_all_queue.peek();
+            }
+            queueSize = histogram_all_queue.size();
+        }
+
+        long[] deltaFg = new long[currentState.length];
+        long[] deltaBg = new long[currentState.length];
+        for (int i = 0; i < currentState.length; i++) {
+            deltaFg[i] = currentState[i] - previousState[i];
+            deltaBg[i] = currentState[i] - backState[i];
+        }
+
+        SpectrumChangeData.instance.set(deltaFg, deltaBg, Math.min(queueSize - 1, delta_time), queueSize - 1);
+    }
+
+    private void notifyDataAvailable() {
+        if (service_context != null) {
+            service_context.sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
+        }
+    }
+
+    public class LocalBinder extends Binder {
+        AtomSpectraService getService() {
+            return AtomSpectraService.this;
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+
+//        timerTask_started = true;
+
+        return new LocalBinder();
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        // After using a given device, you should make sure that this.close() is called
+        // such that resources are cleaned up properly.  In this particular example, close() is
+        // invoked when the UI is disconnected from the Service.
+        //close();
+        return super.onUnbind(intent);
+    }
+
+    private void saveCurrentSpectrum(String suffix) {
+        try {
+            Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, getStringOrDefaultLocale(R.string.file_atomspectra_spectrum_prefix), SpectrumData.instance.foreground.getSpectrumDate(), suffix, ".txt", "text/plain", false);
+            OutputStreamWriter docStream = streamInfo.first;
+            Spectrum spectrum = new Spectrum(SpectrumData.instance.foreground);
+            if (!addGPS) {
+                spectrum.setLocation(null).updateComments();
+            }
+
+            SpectrumFileAS saveFile = new SpectrumFileAS();
+            saveFile.addSpectrum(spectrum)
+                    .setChannelCompression(1)
+                    .saveSpectrumAndCloseStream(docStream, this);
+        } catch (Exception e) {
+            AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
+            showToastInMainLooper(getStringOrDefaultLocale(R.string.hist_save_error, suffix), Toast.LENGTH_SHORT);
+        }
+    }
+
+    private void handleSpectrogramRecording(Spectrum foregroundSpectrumCopy) {
+        if (spgInterval > 0) {
+            boolean updateIsRequired = false;
+            synchronized (spgAutosaveSync) {
+                if (spgAutosaveSpectrum == null) {
+                    updateIsRequired = true;
+                } else {
+                    double elapsedTime = foregroundSpectrumCopy.getSpectrumTime() - spgAutosaveSpectrum.getSpectrumTime();
+                    updateIsRequired = elapsedTime >= spgInterval;
+                }
+            }
+
+            if (updateIsRequired) {
+                new Thread(() -> createOrUpdateSpectrogramFile(foregroundSpectrumCopy)).start();
+            }
+        } else {
+            completeSpectrogramRecording();
+        }
+    }
+
+    private void notifySpectrogramUpdated() {
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    private void createOrUpdateSpectrogramFile(Spectrum foregroundSpectrumCopy) {
+        synchronized (spgAutosaveSync) {
+            // reset spectrogram file if midnight has passed
+            if (spgMidnightReset && spgAutosaveFilePath != null && spgAutosaveFileCreated != null) {
+                Date now = new Date();
+                if (now.getDate() != spgAutosaveFileCreated.getDate()) {
+                    appendDeltaToSpectrogram(foregroundSpectrumCopy);
+                    completeSpectrogramRecording();
+                    showToastInMainLooper(R.string.log_spg_midnight_restart, Toast.LENGTH_SHORT);
+                }
+            }
+
+            // spectrogram recording is starting or restarting
+            if (spgAutosaveSpectrum == null) {
+                spgAutosaveSpectrum = foregroundSpectrumCopy;
+                spgAutosaveSpectrum.updateComments();
+
+                try {
+                    Pair<OutputStreamWriter, Uri> spgAutosaveFileStreamInfo = SpectrumFile.prepareOutputFileStream(this, "Spectrogram-" + spgAutosaveSpectrum.getSuffix(), System.currentTimeMillis(), "", ".txt", "text/plain", true, true, true, false);
+                    spgAutosaveFilePath = spgAutosaveFileStreamInfo.second;
+                    spgAutosaveFileCreated = new Date();
+                    OutputStreamWriter docStream = spgAutosaveFileStreamInfo.first;
+                    SpectrumFileAS saveFile = new SpectrumFileAS();
+                    saveFile.addSpectrum(spgAutosaveSpectrum)
+                            .setChannelCompression(1)
+                            .saveSpectrumAndCloseStream(docStream, this);
+
+                    AtomSpectraSpectrogramData.instance.addSegment(spgAutosaveSpectrum, spgAutosaveFilePath);
+                    notifySpectrogramUpdated();
+                    this.showToastInMainLooper(R.string.log_spg_autosave_start, Toast.LENGTH_SHORT);
+                } catch (Exception e) {
+                    AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
+                    showToastInMainLooper(getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()), Toast.LENGTH_SHORT);
+                }
+
+                return;
+            }
+
+            // spectrogram recording is ongoing
+            double elapsedTime = foregroundSpectrumCopy.getSpectrumTime() - spgAutosaveSpectrum.getSpectrumTime();
+            if (elapsedTime >= spgInterval) {
+                appendDeltaToSpectrogram(foregroundSpectrumCopy);
+            }
+        }
+    }
+
+    private void appendDeltaToSpectrogram(Spectrum foregroundSpectrumCopy) {
+        try {
+            Spectrum deltaSpectrum = new Spectrum(foregroundSpectrumCopy).convertToDeltaSpectrum(spgAutosaveSpectrum);
+
+            // Persist to the file system first. The in-memory spectrogram and the
+            // baseline are only advanced if the write succeeds, so a failed write
+            // leaves the baseline intact and the missed interval is folded into the
+            // next delta instead of being permanently lost from the file.
+            if (!addGPS) {
+                deltaSpectrum.setLocation(null);
+            }
+            deltaSpectrum.updateComments();
+            SpectrumFileAS saveFile = new SpectrumFileAS();
+            saveFile.addSpectrum(deltaSpectrum)
+                    .setChannelCompression(1);
+            OutputStream out = service_context.getContentResolver().openOutputStream(spgAutosaveFilePath, "wa");
+            if (out == null) {
+                throw new IOException("Unable to open spectrogram file for append: " + spgAutosaveFilePath);
+            }
+            OutputStreamWriter docStream = new OutputStreamWriter(out);
+            saveFile.saveDeltaSpectrumAndCloseStream(docStream);
+
+            // Write succeeded: commit to memory and advance the baseline.
+            AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
+            notifySpectrogramUpdated();
+            spgAutosaveSpectrum = foregroundSpectrumCopy;
+        } catch (Exception e) {
+            this.showToastInMainLooper(getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()), Toast.LENGTH_SHORT);
+            AtomSpectraLog.addMessage(service_context, Log.getStackTraceString(e));
+        }
+    }
+
+    private void completeSpectrogramRecording() {
+        synchronized (spgAutosaveSync) {
+            spgAutosaveSpectrum = null;
+            if (spgAutosaveFilePath != null) {
+                showToastInMainLooper(R.string.log_spg_autosave_completed, Toast.LENGTH_SHORT);
+            }
+
+            spgAutosaveFilePath = null;
+            spgAutosaveFileCreated = null;
+        }
+    }
+
+    private void ensureGPSConfigured() {
+        boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+        boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+
+        if ((hasFeatureGPS || hasFeatureNetwork) && addGPS && AppPermissions.isLocationGranted(this)) {
+            Locator.startUsingGPS();
+            addGPS = Locator.hasGPS; // only stamp coordinates once a provider is actually available
+            if (!Locator.hasGPS) {
+                Locator.stopUsingGPS();
+            }
+        } else {
+            // setting off, permission missing, or no hardware: write no coordinates, but keep the
+            // user's "add GPS" intent so startup can ask for the permission again
             Locator.stopUsingGPS();
+            addGPS = false;
         }
-    } else {
-        // setting off, permission missing, or no hardware: write no coordinates, but keep the
-        // user's "add GPS" intent so startup can ask for the permission again
-        Locator.stopUsingGPS();
-        addGPS = false;
+        publishDeviceLocationSnapshot();
     }
-    publishDeviceLocationSnapshot();
-}
 
-// sends intent with dose/count rate etc. to AtomSwift app
+    // sends intent with dose/count rate etc. to AtomSwift app
 // expected to be called each second
 // dose rates expected to be uSv/h
-private void sendDataToAtomSwift(int cps, MeasurementData.DoseRate doseRate) {
-    if (!sendDataToAtomSwiftAppEnabled || !is_recording) {
+    private void sendDataToAtomSwift(int cps, MeasurementData.DoseRate doseRate) {
+        if (!sendDataToAtomSwiftAppEnabled || !is_recording) {
+            resetAtomSwiftIntermediateData();
+            return;
+        }
+
+        if (!atomSwiftHasIntermediateData) {
+            atomSwiftIntermediateCps = cps;
+            atomSwiftHasIntermediateData = true;
+            return;
+        }
+
+        int cp2s = atomSwiftIntermediateCps + cps;
+        double dr = 0;
+        double dr_error = 0;
+        switch (atomSwiftDRType) {
+            case Constants.ATOMSWIFT_DR_COMPENSATED:
+                dr = doseRate.compensated;
+                dr_error = doseRate.compensatedErrorPercent;
+                break;
+            case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
+                dr = doseRate.nonCompensated;
+                dr_error = doseRate.nonCompensatedErrorPercent;
+                break;
+            case Constants.ATOMSWIFT_DR_INTERVAL:
+                dr = doseRate.intervalCps;
+                dr_error = doseRate.intervalCpsErrorPercent;
+                break;
+        }
+
+        String searchMode = "";
+        switch (SearchFSM) {
+            case 0:
+                searchMode = "F";
+                break;
+            case 1:
+                searchMode = "M";
+                break;
+            case 2:
+                searchMode = "S";
+                break;
+        }
+
+        String inputTypeStr = lockedSourceName("MIC", "USB", "BLUZ", "NONE");
+
         resetAtomSwiftIntermediateData();
-        return;
-    }
 
-    if (!atomSwiftHasIntermediateData) {
-        atomSwiftIntermediateCps = cps;
-        atomSwiftHasIntermediateData = true;
-        return;
-    }
+        Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
+        dataIntent.setPackage("com.youratom.scid");
+        dataIntent.putExtra("CP2S", cp2s); // double (imp/2s)
+        dataIntent.putExtra("DR", dr); // double (uSv/h)
+        dataIntent.putExtra("DR_ERROR", dr_error); // double (%), 1 sigma
+        dataIntent.putExtra("SEARCH_MODE", searchMode); // String (F/M/S)
+        dataIntent.putExtra("INPUT_TYPE", inputTypeStr); // String (USB/MIC/NONE)
+        getApplicationContext().sendBroadcast(dataIntent);
 
-    int cp2s = atomSwiftIntermediateCps + cps;
-    double dr = 0;
-    double dr_error = 0;
-    switch (atomSwiftDRType) {
-        case Constants.ATOMSWIFT_DR_COMPENSATED:
-            dr = doseRate.compensated;
-            dr_error = doseRate.compensatedErrorPercent;
-            break;
-        case Constants.ATOMSWIFT_DR_NON_COMPENSATED:
-            dr = doseRate.nonCompensated;
-            dr_error = doseRate.nonCompensatedErrorPercent;
-            break;
-        case Constants.ATOMSWIFT_DR_INTERVAL:
-            dr = doseRate.intervalCps;
-            dr_error = doseRate.intervalCpsErrorPercent;
-            break;
-    }
-
-    String searchMode = "";
-    switch (SearchFSM) {
-        case 0:
-            searchMode = "F";
-            break;
-        case 1:
-            searchMode = "M";
-            break;
-        case 2:
-            searchMode = "S";
-            break;
-    }
-
-    String inputTypeStr = lockedSourceName("MIC", "USB", "BLUZ", "NONE");
-
-    resetAtomSwiftIntermediateData();
-
-    Intent dataIntent = new Intent("org.fe57.atomtag.atomspectradata");
-    dataIntent.setPackage("com.youratom.scid");
-    dataIntent.putExtra("CP2S", cp2s); // double (imp/2s)
-    dataIntent.putExtra("DR", dr); // double (uSv/h)
-    dataIntent.putExtra("DR_ERROR", dr_error); // double (%), 1 sigma
-    dataIntent.putExtra("SEARCH_MODE", searchMode); // String (F/M/S)
-    dataIntent.putExtra("INPUT_TYPE", inputTypeStr); // String (USB/MIC/NONE)
-    getApplicationContext().sendBroadcast(dataIntent);
-
-    // debug toast
+        // debug toast
 //        showToastInMainLooper(
 //                "cp2s: " + cp2s
 //                + "; dr: " + dr + " (+-" + dr_error + "%)"
 //                + "; search: " + searchMode + ";",
 //                Toast.LENGTH_SHORT);
-}
-
-private static void resetAtomSwiftIntermediateData() {
-    atomSwiftHasIntermediateData = false;
-    atomSwiftIntermediateCps = 0;
-}
-
-private void showToastInMainLooper(String text, int duration) {
-    new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
-    AtomSpectraLog.addMessage(service_context, text);
-}
-
-private void showToastInMainLooper(int res_id, int duration) {
-    String text = getStringOrDefaultLocale(res_id);
-    showToastInMainLooper(text, duration);
-}
-
-private void onRecordingSuspended() {
-    synchronized (recordingSuspendedSync) {
-        recordingSuspensionEpisode++;
-        recordingSuspensionAcknowledged = false;
     }
-    recordingSuspendedAt = new Date();
-    AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_recording_suspended));
 
-    saveCurrentSpectrum("recording_suspended");
-    completeSpectrogramRecording();
-    // the source arms its own unreliable-data window when it is started again
-    resetSkippedHistogramCount();
-    resetSpectrumChangeWindow();
-    resetSearchWindow();
-    resetAtomSwiftIntermediateData();
-    sendBroadcast(new Intent(ACTION_RECORDING_SUSPENDED).setPackage(Constants.PACKAGE_NAME));
-    refreshServiceNotification();
-    playNotificationSound();
-}
+    private static void resetAtomSwiftIntermediateData() {
+        atomSwiftHasIntermediateData = false;
+        atomSwiftIntermediateCps = 0;
+    }
 
-private void onRecordingResumed() {
-    recordingResumedAt = new Date();
-    sendBroadcast(new Intent(ACTION_RECORDING_RESUMED).setPackage(Constants.PACKAGE_NAME));
-    refreshServiceNotification();
-    playNotificationSound();
+    private void showToastInMainLooper(String text, int duration) {
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(getApplicationContext(), text, duration).show());
+        AtomSpectraLog.addMessage(service_context, text);
+    }
 
-    AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_recording_resumed));
-}
+    private void showToastInMainLooper(int res_id, int duration) {
+        String text = getStringOrDefaultLocale(res_id);
+        showToastInMainLooper(text, duration);
+    }
 
-// the consecutive-rejection counter behind ACTION_HISTOGRAM_SKIPPED: a restart is not the user's
+    private void onRecordingSuspended() {
+        synchronized (recordingSuspendedSync) {
+            recordingSuspensionEpisode++;
+            recordingSuspensionAcknowledged = false;
+        }
+        recordingSuspendedAt = new Date();
+        AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_recording_suspended));
+
+        saveCurrentSpectrum("recording_suspended");
+        completeSpectrogramRecording();
+        // the source arms its own unreliable-data window when it is started again
+        resetSkippedHistogramCount();
+        resetSpectrumChangeWindow();
+        resetSearchWindow();
+        resetAtomSwiftIntermediateData();
+        sendBroadcast(new Intent(ACTION_RECORDING_SUSPENDED).setPackage(Constants.PACKAGE_NAME));
+        refreshServiceNotification();
+        playNotificationSound();
+    }
+
+    private void onRecordingResumed() {
+        recordingResumedAt = new Date();
+        sendBroadcast(new Intent(ACTION_RECORDING_RESUMED).setPackage(Constants.PACKAGE_NAME));
+        refreshServiceNotification();
+        playNotificationSound();
+
+        AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_recording_resumed));
+    }
+
+    // the consecutive-rejection counter behind ACTION_HISTOGRAM_SKIPPED: a restart is not the user's
 // "no data is arriving" problem, so it starts counting from scratch
-private void resetSkippedHistogramCount() {
-    skippedIncompleteHistogramCount = 0;
-}
-
-private void refreshServiceNotification() {
-    if (service_context != null && AppPermissions.areNotificationsAllowed(service_context)) {
-        NotificationManagerCompat.from(service_context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
-    }
-}
-
-private void playNotificationSound() {
-    try {
-        Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
-        r.play();
-    } catch (Exception e) {
-        // ignore
-    }
-}
-
-private static void resetRecordingSuspendedStatus(boolean withDates) {
-    synchronized (recordingSuspendedSync) {
-        isRecordingSuspended = false;
-        recordingSuspensionAcknowledged = false;
-        recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
-        recordingSuspendSourceType = SpectrumSource.TYPE_NONE;
-
-        if (withDates) {
-            recordingSuspendedAt = null;
-            recordingResumedAt = null;
-        }
-    }
-}
-
-private static void resetSpectrumChangeWindow() {
-    SpectrumChangeData.instance.reset();
-    if (!histogram_all_queue.isEmpty()) {
-        synchronized (histogram_all_queue) {
-            histogram_all_queue.clear();
-        }
-    }
-}
-
-public static String formatLocalTimeAsISOLikeString(Date date) {
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-    sdf.setTimeZone(TimeZone.getDefault());
-
-    return sdf.format(date);
-}
-
-private String getStringOrDefaultLocale(int res_id) {
-    if (service_context != null) {
-        return service_context.getString(res_id);
+    private void resetSkippedHistogramCount() {
+        skippedIncompleteHistogramCount = 0;
     }
 
-    return getString(res_id);
-}
-
-private String getStringOrDefaultLocale(int res_id, Object... formatArgs) {
-    if (service_context != null) {
-        return service_context.getString(res_id, formatArgs);
-    }
-
-    return getString(res_id, formatArgs);
-}
-
-private String getAudioDeviceInfoText(String deviceMeta) {
-    if (deviceMeta == null) {
-        deviceMeta = "UNKNOWN";
-    }
-
-    return "AUDIO: " + deviceMeta;
-}
-
-private String getUsbDeviceInfoText(String deviceMeta) {
-    if (deviceMeta == null) {
-        deviceMeta = "UNKNOWN";
-    }
-
-    return "USB: " + deviceMeta;
-}
-
-public static class AlarmBaseline {
-    private int totalCounts;
-    private double totalTime;
-    private double alarmLevelHigh;
-    private double alarmLevelLow;
-    private final double errorThresholdPercent; // 1 sigma %
-    private final int maxDuration;
-
-    public AlarmBaseline() {
-        this.errorThresholdPercent = Constants.ALARM_BASELINE_ERROR_PERCENT_THRESHOLD;
-        this.maxDuration = Constants.ALARM_BASELINE_MAX_DURATION;
-    }
-
-    public AlarmBaseline(double errorThresholdPercent, int maxDuration) {
-        this.errorThresholdPercent = errorThresholdPercent;
-        this.maxDuration = maxDuration;
-    }
-
-    public void updateBaseline(int counts, double time) {
-        if (!this.isStable()) {
-            this.totalCounts += counts;
-            this.totalTime += time;
+    private void refreshServiceNotification() {
+        if (service_context != null && AppPermissions.areNotificationsAllowed(service_context)) {
+            NotificationManagerCompat.from(service_context).notify(FOREGROUND_PROCESS_ID, createNewServiceNotification());
         }
     }
 
-    public void updateAlarmLevels(double cps, double cpsErrorPercent, int detectionLevel) {
-        if (!this.isStable()) {
-            return;
-        }
-
-        double baseCps = this.getBaseline();
-        double baseErrorValue = baseCps * (this.getBaselineError() / 100);
-        double cpsErrorValue = baseCps * (cpsErrorPercent / 100);
-        double overallErrorValue = Math.sqrt(baseErrorValue * baseErrorValue + cpsErrorValue * cpsErrorValue);
-        double delta = detectionLevel * overallErrorValue;
-
-        alarmLevelHigh = baseCps + delta;
-        if (delta > baseCps) {
-            alarmLevelLow = 0;
-        } else {
-            alarmLevelLow = baseCps - delta;
+    private void playNotificationSound() {
+        try {
+            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+            r.play();
+        } catch (Exception e) {
+            // ignore
         }
     }
 
-    public void reset() {
-        this.totalTime = 0;
-        this.totalCounts = 0;
-        this.alarmLevelLow = 0;
-        this.alarmLevelHigh = 0;
+    private static void resetRecordingSuspendedStatus(boolean withDates) {
+        synchronized (recordingSuspendedSync) {
+            isRecordingSuspended = false;
+            recordingSuspensionAcknowledged = false;
+            recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
+            recordingSuspendSourceType = SpectrumSource.TYPE_NONE;
+
+            if (withDates) {
+                recordingSuspendedAt = null;
+                recordingResumedAt = null;
+            }
+        }
     }
 
-    public boolean isStable() {
-        double error = this.getBaselineError();
-        boolean isPrecise = error > 0 && error <= errorThresholdPercent;
-
-        return this.totalTime >= maxDuration || isPrecise;
+    private static void resetSpectrumChangeWindow() {
+        SpectrumChangeData.instance.reset();
+        if (!histogram_all_queue.isEmpty()) {
+            synchronized (histogram_all_queue) {
+                histogram_all_queue.clear();
+            }
+        }
     }
 
-    public double getBaseline() {
-        if (this.totalTime <= 0) {
-            return 0;
+    public static String formatLocalTimeAsISOLikeString(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        sdf.setTimeZone(TimeZone.getDefault());
+
+        return sdf.format(date);
+    }
+
+    private String getStringOrDefaultLocale(int res_id) {
+        if (service_context != null) {
+            return service_context.getString(res_id);
         }
 
-        return this.totalCounts / this.totalTime;
+        return getString(res_id);
     }
 
-    public double getBaselineError() {
-        if (totalCounts <= 0) {
-            return 0;
+    private String getStringOrDefaultLocale(int res_id, Object... formatArgs) {
+        if (service_context != null) {
+            return service_context.getString(res_id, formatArgs);
         }
 
-        double sigma = Math.sqrt(totalCounts);
-        return sigma / totalCounts * 100.0;
+        return getString(res_id, formatArgs);
     }
 
-    public double getAlarmLevelHigh() {
-        return alarmLevelHigh;
-    }
-
-    public double getAlarmLevelLow() {
-        return alarmLevelLow;
-    }
-
-    public int getRemainingTime() {
-        int remaining = this.maxDuration - (int) this.totalTime;
-        if (remaining < 0) {
-            remaining = 0;
+    private String getAudioDeviceInfoText(String deviceMeta) {
+        if (deviceMeta == null) {
+            deviceMeta = "UNKNOWN";
         }
 
-        return remaining;
+        return "AUDIO: " + deviceMeta;
     }
-}
+
+    private String getUsbDeviceInfoText(String deviceMeta) {
+        if (deviceMeta == null) {
+            deviceMeta = "UNKNOWN";
+        }
+
+        return "USB: " + deviceMeta;
+    }
+
+    public static class AlarmBaseline {
+        private int totalCounts;
+        private double totalTime;
+        private double alarmLevelHigh;
+        private double alarmLevelLow;
+        private final double errorThresholdPercent; // 1 sigma %
+        private final int maxDuration;
+
+        public AlarmBaseline() {
+            this.errorThresholdPercent = Constants.ALARM_BASELINE_ERROR_PERCENT_THRESHOLD;
+            this.maxDuration = Constants.ALARM_BASELINE_MAX_DURATION;
+        }
+
+        public AlarmBaseline(double errorThresholdPercent, int maxDuration) {
+            this.errorThresholdPercent = errorThresholdPercent;
+            this.maxDuration = maxDuration;
+        }
+
+        public void updateBaseline(int counts, double time) {
+            if (!this.isStable()) {
+                this.totalCounts += counts;
+                this.totalTime += time;
+            }
+        }
+
+        public void updateAlarmLevels(double cps, double cpsErrorPercent, int detectionLevel) {
+            if (!this.isStable()) {
+                return;
+            }
+
+            double baseCps = this.getBaseline();
+            double baseErrorValue = baseCps * (this.getBaselineError() / 100);
+            double cpsErrorValue = baseCps * (cpsErrorPercent / 100);
+            double overallErrorValue = Math.sqrt(baseErrorValue * baseErrorValue + cpsErrorValue * cpsErrorValue);
+            double delta = detectionLevel * overallErrorValue;
+
+            alarmLevelHigh = baseCps + delta;
+            if (delta > baseCps) {
+                alarmLevelLow = 0;
+            } else {
+                alarmLevelLow = baseCps - delta;
+            }
+        }
+
+        public void reset() {
+            this.totalTime = 0;
+            this.totalCounts = 0;
+            this.alarmLevelLow = 0;
+            this.alarmLevelHigh = 0;
+        }
+
+        public boolean isStable() {
+            double error = this.getBaselineError();
+            boolean isPrecise = error > 0 && error <= errorThresholdPercent;
+
+            return this.totalTime >= maxDuration || isPrecise;
+        }
+
+        public double getBaseline() {
+            if (this.totalTime <= 0) {
+                return 0;
+            }
+
+            return this.totalCounts / this.totalTime;
+        }
+
+        public double getBaselineError() {
+            if (totalCounts <= 0) {
+                return 0;
+            }
+
+            double sigma = Math.sqrt(totalCounts);
+            return sigma / totalCounts * 100.0;
+        }
+
+        public double getAlarmLevelHigh() {
+            return alarmLevelHigh;
+        }
+
+        public double getAlarmLevelLow() {
+            return alarmLevelLow;
+        }
+
+        public int getRemainingTime() {
+            int remaining = this.maxDuration - (int) this.totalTime;
+            if (remaining < 0) {
+                remaining = 0;
+            }
+
+            return remaining;
+        }
+    }
 }

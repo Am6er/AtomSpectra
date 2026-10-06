@@ -448,7 +448,7 @@ public class SpectrumFileAS extends SpectrumFile {
                         int progressPercent = processedDeltaCount * 100 / totalDeltaCount;
                         onProgress.accept(context.getString(R.string.spectrogram_spectrum_export_progress_combining_deltas_percent, spectrumName, progressPercent));
                     }
-                        SpectrumDelta delta = segmentFile.readNextDelta(fr,
+                    SpectrumDelta delta = segmentFile.readNextDelta(fr,
                             baseSpectrum.getSourceChannelCount(), baseSpectrum.getDataArray().length);
                     if (delta == null) {
                         throw new InvalidParameterException(String.format("Null delta for index: %d", deltaIndex));

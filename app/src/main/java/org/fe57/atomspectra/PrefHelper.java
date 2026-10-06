@@ -11,7 +11,9 @@ import java.util.Locale;
 import java.util.TreeMap;
 
 public class PrefHelper {
-    /** Sentinel for "no coefficient stored"; a real c0 never takes this value. */
+    /**
+     * Sentinel for "no coefficient stored"; a real c0 never takes this value.
+     */
     private static final float NO_COEFFICIENT = -1000;
 
     public static String configCalibrationChannel(int i) {
@@ -207,14 +209,18 @@ public class PrefHelper {
 
     // --- Sensitivity profiles -----------------------------------------------------------------
 
-    /** Active sensitivity profile id, migrating a legacy install to a custom profile on first access. */
+    /**
+     * Active sensitivity profile id, migrating a legacy install to a custom profile on first access.
+     */
     public static String getActiveSensitivityProfileId(@NonNull Context context) {
         SharedPreferences sp = getASSharedPreferences(context);
         maybeMigrateLegacySensitivityPrefs(context);
         return sp.getString(Constants.CONFIG.CONF_SENSITIVITY_PROFILE, SensitivityProfile.ID_DEFAULT);
     }
 
-    /** The active sensitivity profile (a copy - safe to mutate). */
+    /**
+     * The active sensitivity profile (a copy - safe to mutate).
+     */
     public static SensitivityProfile getActiveSensitivityProfile(@NonNull Context context) {
         String id = getActiveSensitivityProfileId(context);
         if (SensitivityProfile.ID_CUSTOM.equals(id)) {
@@ -229,14 +235,18 @@ public class PrefHelper {
                 .apply();
     }
 
-    /** All custom sensitivity profiles. Single slot for now; list-shaped so it can grow later. */
+    /**
+     * All custom sensitivity profiles. Single slot for now; list-shaped so it can grow later.
+     */
     public static List<SensitivityProfile> getCustomSensitivityProfiles(@NonNull Context context) {
         List<SensitivityProfile> profiles = new ArrayList<>();
         profiles.add(getCustomSensitivityProfile(context));
         return profiles;
     }
 
-    /** The (single) custom sensitivity profile assembled from preferences. */
+    /**
+     * The (single) custom sensitivity profile assembled from preferences.
+     */
     public static SensitivityProfile getCustomSensitivityProfile(@NonNull Context context) {
         SharedPreferences sp = getASSharedPreferences(context);
         SensitivityProfile profile = new SensitivityProfile();
@@ -254,7 +264,9 @@ public class PrefHelper {
         return profile;
     }
 
-    /** Persist the custom sensitivity profile (does not change the active profile). */
+    /**
+     * Persist the custom sensitivity profile (does not change the active profile).
+     */
     public static void setCustomSensitivityProfile(@NonNull Context context, @NonNull SensitivityProfile profile) {
         SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
         editor.putString(Constants.CONFIG.CONF_CUSTOM_PROFILE_NAME, profile.name);
@@ -269,7 +281,9 @@ public class PrefHelper {
         editor.apply();
     }
 
-    /** Clone any profile into the custom slot and make it active. */
+    /**
+     * Clone any profile into the custom slot and make it active.
+     */
     public static void cloneToCustomSensitivityProfile(@NonNull Context context, @NonNull SensitivityProfile source, String newName) {
         setCustomSensitivityProfile(context, source.editableCopy(newName));
         setActiveSensitivityProfile(context, SensitivityProfile.ID_CUSTOM);

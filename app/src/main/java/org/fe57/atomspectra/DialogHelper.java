@@ -32,7 +32,8 @@ public class DialogHelper {
                 .setPositiveButton(positiveLabel, (dialog, whichButton) -> {
                     action.run();
                 })
-                .setNegativeButton(negativeLabel, (dialog, whichButton) -> {});
+                .setNegativeButton(negativeLabel, (dialog, whichButton) -> {
+                });
         alert.show();
     }
 
@@ -58,31 +59,31 @@ public class DialogHelper {
                 .setView(column)
                 .setCancelable(cancelable)
                 .create();
-            Context dialogContext = dialog.getContext();
-            float density = dialogContext.getResources().getDisplayMetrics().density;
-            int minHeight = Math.round(48f * density);
-            TypedArray colors = dialogContext.obtainStyledAttributes(new int[] {
+        Context dialogContext = dialog.getContext();
+        float density = dialogContext.getResources().getDisplayMetrics().density;
+        int minHeight = Math.round(48f * density);
+        TypedArray colors = dialogContext.obtainStyledAttributes(new int[]{
                 android.R.attr.textColorPrimary, android.R.attr.colorControlHighlight
-            });
-            int foreground = colors.getColor(0, Color.WHITE);
-            int highlight = colors.getColor(1, ColorUtils.setAlphaComponent(foreground, 31));
-            colors.recycle();
+        });
+        int foreground = colors.getColor(0, Color.WHITE);
+        int highlight = colors.getColor(1, ColorUtils.setAlphaComponent(foreground, 31));
+        colors.recycle();
         for (StackedAction action : actions) {
-                Button button = new Button(dialogContext, null, android.R.attr.borderlessButtonStyle);
+            Button button = new Button(dialogContext, null, android.R.attr.borderlessButtonStyle);
             button.setText(action.label);
             button.setMinHeight(minHeight);
-                GradientDrawable background = new GradientDrawable();
-                background.setCornerRadius(6f * density);
-                background.setColor(ColorUtils.setAlphaComponent(foreground, 15));
-                background.setStroke(Math.max(1, Math.round(density)),
+            GradientDrawable background = new GradientDrawable();
+            background.setCornerRadius(6f * density);
+            background.setColor(ColorUtils.setAlphaComponent(foreground, 15));
+            background.setStroke(Math.max(1, Math.round(density)),
                     ColorUtils.setAlphaComponent(foreground, 61));
-                GradientDrawable mask = new GradientDrawable();
-                mask.setCornerRadius(6f * density);
-                mask.setColor(Color.WHITE);
-                button.setBackground(new RippleDrawable(ColorStateList.valueOf(highlight), background, mask));
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            GradientDrawable mask = new GradientDrawable();
+            mask.setCornerRadius(6f * density);
+            mask.setColor(Color.WHITE);
+            button.setBackground(new RippleDrawable(ColorStateList.valueOf(highlight), background, mask));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                if (column.getChildCount() > 0) params.topMargin = Math.round(8f * density);
+            if (column.getChildCount() > 0) params.topMargin = Math.round(8f * density);
             button.setOnClickListener(v -> {
                 dialog.dismiss();
                 if (action.onClick != null) action.onClick.run();

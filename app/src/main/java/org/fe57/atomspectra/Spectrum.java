@@ -24,11 +24,11 @@ public class Spectrum {
     private String DeviceInfo;                    // device info
     private boolean Changed;                      // functions ...Only don't change this state
 
-    public Spectrum () {
+    public Spectrum() {
         initSpectrumData(Constants.DEFAULT_CHANNEL_COUNT, Calibration.defaultCalibration(Constants.DEFAULT_CHANNEL_COUNT));
     }
 
-    public Spectrum (int channelCount) {
+    public Spectrum(int channelCount) {
         initSpectrumData(channelCount, Calibration.defaultCalibration(channelCount));
     }
 
@@ -128,7 +128,7 @@ public class Spectrum {
             throw new IllegalArgumentException(
                     "Data length mismatch: expected " + DataArray.length + ", got " + data.length);
         }
-        for(int i = 0; i < DataArray.length; i++)
+        for (int i = 0; i < DataArray.length; i++)
             DataArray[i] += data[i];
         SpectrumDate = System.currentTimeMillis();
         Changed = true;
@@ -140,7 +140,7 @@ public class Spectrum {
             throw new IllegalArgumentException(
                     "Spectrum length mismatch: expected " + DataArray.length + ", got " + spectrum.DataArray.length);
         }
-        for(int i = 0; i < DataArray.length; i++)
+        for (int i = 0; i < DataArray.length; i++)
             DataArray[i] += spectrum.DataArray[i];
         SpectrumTime += spectrum.SpectrumTime;
         SpectrumDate = System.currentTimeMillis();
@@ -177,7 +177,7 @@ public class Spectrum {
             throw new IllegalArgumentException(
                     "Data length mismatch: expected " + DataArray.length + ", got " + data.length);
         }
-        for(int i = 0; i < DataArray.length; i++)
+        for (int i = 0; i < DataArray.length; i++)
             DataArray[i] += data[i];
         return this;
     }
@@ -188,7 +188,7 @@ public class Spectrum {
             throw new IllegalArgumentException(
                     "Spectrum length mismatch: expected " + DataArray.length + ", got " + spectrum.DataArray.length);
         }
-        for(int i = 0; i < DataArray.length; i++)
+        for (int i = 0; i < DataArray.length; i++)
             DataArray[i] += spectrum.DataArray[i];
         return this;
     }
@@ -262,7 +262,7 @@ public class Spectrum {
 
     static long[] splitAcquisitionTime(double timeSeconds) {
         long totalSeconds = Math.max(0L, Math.round(timeSeconds));
-        return new long[] {
+        return new long[]{
                 totalSeconds / 86400L,
                 (totalSeconds % 86400L) / 3600L,
                 (totalSeconds % 3600L) / 60L,
@@ -276,7 +276,7 @@ public class Spectrum {
     }
 
     public Spectrum setLocation(Location l) {
-        if ( l != null) {
+        if (l != null) {
             Latitude = l.getLatitude();
             Longitude = l.getLongitude();
             GPSDate = l.getTime();
@@ -290,7 +290,7 @@ public class Spectrum {
     }
 
     public Spectrum setLocationOnly(Location l) {
-        if ( l != null) {
+        if (l != null) {
             Latitude = l.getLatitude();
             Longitude = l.getLongitude();
             GPSDate = l.getTime();

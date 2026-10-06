@@ -1,6 +1,8 @@
 package org.fe57.atomspectra;
 
-/** What the user chose last and the next launch restores: nothing, files only, or a specific device. */
+/**
+ * What the user chose last and the next launch restores: nothing, files only, or a specific device.
+ */
 final class DeviceChoice {
     static final int MODE_NONE = 0;
     static final int MODE_OFFLINE = 1;

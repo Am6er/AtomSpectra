@@ -49,6 +49,6 @@ public class SwipeDetector {
         return isSwipeDistance(coordinateA, coordinateB)
                 && isSwipeSpeed(velocity);
     }
-    
-    
+
+
 }

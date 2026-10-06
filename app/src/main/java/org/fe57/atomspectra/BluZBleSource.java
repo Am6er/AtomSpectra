@@ -190,7 +190,8 @@ final class BluZBleSource implements SpectrumSource {
         scanCallback = null;
         if (callback == null || adapter == null) return;
         try {
-            if (adapter.getBluetoothLeScanner() != null) adapter.getBluetoothLeScanner().stopScan(callback);
+            if (adapter.getBluetoothLeScanner() != null)
+                adapter.getBluetoothLeScanner().stopScan(callback);
         } catch (SecurityException | IllegalStateException ignored) {
         }
     }
@@ -225,14 +226,16 @@ final class BluZBleSource implements SpectrumSource {
             dispatch(() -> {
                 if (!current(candidate)) return;
                 if (newState == BluetoothProfile.STATE_DISCONNECTED || result != BluetoothGatt.GATT_SUCCESS) {
-                    if (physicalConnection && !ready) failHandshake(REASON_ERROR, "BluZ disconnected during handshake");
+                    if (physicalConnection && !ready)
+                        failHandshake(REASON_ERROR, "BluZ disconnected during handshake");
                     else connectionLost("BluZ connection lost (" + result + ")");
                 } else if (newState == BluetoothProfile.STATE_CONNECTED) {
                     physicalConnection = true;
                     setStatus(STATUS_CONNECTING);
                     try {
                         candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
-                        if (!candidate.discoverServices()) failHandshake(REASON_ERROR, "Cannot discover BluZ services");
+                        if (!candidate.discoverServices())
+                            failHandshake(REASON_ERROR, "Cannot discover BluZ services");
                     } catch (SecurityException error) {
                         permissionLost();
                     }
@@ -256,7 +259,8 @@ final class BluZBleSource implements SpectrumSource {
                     return;
                 }
                 try {
-                    if (!candidate.requestMtu(251)) failHandshake(REASON_ERROR, "Cannot request BluZ MTU");
+                    if (!candidate.requestMtu(251))
+                        failHandshake(REASON_ERROR, "Cannot request BluZ MTU");
                 } catch (SecurityException error) {
                     permissionLost();
                 }
@@ -293,7 +297,9 @@ final class BluZBleSource implements SpectrumSource {
             byte[] value = characteristic.getValue();
             if (value != null && NOTIFY.equals(characteristic.getUuid())) {
                 byte[] copy = value.clone();
-                dispatch(() -> { if (current(candidate)) onPacket(copy); });
+                dispatch(() -> {
+                    if (current(candidate)) onPacket(copy);
+                });
             }
         }
 
@@ -301,13 +307,16 @@ final class BluZBleSource implements SpectrumSource {
         public void onCharacteristicChanged(BluetoothGatt candidate, BluetoothGattCharacteristic characteristic, byte[] value) {
             if (!NOTIFY.equals(characteristic.getUuid()) || value == null) return;
             byte[] copy = value.clone();
-            dispatch(() -> { if (current(candidate)) onPacket(copy); });
+            dispatch(() -> {
+                if (current(candidate)) onPacket(copy);
+            });
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt candidate, BluetoothGattCharacteristic characteristic, int result) {
             dispatch(() -> {
-                if (!current(candidate) || !writing || !WRITE.equals(characteristic.getUuid())) return;
+                if (!current(candidate) || !writing || !WRITE.equals(characteristic.getUuid()))
+                    return;
                 handler.removeCallbacks(writeDeadline);
                 PendingWrite completed = writes.poll();
                 writing = false;
@@ -456,7 +465,8 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private boolean calibrationMatches(double[] observed) {
-        if (pendingCalibration == null || observed.length != pendingCalibration.length) return false;
+        if (pendingCalibration == null || observed.length != pendingCalibration.length)
+            return false;
         for (int index = 0; index < observed.length; index++) {
             if (Double.compare(observed[index], pendingCalibration[index]) != 0) return false;
         }
@@ -483,16 +493,21 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     @Override
-    public void requestStart() { dispatch(() -> requestCollecting(true)); }
+    public void requestStart() {
+        dispatch(() -> requestCollecting(true));
+    }
 
     @Override
-    public void requestStop() { dispatch(() -> requestCollecting(false)); }
+    public void requestStop() {
+        dispatch(() -> requestCollecting(false));
+    }
 
     private void requestCollecting(boolean collecting) {
         int op = collecting ? OP_START : OP_STOP;
         if (!usable(op)) return;
         if (toggleOp != 0) {
-            if (desiredCollecting != collecting) error(op, REASON_ERROR, "BluZ acquisition command is already pending");
+            if (desiredCollecting != collecting)
+                error(op, REASON_ERROR, "BluZ acquisition command is already pending");
             return;
         }
         if (latest.isCollecting() == collecting) {
@@ -589,7 +604,7 @@ final class BluZBleSource implements SpectrumSource {
             boolean accepted;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 accepted = gatt.writeCharacteristic(writeCharacteristic, pending.bytes,
-                    BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) == BluetoothStatusCodes.SUCCESS;
+                        BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) == BluetoothStatusCodes.SUCCESS;
             } else {
                 writeCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                 writeCharacteristic.setValue(pending.bytes);
@@ -637,8 +652,10 @@ final class BluZBleSource implements SpectrumSource {
         this.pendingCalibration = null;
         if (pendingToggle != 0 && pendingToggle != op) error(pendingToggle, REASON_ERROR, text);
         if (pendingReset && op != OP_RESET) error(OP_RESET, REASON_ERROR, text);
-        if (pendingResolution && op != OP_SETTINGS_SAVE) error(OP_SETTINGS_SAVE, REASON_ERROR, text);
-        if (pendingCalibration && op != OP_CALIBRATION_SAVE) error(OP_CALIBRATION_SAVE, REASON_ERROR, text);
+        if (pendingResolution && op != OP_SETTINGS_SAVE)
+            error(OP_SETTINGS_SAVE, REASON_ERROR, text);
+        if (pendingCalibration && op != OP_CALIBRATION_SAVE)
+            error(OP_CALIBRATION_SAVE, REASON_ERROR, text);
         error(op, REASON_ERROR, text);
     }
 
@@ -647,11 +664,14 @@ final class BluZBleSource implements SpectrumSource {
         stopScan();
         releaseGatt();
         setStatus(STATUS_DISCONNECTED);
-        if (wasReady) reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
+        if (wasReady)
+            reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
         scheduleRetry();
     }
 
-    private void permissionLost() { failHandshake(REASON_PERMISSION, "Bluetooth permission was lost"); }
+    private void permissionLost() {
+        failHandshake(REASON_PERMISSION, "Bluetooth permission was lost");
+    }
 
     private void failHandshake(int reason, String text) {
         terminal = true;
@@ -690,8 +710,14 @@ final class BluZBleSource implements SpectrumSource {
         writes.clear();
         decoder.reset();
         if (previous != null) {
-            try { previous.disconnect(); } catch (SecurityException ignored) { }
-            try { previous.close(); } catch (SecurityException ignored) { }
+            try {
+                previous.disconnect();
+            } catch (SecurityException ignored) {
+            }
+            try {
+                previous.close();
+            } catch (SecurityException ignored) {
+            }
         }
     }
 
@@ -764,17 +790,51 @@ final class BluZBleSource implements SpectrumSource {
 
     @Override
     public void setInitialHistogram(long[] histogram, double recordingTimeSec) {
-        dispatch(() -> { if (usable(OP_START)) error(OP_START, REASON_ERROR, "BluZ cannot accept an initial histogram"); });
+        dispatch(() -> {
+            if (usable(OP_START))
+                error(OP_START, REASON_ERROR, "BluZ cannot accept an initial histogram");
+        });
     }
 
-    @Override public boolean supportsInitialHistogram() { return false; }
-    @Override public int instanceId() { return instanceId; }
-    @Override public int inputType() { return TYPE_BLUZ; }
-    @Override public int status() { return status; }
-    @Override public SourceError lastError() { return lastError; }
-    @Override public int channelCount() { return BluZFrameDecoder.CHANNEL_COUNT; }
-    @Override public String deviceId() { return "BluZ " + address; }
-    @Override public double[] calibration() { return coefficients.clone(); }
+    @Override
+    public boolean supportsInitialHistogram() {
+        return false;
+    }
+
+    @Override
+    public int instanceId() {
+        return instanceId;
+    }
+
+    @Override
+    public int inputType() {
+        return TYPE_BLUZ;
+    }
+
+    @Override
+    public int status() {
+        return status;
+    }
+
+    @Override
+    public SourceError lastError() {
+        return lastError;
+    }
+
+    @Override
+    public int channelCount() {
+        return BluZFrameDecoder.CHANNEL_COUNT;
+    }
+
+    @Override
+    public String deviceId() {
+        return "BluZ " + address;
+    }
+
+    @Override
+    public double[] calibration() {
+        return coefficients.clone();
+    }
 
     private static final class PendingWrite {
         final byte[] bytes;

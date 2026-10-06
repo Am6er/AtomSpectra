@@ -13,12 +13,16 @@ import androidx.annotation.NonNull;
 public final class SpectrumData {
     public static final SpectrumData instance = new SpectrumData();
 
-    /** Guards the data-handler write of the foreground spectrum and compound reads of it. */
+    /**
+     * Guards the data-handler write of the foreground spectrum and compound reads of it.
+     */
     public final Object lock = new Object();
 
     public final Spectrum foreground = new Spectrum();
     public final Spectrum background = new Spectrum();
-    /** Calibration being edited by the user (points list), not yet applied. */
+    /**
+     * Calibration being edited by the user (points list), not yet applied.
+     */
     public volatile Calibration newCalibration = new Calibration(Constants.DEFAULT_CHANNEL_COUNT);
 
     public volatile int lastCalibrationChannel = Constants.DEFAULT_CHANNEL_COUNT;
@@ -75,21 +79,27 @@ public final class SpectrumData {
     // The active calibration lives on the foreground spectrum. Everything that changes it goes
     // through the apply* methods, which tell the consumers to re-read the data.
 
-    /** Make a calibration the active one and let the consumers know it changed. */
+    /**
+     * Make a calibration the active one and let the consumers know it changed.
+     */
     public void applyCalibration(@NonNull Context context, Calibration calibration) {
         foreground.setSpectrumCalibration(calibration);
         EnergyIntervalData.instance.recalculate();
         notifyDataAvailable(context);
     }
 
-    /** Set the last calibrated channel, store it, and let the consumers know. */
+    /**
+     * Set the last calibrated channel, store it, and let the consumers know.
+     */
     public void applyLastCalibrationChannel(@NonNull Context context, int channel) {
         lastCalibrationChannel = Constants.MinMax(channel, Constants.MIN_LAST_CALIBRATION_CHANNEL, getChannelCount());
         PrefHelper.setLastCalibrationChannel(context, lastCalibrationChannel);
         notifyDataAvailable(context);
     }
 
-    /** Apply coefficients that came from a device, reporting whether they were usable. */
+    /**
+     * Apply coefficients that came from a device, reporting whether they were usable.
+     */
     public void applyDeviceCalibration(@NonNull Context context, double[] coeffs) {
         Calibration calibration = new Calibration(getChannelCount());
         calibration.Calculate(coeffs);
@@ -108,7 +118,9 @@ public final class SpectrumData {
         context.sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
     }
 
-    /** Linear calibration coefficients spanning the device's whole channel range over 0-3MeV, for when the device has none stored. */
+    /**
+     * Linear calibration coefficients spanning the device's whole channel range over 0-3MeV, for when the device has none stored.
+     */
     private static double[] defaultLinearCalibrationCoeffs(int channelCount) {
         double[] coeffs = new double[2];
         coeffs[1] = 3000.0 / (channelCount + 1);
