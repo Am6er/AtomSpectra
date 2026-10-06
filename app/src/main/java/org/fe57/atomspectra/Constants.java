@@ -196,6 +196,7 @@ public class Constants {
         String ACTION_DEVICE_SELECTION_REQUIRED = "org.fe57.atomspectra.ACTION_DEVICE_SELECTION_REQUIRED";
         // sent by the service when a connected device waits for the user to decide what happens to the unsaved screen spectrum
         String ACTION_DEVICE_CONNECT_DECISION = "org.fe57.atomspectra.ACTION_DEVICE_CONNECT_DECISION";
+        String ACTION_DEVICE_STATE_CHANGED = "org.fe57.atomspectra.ACTION_DEVICE_STATE_CHANGED";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
 
         // read by AtomSpectra to actualize menu status after capturing status change

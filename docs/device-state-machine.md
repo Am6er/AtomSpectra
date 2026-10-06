@@ -54,7 +54,7 @@ Responsibilities:
 | Layer | Owns | Does not do |
 |---|---|---|
 | Source | Talking to the hardware, waiting for an absent device, noticing loss and return, `status()`, `lastError()` | Decide what the user wants, touch the screen spectrum |
-| Service | The lock, the remembered choice, recording intent, who produced the screen spectrum, mirrors for the UI | Scan for devices, retry failed connects |
+| Service | The lock, the remembered choice, recording intent, who produced the screen spectrum, mirrors for the UI, user-requested recovery | Scan for devices, implement transport retries |
 | UI | Showing the pair, asking the user, the selection screen | Any state of its own |
 
 ### BluZ Source
@@ -104,6 +104,7 @@ stateDiagram-v2
     [*] --> UNSELECTED: service starts
     UNSELECTED --> LOCKED: remembered device restored<br/>or user picks a device
     UNSELECTED --> OFFLINE: remembered "files only"<br/>or user picks "work offline"
+    LOCKED --> LOCKED: user picks same device<br/>(existing session kept, request connection if needed)
     LOCKED --> LOCKED: user picks another device<br/>(old source closed, recording stopped)
     LOCKED --> OFFLINE: user picks "work offline",<br/>"Stop and work offline"<br/>or "Disconnect and work offline"
     OFFLINE --> LOCKED: user picks a device
@@ -300,10 +301,22 @@ sequenceDiagram
     Note over S,D: LOCKED, RECORDING
     D->>S: DISCONNECTED
     S->>S: deviceReady = false → WAITING<br/>recording intent kept → recording suspended
-    S->>U: suspended dialog "Stop and work offline"
-    alt user does nothing, device returns
+    S->>U: suspended dialog "Wait for device" / "Stop and work offline"
+    opt user chooses "Wait for device"
+        U->>S: acknowledge current suspension episode
+        U->>U: dismiss dialog; indicator and notification remain suspended
+    end
+    opt user selects same device in picker
+        U->>S: selectDevice(same type and identity)
+        S->>D: requestConnect if not connected
+        S->>S: keep source, spectrum ownership and recording intent
+        S->>U: ACTION_DEVICE_SELECTED (picker may close while waiting)
+    end
+    alt device returns, with or without user action
         D->>S: READY
-        S->>D: push screen spectrum, requestStart
+        opt device is not already collecting
+            S->>D: push screen spectrum, requestStart
+        end
         S->>U: dialog dismissed, RECORDING again
     else user chooses "Stop and work offline"
         U->>S: stopAndGoOffline()
@@ -313,18 +326,44 @@ sequenceDiagram
 
 While suspended there is no way to load a file (loading is blocked while the recording intent is set), so a resume always lands on the spectrum that was being recorded.
 
+Acknowledgement is held by the service for one suspension episode and survives
+activity recreation. It does not stop recording, release the device or request a
+connection. A later loss creates a new episode and warns again. An acknowledgement
+from an old dialog cannot suppress a newer episode.
+
+Same-device selection is determined on the input thread using source type and
+stable identity, including if the device returned while the picker was open. It
+does not create a new source, reset the spectrum, or enter first-connect adoption.
+Return follows `onDeviceReturned`; hardware-owned spectra continue updating from
+the device. Selecting a different device or working offline keeps the existing
+switching and spectrum-protection rules.
+
+`requestConnect()` ensures connection or source-owned waiting, retries a failed
+connect, and leaves an existing connection attempt alone. Repeated requests do not
+clear acquisition data. This is not a forced transport restart; UI and service do
+not implement source-specific recovery.
+
 ## 7. Errors
 
 | Kind | Origin | State | Recovery |
 |---|---|---|---|
 | Permission missing or denied at connect (`REASON_PERMISSION`) | microphone permission, USB permission | session falls back to `UNSELECTED`, toast, selection screen opens | user picks a device; remembered choice untouched |
-| Failed connect (`OP_CONNECT`), not permission | handshake error, port open failure | session stays `LOCKED`, device state `ERROR`, the source stops trying | status dialog: **Retry** (`retryConnect`) or **Select device**. No automatic retry |
+| Failed connect (`OP_CONNECT`), not permission | handshake error, port open failure | session stays `LOCKED`, device state `ERROR`, the source stops trying | status dialog: **Retry** (`retryConnect`) or reselect the same device. No automatic retry |
 | Failed command (`OP_START`, `OP_STOP`, `OP_RESET`, `OP_CALIBRATION_SAVE`, …) | timeout, device error | device state `ERROR` while status is `COMMAND_FAILED`; a start/stop failure reverts the recording intent; toast | clears by itself when the source next reaches idle or collecting |
 | Pick failed during selection | any of the above while the user is choosing | session `UNSELECTED`, `ACTION_DEVICE_SELECTION_REQUIRED` carries the text, the selection screen shows it | user picks again |
 
 The error itself lives on the source (`SpectrumSource.lastError()`), is cleared by the source when it recovers, and is mirrored by the service after each reply.
 
 ## 8. Selection screen
+
+The following flow applies to a different device. Reselecting the locked device
+keeps the session, requests connection if needed, and does not gate leaving the
+picker during recovery. The picker displays waiting, connecting or error status
+for suspended recording and refreshes on `ACTION_DEVICE_STATE_CHANGED`, emitted
+for source lifecycle, selection, recovery and recording-state updates, not menu
+refreshes. An already-recording
+session never receives another start command from the picker. An initial pending
+selection still uses the first-connect result flow.
 
 ```mermaid
 sequenceDiagram
@@ -358,7 +397,7 @@ The screen cannot be left (Cancel hidden, back disabled) while the session is `U
 | 2 | Remember the choice, auto-connect, wait if absent | `DeviceChoice`, `restoreDeviceChoice`, source-owned waiting |
 | 3 | Switch devices while running | `selectDevice`: old source closed, recording stopped |
 | 4 | Warn before unsaved data is replaced or lost | connect decision, start decision, exit confirm when `isChanged()` |
-| 5 | Device lost while recording: warn, option to stop and go offline, preference unchanged | suspended dialog → `stopAndGoOffline()` |
+| 5 | Device lost while recording: warn, wait or stop and go offline, preference unchanged | suspension episode acknowledgement or `stopAndGoOffline()` |
 | 6 | Device back, no action: recording resumes | `onDeviceReturned` |
 | 7 | UI always shows the pair, states A–E | `deviceState()` + badges, section 4 |
 

@@ -207,12 +207,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
 
             if (this.isOpened()) {
-                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, "Already connected");
                 return;
             }
 
             if (this.status == SpectrumSource.STATUS_CONNECTING) {
-                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, "Connection already in progress");
                 return;
             }
 

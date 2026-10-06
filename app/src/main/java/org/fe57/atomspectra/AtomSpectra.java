@@ -607,6 +607,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (AtomSpectraService.ACTION_RECORDING_RESUMED.equals(action)) {
                 // ToastHelper.showToast(context,"resumed intent");
                 dismissRecordingSuspendedDialog();
+                checkRecordingSuspended();
             }
 
             if (AtomSpectraService.ACTION_HISTOGRAM_SKIPPED.equals(action)) {
@@ -637,6 +638,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 maybeOpenDeviceSelection();
             }
             if (Constants.ACTION.ACTION_UPDATE_MENU.equals(action)) {
+                checkRecordingSuspended();
                 syncConnectDecisionDialog();
                 updateRecordStatusMenu();
                 updateSelectedInputIndicator();
@@ -3709,13 +3711,19 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     private AlertDialog recordingSuspendedAlert = null;
+    private long recordingSuspendedDialogEpisode = 0;
 
-    private void showRecordingSuspendedDialog() {
+    private void showRecordingSuspendedDialog(long episode) {
         String message = getString(R.string.recording_suspended_dialog_message);
         message += "\n" + AtomSpectraService.formatLocalTimeAsISOLikeString(AtomSpectraService.recordingSuspendedAt);
         final AlertDialog.Builder alert = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.recording_suspended_dialog_title))
                 .setMessage(message)
+                .setNegativeButton(R.string.recording_suspended_dialog_wait, (dialog, whichButton) -> {
+                    AtomSpectraService.acknowledgeRecordingSuspension(episode);
+                    dismissRecordingSuspendedDialog();
+                    checkRecordingSuspended();
+                })
                 .setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
                     // stop recording and release the device; the loaded spectrum and the remembered device stay
                     if (boundService != null) {
@@ -3724,6 +3732,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     dismissRecordingSuspendedDialog();
                 })
                 .setCancelable(false);
+            recordingSuspendedDialogEpisode = episode;
         recordingSuspendedAlert = alert.show();
     }
 
@@ -3732,11 +3741,16 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             recordingSuspendedAlert.dismiss();
             recordingSuspendedAlert = null;
         }
+        recordingSuspendedDialogEpisode = 0;
     }
 
     private void checkRecordingSuspended() {
-        if (AtomSpectraService.isStarted && AtomSpectraService.isRecordingSuspended && active && recordingSuspendedAlert == null) {
-            showRecordingSuspendedDialog();
+        long episode = AtomSpectraService.pendingRecordingSuspensionEpisode();
+        if (recordingSuspendedAlert != null && recordingSuspendedDialogEpisode != episode) {
+            dismissRecordingSuspendedDialog();
+        }
+        if (AtomSpectraService.isStarted && episode != 0 && active && recordingSuspendedAlert == null) {
+            showRecordingSuspendedDialog(episode);
         }
     }
 

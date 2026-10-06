@@ -159,7 +159,6 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
 
             if (this.status != SpectrumSource.STATUS_DISCONNECTED) {
-                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, "Already connected");
                 return;
             }
 

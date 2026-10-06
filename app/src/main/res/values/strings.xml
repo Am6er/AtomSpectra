@@ -58,6 +58,7 @@
     <string name="device_select_offline">Work offline (files only)</string>
     <string name="device_select_remember">Remember my choice</string>
     <string name="device_select_connecting">Connecting…</string>
+    <string name="device_select_waiting">Waiting for device…</string>
     <string name="device_select_permission_needed">Permission needed — tap to grant</string>
     <string name="device_select_none">No devices found</string>
     <string name="device_select_available">Available</string>
@@ -442,6 +443,7 @@
     <string name="recording_suspended_dialog_title">Data reading suspended!</string>
     <string name="recording_suspended_dialog_message">Device disconnected during recording. Once the connection is restored, recording will resume.</string>
     <string name="recording_suspended_dialog_dismiss">Stop and work offline</string>
+    <string name="recording_suspended_dialog_wait">Wait for device</string>
     <string name="recording_suspended_notification">Data reading suspended!</string>
     <string name="recording_suspended_notification_suspended_at">Recording suspended: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Recording resumed: <xliff:g id="time">%1$s</xliff:g></string>
