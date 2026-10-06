@@ -43,7 +43,6 @@
     <string name="cal_store_bluetooth_unsupported">Запись калибровки BluZ не поддерживается</string>
     <string name="log_source_operation_failed">Не удалось выполнить операцию устройства (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="log_source_operation_timeout">Время ожидания операции устройства истекло (<xliff:g id="details">%1$s</xliff:g>)</string>
-    <string name="recording_suspended_dialog_bluetooth_disconnected">BluZ отключён во время записи. Включите Bluetooth и подключите устройство для возобновления.</string>
     <string name="bluetooth_off">Bluetooth выключен</string>
     <string name="bluetooth_allow">Разрешить доступ к Bluetooth</string>
     <string name="bluetooth_enable">Включить Bluetooth</string>
@@ -61,6 +60,7 @@
     <string name="device_select_connecting">Подключение…</string>
     <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
     <string name="device_select_none">Устройства не найдены</string>
+    <string name="device_select_available">Доступно</string>
     <string name="device_select_unavailable">Недоступно</string>
     <string name="device_select_selected_description">%1$s, выбрано</string>
     <string name="device_connect_decision_title">Устройство подключено</string>
@@ -440,9 +440,7 @@
     <string name="usb_version_unknown">Неизвестная версия прошивки</string>
 
     <string name="recording_suspended_dialog_title">Чтение данных приостановлено!</string>
-    <string name="recording_suspended_dialog_usb_disconnected">USB устройство отключено в процессе чтения данных, подключите устройство для возобновления.</string>
-    <string name="recording_suspended_dialog_audio_added">Внешний микрофон подключен в процессе чтения данных, отключите внешний микрофон для возобновления.</string>
-    <string name="recording_suspended_dialog_audio_removed">Внешний микрофон отключен в процессе чтения данных, подключите внешний микрофон для возобновления.</string>
+    <string name="recording_suspended_dialog_message">Устройство отключено во время записи. После восстановления соединения запись возобновится.</string>
     <string name="recording_suspended_dialog_dismiss">Остановить и работать без устройства</string>
     <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
     <string name="recording_suspended_notification_suspended_at">Чтение приостановлено: <xliff:g id="time">%1$s</xliff:g></string>

@@ -8,30 +8,6 @@
     tools:context=".AtomSpectraDeviceSelect">
 
     <TextView
-        android:id="@+id/textCaption"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:layout_marginBottom="3dp"
-        android:gravity="center"
-        android:text="@string/device_select_title"
-        android:textColor="#FFFFFF"
-        android:textSize="24dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <View
-        android:id="@+id/divider"
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_margin="5dp"
-        android:background="#FFFFFF"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textCaption" />
-
-    <TextView
         android:id="@+id/statusText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -69,10 +45,12 @@
 
         <Button
             android:id="@+id/bluetoothAction"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
+            android:minHeight="44dp"
             android:drawableStart="@android:drawable/stat_sys_data_bluetooth"
+            android:textColor="#D0D0D0"
             android:textSize="16dp"
             android:text="@string/bluetooth_allow" />
     </LinearLayout>
@@ -81,10 +59,13 @@
         android:id="@+id/deviceListScroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
         app:layout_constraintBottom_toTopOf="@id/statusText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/divider">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:id="@+id/deviceList"
@@ -121,20 +102,20 @@
 
         <Button
             android:id="@+id/cancelButton"
-            style="@android:style/ButtonBar"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="0.8"
             android:minHeight="48dp"
             android:textSize="16dp"
             android:text="@android:string/cancel" />
 
         <Button
             android:id="@+id/offlineButton"
-            style="@android:style/ButtonBar"
+            style="?android:attr/buttonStyle"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="1.2"
             android:minHeight="48dp"
             android:textSize="16dp"
             android:text="@string/device_select_offline" />

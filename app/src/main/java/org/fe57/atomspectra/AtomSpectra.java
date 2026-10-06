@@ -3424,7 +3424,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             icon.setAlpha(state == AtomSpectraService.DeviceState.WAITING ? INPUT_WAITING_ALPHA : 255);
             Drawable badge = inputStateBadge(state);
             if (badge != null) {
-                icon = new LayerDrawable(new Drawable[]{icon, badge});
+                int gap = Math.round(3 * getResources().getDisplayMetrics().density);
+                int badgeTop = (icon.getIntrinsicHeight() - badge.getIntrinsicHeight()) / 2;
+                LayerDrawable indicator = new LayerDrawable(new Drawable[]{icon, badge});
+                indicator.setLayerInset(0, 0, 0, badge.getIntrinsicWidth() + gap, 0);
+                indicator.setLayerInset(1, icon.getIntrinsicWidth() + gap, badgeTop, 0,
+                        icon.getIntrinsicHeight() - badge.getIntrinsicHeight() - badgeTop);
+                icon = indicator;
             }
             inputType.setImageDrawable(icon);
         }
@@ -3457,7 +3463,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         inputType.setOnClickListener(canSwitch ? v -> onClickInputType() : null);
     }
 
-    // the badge is the lower-right of the same 24x24 viewport as the device glyph
     private Drawable inputStateBadge(AtomSpectraService.DeviceState state) {
         switch (state) {
             case WAITING:
@@ -3706,21 +3711,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private AlertDialog recordingSuspendedAlert = null;
 
     private void showRecordingSuspendedDialog() {
-        String message;
-        switch (AtomSpectraService.recordingSuspendReason) {
-            case AtomSpectraService.RECORDING_SUSPEND_REASON_AUDIO_REMOVED:
-                message = getString(R.string.recording_suspended_dialog_audio_removed);
-                break;
-            case AtomSpectraService.RECORDING_SUSPEND_REASON_USB_DISCONNECT:
-                message = getString(R.string.recording_suspended_dialog_usb_disconnected);
-                break;
-            case AtomSpectraService.RECORDING_SUSPEND_REASON_BT_DISCONNECT:
-                message = getString(R.string.recording_suspended_dialog_bluetooth_disconnected);
-                break;
-            default:
-                message = "Unknown reason.";
-                break;
-        }
+        String message = getString(R.string.recording_suspended_dialog_message);
         message += "\n" + AtomSpectraService.formatLocalTimeAsISOLikeString(AtomSpectraService.recordingSuspendedAt);
         final AlertDialog.Builder alert = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.recording_suspended_dialog_title))
