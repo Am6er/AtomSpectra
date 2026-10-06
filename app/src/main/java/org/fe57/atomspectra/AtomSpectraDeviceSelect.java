@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -54,6 +55,10 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_atom_spectra_device_select);
+        CheckBox rememberChoice = findViewById(R.id.rememberChoice);
+        rememberChoice.setChecked(PrefHelper.shouldRememberDeviceChoice(this));
+        rememberChoice.setOnCheckedChangeListener((button, checked) ->
+            PrefHelper.setRememberDeviceChoice(this, checked));
         startRecordingAfter = getIntent().getBooleanExtra(EXTRA_START_RECORDING_AFTER, false);
         scanner = new DeviceScanner(this);
         permissions = new AppPermissions(this, null);

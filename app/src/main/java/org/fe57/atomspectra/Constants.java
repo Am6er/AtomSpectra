@@ -138,6 +138,7 @@ public class Constants {
         String CONF_DEVICE_TYPE = "Device type";
         String CONF_DEVICE_IDENTITY = "Device identity";
         String CONF_DEVICE_NAME = "Device name";
+        String CONF_DEVICE_REMEMBER = "Remember device choice";
         String CONF_SPG_DELTA_DURATION = "File autosave";
         String CONF_SPG_MIDNIGHT_RESET = "Reset spectrogram at midnight";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";

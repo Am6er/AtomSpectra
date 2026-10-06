@@ -147,8 +147,34 @@ public class PrefHelper {
 
     // --- Device choice ------------------------------------------------------------------------
 
-    static DeviceChoice getDeviceChoice(@NonNull Context context) {
+    static synchronized boolean shouldRememberDeviceChoice(@NonNull Context context) {
+        return getASSharedPreferences(context).getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false);
+    }
+
+    static synchronized void setRememberDeviceChoice(@NonNull Context context, boolean remember) {
         SharedPreferences sp = getASSharedPreferences(context);
+        SharedPreferences.Editor editor = sp.edit();
+        if (!remember || !sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
+            clearDeviceChoice(editor);
+        }
+        editor.putBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, remember).apply();
+    }
+
+    private static void clearDeviceChoice(@NonNull SharedPreferences.Editor editor) {
+        editor.remove(Constants.CONFIG.CONF_DEVICE_MODE)
+                .remove(Constants.CONFIG.CONF_DEVICE_TYPE)
+                .remove(Constants.CONFIG.CONF_DEVICE_IDENTITY)
+                .remove(Constants.CONFIG.CONF_DEVICE_NAME);
+    }
+
+    static synchronized DeviceChoice getDeviceChoice(@NonNull Context context) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        if (!sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
+            SharedPreferences.Editor editor = sp.edit();
+            clearDeviceChoice(editor);
+            editor.apply();
+            return DeviceChoice.none();
+        }
         switch (sp.getInt(Constants.CONFIG.CONF_DEVICE_MODE, DeviceChoice.MODE_NONE)) {
             case DeviceChoice.MODE_OFFLINE:
                 return DeviceChoice.offline();
@@ -164,9 +190,15 @@ public class PrefHelper {
         }
     }
 
-    static void setDeviceChoice(@NonNull Context context, @NonNull DeviceChoice choice) {
-        getASSharedPreferences(context).edit()
-                .putInt(Constants.CONFIG.CONF_DEVICE_MODE, choice.mode)
+    static synchronized void setDeviceChoice(@NonNull Context context, @NonNull DeviceChoice choice) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        SharedPreferences.Editor editor = sp.edit();
+        if (!sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
+            clearDeviceChoice(editor);
+            editor.apply();
+            return;
+        }
+        editor.putInt(Constants.CONFIG.CONF_DEVICE_MODE, choice.mode)
                 .putInt(Constants.CONFIG.CONF_DEVICE_TYPE, choice.type)
                 .putString(Constants.CONFIG.CONF_DEVICE_IDENTITY, choice.identity)
                 .putString(Constants.CONFIG.CONF_DEVICE_NAME, choice.name)
