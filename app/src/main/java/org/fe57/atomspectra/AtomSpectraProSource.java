@@ -189,7 +189,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this(context, device, DeviceIdentity.usb(device));
     }
 
-    /** Waits for this identity if the token is not on the bus yet. */
+    /**
+     * Waits for this identity if the token is not on the bus yet.
+     */
     public AtomSpectraProSource(Context context, String identity) {
         this(context, null, identity);
     }
@@ -257,7 +259,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void onAppPreferencesChanged() {
-        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED) return;
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+            return;
         this.loadAppPreferences();
     }
 
@@ -367,7 +370,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void requestStart(boolean isFirstStartAfterConnect) {
-        if (this.rejectIfDisconnected(isFirstStartAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_START)) return;
+        if (this.rejectIfDisconnected(isFirstStartAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_START))
+            return;
 
         this.armUnreliableDataWindow();
         this.enqueueTextCommand("-sta", isFirstStartAfterConnect ? OP_ID_INITIAL_START_COLLECTING : OP_ID_START_COLLECTING,
@@ -375,7 +379,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void requestShowData(boolean isFirstShowAfterConnect) {
-        if (this.rejectIfDisconnected(isFirstShowAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_SHOW)) return;
+        if (this.rejectIfDisconnected(isFirstShowAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_SHOW))
+            return;
 
         this.enqueueTextCommand("-sho", isFirstShowAfterConnect ? OP_ID_INITIAL_SHOW_HISTOGRAM : OP_ID_SHOW_HISTOGRAM,
                 isFirstShowAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_SHOW);
@@ -677,7 +682,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.restartDataWatchdog();
     }
 
-    /** Logs any errors accumulated while suppressed, then clears suppression state. */
+    /**
+     * Logs any errors accumulated while suppressed, then clears suppression state.
+     */
     private void flushErrorSuppressionLog() {
         final Context ctx = this.context;
         if (ctx == null) return;
@@ -712,7 +719,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
     }
 
-    /** Sends commands as one all-or-nothing unit: callback fires once every answer is in, or as soon as one fails. */
+    /**
+     * Sends commands as one all-or-nothing unit: callback fires once every answer is in, or as soon as one fails.
+     */
     private void executeCommandBatch(@NonNull String[] commands, @NonNull String batchId, int op, @NonNull BatchCallback callback) {
         synchronized (this.batchSync) {
             this.pendingBatches.put(batchId, new CommandBatch(commands.length, callback));
@@ -758,7 +767,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         return true;
     }
 
-    /** Removes any not-yet-sent commands belonging to a failed batch so they never reach the device. */
+    /**
+     * Removes any not-yet-sent commands belonging to a failed batch so they never reach the device.
+     */
     private void drainQueuedCommands(String id) {
         synchronized (this.syncCommand) {
             Iterator<CommandCode> it = this.commands.iterator();
@@ -772,7 +783,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
     }
 
-    /** Warn about firmware this app is not able to drive correctly. */
+    /**
+     * Warn about firmware this app is not able to drive correctly.
+     */
     private void checkDeviceVersion(String answer) {
         final Context ctx = this.context;
         if (ctx == null) {
@@ -800,7 +813,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
     }
 
-    /** One "-cal" answer carries both the calibration and the device metadata. */
+    /**
+     * One "-cal" answer carries both the calibration and the device metadata.
+     */
     private void readDeviceCalibrationAndId(String answer) {
         final Context ctx = this.context;
         if (ctx == null) {
@@ -917,14 +932,18 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
     }
 
-    /** Points the source at a fresh device token and opens the port; returns an error text or null. Caller holds connectionLock. */
+    /**
+     * Points the source at a fresh device token and opens the port; returns an error text or null. Caller holds connectionLock.
+     */
     private String reopenLocked(UsbDevice fresh) {
         this.device = fresh;
         SystemClock.sleep(USB_WAIT_DEVICE);
         return this.openPort();
     }
 
-    /** Releases the hardware and leaves the source in DISCONNECTED; caller holds connectionLock. */
+    /**
+     * Releases the hardware and leaves the source in DISCONNECTED; caller holds connectionLock.
+     */
     private void teardownConnection() {
         this.cancelDataWatchdog();
         this.reportIncompleteCommandsAsFailed();
@@ -1007,8 +1026,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         synchronized (this.connectionLock) {
             final Context ctx = this.context;
-            if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED) return;
-            if (this.device == null || !detached.getDeviceName().equals(this.device.getDeviceName())) return;
+            if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+                return;
+            if (this.device == null || !detached.getDeviceName().equals(this.device.getDeviceName()))
+                return;
 
             this.teardownConnection();
             log(ctx, "USB device detached");
@@ -1017,7 +1038,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void onDeviceAttached(UsbDevice attached) {
-        if (attached == null || !isSpectraPro(attached) || !this.identity.equals(DeviceIdentity.usb(attached))) return;
+        if (attached == null || !isSpectraPro(attached) || !this.identity.equals(DeviceIdentity.usb(attached)))
+            return;
         if (this.status != SpectrumSource.STATUS_DISCONNECTED) return;
 
         final Context ctx = this.context;
@@ -1049,7 +1071,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         final UsbDevice requested = this.permissionRequestedDevice;
         this.permissionRequestedDevice = null;
         final Context ctx = this.context;
-        if (requested == null || ctx == null || this.status != SpectrumSource.STATUS_DISCONNECTED) return;
+        if (requested == null || ctx == null || this.status != SpectrumSource.STATUS_DISCONNECTED)
+            return;
 
         UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
         if (manager != null && manager.hasPermission(requested)) {
@@ -1097,7 +1120,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private static final int CALIBRATION_WORDS = 2 * CALIBRATION_COEFFICIENTS + 1; // + crc word
     private static final int CALIBRATION_WORD_LENGTH = 8;
 
-    /** Calibration coefficients read from the device, with the result of the checksum check. */
+    /**
+     * Calibration coefficients read from the device, with the result of the checksum check.
+     */
     // A checksum mismatch means the device has no valid calibration stored, not a transient read error.
     private static class CalibrationAnswer {
         public final double[] coeffs;
@@ -1124,7 +1149,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         return new CalibrationAnswer(coeffs, crc32(combined.toString().getBytes()) == crc);
     }
 
-    /** Build the "-cal" commands that store the calibration on the device, CRC word included. */
+    /**
+     * Build the "-cal" commands that store the calibration on the device, CRC word included.
+     */
     private static String[] buildCalibrationCommands(@NonNull double[] coeffs) {
         String[] commands = new String[CALIBRATION_WORDS];
         StringBuilder combined = new StringBuilder();
@@ -1763,7 +1790,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         log(this.context, "USB serial error: " + e.getMessage());
     }
 
-    /** Finds the locked unit again: same bus name if still present, otherwise the first unit with the same identity. */
+    /**
+     * Finds the locked unit again: same bus name if still present, otherwise the first unit with the same identity.
+     */
     private UsbDevice findLockedDevice(UsbManager manager) {
         if (manager == null) return null;
 

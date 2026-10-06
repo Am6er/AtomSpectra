@@ -48,7 +48,9 @@ public class AtomSpectraLog extends Activity {
         addMessage(context, null, message);
     }
 
-    /** Prefixes the message with a source tag, e.g. the device/input source it originated from. */
+    /**
+     * Prefixes the message with a source tag, e.g. the device/input source it originated from.
+     */
     public static void addMessage(Context context, String tag, String message) {
         String formatted = (tag == null || tag.isEmpty()) ? message : (tag + ": " + message);
         synchronized (logSync) {

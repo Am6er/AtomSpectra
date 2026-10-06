@@ -1,6 +1,8 @@
 package org.fe57.atomspectra;
 
-/** One selectable device as listed by {@link DeviceScanner}; the only thing the selection screen hands to the service to connect. */
+/**
+ * One selectable device as listed by {@link DeviceScanner}; the only thing the selection screen hands to the service to connect.
+ */
 final class DeviceDescriptor {
     final int type;                 // SpectrumSource.TYPE_*
     final String identity;          // see DeviceIdentity

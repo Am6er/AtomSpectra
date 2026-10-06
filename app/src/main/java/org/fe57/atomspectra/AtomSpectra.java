@@ -167,7 +167,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         requestStartupPermissions();
     }
 
-    /** Wire findViewById results and set initial visibility / labels. */
+    /**
+     * Wire findViewById results and set initial visibility / labels.
+     */
     private void bindViews() {
         mCursorView = findViewById(R.id.cursorView);
         mCursorView.setVisibility(TextView.INVISIBLE);
@@ -192,7 +194,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         mAtomSpectraShapeView = findViewById(R.id.shape_area);
     }
 
-    /** Configure the channel seek bar and start its auto-hide timer. */
+    /**
+     * Configure the channel seek bar and start its auto-hide timer.
+     */
     private void setupSeekChannel() {
         int coeff = StrictMath.max(seekChannel.getWidth() / 200, 1);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -253,7 +257,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         seekChannelHideTimer.schedule(seekChannelHideTask, 0, 1000);
     }
 
-    /** Initialize FMS labels and search-mode button enablement. */
+    /**
+     * Initialize FMS labels and search-mode button enablement.
+     */
     private void setupSearchModeButtons() {
         searchFMSNames[0] = getString(R.string.mode_fast_button);
         searchFMSNames[1] = getString(R.string.mode_medium_button);
@@ -262,14 +268,18 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         updateSearchBaselineButton();
     }
 
-    /** Enable the search baseline button when sound output is available (API 23+). */
+    /**
+     * Enable the search baseline button when sound output is available (API 23+).
+     */
     private void updateSearchBaselineButton() {
         Button searchBaselineButton = findViewById(R.id.searchBaselineButton);
         searchBaselineButton.setEnabled((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 && sharedPreferences.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
     }
 
-    /** One-shot first-launch tip about power / battery. */
+    /**
+     * One-shot first-launch tip about power / battery.
+     */
     @SuppressLint("ApplySharedPref")
     private void maybeShowPowerAdvice() {
         if (!sharedPreferences.getBoolean(Constants.CONFIG.CONF_CHECK_POWER, true)) {
@@ -284,7 +294,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         sharedPreferences.edit().putBoolean(Constants.CONFIG.CONF_CHECK_POWER, false).commit();
     }
 
-    /** Load display prefs into UIViewState and apply them to the main views. */
+    /**
+     * Load display prefs into UIViewState and apply them to the main views.
+     */
     private void applyInitialViewState() {
         UIViewState.instance.loadFromPreferences(sharedPreferences, getResources());
         setXCalibrated(UIViewState.instance.energyAxis);
@@ -293,7 +305,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         showCursorInfo(false);
     }
 
-    /** Cold-start share / "Open with": stash URI until the service binds. */
+    /**
+     * Cold-start share / "Open with": stash URI until the service binds.
+     */
     private void stashPendingOpenFile() {
         Uri openFile = spectrumUriFromIntent(getIntent());
         if (openFile != null) {
@@ -354,7 +368,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         ensureWorkingDirectory();
     }
 
-    /** On API 26+ (SAF) prompt for a working folder if none has been chosen yet. */
+    /**
+     * On API 26+ (SAF) prompt for a working folder if none has been chosen yet.
+     */
     private void ensureWorkingDirectory() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && AppPermissions.isStorageAllowed(this)
@@ -370,7 +386,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         }
     }
 
-    /** Starts and binds the foreground service, passing the computed FGS type. No-op if already started. */
+    /**
+     * Starts and binds the foreground service, passing the computed FGS type. No-op if already started.
+     */
     private void startInputService() {
         if (serviceBound) {
             return;
@@ -387,7 +405,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         serviceBound = true;
     }
 
-    /** Returns a spectrum file URI from SEND/VIEW text/plain, or null. */
+    /**
+     * Returns a spectrum file URI from SEND/VIEW text/plain, or null.
+     */
     private static Uri spectrumUriFromIntent(Intent intent) {
         if (intent == null || intent.getType() == null || !"text/plain".equals(intent.getType())) {
             return null;
@@ -404,7 +424,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         return null;
     }
 
-    /** Drop a consumed SEND/VIEW so recreate does not reopen the same file via getIntent(). */
+    /**
+     * Drop a consumed SEND/VIEW so recreate does not reopen the same file via getIntent().
+     */
     private void clearActivityIntent() {
         setIntent(new Intent());
     }
@@ -664,7 +686,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private double[] shownCalibrationCoeffs = null;
     private int shownCalibrationChannel = -1;
 
-    /** Update the text fields and redraw the view from the shared data and the current view state. */
+    /**
+     * Update the text fields and redraw the view from the shared data and the current view state.
+     */
     private void refreshDisplay() {
         if (mAtomSpectraShapeView == null) {
             return;
@@ -780,7 +804,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     // TODO: refreshCalibrationMenu and updateCalibrationMenu look very similar
-    /** The calibration menu items only change with the calibration or the last calibrated channel. */
+
+    /**
+     * The calibration menu items only change with the calibration or the last calibrated channel.
+     */
     private void refreshCalibrationMenu() {
         if (app_menu == null) {
             return;
@@ -1096,13 +1123,17 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
     }
 
-    /** Ask the service to apply the active device's calibration; the answer arrives as ACTION_DATA_AVAILABLE. */
+    /**
+     * Ask the service to apply the active device's calibration; the answer arrives as ACTION_DATA_AVAILABLE.
+     */
     private void loadCalibration() {
         sendBroadcast(new Intent(Constants.ACTION.ACTION_LOAD_CALIBRATION)
                 .setPackage(Constants.PACKAGE_NAME));
     }
 
-    /** Ask the service to store the active calibration into the active device. */
+    /**
+     * Ask the service to store the active calibration into the active device.
+     */
     private void storeCalibration() {
         sendBroadcast(new Intent(Constants.ACTION.ACTION_STORE_CALIBRATION)
                 .setPackage(Constants.PACKAGE_NAME));
@@ -1433,7 +1464,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         });
     }
 
-    /** Hides the channel seek bar after {@link Constants#CURSOR_TIMEOUT} of inactivity. */
+    /**
+     * Hides the channel seek bar after {@link Constants#CURSOR_TIMEOUT} of inactivity.
+     */
     private final Timer seekChannelHideTimer = new Timer();
     private long dateChannelChanged = 0;
     private final TimerTask seekChannelHideTask = new TimerTask() {
@@ -3580,7 +3613,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
             return;
         }
-        if (boundService == null || !active || connectDecisionDialog != null || connectDecisionSaving) return;
+        if (boundService == null || !active || connectDecisionDialog != null || connectDecisionSaving)
+            return;
 
         connectDecisionDialog = DialogHelper.showStackedActions(this,
                 getString(R.string.device_connect_decision_title),
@@ -3760,7 +3794,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     dismissRecordingSuspendedDialog();
                 })
                 .setCancelable(false);
-            recordingSuspendedDialogEpisode = episode;
+        recordingSuspendedDialogEpisode = episode;
         recordingSuspendedAlert = alert.show();
     }
 

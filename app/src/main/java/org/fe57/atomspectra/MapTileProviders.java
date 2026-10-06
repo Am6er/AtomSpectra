@@ -22,7 +22,9 @@ public final class MapTileProviders {
 
     public static final String DEFAULT_PROVIDER_ID = ID_OSM;
 
-    /** Built-in providers shown in settings (custom URL support is kept in code but hidden for now). */
+    /**
+     * Built-in providers shown in settings (custom URL support is kept in code but hidden for now).
+     */
     public static final String[] SETTINGS_PROVIDER_IDS = {
             ID_NONE,
             ID_OSM,

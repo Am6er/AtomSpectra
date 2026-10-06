@@ -34,11 +34,23 @@ final class BluZFrameDecoder {
             reset();
             type = packet[3] & 255;
             switch (type) {
-                case 0: remaining = 6; break;
-                case 1: case 4: remaining = 16; break;
-                case 2: case 5: remaining = 23; break;
-                case 3: case 6: remaining = 40; break;
-                default: throw new IllegalArgumentException("Unknown BluZ frame type");
+                case 0:
+                    remaining = 6;
+                    break;
+                case 1:
+                case 4:
+                    remaining = 16;
+                    break;
+                case 2:
+                case 5:
+                    remaining = 23;
+                    break;
+                case 3:
+                case 6:
+                    remaining = 40;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown BluZ frame type");
             }
             packetLength = packet.length;
             if (interrupted) droppedFrames++;

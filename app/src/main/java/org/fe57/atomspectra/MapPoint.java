@@ -1,6 +1,8 @@
 package org.fe57.atomspectra;
 
-/** Immutable per-row map metadata aligned with a spectrogram row. */
+/**
+ * Immutable per-row map metadata aligned with a spectrogram row.
+ */
 public final class MapPoint {
     public final double latitude;
     public final double longitude;

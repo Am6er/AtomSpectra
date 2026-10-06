@@ -33,17 +33,27 @@ public interface SpectrumSource {
     int OP_CALIBRATION_SAVE = 6;
     int OP_SETTINGS_SAVE = 7;
 
-    /** Human-readable name for an OP_* code, for logging. */
+    /**
+     * Human-readable name for an OP_* code, for logging.
+     */
     static String opName(int op) {
         switch (op) {
-            case OP_CONNECT: return "OP_CONNECT";
-            case OP_START: return "OP_START";
-            case OP_STOP: return "OP_STOP";
-            case OP_SHOW: return "OP_SHOW";
-            case OP_RESET: return "OP_RESET";
-            case OP_CALIBRATION_SAVE: return "OP_CALIBRATION_SAVE";
-            case OP_SETTINGS_SAVE: return "OP_SETTINGS_SAVE";
-            default: return "op=" + op;
+            case OP_CONNECT:
+                return "OP_CONNECT";
+            case OP_START:
+                return "OP_START";
+            case OP_STOP:
+                return "OP_STOP";
+            case OP_SHOW:
+                return "OP_SHOW";
+            case OP_RESET:
+                return "OP_RESET";
+            case OP_CALIBRATION_SAVE:
+                return "OP_CALIBRATION_SAVE";
+            case OP_SETTINGS_SAVE:
+                return "OP_SETTINGS_SAVE";
+            default:
+                return "op=" + op;
         }
     }
 
@@ -94,23 +104,33 @@ public interface SpectrumSource {
      * A device that is not there yet is not an error: the source stays disconnected, waits for it and connects when it appears.
      * The same wait applies after the device is lost. A failed hand-shake is an error reply and the source stops trying
      * until the next requestConnect().
-    * Repeated requests while connected or connecting are harmless and do not reset acquisition or spectrum data.
+     * Repeated requests while connected or connecting are harmless and do not reset acquisition or spectrum data.
      */
     void requestConnect();
 
-    /** Request current data state. Success is single data intent. */
+    /**
+     * Request current data state. Success is single data intent.
+     */
     void requestShowData();
 
-    /** Begin acquisition. Success is data intents starting to arrive. */
+    /**
+     * Begin acquisition. Success is data intents starting to arrive.
+     */
     void requestStart();
 
-    /** Halt acquisition. Success is data intents stopping. */
+    /**
+     * Halt acquisition. Success is data intents stopping.
+     */
     void requestStop();
 
-    /** Clear the device-side spectrum. */
+    /**
+     * Clear the device-side spectrum.
+     */
     void requestReset();
 
-    /** Save calibration to device. */
+    /**
+     * Save calibration to device.
+     */
     void requestSaveCalibration(double[] coeffs);
 
     /**
@@ -120,10 +140,14 @@ public interface SpectrumSource {
     default void onAppPreferencesChanged() {
     }
 
-    /** Close connection and free up all the resources, spectrum source couldn't be used after close. */
+    /**
+     * Close connection and free up all the resources, spectrum source couldn't be used after close.
+     */
     void close();
 
-    /** Whether the source can start from a histogram supplied by {@link #setInitialHistogram}. */
+    /**
+     * Whether the source can start from a histogram supplied by {@link #setInitialHistogram}.
+     */
     boolean supportsInitialHistogram();
 
     /**
@@ -132,13 +156,19 @@ public interface SpectrumSource {
      */
     void setInitialHistogram(long[] histogram, double recordingTimeSec);
 
-    /** Unique id of this source object, carried by every reply intent. */
+    /**
+     * Unique id of this source object, carried by every reply intent.
+     */
     int instanceId();
 
-    /** Source input type. */
+    /**
+     * Source input type.
+     */
     int inputType();
 
-    /** Device status. */
+    /**
+     * Device status.
+     */
     int status();
 
     /**
@@ -153,10 +183,14 @@ public interface SpectrumSource {
      */
     int channelCount();
 
-    /** Device identification for this source. */
+    /**
+     * Device identification for this source.
+     */
     String deviceId();
 
-    /** Device calibration coefficients. */
+    /**
+     * Device calibration coefficients.
+     */
     double[] calibration();
 
     // TODO: add specific device stored settings abstraction, calibration is separate as it is required for a spectrum, other settings are optional

@@ -54,14 +54,18 @@ public final class SensitivityProfileFile {
     private SensitivityProfileFile() {
     }
 
-    /** Thrown when a profile file is missing its signature, has a bad version, or fails validation. */
+    /**
+     * Thrown when a profile file is missing its signature, has a bad version, or fails validation.
+     */
     public static class FormatException extends IOException {
         public FormatException(String message) {
             super(message);
         }
     }
 
-    /** Writes {@code profile} in the v1 format. Bins are emitted sorted ascending by edge. */
+    /**
+     * Writes {@code profile} in the v1 format. Bins are emitted sorted ascending by edge.
+     */
     public static void write(@NonNull Writer writer, @NonNull SensitivityProfile profile) throws IOException {
         writer.write(SIGNATURE + "\n");
         writer.write(KEY_VERSION + ": " + VERSION + "\n");
@@ -238,7 +242,9 @@ public final class SensitivityProfileFile {
         }
     }
 
-    /** Edge as a clean integer when whole (e.g. {@code 3000}), otherwise a locale-independent float. */
+    /**
+     * Edge as a clean integer when whole (e.g. {@code 3000}), otherwise a locale-independent float.
+     */
     private static String edgeStr(float edge) {
         if (edge == Math.rint(edge)) {
             return Long.toString((long) edge);
@@ -246,7 +252,9 @@ public final class SensitivityProfileFile {
         return Float.toString(edge);
     }
 
-    /** Locale-independent, round-trippable representation of a pSv/count value. */
+    /**
+     * Locale-independent, round-trippable representation of a pSv/count value.
+     */
     private static String doubleStr(double value) {
         return Double.toString(value);
     }

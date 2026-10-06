@@ -26,7 +26,9 @@ public final class AppPermissions {
 
     // ---- static capability checks (usable from Activity, Service, anywhere) ----
 
-    /** @return true when the capability is usable right now on this SDK. */
+    /**
+     * @return true when the capability is usable right now on this SDK.
+     */
     public static boolean isGranted(Context ctx, Capability cap) {
         switch (cap) {
             case BLUETOOTH:
@@ -81,7 +83,9 @@ public final class AppPermissions {
         return isGranted(c, Capability.NOTIFICATIONS);
     }
 
-    /** Raw permission strings actually requestable on this SDK for the given capabilities. */
+    /**
+     * Raw permission strings actually requestable on this SDK for the given capabilities.
+     */
     public static String[] requestablePermissions(Context ctx, Capability... caps) {
         List<String> perms = new ArrayList<>();
         for (Capability cap : caps) {

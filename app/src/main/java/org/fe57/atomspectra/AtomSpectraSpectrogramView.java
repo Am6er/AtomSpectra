@@ -1618,7 +1618,8 @@ public class AtomSpectraSpectrogramView extends View {
 
             int barTop = viewHeight - COLOR_BAR_HEIGHT_PX;
             int barBottom = viewHeight;
-            if (barTop < 0) return; // view shorter than the color bar: setPixels y would be negative
+            if (barTop < 0)
+                return; // view shorter than the color bar: setPixels y would be negative
 
             int[] colors = paletteColors();
 

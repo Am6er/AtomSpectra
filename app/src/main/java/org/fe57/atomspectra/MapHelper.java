@@ -30,7 +30,9 @@ public final class MapHelper {
         return latitude != 0.0 && longitude != 0.0 && isFiniteInRange(latitude, longitude);
     }
 
-    /** Spectrum map menu: GPSDate is authoritative; coordinates must be finite and in range. */
+    /**
+     * Spectrum map menu: GPSDate is authoritative; coordinates must be finite and in range.
+     */
     public static boolean hasValidSpectrumLocation(Spectrum spectrum) {
         return spectrum != null
                 && spectrum.getGPSDate() != 0

@@ -18,12 +18,15 @@ public class Constants {
     public static final boolean LOG_SCALE_DEFAULT = false;
     // !!! WARNING: all scale constants are fragile to change, code changes will be required
     public static final int SCALE_MAX = 16 - Integer.numberOfTrailingZeros(WINDOW_OUTPUT_SIZE);                         //maximum scale factor (32X)
+
     public static int scaleMinFor(int channelCount) {
         return SCALE_MAX - (Integer.numberOfTrailingZeros(channelCount) - Integer.numberOfTrailingZeros(WINDOW_OUTPUT_SIZE));
     }
+
     public static boolean isValidChannelCount(int channelCount) {
         return channelCount >= MIN_CHANNEL_COUNT && (channelCount & (channelCount - 1)) == 0;
     }
+
     public static final int DISPLAY_MODE_SPECTRUM = 0;
     public static final int DISPLAY_MODE_SPECTRUM_CHANGE = 1;
     public static final int DISPLAY_MODE_SEARCH = 2;
@@ -110,7 +113,7 @@ public class Constants {
         String CONF_SEARCH_NONCOMP_FAST = "search_noncomp_fast";
         String CONF_SEARCH_NONCOMP_MEDIUM = "search_noncomp_medium";
         String CONF_SEARCH_NONCOMP_SLOW = "search_noncomp_slow";
-        
+
         String CONF_DOSE_UPDATE = "doserate_update_freq";
         String CONF_SENS_TABLE_SIZE = "CalSize";
         String CONF_SENS_TABLE_VALUE = "CalSense";
@@ -145,11 +148,17 @@ public class Constants {
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
         String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
-        /** Map basemap provider id: {@code none}, {@code osm}, or {@code custom}. */
+        /**
+         * Map basemap provider id: {@code none}, {@code osm}, or {@code custom}.
+         */
         String CONF_MAP_TILE_PROVIDER = "map_tile_provider";
-        /** Custom tile URL template with {z}/{x}/{y} when provider is {@code custom}. */
+        /**
+         * Custom tile URL template with {z}/{x}/{y} when provider is {@code custom}.
+         */
         String CONF_MAP_TILE_CUSTOM_URL = "map_tile_custom_url";
-        /** Optional HTML attribution for the custom tile provider. */
+        /**
+         * Optional HTML attribution for the custom tile provider.
+         */
         String CONF_MAP_TILE_CUSTOM_ATTRIBUTION = "map_tile_custom_attribution";
     }
 
@@ -212,7 +221,9 @@ public class Constants {
         String ACTION_CLOSE_SENSITIVITY = "org.fe57.atomspectra.ACTION_CLOSE_SENSITIVITY";
         String ACTION_UPDATE_ISOTOPE_LIST = "org.fe57.atomspectra.ACTION_UPDATE_ISOTOPE_LIST";
         String ACTION_UPDATE_GPS = "org.fe57.atomspectra.SEND_GPS_COMMAND";
-        /** Map-facing device position snapshot (immutable extras). */
+        /**
+         * Map-facing device position snapshot (immutable extras).
+         */
         String ACTION_DEVICE_LOCATION_UPDATED = "org.fe57.atomspectra.ACTION_DEVICE_LOCATION_UPDATED";
     }
 
@@ -228,7 +239,7 @@ public class Constants {
         int FOREIGN_SPECTRUM_UNDECIDED = 0;     // the start is refused when the user has to decide first
         int FOREIGN_SPECTRUM_CONTINUE = 1;      // the screen spectrum is handed to the device, which continues it
         int FOREIGN_SPECTRUM_REPLACE = 2;       // the screen spectrum is discarded
-        String DEVICE_LOCATION_AVAILABLE ="device_location_available";
+        String DEVICE_LOCATION_AVAILABLE = "device_location_available";
         String DEVICE_LOCATION_LATITUDE = "device_location_latitude";
         String DEVICE_LOCATION_LONGITUDE = "device_location_longitude";
         String DEVICE_LOCATION_TIME = "device_location_time";

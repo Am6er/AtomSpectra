@@ -11,7 +11,9 @@ public final class AudioScopeData {
 
     private static final double[] EMPTY = new double[0];
 
-    /** Set by a viewer while it is showing the snapshots; the audio source skips the work otherwise. */
+    /**
+     * Set by a viewer while it is showing the snapshots; the audio source skips the work otherwise.
+     */
     public volatile boolean wanted = false;
 
     private volatile double[] samples = EMPTY;

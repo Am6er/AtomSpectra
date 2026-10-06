@@ -150,7 +150,9 @@ public class AtomSpectraSensitivity extends Activity {
         confirmDiscardOrFinish();
     }
 
-    /** Warn about unsaved edits before leaving via an implicit exit (back / up); apply happens on OK. */
+    /**
+     * Warn about unsaved edits before leaving via an implicit exit (back / up); apply happens on OK.
+     */
     private void confirmDiscardOrFinish() {
         if (!isDirty()) {
             finish();
@@ -240,7 +242,9 @@ public class AtomSpectraSensitivity extends Activity {
         return CUSTOM_INDEX;
     }
 
-    /** Point {@link #workingProfile} at the built-in copy or the in-memory custom for {@code id}. */
+    /**
+     * Point {@link #workingProfile} at the built-in copy or the in-memory custom for {@code id}.
+     */
     private void selectWorkingFor(String id) {
         selectedId = id;
         if (SensitivityProfile.ID_CUSTOM.equals(id)) {
@@ -289,7 +293,9 @@ public class AtomSpectraSensitivity extends Activity {
         e.setFocusableInTouchMode(enabled);
     }
 
-    /** Read the inline fields into {@link #workingProfile} (best-effort; keeps prior value on error). */
+    /**
+     * Read the inline fields into {@link #workingProfile} (best-effort; keeps prior value on error).
+     */
     private void flushScalars() {
         if (!editable) {
             return;
@@ -343,7 +349,9 @@ public class AtomSpectraSensitivity extends Activity {
         finish();
     }
 
-    /** Custom mode: reset the custom profile to a chosen built-in's values. */
+    /**
+     * Custom mode: reset the custom profile to a chosen built-in's values.
+     */
     public void onResetToButton(View v) {
         final String[] names = {SensitivityProfile.ID_NANO3, SensitivityProfile.ID_NANO8, SensitivityProfile.ID_NANO15};
         new AlertDialog.Builder(this)
@@ -354,7 +362,9 @@ public class AtomSpectraSensitivity extends Activity {
                 .show();
     }
 
-    /** Clone {@code source} into the custom slot (in memory) and show it in editable mode. */
+    /**
+     * Clone {@code source} into the custom slot (in memory) and show it in editable mode.
+     */
     private void cloneIntoCustom(SensitivityProfile source) {
         customWorking = source.editableCopy(getString(R.string.profile_custom_name_default));
         rebuildSpinnerLabels();

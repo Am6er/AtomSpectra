@@ -272,7 +272,9 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    /** True if any retained spectrogram row has usable map coordinates. */
+    /**
+     * True if any retained spectrogram row has usable map coordinates.
+     */
     public boolean hasLocatedRows() {
         synchronized (spectrogramSync) {
             for (Segment segment : segments) {
@@ -316,10 +318,14 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    /** Immutable spectrogram map payload: recording id plus chronological track runs. */
+    /**
+     * Immutable spectrogram map payload: recording id plus chronological track runs.
+     */
     public static final class MapTrackSnapshot {
         public final String recordingId;
-        /** Each inner list is one uninterrupted run of valid {@link MapPoint}s. */
+        /**
+         * Each inner list is one uninterrupted run of valid {@link MapPoint}s.
+         */
         public final List<List<MapPoint>> tracks;
 
         private MapTrackSnapshot(String recordingId, List<List<MapPoint>> tracks) {

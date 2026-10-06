@@ -1413,12 +1413,12 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 try {
                     if (detector.isSwipeLeft(e1, e2, velocityX)) {
                         //showToast("Left Swipe");
-                        showPulseShape =! showPulseShape;
+                        showPulseShape = !showPulseShape;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
 
                     } else if (detector.isSwipeRight(e1, e2, velocityX)) {
                         //showToast("Right Swipe");
-                        showPulseShape =! showPulseShape;
+                        showPulseShape = !showPulseShape;
                         sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
                     } else if (detector.isSwipeDown(e1, e2, velocityY)) {
                         if (zoom_factor > 1.1) zoom_factor /= 2;

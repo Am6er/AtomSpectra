@@ -26,7 +26,9 @@ public final class DeviceLocationSnapshot {
     public final double latitude;
     public final double longitude;
     public final long fixTimestampMs;
-    /** {@link Float#NaN} when the provider did not report accuracy. */
+    /**
+     * {@link Float#NaN} when the provider did not report accuracy.
+     */
     public final float accuracyMeters;
     @NonNull
     public final String provider;

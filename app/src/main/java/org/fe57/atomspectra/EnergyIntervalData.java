@@ -32,12 +32,16 @@ public final class EnergyIntervalData {
         snapshot = new Snapshot(left, right, calibration.toEnergy(left), calibration.toEnergy(right), left == 0 && right == channelCount - 1);
     }
 
-    /** Select the whole spectrum. */
+    /**
+     * Select the whole spectrum.
+     */
     public synchronized void reset() {
         snapshot = new Snapshot(0, SpectrumData.instance.getChannelCount() - 1, 0, 0, true);
     }
 
-    /** Follow a calibration or channel count change: the selected energies stay, the channels move. */
+    /**
+     * Follow a calibration or channel count change: the selected energies stay, the channels move.
+     */
     public synchronized void recalculate() {
         Snapshot current = snapshot;
         if (current.full) {
@@ -52,7 +56,9 @@ public final class EnergyIntervalData {
         public final int rightChannel;
         public final double leftEnergy;
         public final double rightEnergy;
-        /** The whole spectrum is selected, whatever its channel count. */
+        /**
+         * The whole spectrum is selected, whatever its channel count.
+         */
         public final boolean full;
 
         private Snapshot(int leftChannel, int rightChannel, double leftEnergy, double rightEnergy, boolean full) {

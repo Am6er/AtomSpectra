@@ -22,26 +22,46 @@ public final class UIViewState {
     public volatile boolean smooth = false;
     public volatile boolean showCalibrationFunction = false;
 
-    /** Draw the x axis in energy (CONF_CALIBRATED) instead of channels. */
+    /**
+     * Draw the x axis in energy (CONF_CALIBRATED) instead of channels.
+     */
     public volatile boolean energyAxis = true;
-    /** CONF_COMPRESS_GRAPH */
+    /**
+     * CONF_COMPRESS_GRAPH
+     */
     public volatile int compressMode = Constants.COMPRESS_GRAPH_SUM;
-    /** CONF_GOLAY_WINDOW */
+    /**
+     * CONF_GOLAY_WINDOW
+     */
     public volatile int smoothWindow = Constants.DEFAULT_GOLAY_WINDOW;
-    /** CONF_LOG_SCALE */
+    /**
+     * CONF_LOG_SCALE
+     */
     public volatile boolean logScale = Constants.LOG_SCALE_DEFAULT;
-    /** CONF_BAR_MODE */
+    /**
+     * CONF_BAR_MODE
+     */
     public volatile boolean barMode = true;
-    /** CONF_REDUCED_TO — number of abscissa points drawn on the spectrum graph. */
+    /**
+     * CONF_REDUCED_TO — number of abscissa points drawn on the spectrum graph.
+     */
     public volatile int reducedTo = Constants.VIEW_CHANNELS_DEFAULT;
-    /** CONF_DISPLAY_DOSE — dose / interval search display mode. */
+    /**
+     * CONF_DISPLAY_DOSE — dose / interval search display mode.
+     */
     public volatile String displayDose = Constants.DISPLAY_DOSE_DEFAULT;
 
-    /** Y-axis zoom for spectrum / search graphs (not persisted). */
+    /**
+     * Y-axis zoom for spectrum / search graphs (not persisted).
+     */
     public volatile float yZoomFactor = 1f;
-    /** Cursor channel, or -1 when hidden (not persisted). */
+    /**
+     * Cursor channel, or -1 when hidden (not persisted).
+     */
     public volatile int cursorX = -1;
-    /** Seek-bar / +/- cursor controls visible (not persisted). */
+    /**
+     * Seek-bar / +/- cursor controls visible (not persisted).
+     */
     public volatile boolean showPlusMinusButtons = false;
 
     private UIViewState() {
@@ -100,7 +120,9 @@ public final class UIViewState {
         sp.edit().putInt(Constants.CONFIG.CONF_FIRST_CHANNEL, getFirstChannel()).commit();
     }
 
-    /** The spectrum got a different channel count: show it whole, with no cursor. */
+    /**
+     * The spectrum got a different channel count: show it whole, with no cursor.
+     */
     public void onChannelCountChanged(int channelCount) {
         synchronized (syncFactor) {
             xScaleFactor = Constants.scaleMinFor(channelCount);
@@ -109,7 +131,9 @@ public final class UIViewState {
         cursorX = -1;
     }
 
-    /** Scale factor and first channel taken together, for a consistent render. */
+    /**
+     * Scale factor and first channel taken together, for a consistent render.
+     */
     public int[] getScaleAndFirstChannel() {
         synchronized (syncFactor) {
             return new int[]{xScaleFactor, firstChannel};
@@ -146,7 +170,9 @@ public final class UIViewState {
         sp.edit().putString(Constants.CONFIG.CONF_DISPLAY_DOSE, value).commit();
     }
 
-    /** Refresh the preference-derived render settings. */
+    /**
+     * Refresh the preference-derived render settings.
+     */
     public void loadFromPreferences(SharedPreferences sp, Resources resources) {
         energyAxis = sp.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true);
         smoothWindow = sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
