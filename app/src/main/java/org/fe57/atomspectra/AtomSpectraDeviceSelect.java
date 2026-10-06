@@ -116,6 +116,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
         IntentFilter filter = new IntentFilter(Constants.ACTION.ACTION_DEVICE_SELECTED);
         filter.addAction(Constants.ACTION.ACTION_DEVICE_SELECTION_REQUIRED);
+        filter.addAction(Constants.ACTION.ACTION_DEVICE_STATE_CHANGED);
         ContextCompat.registerReceiver(this, resultReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         receiverRegistered = true;
 
@@ -175,12 +176,19 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (Constants.ACTION.ACTION_DEVICE_STATE_CHANGED.equals(intent.getAction())) {
+                restoreSelection();
+                renderDevices();
+                updateExitGate();
+                return;
+            }
             connecting = false;
             restoreSelection();
             updateExitGate();
             if (Constants.ACTION.ACTION_DEVICE_SELECTED.equals(intent.getAction())) {
                 // a spectrum that needs the user's decision before recording is settled by the record button, not here
-                if (startRecordingAfter && service != null && !AtomSpectraService.isConnectDecisionPending()
+                if (startRecordingAfter && service != null && !AtomSpectraService.isRecording()
+                    && AtomSpectraService.isDeviceConnected() && !AtomSpectraService.isConnectDecisionPending()
                         && service.startDecision() == AtomSpectraService.START_FREE) {
                     sendBroadcast(new Intent(Constants.ACTION.ACTION_START_RECORDING).setPackage(Constants.PACKAGE_NAME));
                 }
@@ -207,8 +215,13 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
     private void showConnecting(boolean show) {
         TextView status = findViewById(R.id.statusText);
-        status.setText(R.string.device_select_connecting);
-        status.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+        boolean suspended = AtomSpectraService.isRecordingSuspended;
+        AtomSpectraService.DeviceState deviceState = AtomSpectraService.deviceState();
+        status.setText(suspended && deviceState == AtomSpectraService.DeviceState.ERROR
+                ? R.string.device_error_notification
+                : suspended && deviceState != AtomSpectraService.DeviceState.BUSY
+                    ? R.string.device_select_waiting : R.string.device_select_connecting);
+        status.setVisibility(show || suspended ? View.VISIBLE : View.INVISIBLE);
     }
 
     private void restoreSelection() {
@@ -302,7 +315,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 0, 0, 0);
         row.setCompoundDrawablePadding(dp(8));
         row.setContentDescription(selected ? getString(R.string.device_select_selected_description, text) : text);
-        row.setEnabled(available || (device.type == SpectrumSource.TYPE_BLUZ
+        row.setEnabled(available || selected || (device.type == SpectrumSource.TYPE_BLUZ
                 && bluetoothState != DeviceScanner.BluetoothState.UNSUPPORTED)
                 || (device.type == SpectrumSource.TYPE_AUDIO && !device.permissionGranted));
         row.setClickable(true);
@@ -328,7 +341,9 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             if (bluetoothState != DeviceScanner.BluetoothState.UNSUPPORTED) onBluetoothAction();
             return;
         }
-        if (!device.available && device.type != SpectrumSource.TYPE_BLUZ) return;
+        AtomSpectraService.LockedDevice locked = AtomSpectraService.selectedDevice();
+        boolean sameDevice = locked != null && device.matches(locked.type, locked.identity);
+        if (!device.available && device.type != SpectrumSource.TYPE_BLUZ && !sameDevice) return;
 
         // picking again while a device is connecting replaces the pending choice; unsaved data on the screen is never discarded by a switch
         connect(device);
@@ -381,14 +396,16 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
     private void connect(DeviceDescriptor device) {
         if (service == null) return;
+        AtomSpectraService.LockedDevice locked = AtomSpectraService.selectedDevice();
+        boolean sameDevice = locked != null && device.matches(locked.type, locked.identity);
+        if (sameDevice && AtomSpectraService.isRecording()) startRecordingAfter = false;
         selectedType = device.type;
         selectedIdentity = device.identity;
         selectedName = device.displayName;
-        connecting = true;
-        showConnecting(true);
+        connecting = !sameDevice || AtomSpectraService.isSelectionPending();
+        showConnecting(connecting);
         renderDevices();
         service.selectDevice(device);
         updateExitGate();
-        backCallback.setEnabled(true);
     }
 }

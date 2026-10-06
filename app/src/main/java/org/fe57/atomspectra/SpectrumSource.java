@@ -94,6 +94,7 @@ public interface SpectrumSource {
      * A device that is not there yet is not an error: the source stays disconnected, waits for it and connects when it appears.
      * The same wait applies after the device is lost. A failed hand-shake is an error reply and the source stops trying
      * until the next requestConnect().
+    * Repeated requests while connected or connecting are harmless and do not reset acquisition or spectrum data.
      */
     void requestConnect();
 

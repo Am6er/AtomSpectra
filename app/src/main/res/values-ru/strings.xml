@@ -58,6 +58,7 @@
     <string name="device_select_offline">Работать без устройства (только файлы)</string>
     <string name="device_select_remember">Запомнить мой выбор</string>
     <string name="device_select_connecting">Подключение…</string>
+    <string name="device_select_waiting">Ожидание устройства…</string>
     <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
     <string name="device_select_none">Устройства не найдены</string>
     <string name="device_select_available">Доступно</string>
@@ -442,6 +443,7 @@
     <string name="recording_suspended_dialog_title">Чтение данных приостановлено!</string>
     <string name="recording_suspended_dialog_message">Устройство отключено во время записи. После восстановления соединения запись возобновится.</string>
     <string name="recording_suspended_dialog_dismiss">Остановить и работать без устройства</string>
+    <string name="recording_suspended_dialog_wait">Ожидать подключение</string>
     <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
     <string name="recording_suspended_notification_suspended_at">Чтение приостановлено: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Чтение возобновлено: <xliff:g id="time">%1$s</xliff:g></string>

@@ -138,6 +138,22 @@ public class AtomSpectraService extends Service {
     public static final int RECORDING_SUSPEND_REASON_USB_DISCONNECT = 3;
     public static int recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
     public static boolean isRecordingSuspended = false;
+    private static long recordingSuspensionEpisode = 0;
+    private static boolean recordingSuspensionAcknowledged = false;
+
+    public static long pendingRecordingSuspensionEpisode() {
+        synchronized (recordingSuspendedSync) {
+            return isRecordingSuspended && !recordingSuspensionAcknowledged ? recordingSuspensionEpisode : 0;
+        }
+    }
+
+    public static void acknowledgeRecordingSuspension(long episode) {
+        synchronized (recordingSuspendedSync) {
+            if (isRecordingSuspended && recordingSuspensionEpisode == episode) {
+                recordingSuspensionAcknowledged = true;
+            }
+        }
+    }
 
     /**
      * The device the user selected; survives a disconnect, cleared by a switch or by going offline.
@@ -549,6 +565,10 @@ public class AtomSpectraService extends Service {
         sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
     }
 
+    private void notifyDeviceStateChanged() {
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_STATE_CHANGED).setPackage(Constants.PACKAGE_NAME));
+    }
+
     /**
     * Asynchronous; the outcome is sent as ACTION_DEVICE_SELECTED or ACTION_DEVICE_SELECTION_REQUIRED.
     * Once connected, the choice is remembered only if the user opted in.
@@ -596,6 +616,7 @@ public class AtomSpectraService extends Service {
             source.requestConnect();
             updateMenu();
             refreshServiceNotification();
+            notifyDeviceStateChanged();
         });
     }
 
@@ -685,6 +706,21 @@ public class AtomSpectraService extends Service {
     }
 
     private void doSelectDevice(DeviceDescriptor device) {
+        final LockedDevice locked = lockedDevice;
+        if (sessionState == DeviceSessionState.LOCKED && activeSource != null && locked != null
+                && device.matches(locked.type, locked.identity)) {
+            if (!isDeviceConnected()) {
+                deviceError = null;
+                activeSource.requestConnect();
+            }
+            updateMenu();
+            refreshServiceNotification();
+            notifyDeviceStateChanged();
+            if (!firstConnectPending) {
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_SELECTED).setPackage(Constants.PACKAGE_NAME));
+            }
+            return;
+        }
         // switching away from a recording device stops the recording; the loaded spectrum stays
         if (is_recording) {
             setRecordingState(false);
@@ -720,6 +756,7 @@ public class AtomSpectraService extends Service {
         updateInputDeviceInfo(null);
         updateMenu();
         refreshServiceNotification();
+        notifyDeviceStateChanged();
         source.requestConnect();
     }
 
@@ -737,6 +774,7 @@ public class AtomSpectraService extends Service {
         resetRecordingSuspendedStatus(false);
         updateMenu();
         refreshServiceNotification();
+        notifyDeviceStateChanged();
         notifyDataAvailable();
     }
 
@@ -796,6 +834,7 @@ public class AtomSpectraService extends Service {
         sendBroadcast(required);
         updateMenu();
         refreshServiceNotification();
+        notifyDeviceStateChanged();
         notifyDataAvailable();
     }
 
@@ -909,17 +948,21 @@ public class AtomSpectraService extends Service {
         switch (action) {
             case SpectrumSource.ACTION_SOURCE_READY:
                 onSourceReady(intent);
+                notifyDeviceStateChanged();
                 break;
             case SpectrumSource.ACTION_SOURCE_DISCONNECTED:
                 onSourceDisconnected(intent);
+                notifyDeviceStateChanged();
                 break;
             case SpectrumSource.ACTION_SOURCE_ERROR:
                 onSourceError(intent);
+                notifyDeviceStateChanged();
                 break;
             case SpectrumSource.ACTION_SOURCE_STATUS:
                 deviceStatus = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
                 updateMenu();
                 refreshServiceNotification();
+                notifyDeviceStateChanged();
                 break;
             case SpectrumSource.ACTION_SOURCE_DATA:
                 onSourceData(intent);
@@ -1876,6 +1919,7 @@ private void setRecordingState(boolean recording) {
 
     updateMenu();
     refreshServiceNotification();
+    notifyDeviceStateChanged();
 }
 
 // when new data arrives either from audio or USB we preserve it in historical sliding time window
@@ -2351,6 +2395,10 @@ private void showToastInMainLooper(int res_id, int duration) {
 }
 
 private void onRecordingSuspended() {
+    synchronized (recordingSuspendedSync) {
+        recordingSuspensionEpisode++;
+        recordingSuspensionAcknowledged = false;
+    }
     recordingSuspendedAt = new Date();
     AtomSpectraLog.addMessage(service_context, getStringOrDefaultLocale(R.string.log_recording_suspended));
 
@@ -2400,6 +2448,7 @@ private void playNotificationSound() {
 private static void resetRecordingSuspendedStatus(boolean withDates) {
     synchronized (recordingSuspendedSync) {
         isRecordingSuspended = false;
+        recordingSuspensionAcknowledged = false;
         recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
         recordingSuspendSourceType = SpectrumSource.TYPE_NONE;
 
