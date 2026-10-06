@@ -3429,7 +3429,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             inputType.setImageDrawable(icon);
         }
 
-        final String info = AtomSpectraService.inputDeviceInfo;
+        final String info = userFacingDeviceName();
         switch (state) {
             case WAITING:
                 inputType.setContentDescription(getString(R.string.device_waiting_description, info));
@@ -3486,25 +3486,46 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         }
     }
 
+    private String userFacingDeviceName() {
+        switch (AtomSpectraService.lockedSourceType()) {
+            case SpectrumSource.TYPE_AUDIO:
+                return getString(R.string.device_type_audio);
+            case SpectrumSource.TYPE_SPECTRA_PRO:
+                return getString(R.string.device_type_spectra_pro);
+            case SpectrumSource.TYPE_BLUZ:
+                return getString(R.string.device_type_bluz);
+            default:
+                return getString(R.string.device_none_selected_notification);
+        }
+    }
+
     private void showDeviceStatusDialog() {
         final SourceError error = AtomSpectraService.deviceError();
 
-        StringBuilder message = new StringBuilder(AtomSpectraService.inputDeviceInfo);
+        StringBuilder message = new StringBuilder(userFacingDeviceName());
         if (error != null && error.text != null) {
             message.append("\n\n").append(error.text);
         }
 
-        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
+        if (error != null && error.isTerminal()) {
+            DialogHelper.showStackedActions(this,
+                    getString(R.string.device_status_title),
+                    message.toString(),
+                    true,
+                    new DialogHelper.StackedAction(getString(R.string.device_status_retry), () -> {
+                        if (boundService != null) boundService.retryConnect();
+                    }),
+                    new DialogHelper.StackedAction(getString(R.string.device_status_select_other),
+                            () -> openDeviceSelection(false)),
+                    new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
+            return;
+        }
+        new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.device_status_title))
                 .setMessage(message.toString())
                 .setPositiveButton(getString(R.string.device_status_select_other), (dialog, which) -> openDeviceSelection(false))
-                .setNegativeButton(getString(R.string.dialog_cancel_button), null);
-        if (error != null && error.isTerminal()) {
-            alert.setNeutralButton(getString(R.string.device_status_retry), (dialog, which) -> {
-                if (boundService != null) boundService.retryConnect();
-            });
-        }
-        alert.show();
+                .setNegativeButton(getString(R.string.dialog_cancel_button), null)
+                .show();
     }
 
     private AlertDialog connectDecisionDialog = null;
@@ -3528,24 +3549,23 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         }
         if (boundService == null || !active || connectDecisionDialog != null || connectDecisionSaving) return;
 
-        connectDecisionDialog = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.device_connect_decision_title))
-                .setMessage(getString(R.string.device_connect_decision_text, AtomSpectraService.inputDeviceInfo))
-                .setPositiveButton(getString(R.string.device_decision_save), (dialog, which) -> {
+        connectDecisionDialog = DialogHelper.showStackedActions(this,
+                getString(R.string.device_connect_decision_title),
+                getString(R.string.device_connect_decision_text, userFacingDeviceName()),
+                false,
+                new DialogHelper.StackedAction(getString(R.string.device_decision_discard_switch), () -> {
+                    connectDecisionDialog = null;
+                    boundService.discardScreenForDevice();
+                }),
+                new DialogHelper.StackedAction(getString(R.string.device_decision_save), () -> {
                     connectDecisionDialog = null;
                     connectDecisionSaving = true;
                     startSavingSpectrum();
-                })
-                .setNeutralButton(getString(R.string.device_decision_discard_switch), (dialog, which) -> {
-                    connectDecisionDialog = null;
-                    boundService.discardScreenForDevice();
-                })
-                .setNegativeButton(getString(R.string.device_decision_go_offline), (dialog, which) -> {
+                }),
+                new DialogHelper.StackedAction(getString(R.string.device_decision_go_offline), () -> {
                     connectDecisionDialog = null;
                     boundService.stopAndGoOffline();
-                })
-                .setCancelable(false)
-                .show();
+                }));
     }
 
     // the regular save flow (folder, suffix); the service hears about it when the spectrum is saved
@@ -3570,32 +3590,42 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return;
         }
 
-        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.dialog_confirm_title))
-                .setNegativeButton(getString(R.string.dialog_cancel_button), null);
+        final DialogHelper.StackedAction cancel =
+                new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null);
         switch (decision) {
             case AtomSpectraService.START_CONTINUE_OR_NEW:
-                alert.setMessage(getString(R.string.start_continue_or_new_text))
-                        .setPositiveButton(getString(R.string.start_continue_button), (dialog, which) ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE))
-                        .setNeutralButton(getString(R.string.start_new_button), (dialog, which) ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE));
+                DialogHelper.showStackedActions(this,
+                        getString(R.string.dialog_confirm_title),
+                        getString(R.string.start_continue_or_new_text),
+                        true,
+                        new DialogHelper.StackedAction(getString(R.string.start_continue_button), () ->
+                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE)),
+                        new DialogHelper.StackedAction(getString(R.string.start_new_button), () ->
+                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
+                        cancel);
                 break;
             case AtomSpectraService.START_CONTINUE_OR_DISCARD:
-                alert.setMessage(getString(R.string.start_continue_or_discard_text))
-                        .setPositiveButton(getString(R.string.start_continue_button), (dialog, which) ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE))
-                        .setNeutralButton(getString(R.string.start_discard_button), (dialog, which) ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE));
+                DialogHelper.showStackedActions(this,
+                        getString(R.string.dialog_confirm_title),
+                        getString(R.string.start_continue_or_discard_text),
+                        true,
+                        new DialogHelper.StackedAction(getString(R.string.start_continue_button), () ->
+                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE)),
+                        new DialogHelper.StackedAction(getString(R.string.start_discard_button), () ->
+                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
+                        cancel);
                 break;
             default:
-                alert.setMessage(getString(R.string.start_save_or_discard_text))
-                        .setPositiveButton(getString(R.string.start_save_button), (dialog, which) -> startSavingSpectrum())
-                        .setNeutralButton(getString(R.string.start_discard_button), (dialog, which) ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE));
+                DialogHelper.showStackedActions(this,
+                        getString(R.string.dialog_confirm_title),
+                        getString(R.string.start_save_or_discard_text),
+                        true,
+                        new DialogHelper.StackedAction(getString(R.string.start_save_button), this::startSavingSpectrum),
+                        new DialogHelper.StackedAction(getString(R.string.start_discard_button), () ->
+                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
+                        cancel);
                 break;
         }
-        alert.show();
     }
 
     private void showSpectrogramView() {
