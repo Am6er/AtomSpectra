@@ -36,6 +36,9 @@
     <string name="device_default_microphone">Default microphone</string>
     <string name="device_spectra_pro">Spectra Pro (USB)</string>
     <string name="device_bluz">BluZ (Bluetooth)</string>
+    <string name="device_type_audio">Audio device</string>
+    <string name="device_type_spectra_pro">Spectra Pro</string>
+    <string name="device_type_bluz">BluZ</string>
     <string name="action_bluetooth_attached">BluZ reconnected</string>
     <string name="cal_store_bluetooth_unsupported">Writing BluZ calibration is not supported</string>
     <string name="log_source_operation_failed">Device operation failed (<xliff:g id="details">%1$s</xliff:g>)</string>
