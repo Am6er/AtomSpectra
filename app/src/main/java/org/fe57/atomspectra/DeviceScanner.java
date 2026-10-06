@@ -144,13 +144,17 @@ final class DeviceScanner {
         AudioDeviceInfo[] devices = manager.getDevices(AudioManager.GET_DEVICES_INPUTS);
         if (devices == null) return result;
 
+        Map<String, DeviceDescriptor> audioDevices = new LinkedHashMap<>();
         for (AudioDeviceInfo device : devices) {
             if (!isSupportedAudioInput(device)) continue;
+            String identity = DeviceIdentity.audio(device);
+            if (audioDevices.containsKey(identity)) continue;
             int typeIndex = Constants.MinMax(device.getType(), 0, AtomSpectraService.audioDeviceNames.length - 1);
             String name = AtomSpectraService.audioDeviceNames[typeIndex] + ": " + device.getProductName();
-            result.add(new DeviceDescriptor(SpectrumSource.TYPE_AUDIO, DeviceIdentity.audio(device), name, true,
+            audioDevices.put(identity, new DeviceDescriptor(SpectrumSource.TYPE_AUDIO, identity, name, true,
                     device));
         }
+        result.addAll(audioDevices.values());
         return result;
     }
 
