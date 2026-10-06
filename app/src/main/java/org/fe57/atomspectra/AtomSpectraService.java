@@ -1011,13 +1011,15 @@ public class AtomSpectraService extends Service {
 
         if (is_recording) {
             synchronized (recordingSuspendedSync) {
-                isRecordingSuspended = true;
-                recordingSuspendReason = lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO
-                        ? RECORDING_SUSPEND_REASON_USB_DISCONNECT
-                    : lockedSourceType() == SpectrumSource.TYPE_BLUZ ? RECORDING_SUSPEND_REASON_BT_DISCONNECT
-                        : RECORDING_SUSPEND_REASON_AUDIO_REMOVED;
-                recordingSuspendSourceType = lockedSourceType();
-                onRecordingSuspended();
+                if (!isRecordingSuspended) {
+                    isRecordingSuspended = true;
+                    recordingSuspendReason = lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO
+                            ? RECORDING_SUSPEND_REASON_USB_DISCONNECT
+                        : lockedSourceType() == SpectrumSource.TYPE_BLUZ ? RECORDING_SUSPEND_REASON_BT_DISCONNECT
+                            : RECORDING_SUSPEND_REASON_AUDIO_REMOVED;
+                    recordingSuspendSourceType = lockedSourceType();
+                    onRecordingSuspended();
+                }
             }
         }
         updateMenu();
