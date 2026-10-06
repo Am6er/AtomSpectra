@@ -3440,13 +3440,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             icon.setAlpha(state == AtomSpectraService.DeviceState.WAITING ? INPUT_WAITING_ALPHA : 255);
             Drawable badge = inputStateBadge(state);
             if (badge != null) {
-                float density = getResources().getDisplayMetrics().density;
-                int gap = Math.round(density);
-                int deviceOffset = Math.round(3 * density);
+                float density = getResources().getDisplayMetrics().density;.
+                int gap = Math.round(density); // adjusts the status badge's horizontal spacing
+                int deviceOffset = Math.round(2 * density); // Shifts the device icon right
                 int badgeTop = (icon.getIntrinsicHeight() - badge.getIntrinsicHeight()) / 2;
                 LayerDrawable indicator = new LayerDrawable(new Drawable[]{icon, badge});
                 indicator.setLayerInset(0, deviceOffset, 0, badge.getIntrinsicWidth() + gap, 0);
-                indicator.setLayerInset(1, icon.getIntrinsicWidth() + gap, badgeTop, 0,
+                indicator.setLayerInset(1, icon.getIntrinsicWidth() + gap, badgeTop, deviceOffset,
                         icon.getIntrinsicHeight() - badge.getIntrinsicHeight() - badgeTop);
                 icon = indicator;
             }
