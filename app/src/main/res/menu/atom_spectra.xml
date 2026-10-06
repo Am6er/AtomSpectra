@@ -2,11 +2,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/action_switch_device"
-        android:orderInCategory="101"
-        android:showAsAction="never"
-        android:title="@string/action_switch_device" />
-    <item
         android:id="@+id/action_record_toggle"
         android:icon="@drawable/menu_block"
         android:orderInCategory="100"
@@ -319,6 +314,10 @@
         android:orderInCategory="106"
         android:title="@string/calibration_device">
         <menu>
+            <item
+                android:id="@+id/action_switch_device"
+                android:orderInCategory="601"
+                android:title="@string/action_switch_device" />
             <item
                 android:id="@+id/action_edit_sensivity"
                 android:icon="@drawable/menu_edit"
