@@ -4,6 +4,8 @@ import android.hardware.usb.UsbDevice;
 import android.media.AudioDeviceInfo;
 import android.os.Build;
 
+import java.util.Locale;
+
 /** Best-effort device identity strings, shared by the scanner and the sources so they always agree. */
 final class DeviceIdentity {
     private DeviceIdentity() {
@@ -21,5 +23,9 @@ final class DeviceIdentity {
 
     static String usb(UsbDevice device) {
         return "usb:" + Integer.toHexString(device.getVendorId()) + ":" + Integer.toHexString(device.getProductId());
+    }
+
+    static String bluz(String address) {
+        return "bluz:" + address.toUpperCase(Locale.US);
     }
 }

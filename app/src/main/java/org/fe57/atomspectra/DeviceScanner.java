@@ -1,6 +1,14 @@
 package org.fe57.atomspectra;
 
 import android.app.PendingIntent;
+import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +18,7 @@ import android.hardware.usb.UsbManager;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,6 +28,9 @@ import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Lists the devices the user can select and keeps the list current while started.
@@ -27,7 +39,12 @@ import java.util.List;
 final class DeviceScanner {
     interface Listener {
         void onDevicesChanged(List<DeviceDescriptor> devices);
+
+        default void onBluetoothStateChanged(BluetoothState state) {
+        }
     }
+
+    enum BluetoothState { UNSUPPORTED, PERMISSION_REQUIRED, OFF, LOCATION_DISABLED, READY, SCAN_FAILED }
 
     private static final String ACTION_USB_PERMISSION_RESULT = "org.fe57.atomspectra.ACTION_SCANNER_USB_PERMISSION";
 
@@ -36,9 +53,16 @@ final class DeviceScanner {
     private Listener listener = null;
     private BroadcastReceiver usbReceiver = null;
     private AudioDeviceCallback audioCallback = null;
+    private BroadcastReceiver bluetoothReceiver;
+    private ScanCallback bluetoothScan;
+    private BluetoothAdapter bluetoothAdapter;
+    private boolean scanFailed;
+    private final Map<String, DeviceDescriptor> bluetoothDevices = new LinkedHashMap<>();
 
     DeviceScanner(Context context) {
         this.context = context;
+        BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothAdapter = manager == null ? null : manager.getAdapter();
     }
 
     List<DeviceDescriptor> scan() {
@@ -54,6 +78,7 @@ final class DeviceScanner {
         this.stop();
         this.listener = listener;
         this.registerUsbReceiver();
+        this.registerBluetoothReceiver();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             this.registerAudioCallback();
         }
@@ -62,6 +87,13 @@ final class DeviceScanner {
 
     void stop() {
         this.listener = null;
+        stopBluetoothScan();
+        bluetoothDevices.clear();
+        scanFailed = false;
+        if (bluetoothReceiver != null) {
+            context.unregisterReceiver(bluetoothReceiver);
+            bluetoothReceiver = null;
+        }
         if (this.usbReceiver != null) {
             try {
                 this.context.unregisterReceiver(this.usbReceiver);
@@ -154,9 +186,135 @@ final class DeviceScanner {
         return result;
     }
 
-    // seam for a future wireless producer
+    @SuppressLint("MissingPermission")
     private List<DeviceDescriptor> scanBluetooth() {
-        return new ArrayList<>();
+        List<DeviceDescriptor> result = new ArrayList<>();
+        BluetoothState state = bluetoothState();
+        if (listener != null) listener.onBluetoothStateChanged(state);
+        if (state != BluetoothState.READY && state != BluetoothState.SCAN_FAILED) {
+            stopBluetoothScan();
+            bluetoothDevices.clear();
+            DeviceChoice choice = PrefHelper.getDeviceChoice(context);
+            if (state != BluetoothState.UNSUPPORTED && choice.type == SpectrumSource.TYPE_BLUZ) {
+                result.add(new DeviceDescriptor(choice.type, choice.identity, choice.name,
+                        AppPermissions.isBluetoothGranted(context), null));
+            }
+            return result;
+        }
+        try {
+            for (BluetoothDevice device : bluetoothAdapter.getBondedDevices()) {
+                if ("BluZ".equals(device.getName())) addBluetoothDevice(device, device.getName());
+            }
+            if (listener != null && bluetoothScan == null && !scanFailed) startBluetoothScan();
+            result.addAll(bluetoothDevices.values());
+        } catch (SecurityException error) {
+            stopBluetoothScan();
+            if (listener != null) listener.onBluetoothStateChanged(BluetoothState.PERMISSION_REQUIRED);
+        }
+        return result;
+    }
+
+    @SuppressLint("MissingPermission")
+    BluetoothState bluetoothState() {
+        if (bluetoothAdapter == null || !context.getPackageManager()
+                .hasSystemFeature(android.content.pm.PackageManager.FEATURE_BLUETOOTH_LE)) {
+            return BluetoothState.UNSUPPORTED;
+        }
+        if (!AppPermissions.isBluetoothGranted(context)) return BluetoothState.PERMISSION_REQUIRED;
+        try {
+            if (!bluetoothAdapter.isEnabled()) return BluetoothState.OFF;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                LocationManager manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+                if (manager == null || (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                        && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
+                    return BluetoothState.LOCATION_DISABLED;
+                }
+            }
+            return scanFailed ? BluetoothState.SCAN_FAILED : BluetoothState.READY;
+        } catch (SecurityException error) {
+            return BluetoothState.PERMISSION_REQUIRED;
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private boolean addBluetoothDevice(BluetoothDevice device, String name) {
+        String identity = DeviceIdentity.bluz(device.getAddress());
+        String displayName = name + " (" + device.getAddress() + ")";
+        DeviceDescriptor previous = bluetoothDevices.get(identity);
+        if (previous != null && displayName.equals(previous.displayName)) return false;
+        bluetoothDevices.put(identity, new DeviceDescriptor(SpectrumSource.TYPE_BLUZ, identity,
+                displayName, true, device));
+        return true;
+    }
+
+    @SuppressLint("MissingPermission")
+    private void startBluetoothScan() {
+        if (bluetoothAdapter.getBluetoothLeScanner() == null) return;
+        ScanCallback callback = new ScanCallback() {
+            @Override
+            public void onScanResult(int callbackType, ScanResult result) {
+                mainHandler.post(() -> {
+                    if (listener == null || bluetoothScan != this) return;
+                    try {
+                        String name = result.getScanRecord() == null ? null : result.getScanRecord().getDeviceName();
+                        if (name == null) name = result.getDevice().getName();
+                        if (!"BluZ".equals(name)) return;
+                        if (addBluetoothDevice(result.getDevice(), name)) refresh();
+                    } catch (SecurityException error) {
+                        refresh();
+                    }
+                });
+            }
+
+            @Override
+            public void onScanFailed(int errorCode) {
+                mainHandler.post(() -> {
+                    if (bluetoothScan != this || listener == null) return;
+                    stopBluetoothScan();
+                    scanFailed = true;
+                    refresh();
+                });
+            }
+        };
+        bluetoothScan = callback;
+        try {
+            bluetoothAdapter.getBluetoothLeScanner().startScan(
+                    Collections.singletonList(new ScanFilter.Builder().setDeviceName("BluZ").build()),
+                    new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), callback);
+        } catch (IllegalStateException error) {
+            stopBluetoothScan();
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void stopBluetoothScan() {
+        ScanCallback previous = bluetoothScan;
+        bluetoothScan = null;
+        if (previous == null || bluetoothAdapter == null) return;
+        try {
+            if (bluetoothAdapter.getBluetoothLeScanner() != null) bluetoothAdapter.getBluetoothLeScanner().stopScan(previous);
+        } catch (SecurityException | IllegalStateException ignored) {
+        }
+    }
+
+    void restartBluetoothScan() {
+        stopBluetoothScan();
+        scanFailed = false;
+        refresh();
+    }
+
+    private void registerBluetoothReceiver() {
+        bluetoothReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                stopBluetoothScan();
+                scanFailed = false;
+                refresh();
+            }
+        };
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(LocationManager.PROVIDERS_CHANGED_ACTION);
+        ContextCompat.registerReceiver(context, bluetoothReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
     }
 
     private void registerUsbReceiver() {

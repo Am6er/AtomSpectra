@@ -22,13 +22,20 @@ import java.util.Map;
  */
 public final class AppPermissions {
 
-    public enum Capability {MIC, LOCATION, STORAGE, NOTIFICATIONS}
+    public enum Capability {MIC, LOCATION, STORAGE, NOTIFICATIONS, BLUETOOTH}
 
     // ---- static capability checks (usable from Activity, Service, anywhere) ----
 
     /** @return true when the capability is usable right now on this SDK. */
     public static boolean isGranted(Context ctx, Capability cap) {
         switch (cap) {
+            case BLUETOOTH:
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    return checkSelf(ctx, Manifest.permission.BLUETOOTH_SCAN)
+                            && checkSelf(ctx, Manifest.permission.BLUETOOTH_CONNECT);
+                }
+                return Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                        || checkSelf(ctx, Manifest.permission.ACCESS_FINE_LOCATION);
             case MIC:
                 return Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                         || checkSelf(ctx, Manifest.permission.RECORD_AUDIO);
@@ -58,6 +65,10 @@ public final class AppPermissions {
         return isGranted(c, Capability.MIC);
     }
 
+    public static boolean isBluetoothGranted(Context c) {
+        return isGranted(c, Capability.BLUETOOTH);
+    }
+
     public static boolean isLocationGranted(Context c) {
         return isGranted(c, Capability.LOCATION);
     }
@@ -75,6 +86,17 @@ public final class AppPermissions {
         List<String> perms = new ArrayList<>();
         for (Capability cap : caps) {
             switch (cap) {
+                case BLUETOOTH:
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (!checkSelf(ctx, Manifest.permission.BLUETOOTH_SCAN))
+                            perms.add(Manifest.permission.BLUETOOTH_SCAN);
+                        if (!checkSelf(ctx, Manifest.permission.BLUETOOTH_CONNECT))
+                            perms.add(Manifest.permission.BLUETOOTH_CONNECT);
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isLocationGranted(ctx)) {
+                        perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
+                        perms.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+                    }
+                    break;
                 case MIC:
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isMicGranted(ctx))
                         perms.add(Manifest.permission.RECORD_AUDIO);
@@ -99,7 +121,7 @@ public final class AppPermissions {
                     break;
             }
         }
-        return perms.toArray(new String[0]);
+        return new java.util.LinkedHashSet<>(perms).toArray(new String[0]);
     }
 
     /**
@@ -113,6 +135,9 @@ public final class AppPermissions {
         }
         if (isLocationGranted(ctx)) {
             type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && isBluetoothGranted(ctx)) {
+            type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE;
         }
         return type;
     }

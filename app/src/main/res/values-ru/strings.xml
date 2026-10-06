@@ -4,6 +4,7 @@
     <string name="app_name">Atom Spectra</string>
     <string name="app_bar_audio_action">Читаю аудио-данные</string>
     <string name="app_bar_usb_action">Читаю данные с USB</string>
+    <string name="app_bar_bluetooth_action">Читаю данные по Bluetooth</string>
     <string name="app_bar_spectrum_update">(обновляю спектр)</string>
     <string name="app_bar_pause">Чтение данных остановлено</string>
     <string name="app_channel">Сервис Atom Spectra</string>
@@ -34,6 +35,19 @@
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
     <string name="device_default_microphone">Микрофон по умолчанию</string>
     <string name="device_spectra_pro">Spectra Pro (USB)</string>
+    <string name="device_bluz">BluZ (Bluetooth)</string>
+    <string name="action_bluetooth_attached">BluZ подключён повторно</string>
+    <string name="cal_store_bluetooth_unsupported">Запись калибровки BluZ не поддерживается</string>
+    <string name="log_bluetooth_command_failed">Ошибка выполнения Bluetooth команды %1$s</string>
+    <string name="log_bluetooth_command_timeout">Превышено время ожидания Bluetooth команды %1$s</string>
+    <string name="recording_suspended_dialog_bluetooth_disconnected">BluZ отключён во время записи. Включите Bluetooth и подключите устройство для возобновления.</string>
+    <string name="bluetooth_off">Bluetooth выключен</string>
+    <string name="bluetooth_allow">Разрешить доступ к Bluetooth</string>
+    <string name="bluetooth_enable">Включить Bluetooth</string>
+    <string name="bluetooth_scan">Поиск устройств Bluetooth</string>
+    <string name="bluetooth_location_off">Геолокация выключена; поиск устройств Bluetooth недоступен</string>
+    <string name="bluetooth_location_enable">Включить геолокацию</string>
+    <string name="bluetooth_scan_failed">Не удалось найти устройства Bluetooth</string>
     <string name="device_waiting_notification">Ожидание выбранного устройства</string>
     <string name="device_none_selected_notification">Устройство не выбрано</string>
     <string name="device_waiting_description">%1$s - ожидание устройства</string>
