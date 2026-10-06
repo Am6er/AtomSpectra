@@ -1064,18 +1064,16 @@ public class AtomSpectraService extends Service {
 
         if (op == SpectrumSource.OP_CALIBRATION_SAVE
                 && lockedSourceType() != SpectrumSource.TYPE_BLUZ) {
-            showToastInMainLooper(R.string.cal_wrong_store_usb, Toast.LENGTH_SHORT);
+            showToastInMainLooper(R.string.cal_wrong_store_device, Toast.LENGTH_SHORT);
             return;
         }
 
         if (label != null) {
-            showToastInMainLooper(getStringOrDefaultLocale(
-                    reason == SpectrumSource.REASON_TIMEOUT
-                            ? (lockedSourceType() == SpectrumSource.TYPE_BLUZ
-                                ? R.string.log_bluetooth_command_timeout : R.string.log_usb_command_timeout)
-                            : (lockedSourceType() == SpectrumSource.TYPE_BLUZ
-                                ? R.string.log_bluetooth_command_failed : R.string.log_usb_command_failed),
-                    label), Toast.LENGTH_SHORT);
+        showToastInMainLooper(getStringOrDefaultLocale(
+            reason == SpectrumSource.REASON_TIMEOUT
+                ? R.string.log_source_operation_timeout
+                : R.string.log_source_operation_failed,
+            label), Toast.LENGTH_SHORT);
         }
     }
 
