@@ -16,21 +16,22 @@
         android:clickable="true"
         android:onClick="onClickShape" />
 
-    <Button
+    <ImageButton
         android:id="@+id/inputTypeButton"
-        style="?android:attr/buttonStyleSmall"
-
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:layout_gravity="top|right"
         android:layout_marginTop="45dp"
         android:layout_marginRight="0dp"
-        android:background="@drawable/input_none"
+        android:adjustViewBounds="true"
         android:clickable="false"
+        android:contentDescription="@string/action_switch_device"
         android:enabled="false"
         android:focusable="false"
-        android:textColor="#FFFFFFFF"
-        android:textSize="8dp" />
+        android:foregroundGravity="center"
+        android:padding="0dp"
+        android:scaleType="center"
+        android:src="@drawable/input_none" />
 
     <Button
         android:id="@+id/keVOrChannelButton"

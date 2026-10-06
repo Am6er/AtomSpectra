@@ -41,6 +41,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -3399,7 +3400,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private static final int INPUT_WAITING_ALPHA = 110;
 
     private void updateSelectedInputIndicator() {
-        Button inputType = findViewById(R.id.inputTypeButton);
+        ImageButton inputType = findViewById(R.id.inputTypeButton);
         final AtomSpectraService.DeviceState state = AtomSpectraService.deviceState();
 
         int baseRes;
@@ -3425,8 +3426,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (badge != null) {
                 icon = new LayerDrawable(new Drawable[]{icon, badge});
             }
-            inputType.setBackground(icon);
-            inputType.setBackgroundTintList(null);
+            inputType.setImageDrawable(icon);
         }
 
         final String info = AtomSpectraService.inputDeviceInfo;
@@ -3457,7 +3457,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         inputType.setOnClickListener(canSwitch ? v -> onClickInputType() : null);
     }
 
-    // the badge in the corner of the device icon; both drawables share one viewport, so no insets are needed
+    // the badge is the lower-right of the same 24x24 viewport as the device glyph
     private Drawable inputStateBadge(AtomSpectraService.DeviceState state) {
         switch (state) {
             case WAITING:

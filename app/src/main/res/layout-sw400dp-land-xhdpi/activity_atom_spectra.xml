@@ -6,18 +6,20 @@
     android:background="#000000"
     tools:context=".AtomSpectra" >
 
-    <Button
+    <ImageButton
         android:id="@+id/inputTypeButton"
-        style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="top|right"
-        android:background="@drawable/input_none"
+        android:adjustViewBounds="true"
         android:clickable="false"
+        android:contentDescription="@string/action_switch_device"
         android:enabled="false"
         android:focusable="false"
-        android:textColor="#FFFFFFFF"
-        android:textSize="8dp" />
+        android:foregroundGravity="center"
+        android:padding="0dp"
+        android:scaleType="center"
+        android:src="@drawable/input_none" />
 
     <FrameLayout
         android:id="@+id/FrameLayoutShape"
