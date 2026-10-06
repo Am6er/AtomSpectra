@@ -199,7 +199,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private void updateExitGate() {
         boolean gate = connecting || AtomSpectraService.sessionState == AtomSpectraService.DeviceSessionState.UNSELECTED
                 || AtomSpectraService.isSelectionPending();
-        findViewById(R.id.cancelButton).setVisibility(gate ? View.INVISIBLE : View.VISIBLE);
+        findViewById(R.id.cancelButton).setEnabled(!gate);
         if (backCallback != null) {
             backCallback.setEnabled(gate);
         }
@@ -389,8 +389,6 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         renderDevices();
         service.selectDevice(device);
         updateExitGate();
-        // the service reports the pending selection on the input thread shortly after; hide Cancel immediately
-        findViewById(R.id.cancelButton).setVisibility(View.INVISIBLE);
         backCallback.setEnabled(true);
     }
 }

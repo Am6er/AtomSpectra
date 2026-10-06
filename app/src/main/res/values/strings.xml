@@ -43,7 +43,6 @@
     <string name="cal_store_bluetooth_unsupported">Writing BluZ calibration is not supported</string>
     <string name="log_source_operation_failed">Device operation failed (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="log_source_operation_timeout">Device operation timed out (<xliff:g id="details">%1$s</xliff:g>)</string>
-    <string name="recording_suspended_dialog_bluetooth_disconnected">BluZ disconnected during recording. Turn on Bluetooth and reconnect the device to resume.</string>
     <string name="bluetooth_off">Bluetooth is off</string>
     <string name="bluetooth_allow">Allow Bluetooth access</string>
     <string name="bluetooth_enable">Enable Bluetooth</string>
@@ -61,6 +60,7 @@
     <string name="device_select_connecting">Connecting…</string>
     <string name="device_select_permission_needed">Permission needed — tap to grant</string>
     <string name="device_select_none">No devices found</string>
+    <string name="device_select_available">Available</string>
     <string name="device_select_unavailable">Unavailable</string>
     <string name="device_select_selected_description">%1$s, selected</string>
     <string name="device_connect_decision_title">Device connected</string>
@@ -440,9 +440,7 @@
     <string name="usb_version_unknown">Device firmware version is unknown</string>
 
     <string name="recording_suspended_dialog_title">Data reading suspended!</string>
-    <string name="recording_suspended_dialog_usb_disconnected">USB device is disconnected while reading data, please connect the device to resume.</string>
-    <string name="recording_suspended_dialog_audio_added">External microphone is connected during data reading process, please disconnect external microphone to resume.</string>
-    <string name="recording_suspended_dialog_audio_removed">External microphone is disconnected during data reading process, please connect external microphone to resume.</string>
+    <string name="recording_suspended_dialog_message">Device disconnected during recording. Once the connection is restored, recording will resume.</string>
     <string name="recording_suspended_dialog_dismiss">Stop and work offline</string>
     <string name="recording_suspended_notification">Data reading suspended!</string>
     <string name="recording_suspended_notification_suspended_at">Recording suspended: <xliff:g id="time">%1$s</xliff:g></string>
