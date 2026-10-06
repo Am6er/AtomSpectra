@@ -58,6 +58,8 @@
     <string name="device_select_connecting">Подключение…</string>
     <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
     <string name="device_select_none">Устройства не найдены</string>
+    <string name="device_select_unavailable">Недоступно</string>
+    <string name="device_select_selected_description">%1$s, выбрано</string>
     <string name="device_connect_decision_title">Устройство подключено</string>
     <string name="device_connect_decision_text">%1$s подключено, но в спектре на экране есть несохранённые данные. Показ спектра устройства заменит его.</string>
     <string name="device_decision_save">Сохранить…</string>

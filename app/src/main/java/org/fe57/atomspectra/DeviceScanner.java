@@ -70,6 +70,23 @@ final class DeviceScanner {
         devices.addAll(this.scanAudio());
         devices.addAll(this.scanUsb());
         devices.addAll(this.scanBluetooth());
+        DeviceChoice choice = PrefHelper.getDeviceChoice(context);
+        if (choice.mode == DeviceChoice.MODE_DEVICE) {
+            boolean found = false;
+            for (DeviceDescriptor device : devices) {
+                if (device.matches(choice.type, choice.identity)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                boolean permissionGranted = choice.type == SpectrumSource.TYPE_AUDIO
+                        ? AppPermissions.isMicGranted(context)
+                        : choice.type != SpectrumSource.TYPE_BLUZ || AppPermissions.isBluetoothGranted(context);
+                devices.add(new DeviceDescriptor(choice.type, choice.identity, choice.name,
+                        permissionGranted, null, false));
+            }
+        }
         return devices;
     }
 
@@ -198,16 +215,11 @@ final class DeviceScanner {
         if (state != BluetoothState.READY && state != BluetoothState.SCAN_FAILED) {
             stopBluetoothScan();
             bluetoothDevices.clear();
-            DeviceChoice choice = PrefHelper.getDeviceChoice(context);
-            if (state != BluetoothState.UNSUPPORTED && choice.type == SpectrumSource.TYPE_BLUZ) {
-                result.add(new DeviceDescriptor(choice.type, choice.identity, choice.name,
-                        AppPermissions.isBluetoothGranted(context), null));
-            }
             return result;
         }
         try {
             for (BluetoothDevice device : bluetoothAdapter.getBondedDevices()) {
-                if ("BluZ".equals(device.getName())) addBluetoothDevice(device, device.getName());
+                if ("BluZ".equals(device.getName())) addBluetoothDevice(device, device.getName(), false);
             }
             if (listener != null && bluetoothScan == null && !scanFailed) startBluetoothScan();
             result.addAll(bluetoothDevices.values());
@@ -241,13 +253,15 @@ final class DeviceScanner {
     }
 
     @SuppressLint("MissingPermission")
-    private boolean addBluetoothDevice(BluetoothDevice device, String name) {
+    private boolean addBluetoothDevice(BluetoothDevice device, String name, boolean observed) {
         String identity = DeviceIdentity.bluz(device.getAddress());
         String displayName = name + " (" + device.getAddress() + ")";
         DeviceDescriptor previous = bluetoothDevices.get(identity);
-        if (previous != null && displayName.equals(previous.displayName)) return false;
+        boolean available = observed || (previous != null && previous.available);
+        if (previous != null && displayName.equals(previous.displayName)
+                && available == previous.available) return false;
         bluetoothDevices.put(identity, new DeviceDescriptor(SpectrumSource.TYPE_BLUZ, identity,
-                displayName, true, device));
+                displayName, true, device, available));
         return true;
     }
 
@@ -263,7 +277,7 @@ final class DeviceScanner {
                         String name = result.getScanRecord() == null ? null : result.getScanRecord().getDeviceName();
                         if (name == null) name = result.getDevice().getName();
                         if (!"BluZ".equals(name)) return;
-                        if (addBluetoothDevice(result.getDevice(), name)) refresh();
+                        if (addBluetoothDevice(result.getDevice(), name, true)) refresh();
                     } catch (SecurityException error) {
                         refresh();
                     }
@@ -303,6 +317,7 @@ final class DeviceScanner {
 
     void restartBluetoothScan() {
         stopBluetoothScan();
+        bluetoothDevices.clear();
         scanFailed = false;
         refresh();
     }
@@ -312,6 +327,7 @@ final class DeviceScanner {
             @Override
             public void onReceive(Context context, Intent intent) {
                 stopBluetoothScan();
+                bluetoothDevices.clear();
                 scanFailed = false;
                 refresh();
             }

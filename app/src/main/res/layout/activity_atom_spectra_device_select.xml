@@ -16,7 +16,7 @@
         android:gravity="center"
         android:text="@string/device_select_title"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
+        android:textSize="24dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -37,12 +37,14 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="8dp"
+        android:text="@string/device_select_connecting"
         android:textColor="#FFA629"
-        android:textSize="18sp"
-        android:visibility="gone"
+        android:textSize="16dp"
+        android:accessibilityLiveRegion="polite"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/divider" />
+        app:layout_constraintBottom_toTopOf="@id/bluetoothControls" />
 
     <LinearLayout
         android:id="@+id/bluetoothControls"
@@ -51,23 +53,27 @@
         android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/statusText">
+        app:layout_constraintBottom_toTopOf="@id/rememberChoice">
 
         <TextView
             android:id="@+id/bluetoothWarning"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
+            android:minLines="2"
+            android:text="@string/bluetooth_scan_failed"
             android:textColor="#FFA629"
-            android:textSize="16sp"
+            android:textSize="14dp"
             android:accessibilityLiveRegion="polite"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <Button
             android:id="@+id/bluetoothAction"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:drawableStart="@android:drawable/stat_sys_data_bluetooth"
+            android:textSize="16dp"
             android:text="@string/bluetooth_allow" />
     </LinearLayout>
 
@@ -75,10 +81,10 @@
         android:id="@+id/deviceListScroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/rememberChoice"
+        app:layout_constraintBottom_toTopOf="@id/statusText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/bluetoothControls">
+        app:layout_constraintTop_toBottomOf="@id/divider">
 
         <LinearLayout
             android:id="@+id/deviceList"
@@ -98,7 +104,7 @@
         android:saveEnabled="false"
         android:text="@string/device_select_remember"
         android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:textSize="16dp"
         app:layout_constraintBottom_toTopOf="@+id/buttons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -107,6 +113,7 @@
         android:id="@+id/buttons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:baselineAligned="false"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -115,17 +122,21 @@
         <Button
             android:id="@+id/cancelButton"
             style="@android:style/ButtonBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:minHeight="48dp"
+            android:textSize="16dp"
             android:text="@android:string/cancel" />
 
         <Button
             android:id="@+id/offlineButton"
             style="@android:style/ButtonBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:minHeight="48dp"
+            android:textSize="16dp"
             android:text="@string/device_select_offline" />
     </LinearLayout>
 

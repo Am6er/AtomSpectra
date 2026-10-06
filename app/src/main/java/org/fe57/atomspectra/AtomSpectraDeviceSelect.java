@@ -10,6 +10,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.AbsoluteSizeSpan;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +30,8 @@ import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /** Lets the user pick the device to record from, or work offline. */
 public class AtomSpectraDeviceSelect extends ComponentActivity {
@@ -37,6 +43,10 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private boolean receiverRegistered = false;
     private boolean startRecordingAfter = false;
     private boolean connecting = false;
+    private int selectedType = SpectrumSource.TYPE_NONE;
+    private String selectedIdentity;
+    private String selectedName;
+    private DeviceScanner.BluetoothState bluetoothState = DeviceScanner.BluetoothState.UNSUPPORTED;
     private OnBackPressedCallback backCallback;
     private List<DeviceDescriptor> devices = new ArrayList<>();
     private AppPermissions permissions;
@@ -57,11 +67,20 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         setContentView(R.layout.activity_atom_spectra_device_select);
         CheckBox rememberChoice = findViewById(R.id.rememberChoice);
         rememberChoice.setChecked(PrefHelper.shouldRememberDeviceChoice(this));
-        rememberChoice.setOnCheckedChangeListener((button, checked) ->
-            PrefHelper.setRememberDeviceChoice(this, checked));
+        rememberChoice.setOnCheckedChangeListener((button, checked) -> {
+            PrefHelper.setRememberDeviceChoice(this, checked);
+            if (scanner != null) scanner.refresh();
+        });
         startRecordingAfter = getIntent().getBooleanExtra(EXTRA_START_RECORDING_AFTER, false);
         scanner = new DeviceScanner(this);
         permissions = new AppPermissions(this, null);
+        if (savedInstanceState != null) {
+            selectedType = savedInstanceState.getInt("selectedType", SpectrumSource.TYPE_NONE);
+            selectedIdentity = savedInstanceState.getString("selectedIdentity");
+            selectedName = savedInstanceState.getString("selectedName");
+            connecting = savedInstanceState.getBoolean("connecting");
+        }
+        showConnecting(connecting);
         findViewById(R.id.bluetoothAction).setOnClickListener(view -> onBluetoothAction());
         backCallback = new OnBackPressedCallback(false) {
             @Override
@@ -91,6 +110,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        restoreSelection();
         // the service is started by the main activity; binding without BIND_AUTO_CREATE never starts a new one
         serviceBound = bindService(new Intent(this, AtomSpectraService.class), serviceConnection, 0);
 
@@ -114,6 +134,15 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle state) {
+        super.onSaveInstanceState(state);
+        state.putInt("selectedType", selectedType);
+        state.putString("selectedIdentity", selectedIdentity);
+        state.putString("selectedName", selectedName);
+        state.putBoolean("connecting", connecting);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         scanner.stop();
@@ -132,6 +161,8 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         @Override
         public void onServiceConnected(ComponentName name, IBinder binder) {
             service = ((AtomSpectraService.LocalBinder) binder).getService();
+            restoreSelection();
+            renderDevices();
             updateExitGate();
         }
 
@@ -145,7 +176,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             connecting = false;
-            showConnecting(false);
+            restoreSelection();
             updateExitGate();
             if (Constants.ACTION.ACTION_DEVICE_SELECTED.equals(intent.getAction())) {
                 // a spectrum that needs the user's decision before recording is settled by the record button, not here
@@ -166,9 +197,9 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
     // nothing is chosen, or a chosen device is still connecting: the screen cannot be left
     private void updateExitGate() {
-        boolean gate = AtomSpectraService.sessionState == AtomSpectraService.DeviceSessionState.UNSELECTED
+        boolean gate = connecting || AtomSpectraService.sessionState == AtomSpectraService.DeviceSessionState.UNSELECTED
                 || AtomSpectraService.isSelectionPending();
-        findViewById(R.id.cancelButton).setVisibility(gate ? View.GONE : View.VISIBLE);
+        findViewById(R.id.cancelButton).setVisibility(gate ? View.INVISIBLE : View.VISIBLE);
         if (backCallback != null) {
             backCallback.setEnabled(gate);
         }
@@ -177,39 +208,110 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private void showConnecting(boolean show) {
         TextView status = findViewById(R.id.statusText);
         status.setText(R.string.device_select_connecting);
-        status.setVisibility(show ? View.VISIBLE : View.GONE);
+        status.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    private void restoreSelection() {
+        AtomSpectraService.LockedDevice selected = AtomSpectraService.selectedDevice();
+        selectedType = selected == null ? SpectrumSource.TYPE_NONE : selected.type;
+        selectedIdentity = selected == null ? null : selected.identity;
+        selectedName = selected == null ? null : selected.name;
+        connecting = AtomSpectraService.isSelectionPending();
+        showConnecting(connecting);
     }
 
     private void renderDevices() {
         LinearLayout list = findViewById(R.id.deviceList);
-        list.removeAllViews();
-
-        if (devices.isEmpty()) {
-            list.addView(createRow(getString(R.string.device_select_none), 0xFF808080, null));
+        List<DeviceDescriptor> visibleDevices = new ArrayList<>(devices);
+        if (selectedIdentity != null) {
+            boolean found = false;
+            for (DeviceDescriptor device : visibleDevices) {
+                if (device.matches(selectedType, selectedIdentity)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                boolean permissionGranted = selectedType == SpectrumSource.TYPE_AUDIO
+                        ? AppPermissions.isMicGranted(this)
+                        : selectedType != SpectrumSource.TYPE_BLUZ || AppPermissions.isBluetoothGranted(this);
+                visibleDevices.add(new DeviceDescriptor(selectedType, selectedIdentity, selectedName,
+                        permissionGranted, null, false));
+            }
+        }
+        if (visibleDevices.isEmpty()) {
+            list.removeAllViews();
+            TextView empty = createRow();
+            empty.setText(R.string.device_select_none);
+            empty.setTextColor(0xFF808080);
+            list.addView(empty);
             return;
         }
-        for (DeviceDescriptor device : devices) {
-            String text = device.displayName;
-            if (!device.permissionGranted) {
-                text += "\n" + getString(R.string.device_select_permission_needed);
+        Map<String, TextView> rows = new LinkedHashMap<>();
+        for (int index = 0; index < list.getChildCount(); index++) {
+            TextView row = (TextView) list.getChildAt(index);
+            if (row.getTag() instanceof DeviceDescriptor) {
+                DeviceDescriptor device = (DeviceDescriptor) row.getTag();
+                rows.put(device.type + ":" + device.identity, row);
             }
-            list.addView(createRow(text, device.permissionGranted ? 0xFFFFFFFF : 0xFFB0B0B0, device));
+        }
+        for (int index = 0; index < visibleDevices.size(); index++) {
+            DeviceDescriptor device = visibleDevices.get(index);
+            TextView row = rows.get(device.type + ":" + device.identity);
+            if (row == null) row = createRow();
+            updateRow(row, device);
+            if (list.getChildAt(index) != row) {
+                list.removeView(row);
+                list.addView(row, index);
+            }
+        }
+        while (list.getChildCount() > visibleDevices.size()) {
+            list.removeViewAt(list.getChildCount() - 1);
         }
     }
 
-    private TextView createRow(String text, int color, DeviceDescriptor device) {
+    private TextView createRow() {
         TextView row = new TextView(this);
-        row.setText(text);
-        row.setTextSize(20);
-        row.setTextColor(color);
-        row.setPadding(16, 24, 16, 24);
+        row.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        row.setPadding(dp(16), dp(12), dp(16), dp(12));
+        row.setMinimumHeight(dp(48));
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        if (device != null) {
-            row.setClickable(true);
-            row.setOnClickListener(v -> onDeviceTapped(device));
-        }
         return row;
+    }
+
+    private void updateRow(TextView row, DeviceDescriptor device) {
+        boolean selected = device.matches(selectedType, selectedIdentity);
+        AtomSpectraService.LockedDevice locked = AtomSpectraService.selectedDevice();
+        boolean available = device.available || (locked != null && device.matches(locked.type, locked.identity)
+                && AtomSpectraService.isDeviceConnected());
+        String text = device.displayName;
+        if (!available) text += "\n" + getString(R.string.device_select_unavailable);
+        if (!device.permissionGranted) text += "\n" + getString(R.string.device_select_permission_needed);
+        SpannableString label = new SpannableString(text);
+        if (text.length() > device.displayName.length()) {
+            label.setSpan(new AbsoluteSizeSpan(14, true), device.displayName.length(), text.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        row.setText(label);
+        row.setTag(device);
+        row.setTextColor(available && device.permissionGranted ? 0xFFFFFFFF : 0xFFB0B0B0);
+        row.setBackgroundColor(selected ? 0x70505050 : 0x00000000);
+        row.setSelected(selected);
+        row.setCompoundDrawablesRelativeWithIntrinsicBounds(selected ? android.R.drawable.checkbox_on_background : 0,
+                0, 0, 0);
+        row.setCompoundDrawablePadding(dp(8));
+        row.setContentDescription(selected ? getString(R.string.device_select_selected_description, text) : text);
+        row.setEnabled(available || (device.type == SpectrumSource.TYPE_BLUZ
+                && bluetoothState != DeviceScanner.BluetoothState.UNSUPPORTED)
+                || (device.type == SpectrumSource.TYPE_AUDIO && !device.permissionGranted));
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(view -> onDeviceTapped(device));
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private void onDeviceTapped(DeviceDescriptor device) {
@@ -220,11 +322,23 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             return;
         }
 
+        if (device.type == SpectrumSource.TYPE_BLUZ
+                && bluetoothState != DeviceScanner.BluetoothState.READY
+                && bluetoothState != DeviceScanner.BluetoothState.SCAN_FAILED) {
+            if (bluetoothState != DeviceScanner.BluetoothState.UNSUPPORTED) onBluetoothAction();
+            return;
+        }
+        if (!device.available && device.type != SpectrumSource.TYPE_BLUZ) return;
+
         // picking again while a device is connecting replaces the pending choice; unsaved data on the screen is never discarded by a switch
         connect(device);
     }
 
     private void requestPermission(DeviceDescriptor device) {
+        if (device.type == SpectrumSource.TYPE_AUDIO) {
+            permissions.ensure(AppPermissions.Capability.MIC, () -> scanner.refresh(), () -> scanner.refresh());
+            return;
+        }
         if (device.type == SpectrumSource.TYPE_BLUZ) {
             permissions.ensure(AppPermissions.Capability.BLUETOOTH,
                     () -> scanner.restartBluetoothScan(), () -> scanner.refresh());
@@ -236,15 +350,16 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     }
 
     private void updateBluetoothState(DeviceScanner.BluetoothState state) {
+        bluetoothState = state;
         TextView warning = findViewById(R.id.bluetoothWarning);
         android.widget.Button action = findViewById(R.id.bluetoothAction);
         warning.setVisibility(state == DeviceScanner.BluetoothState.OFF
                 || state == DeviceScanner.BluetoothState.LOCATION_DISABLED
-                || state == DeviceScanner.BluetoothState.SCAN_FAILED ? View.VISIBLE : View.GONE);
+                || state == DeviceScanner.BluetoothState.SCAN_FAILED ? View.VISIBLE : View.INVISIBLE);
         if (state == DeviceScanner.BluetoothState.OFF) warning.setText(R.string.bluetooth_off);
         else if (state == DeviceScanner.BluetoothState.LOCATION_DISABLED) warning.setText(R.string.bluetooth_location_off);
         else if (state == DeviceScanner.BluetoothState.SCAN_FAILED) warning.setText(R.string.bluetooth_scan_failed);
-        action.setVisibility(state == DeviceScanner.BluetoothState.UNSUPPORTED ? View.GONE : View.VISIBLE);
+        action.setVisibility(state == DeviceScanner.BluetoothState.UNSUPPORTED ? View.INVISIBLE : View.VISIBLE);
         action.setText(state == DeviceScanner.BluetoothState.PERMISSION_REQUIRED ? R.string.bluetooth_allow
                 : state == DeviceScanner.BluetoothState.OFF ? R.string.bluetooth_enable
                 : state == DeviceScanner.BluetoothState.LOCATION_DISABLED ? R.string.bluetooth_location_enable
@@ -266,12 +381,16 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
     private void connect(DeviceDescriptor device) {
         if (service == null) return;
+        selectedType = device.type;
+        selectedIdentity = device.identity;
+        selectedName = device.displayName;
         connecting = true;
         showConnecting(true);
+        renderDevices();
         service.selectDevice(device);
         updateExitGate();
         // the service reports the pending selection on the input thread shortly after; hide Cancel immediately
-        findViewById(R.id.cancelButton).setVisibility(View.GONE);
+        findViewById(R.id.cancelButton).setVisibility(View.INVISIBLE);
         backCallback.setEnabled(true);
     }
 }
