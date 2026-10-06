@@ -265,6 +265,10 @@ public class AtomSpectraService extends Service {
         return locked == null ? SpectrumSource.TYPE_NONE : locked.type;
     }
 
+    static LockedDevice selectedDevice() {
+        return lockedDevice;
+    }
+
     private static String lockedSourceName(String audio, String usb, String bluetooth, String none) {
         switch (lockedSourceType()) {
             case SpectrumSource.TYPE_AUDIO:

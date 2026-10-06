@@ -87,6 +87,16 @@ permission denial or absent BLE hardware are distinct states. Audio, USB and
 offline choices remain usable. Device-type icons are vectors with existing
 status badges above them; WAITING dims only the base icon.
 
+The picker keeps connection status and Bluetooth controls below the device list,
+without blocking a replacement choice while connecting. The chosen row is marked.
+Saved devices remain listed when absent, with an unavailable label separate from
+permission requirements. Paired Bluetooth devices are unavailable until detected
+by the current picker scan, but can still be selected for a connection attempt.
+A connected locked device remains available even when it is not advertising.
+Unavailable USB/audio devices cannot be selected until present; missing microphone
+permission can still be requested. Discovery availability does not change the
+service's lock or its reconnection behavior.
+
 ## 2. Session state (what the user chose)
 
 ```mermaid
