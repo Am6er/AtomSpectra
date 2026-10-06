@@ -95,12 +95,12 @@ public final class SpectrumData {
         calibration.Calculate(coeffs);
         if (calibration.isCorrect()) {
             applyCalibration(context, calibration);
-            ToastHelper.showToastAndLog(context, R.string.cal_apply_usb);
+            ToastHelper.showToastAndLog(context, R.string.cal_apply_device);
         } else {
             calibration.Calculate(defaultLinearCalibrationCoeffs(getChannelCount()));
             applyCalibration(context, calibration);
             // TODO: rename string resource so it tells "Incorrect calibration from device, default applied"
-            ToastHelper.showToastAndLog(context, R.string.cal_wrong_usb);
+            ToastHelper.showToastAndLog(context, R.string.cal_wrong_device);
         }
     }
 

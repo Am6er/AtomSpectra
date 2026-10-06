@@ -38,8 +38,8 @@
     <string name="device_bluz">BluZ (Bluetooth)</string>
     <string name="action_bluetooth_attached">BluZ reconnected</string>
     <string name="cal_store_bluetooth_unsupported">Writing BluZ calibration is not supported</string>
-    <string name="log_bluetooth_command_failed">%1$s Bluetooth command failed</string>
-    <string name="log_bluetooth_command_timeout">%1$s Bluetooth command timed out</string>
+    <string name="log_source_operation_failed">Device operation failed (<xliff:g id="details">%1$s</xliff:g>)</string>
+    <string name="log_source_operation_timeout">Device operation timed out (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="recording_suspended_dialog_bluetooth_disconnected">BluZ disconnected during recording. Turn on Bluetooth and reconnect the device to resume.</string>
     <string name="bluetooth_off">Bluetooth is off</string>
     <string name="bluetooth_allow">Allow Bluetooth access</string>
@@ -422,17 +422,16 @@
     <string name="something_wrong">Something goes wrong!</string>
     <string name="unknown_code">Got unknown code from the device: <xliff:g id="code">%1$d</xliff:g></string>
     <string name="cal_store_wait">Wait for calibration to store into the device</string>
-    <string name="cal_apply_usb">Calibration applied from the device</string>
-    <string name="cal_wrong_usb">Wrong calibration from the device</string>
+    <string name="cal_apply_device">Calibration applied from the device</string>
+    <string name="cal_wrong_device">Wrong calibration from the device</string>
     <string name="cal_none_stored">No calibration is stored for this device</string>
     <string name="device_not_available">Device is not available</string>
     <string name="cal_wrong_checksum">A bad calibration checksum from a USB device</string>
     <string name="cal_stored">Calibration stored to the device</string>
-    <string name="cal_wrong_store_usb">Can\'t store calibration to a USB device</string>
+    <string name="cal_wrong_store_device">Can\'t store calibration to the device</string>
     <string name="usb_below_minimal_version">Update device firmware to <xliff:g id="version">%1$d</xliff:g> or higher</string>
     <string name="usb_version_read_error">Device firmware version read error</string>
     <string name="usb_version_unknown">Device firmware version is unknown</string>
-    <string name="usb_attached_while_recording_audio">USB device ignored: reading data from microphone.\nStop reading data and reconnect USB device.</string>
 
     <string name="recording_suspended_dialog_title">Data reading suspended!</string>
     <string name="recording_suspended_dialog_usb_disconnected">USB device is disconnected while reading data, please connect the device to resume.</string>
@@ -464,8 +463,6 @@
     <string name="log_audio_zero_buffers_detected">Zero audio buffer received several times in a row (%1$d), restarting audio</string>
     <string name="log_fetching_data_from_audio">Fetching data from audio source: %1$s, use raw audio: %2$b</string>
     <string name="log_wrong_sens_curve_pref">Unable to load device sensitivity curve from preferences, resetting to default</string>
-    <string name="log_usb_command_failed">%1$s USB command failed</string>
-    <string name="log_usb_command_timeout">%1$s USB command timeout</string>
     <string name="log_usb_device_version_error">USB device version read error</string>
     <string name="log_usb_device_version_unknown">USB device version is unknown</string>
     <string name="log_usb_answer_unexpected_registers">Unexpected \"-cal\" answer: %1$d registers instead of %2$d</string>
