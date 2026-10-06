@@ -54,6 +54,7 @@
     <string name="action_switch_device">Switch device</string>
     <string name="device_select_title">Select a device</string>
     <string name="device_select_offline">Work offline (files only)</string>
+    <string name="device_select_remember">Remember my choice</string>
     <string name="device_select_connecting">Connecting…</string>
     <string name="device_select_permission_needed">Permission needed — tap to grant</string>
     <string name="device_select_none">No devices found</string>

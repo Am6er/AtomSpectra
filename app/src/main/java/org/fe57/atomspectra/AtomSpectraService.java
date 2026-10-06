@@ -546,14 +546,16 @@ public class AtomSpectraService extends Service {
     }
 
     /**
-     * Asynchronous; the outcome is sent as ACTION_DEVICE_SELECTED or ACTION_DEVICE_SELECTION_REQUIRED. The choice is remembered once the device is connected.
+    * Asynchronous; the outcome is sent as ACTION_DEVICE_SELECTED or ACTION_DEVICE_SELECTION_REQUIRED.
+    * Once connected, the choice is remembered only if the user opted in.
      */
     public void selectDevice(DeviceDescriptor device) {
         postToInputThread(() -> doSelectDevice(device));
     }
 
     /**
-     * Stops any recording, releases the device and leaves the loaded spectrum as it is. The next launch starts offline too.
+    * Stops any recording, releases the device and leaves the loaded spectrum as it is.
+    * The next launch starts offline too only if the user opted in to remembering the choice.
      */
     public void selectOffline() {
         sessionState = DeviceSessionState.OFFLINE;
@@ -937,7 +939,7 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    // the first time the locked device answers: the choice is remembered and the screen is reconciled with the device
+    // the first time the locked device answers: remember the choice if opted in and reconcile the screen with the device
     private void onFirstReady() {
         final SpectrumSource source = activeSource;
         final LockedDevice locked = lockedDevice;

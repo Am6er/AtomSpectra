@@ -54,6 +54,7 @@
     <string name="action_switch_device">Сменить устройство</string>
     <string name="device_select_title">Выбор устройства</string>
     <string name="device_select_offline">Работать без устройства (только файлы)</string>
+    <string name="device_select_remember">Запомнить мой выбор</string>
     <string name="device_select_connecting">Подключение…</string>
     <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
     <string name="device_select_none">Устройства не найдены</string>
