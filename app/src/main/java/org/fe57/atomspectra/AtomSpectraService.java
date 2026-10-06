@@ -205,6 +205,8 @@ public class AtomSpectraService extends Service {
     // the device data on the screen is the only thing that may replace it without asking: set when a device writes
     // to the screen, cleared when a file or another device takes it over
     private static volatile boolean screenFromDevice = false;
+    // the screen holds a spectrum the user loaded: only Clear, Start or a collecting device replace it
+    private static volatile boolean screenFromFile = false;
     // a connected device that holds data of its own waits for the user to decide about the unsaved screen spectrum;
     // its data is ignored and recording cannot start until then
     private static volatile boolean connectDecisionPending = false;
@@ -590,19 +592,7 @@ public class AtomSpectraService extends Service {
      * The same, but the remembered choice stays: the next launch waits for the remembered device again.
      */
     public void stopAndGoOffline() {
-        stopAndGoOffline(null);
-    }
-
-    /**
-     * Same, and runs {@code afterOffline} on the main thread once the device is released.
-     */
-    public void stopAndGoOffline(Runnable afterOffline) {
-        postToInputThread(() -> {
-            doGoOffline(false);
-            if (afterOffline != null) {
-                new Handler(Looper.getMainLooper()).post(afterOffline);
-            }
-        });
+        postToInputThread(() -> doGoOffline(false));
     }
 
     /**
@@ -658,6 +648,7 @@ public class AtomSpectraService extends Service {
      */
     public static void markScreenForeign() {
         screenFromDevice = false;
+        screenFromFile = true;
     }
 
     // the connected device can take over the screen spectrum and go on with it
@@ -897,6 +888,9 @@ public class AtomSpectraService extends Service {
     // what happens to that spectrum is settled when recording starts.
     // A device with a different channel count than the screen always takes the screen over, whatever it can hold.
     private void reconcileScreenWithDevice(SpectrumSource source, boolean firstConnect) {
+        if (screenFromFile && deviceStatus != SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            return;
+        }
         if (deviceChannelCount != SpectrumData.instance.getChannelCount()) {
             adoptOrAskAboutScreen(source, firstConnect);
             return;
@@ -1667,6 +1661,7 @@ private void onSourceData(Intent intent) {
                     .setDeviceInfo(inputDeviceInfo)
                     .updateComments();
             screenFromDevice = true;
+            screenFromFile = false;
         }
 
         foregroundSpectrumCopy = new Spectrum(SpectrumData.instance.foreground);
@@ -1724,8 +1719,8 @@ private void showIdleSnapshot(Intent intent) {
     synchronized (SpectrumData.instance.lock) {
         // mirroring the device is not a change the user made
         boolean wasChanged = SpectrumData.instance.foreground.isChanged();
-        // unsaved data that did not come from the device is never overwritten by a snapshot
-        if (!screenFromDevice && wasChanged) {
+        // a loaded file, or unsaved data that did not come from the device, is never overwritten by a snapshot
+        if (screenFromFile || (!screenFromDevice && wasChanged)) {
             return;
         }
         SpectrumData.instance.foreground
@@ -1802,6 +1797,12 @@ public void Stop() {
 // false when the start must not go ahead: the screen spectrum is not the device's and the user has not said what to do with it
 private boolean settleForeignSpectrumForStart(int policy) {
     if (startDecision() == START_FREE) {
+        // a saved spectrum the device cannot continue makes way for the device's own, with its calibration and channel count
+        if (!screenFromDevice && !SpectrumData.instance.foreground.isEmpty() && !canContinueScreenSpectrum()) {
+            resetServiceSpectrum();
+            restoreDeviceCalibration();
+            showToastInMainLooper(R.string.start_screen_replaced, Toast.LENGTH_SHORT);
+        }
         return true;
     }
     switch (policy) {
@@ -1827,6 +1828,7 @@ public void DeleteSpc() {
 // clears the service's own spectrum and baselines without touching the source
 private void resetServiceSpectrum() {
     screenFromDevice = false;
+    screenFromFile = false;
     completeSpectrogramRecording();
     AtomSpectraSpectrogramData.instance.clear();
     notifySpectrogramUpdated();

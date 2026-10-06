@@ -69,9 +69,9 @@
     <string name="device_decision_save">Save…</string>
     <string name="device_decision_discard_switch">Discard and switch</string>
     <string name="device_decision_go_offline">Disconnect and work offline</string>
-    <string name="start_continue_or_new_text">The spectrum on the screen was not recorded by this device. Continue it, or start a new one?</string>
-    <string name="start_continue_or_discard_text">The spectrum on the screen has unsaved data and was not recorded by this device. Continue it, or discard it and start a new one?</string>
-    <string name="start_save_or_discard_text">The spectrum on the screen has unsaved data and this device cannot continue it. Save it first, or discard it and start a new one?</string>
+    <string name="start_continue_or_new_text">The spectrum on the screen was not recorded by this device.</string>
+    <string name="start_continue_or_discard_text">The spectrum on the screen has unsaved data and was not recorded by this device.</string>
+    <string name="start_save_or_discard_text">The spectrum on the screen has unsaved data and this device cannot continue it.</string>
     <string name="start_continue_button">Continue</string>
     <string name="start_new_button">Start new</string>
     <string name="start_discard_button">Discard and start new</string>
@@ -79,6 +79,7 @@
     <string name="device_error_notification">Device error</string>
     <string name="device_permission_lost">Permission for the selected device is missing. Please select a device.</string>
     <string name="device_spectrum_adopted">Device connected, showing the device spectrum</string>
+    <string name="start_screen_replaced">The spectrum on the screen is replaced by the device spectrum</string>
     <string name="device_status_title">Device status</string>
     <string name="device_status_select_other">Select device</string>
     <string name="device_status_retry">Retry</string>
@@ -418,8 +419,8 @@
     <string name="background_load_success">Background loaded successfully</string>
     <string name="background_load_error">Background loading failed!</string>
     <string name="background_channel_mismatch">Background has a different number of channels than the spectrum</string>
-    <string name="hist_load_device_locked_title">Device is in use</string>
-    <string name="hist_load_device_locked_text">A device is selected. To open a file, disconnect from it and work offline.</string>
+    <string name="hist_load_unsaved_text">The spectrum on the screen has unsaved data. Opening the file replaces it.</string>
+    <string name="hist_load_discard_button">Discard and open file</string>
     <string name="background_delete_error">Can\'t delete a background file</string>
     <string name="background_no_data">No background data</string>
     <string name="background_save_success">Background saved successfully</string>
