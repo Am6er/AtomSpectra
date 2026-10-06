@@ -46,6 +46,26 @@ final class BluZCommandCodec {
         return packet;
     }
 
+    static byte[] calibration4096(byte[] snapshot, double[] coefficients) {
+        if (coefficients == null || coefficients.length != 5) {
+            throw new IllegalArgumentException("BluZ calibration requires five coefficients");
+        }
+        byte[] packet = resolution4096(snapshot);
+        int[] writeOffsets = {47, 43, 59, 55, 51};
+        for (int index = 0; index < coefficients.length; index++) {
+            float value = (float) coefficients[index];
+            if (!Double.isFinite(coefficients[index]) || !Float.isFinite(value)) {
+                throw new IllegalArgumentException("Invalid BluZ calibration coefficient");
+            }
+            int bits = Float.floatToIntBits(value);
+            for (int byteIndex = 0; byteIndex < 4; byteIndex++) {
+                packet[writeOffsets[index] + byteIndex] = (byte) (bits >>> (24 - byteIndex * 8));
+            }
+        }
+        checksum(packet);
+        return packet;
+    }
+
     private static void reverseFloat(byte[] snapshot, int readOffset, byte[] packet, int writeOffset) {
         for (int index = 0; index < 4; index++) {
             packet[writeOffset + index] = snapshot[readOffset + 3 - index];
