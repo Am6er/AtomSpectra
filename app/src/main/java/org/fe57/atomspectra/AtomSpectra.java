@@ -1719,17 +1719,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
             Log.d(TAG, "loading hist file");
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                withStorage(() -> {
-                    Intent loadIntent = new Intent()
-                            .setType("*/*")
-                            .setAction(Intent.ACTION_GET_CONTENT);
-                    startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
-                }, getString(R.string.perm_no_read_histogram));
+                confirmReplaceUnsaved(() -> withStorage(this::openLoadSpectrumPicker, getString(R.string.perm_no_read_histogram)));
             } else {
-                Intent loadIntent = new Intent()
-                        .setType("*/*")
-                        .setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
+                confirmReplaceUnsaved(this::openLoadSpectrumPicker);
             }
             return true;
         } else if (item.getItemId() == R.id.action_hist_add_from_file) {
@@ -2364,7 +2356,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         if (requestCode == LOAD_HIST_CODE && resultCode == RESULT_OK) {
             selectedFile = data.getData(); //The uri with the location of the file
             if (selectedFile != null)
-                loadSpectrum(selectedFile, true);
+                loadSpectrumFile(selectedFile, true);
         } else if (requestCode == ADD_HIST_CODE && resultCode == RESULT_OK) {
             selectedFile = data.getData(); //The uri with the location of the file
             if (selectedFile != null)
@@ -2740,22 +2732,44 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             super.onActivityResult(requestCode, resultCode, data);
     }
 
-    // a loaded file never disagrees with a locked device: the device is released first
+    // the screen spectrum is replaced by a file: unsaved data is never dropped without asking
     private void loadSpectrum(Uri histFile, boolean showMessage) {
-        if (AtomSpectraService.sessionState == AtomSpectraService.DeviceSessionState.LOCKED && boundService != null) {
-            new AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.hist_load_device_locked_title))
-                    .setMessage(getString(R.string.hist_load_device_locked_text))
-                    .setPositiveButton(getString(R.string.device_decision_go_offline), (dialog, which) ->
-                            boundService.stopAndGoOffline(() -> loadSpectrumFile(histFile, showMessage)))
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show();
+        if (AtomSpectraService.isRecording()) {
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
             return;
         }
-        loadSpectrumFile(histFile, showMessage);
+        confirmReplaceUnsaved(() -> loadSpectrumFile(histFile, showMessage));
+    }
+
+    private void confirmReplaceUnsaved(Runnable proceed) {
+        if (!SpectrumData.instance.foreground.isChanged()) {
+            proceed.run();
+            return;
+        }
+        DialogHelper.showStackedActions(this,
+                getString(R.string.dialog_confirm_title),
+                getString(R.string.hist_load_unsaved_text),
+                true,
+                new DialogHelper.StackedAction(getString(R.string.start_save_button), () -> {
+                    afterSaveAction = proceed;
+                    startSavingSpectrum();
+                }),
+                new DialogHelper.StackedAction(getString(R.string.hist_load_discard_button), proceed),
+                new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
+    }
+
+    private void openLoadSpectrumPicker() {
+        Intent loadIntent = new Intent()
+                .setType("*/*")
+                .setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_histogram)), LOAD_HIST_CODE);
     }
 
     private void loadSpectrumFile(Uri histFile, boolean showMessage) {
+        if (AtomSpectraService.isRecording()) {
+            ToastHelper.showToastAndLog(this, getString(R.string.hist_recording_in_progress));
+            return;
+        }
         final String filename = histFile.getPath();
         if (filename == null) {
             Log.d(TAG, "Null filename");
@@ -3426,10 +3440,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             icon.setAlpha(state == AtomSpectraService.DeviceState.WAITING ? INPUT_WAITING_ALPHA : 255);
             Drawable badge = inputStateBadge(state);
             if (badge != null) {
-                int gap = Math.round(3 * getResources().getDisplayMetrics().density);
+                float density = getResources().getDisplayMetrics().density;
+                int gap = Math.round(density);
+                int deviceOffset = Math.round(3 * density);
                 int badgeTop = (icon.getIntrinsicHeight() - badge.getIntrinsicHeight()) / 2;
                 LayerDrawable indicator = new LayerDrawable(new Drawable[]{icon, badge});
-                indicator.setLayerInset(0, 0, 0, badge.getIntrinsicWidth() + gap, 0);
+                indicator.setLayerInset(0, deviceOffset, 0, badge.getIntrinsicWidth() + gap, 0);
                 indicator.setLayerInset(1, icon.getIntrinsicWidth() + gap, badgeTop, 0,
                         icon.getIntrinsicHeight() - badge.getIntrinsicHeight() - badgeTop);
                 icon = indicator;
@@ -3538,8 +3554,16 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private AlertDialog connectDecisionDialog = null;
     // the save started from the decision dialog is under way: the decision dialog stays hidden until it ends
     private boolean connectDecisionSaving = false;
+    // runs when the save flow ends with the screen spectrum saved
+    private Runnable afterSaveAction = null;
 
+    // the end of every save flow, saved or cancelled
     private void endConnectDecisionSaving() {
+        final Runnable afterSave = afterSaveAction;
+        afterSaveAction = null;
+        if (afterSave != null && !SpectrumData.instance.foreground.isChanged()) {
+            afterSave.run();
+        }
         if (!connectDecisionSaving) return;
         connectDecisionSaving = false;
         syncConnectDecisionDialog();
@@ -3579,6 +3603,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private void startSavingSpectrum() {
         if (app_menu != null) {
             onOptionsItemSelected(app_menu.findItem(R.id.action_hist_to_file));
+        } else {
+            endConnectDecisionSaving();
         }
     }
 

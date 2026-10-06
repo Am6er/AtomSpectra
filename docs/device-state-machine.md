@@ -218,6 +218,8 @@ The service owns the spectrum on the screen. Two facts decide what a device may 
 
 **Who produced the screen content.** `screenFromDevice` is true once the connected device has written to the screen in the current lock. It becomes false when a device is locked, a file is loaded, a spectrum is added from a file, or the screen is cleared.
 
+**Whether the user loaded it.** `screenFromFile` is true after a file is loaded or added. It becomes false when the screen is cleared, the device takes the screen over, or recording writes to it. Locking, losing or releasing a device does not change it.
+
 **Whether the content is unsaved.** `foreground.isChanged()`. A loaded file, an empty screen and a saved spectrum are clean.
 
 **Two kinds of device.**
@@ -233,7 +235,9 @@ Rule: **a spectrum the device did not produce is never replaced without the user
 
 ```mermaid
 flowchart TD
-    R(["device READY"]) --> K{"device holds<br/>its own data?"}
+    R(["device READY"]) --> LF{"loaded file on screen<br/>and device not collecting?"}
+    LF -- yes --> KF["screen untouched;<br/>the device waits for Clear or Start"]
+    LF -- no --> K{"device holds<br/>its own data?"}
     K -- "no (microphone)" --> M["screen untouched;<br/>empty screen on first connect gets<br/>the device calibration"]
     K -- "yes (Pro)" --> F{first connect<br/>of this lock?}
     F -- "no (return)" --> RC{recording<br/>intent?}
@@ -277,18 +281,26 @@ Pressing record asks the service what has to be decided first (`startDecision()`
 | Screen content | Microphone (can continue) | Pro (cannot continue) |
 |---|---|---|
 | Empty, or produced by the device | start | start |
-| A saved spectrum from elsewhere | **Continue** / **Start new** / Cancel | start, the device data replaces it |
+| A saved spectrum from elsewhere | **Continue** / **Start new** / Cancel | start; the screen is cleared to the device's channel count and calibration (toast) |
 | An unsaved spectrum from elsewhere | **Continue** / **Discard and start new** / Cancel | **Save…** / **Discard and start new** / Cancel |
 
-"Continue" hands the screen spectrum to the source, which goes on with it. "Start new" and "Discard and start new" clear the screen first. "Save…" starts the regular save flow; after saving, the screen is a saved spectrum and recording starts without a question.
+"Continue" is offered only when the source can start from a supplied histogram and the channel counts match. It hands the screen spectrum to the source, which goes on with it under the screen's calibration. "Start new" and "Discard and start new" clear the screen first and apply the device calibration. "Save…" starts the regular save flow; after saving, the screen is a saved spectrum and recording starts without a question.
 
 A start request that needs a decision and carries none is refused, so no path replaces the screen by accident.
 
 ### Data
 
-- Idle snapshots from a device never overwrite unsaved data the device did not produce.
+- Idle snapshots from a device never overwrite a loaded file, nor unsaved data the device did not produce.
 - Device data is ignored while a connect decision is pending.
 - Switching device never asks anything by itself: the screen stays as it is, and the question is asked when the new device connects (if it holds its own data) or when recording starts.
+
+### Loading a file
+
+| Situation | Behaviour |
+|---|---|
+| Recording (menu, "Open with", share) | refused with a toast |
+| Screen has unsaved data | **Save…** / **Discard and open file** / Cancel, before the file picker opens (after it for "Open with"); after a successful save the load goes on |
+| Otherwise, offline or with any device locked | loads; the device stays locked and leaves the file on screen until Clear, Start, or the device is found collecting |
 
 ## 6. Loss and return
 
@@ -396,7 +408,7 @@ The screen cannot be left (Cancel hidden, back disabled) while the session is `U
 | 1 | Pick a device at startup | `UNSELECTED` opens the selection screen |
 | 2 | Remember the choice, auto-connect, wait if absent | `DeviceChoice`, `restoreDeviceChoice`, source-owned waiting |
 | 3 | Switch devices while running | `selectDevice`: old source closed, recording stopped |
-| 4 | Warn before unsaved data is replaced or lost | connect decision, start decision, exit confirm when `isChanged()` |
+| 4 | Warn before unsaved data is replaced or lost | connect decision, start decision, load confirm, exit confirm when `isChanged()` |
 | 5 | Device lost while recording: warn, wait or stop and go offline, preference unchanged | suspension episode acknowledgement or `stopAndGoOffline()` |
 | 6 | Device back, no action: recording resumes | `onDeviceReturned` |
 | 7 | UI always shows the pair, states A–E | `deviceState()` + badges, section 4 |

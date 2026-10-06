@@ -69,9 +69,9 @@
     <string name="device_decision_save">Сохранить…</string>
     <string name="device_decision_discard_switch">Не сохранять и переключиться</string>
     <string name="device_decision_go_offline">Отключиться и работать без устройства</string>
-    <string name="start_continue_or_new_text">Спектр на экране записан не этим устройством. Продолжить его или начать новый?</string>
-    <string name="start_continue_or_discard_text">В спектре на экране есть несохранённые данные, и он записан не этим устройством. Продолжить его или не сохранять и начать новый?</string>
-    <string name="start_save_or_discard_text">В спектре на экране есть несохранённые данные, и это устройство не может его продолжить. Cохранить его или не сохранять и начать новый?</string>
+    <string name="start_continue_or_new_text">Спектр на экране записан не этим устройством.</string>
+    <string name="start_continue_or_discard_text">Спектр на экране содержит несохранённые данные, и он записан не этим устройством.</string>
+    <string name="start_save_or_discard_text">Спектр на экране содержит несохранённые данные, и это устройство не может его продолжить.</string>
     <string name="start_continue_button">Продолжить</string>
     <string name="start_new_button">Начать новый</string>
     <string name="start_discard_button">Не сохранять и начать новый</string>
@@ -79,6 +79,7 @@
     <string name="device_error_notification">Ошибка устройства</string>
     <string name="device_permission_lost">Нет разрешения на выбранное устройство. Выберите устройство.</string>
     <string name="device_spectrum_adopted">Устройство подключено, показан спектр устройства</string>
+    <string name="start_screen_replaced">Спектр на экране заменён спектром устройства</string>
     <string name="device_status_title">Состояние устройства</string>
     <string name="device_status_select_other">Выбрать устройство</string>
     <string name="device_status_retry">Повторить</string>
@@ -418,8 +419,8 @@
     <string name="background_load_success">Фон успешно загружен</string>
     <string name="background_load_error">Загрузка фона НЕУДАЧНА!</string>
     <string name="background_channel_mismatch">Нельзя загрузить фон с другим числом каналов, чем в спектре</string>
-    <string name="hist_load_device_locked_title">Устройство используется</string>
-    <string name="hist_load_device_locked_text">Выбрано устройство. Чтобы открыть файл, отключитесь от него и работайте без устройства.</string>
+    <string name="hist_load_unsaved_text">В спектре на экране есть несохранённые данные. Открытие файла заменит их.</string>
+    <string name="hist_load_discard_button">Не сохранять и открыть файл</string>
     <string name="background_delete_error">Не могу удалить файл фона</string>
     <string name="background_no_data">Нет данных фона</string>
     <string name="background_save_success">Фон успешно сохранён</string>
