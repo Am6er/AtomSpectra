@@ -34,7 +34,7 @@
     <string name="action_usb_detached">USB detached</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
     <string name="device_default_microphone">Default microphone</string>
-    <string name="device_spectra_pro">Spectra Pro (USB)</string>
+    <string name="device_spectra_pro">Spectra Pro</string>
     <string name="device_bluz">BluZ (Bluetooth)</string>
     <string name="device_type_audio">Audio device</string>
     <string name="device_type_spectra_pro">Spectra Pro</string>
@@ -58,11 +58,13 @@
     <string name="device_select_offline">Work offline (files only)</string>
     <string name="device_select_remember">Remember my choice</string>
     <string name="device_select_connecting">Connecting…</string>
+    <string name="device_select_connecting_timed">Connecting… <xliff:g id="seconds">%1$d</xliff:g>s</string>
     <string name="device_select_waiting">Waiting for device…</string>
+    <string name="device_select_waiting_timed">Waiting for device… <xliff:g id="seconds">%1$d</xliff:g>s</string>
     <string name="device_select_permission_needed">Permission needed — tap to grant</string>
     <string name="device_select_none">No devices found</string>
     <string name="device_select_available">Available</string>
-    <string name="device_select_unavailable">Unavailable</string>
+    <string name="device_select_unavailable">Not found</string>
     <string name="device_select_selected_description">%1$s, selected</string>
     <string name="device_connect_decision_title">Device connected</string>
     <string name="device_connect_decision_text">%1$s is connected, but the spectrum on the screen has unsaved data. Showing the device spectrum replaces it.</string>

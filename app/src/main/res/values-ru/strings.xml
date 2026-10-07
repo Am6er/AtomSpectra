@@ -34,7 +34,7 @@
     <string name="action_usb_detached">USB отключён</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
     <string name="device_default_microphone">Микрофон по умолчанию</string>
-    <string name="device_spectra_pro">Spectra Pro (USB)</string>
+    <string name="device_spectra_pro">Spectra Pro</string>
     <string name="device_bluz">BluZ (Bluetooth)</string>
     <string name="device_type_audio">Аудиоустройство</string>
     <string name="device_type_spectra_pro">Spectra Pro</string>
@@ -58,11 +58,13 @@
     <string name="device_select_offline">Работать без устройства (только файлы)</string>
     <string name="device_select_remember">Запомнить мой выбор</string>
     <string name="device_select_connecting">Подключение…</string>
+    <string name="device_select_connecting_timed">Подключение… <xliff:g id="seconds">%1$d</xliff:g> с</string>
     <string name="device_select_waiting">Ожидание устройства…</string>
+    <string name="device_select_waiting_timed">Ожидание устройства… <xliff:g id="seconds">%1$d</xliff:g> с</string>
     <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
     <string name="device_select_none">Устройства не найдены</string>
     <string name="device_select_available">Доступно</string>
-    <string name="device_select_unavailable">Недоступно</string>
+    <string name="device_select_unavailable">Не найдено</string>
     <string name="device_select_selected_description">%1$s, выбрано</string>
     <string name="device_connect_decision_title">Устройство подключено</string>
     <string name="device_connect_decision_text">%1$s подключено, но в спектре на экране есть несохранённые данные. Показ спектра устройства заменит его.</string>
