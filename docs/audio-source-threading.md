@@ -5,6 +5,7 @@ This document describes
 thread ownership, microphone startup, PCM handoff, pulse processing, reporting,
 device recovery and shutdown. Application-level recording and device selection
 are covered in [Device session state machine](device-state-machine.md).
+All sources follow its [Recovery Event Contract](device-state-machine.md#recovery-event-contract).
 
 The central rule is: **the source handler owns mutable acquisition state; the
 capture worker reads PCM and posts session-tagged results without waiting for
@@ -283,7 +284,13 @@ Recovery has two separate stages:
 | Stage | Budget | Meaning |
 |---|---|---|
 | Waiting for a device return | Five seconds after eligible loss cleanup | The selected device must become available |
-| Confirming restarted capture | Five seconds after recorder startup and worker scheduling | Positive-length samples must come from the selected route |
+| Confirming restarted capture | Five seconds from the input's return | Positive-length samples must come from the selected route |
+
+The capture confirmation deadline is fixed when the input returns. Transient
+startup/read failures stop and invalidate that attempt and retry after up to
+250 ms within the remaining budget. Retries do not reset the five-second
+deadline. Exhaustion reports disconnected without a ready event. Permission
+loss reports disconnected followed by a terminal connect error.
 
 ```mermaid
 sequenceDiagram
@@ -346,13 +353,15 @@ deadline is not itself confirmation until the owner has validated them.
 
 Ordinary initialization/startup/read/processing failure stops capture, reports
 `STATUS_CONNECTED_COMMAND_FAILED` and emits `ACTION_SOURCE_ERROR` with `OP_START`.
-A failure while silent restart is pending instead reports disconnected, allowing
-the service to suspend recording.
+Permission errors use `OP_CONNECT`. While silent restart is pending, transient
+failures retry within the fixed capture deadline; exhaustion reports disconnected
+and lets the service suspend recording.
 
 The confirmation timeout also covers initial zero-length reads or samples not
 yet routed to the selected device. After confirmation, five consecutive
 zero-length reads fail capture. A negative read result or read/processing
-exception fails the current session immediately. A changed or missing selected
+exception ends the current attempt. During recovery, it may be retried within
+the budget. A changed or missing selected
 route after confirmation also fails capture; those samples are not accumulated.
 
 Preference updates are owner tasks. Pulse-selection changes clear the reference
@@ -368,6 +377,7 @@ sample time remain available across that restart.
 1. Increment the volatile capture generation.
 2. Clear capturing, confirmation and recovery-capture flags.
 3. Remove report and startup-confirmation callbacks.
+    Cancel any pending recovery-capture retry as well.
 4. Call `AudioRecord.stop()` when the recorder is recording.
 5. Quit and interrupt the capture worker, then join it.
 6. Release and clear the recorder after the worker has exited.
@@ -378,7 +388,9 @@ is not released while its worker can still be using it.
 
 `requestStop()` also removes the device-return timeout. Stopping while recovering
 reports disconnected rather than leaving a pending automatic restart. Otherwise
-it reports connected idle.
+it reports connected idle. If the selected input remains present with microphone
+permission, cancellation is followed by `READY` with idle status. That readiness
+does not start capture; the service's current recording intent controls any start.
 
 ```mermaid
 sequenceDiagram

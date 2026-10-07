@@ -69,6 +69,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private final HandlerThread sourceThread;
     private final Handler sourceHandler;
     private final Runnable recoveryTimeout = this::onDeviceRecoveryTimeout;
+    private final Runnable recoveryCaptureRetry = this::retryRecoveryCapture;
     private final Runnable captureStartTimeout = this::onCaptureStartTimeout;
     private final Runnable reportRunnable = this::reportTask;
 
@@ -85,6 +86,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private boolean capturing = false;
     private boolean captureConfirmed = false;
     private boolean recoveryCapture = false;
+    private long recoveryCaptureDeadline;
     private volatile long captureGeneration;
     private HandlerThread captureThread;
     private AudioRecord audioRecord = null;
@@ -334,7 +336,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private void onSelectedDeviceLost() {
         if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
             return;
-        if (this.status == SpectrumSource.STATUS_RECOVERING && !this.capturing) return;
+        if (this.status == SpectrumSource.STATUS_RECOVERING && !this.capturing && !this.recoveryCapture)
+            return;
 
         boolean wasCollecting = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING || this.recoveryCapture;
         this.stopCapture();
@@ -350,16 +353,26 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     private void onSelectedDeviceReturned(AudioDeviceInfo returned) {
         boolean recovering = this.status == SpectrumSource.STATUS_RECOVERING;
-        if (this.capturing || (!recovering && this.status != SpectrumSource.STATUS_DISCONNECTED)) return;
+        if (this.capturing || (!recovering && this.status != SpectrumSource.STATUS_DISCONNECTED))
+            return;
 
         final Context ctx = this.context;
-        if (ctx == null || !AppPermissions.isMicGranted(ctx)) return;
+        if (ctx == null) return;
+        if (!AppPermissions.isMicGranted(ctx)) {
+            if (recovering) {
+                this.status = SpectrumSource.STATUS_DISCONNECTED;
+                this.emitDisconnected("Audio recovery permission denied");
+            }
+            this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_PERMISSION, "Microphone permission was lost");
+            return;
+        }
 
         this.sourceHandler.removeCallbacks(this.recoveryTimeout);
         this.device = returned;
         if (recovering) {
             this.loadAppPreferences(ctx);
             this.deviceId = returned.getProductName().toString();
+            this.recoveryCaptureDeadline = SystemClock.uptimeMillis() + CAPTURE_START_WINDOW_MS;
             this.startCapture(true);
         } else {
             this.completeConnect(ctx);
@@ -399,7 +412,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         try {
             this.audioSourceMode = this.resolveAudioSourceMode(ctx);
             int minimumBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
-            if (minimumBufferSize <= 0) throw new IllegalStateException("Audio buffer configuration is unsupported");
+            if (minimumBufferSize <= 0)
+                throw new IllegalStateException("Audio buffer configuration is unsupported");
             this.bufferSize = minimumBufferSize * 2;
             this.audioData = new int[this.bufferSize / 2];
             this.audioZeroDataCount = 0;
@@ -453,35 +467,65 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                     } catch (RuntimeException error) {
                         AtomSpectraAudioSource.this.sourceHandler.post(() -> {
                             if (generation == AtomSpectraAudioSource.this.captureGeneration) {
-                                AtomSpectraAudioSource.this.failCapture("Audio read failed: " + error);
+                                AtomSpectraAudioSource.this.failCapture("Audio read failed: " + error,
+                                        error instanceof SecurityException ? SpectrumSource.REASON_PERMISSION : SpectrumSource.REASON_ERROR);
                             }
                         });
                         return;
                     }
                 }
             });
-            this.sourceHandler.postDelayed(this.captureStartTimeout, CAPTURE_START_WINDOW_MS);
+            long remaining = recovering ? Math.max(0, this.recoveryCaptureDeadline - SystemClock.uptimeMillis())
+                    : CAPTURE_START_WINDOW_MS;
+            this.sourceHandler.postDelayed(this.captureStartTimeout, remaining);
         } catch (RuntimeException error) {
-            this.failCapture("Audio capture could not start: " + error);
+            this.failCapture("Audio capture could not start: " + error,
+                    error instanceof SecurityException ? SpectrumSource.REASON_PERMISSION : SpectrumSource.REASON_ERROR);
         }
     }
 
     private void onCaptureStartTimeout() {
-        if (this.capturing && !this.captureConfirmed) {
-            this.failCapture("No samples from the selected audio input before the capture deadline");
+        if ((this.capturing || this.recoveryCapture) && !this.captureConfirmed) {
+            this.failCapture("No samples from the selected audio input before the capture deadline", SpectrumSource.REASON_TIMEOUT);
         }
     }
 
     private void failCapture(String reason) {
+        this.failCapture(reason, SpectrumSource.REASON_ERROR);
+    }
+
+    private void failCapture(String reason, int errorReason) {
         boolean recovering = this.recoveryCapture;
         this.stopCapture();
         if (recovering) {
+            long remaining = this.recoveryCaptureDeadline - SystemClock.uptimeMillis();
+            if (errorReason != SpectrumSource.REASON_PERMISSION && remaining > 0) {
+                this.recoveryCapture = true;
+                this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
+                this.sourceHandler.postDelayed(this.captureStartTimeout, remaining);
+                this.sourceHandler.postDelayed(this.recoveryCaptureRetry, Math.min(250, remaining));
+                return;
+            }
             this.status = SpectrumSource.STATUS_DISCONNECTED;
             this.emitDisconnected(reason);
+            if (errorReason == SpectrumSource.REASON_PERMISSION) {
+                this.emitError(SpectrumSource.OP_CONNECT, errorReason, reason);
+            }
         } else {
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
-            this.emitError(SpectrumSource.OP_START, SpectrumSource.REASON_ERROR, reason);
+            this.emitError(errorReason == SpectrumSource.REASON_PERMISSION ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_START,
+                    errorReason, reason);
         }
+    }
+
+    private void retryRecoveryCapture() {
+        if (this.context == null || !this.recoveryCapture || this.capturing
+                || this.status != SpectrumSource.STATUS_RECOVERING) return;
+        if (!AppPermissions.isMicGranted(this.context)) {
+            this.failCapture("Microphone permission was lost", SpectrumSource.REASON_PERMISSION);
+            return;
+        }
+        this.startCapture(true);
     }
 
     private void onAudioRead(long generation, AudioRecord record, byte[] samples, int bytesRead) {
@@ -499,7 +543,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
             AudioDeviceInfo routed = record.getRoutedDevice();
             if (routed == null || this.device == null || routed.getId() != this.device.getId()) {
-                if (this.captureConfirmed) this.failCapture("Audio input no longer routes to the selected device");
+                if (this.captureConfirmed)
+                    this.failCapture("Audio input no longer routes to the selected device");
                 return;
             }
         }
@@ -526,6 +571,11 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (this.status == SpectrumSource.STATUS_RECOVERING || this.status == SpectrumSource.STATUS_DISCONNECTED) {
             this.status = SpectrumSource.STATUS_DISCONNECTED;
             this.emitDisconnected("Audio recovery cancelled by stop");
+            AudioDeviceInfo available = findAudioDevice(this.context, this.identity);
+            if (available != null && AppPermissions.isMicGranted(this.context)) {
+                this.device = available;
+                this.completeConnect(this.context);
+            }
         } else {
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
         }
@@ -653,6 +703,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         this.recoveryCapture = false;
         this.sourceHandler.removeCallbacks(this.reportRunnable);
         this.sourceHandler.removeCallbacks(this.captureStartTimeout);
+        this.sourceHandler.removeCallbacks(this.recoveryCaptureRetry);
         if (this.audioRecord != null) {
             try {
                 if (this.audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -800,7 +851,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private boolean rejectIfDisconnected(int op) {
         if (this.rejectIfClosed(op)) return true;
         if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING
-            || this.status == SpectrumSource.STATUS_RECOVERING) {
+                || this.status == SpectrumSource.STATUS_RECOVERING) {
             this.emitError(op, SpectrumSource.REASON_ERROR, "Request to a disconnected source");
             return true;
         }

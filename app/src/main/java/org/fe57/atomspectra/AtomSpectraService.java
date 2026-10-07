@@ -204,6 +204,8 @@ public class AtomSpectraService extends Service {
     // mirrors of the locked source, updated from its replies
     private static volatile int deviceStatus = SpectrumSource.STATUS_DISCONNECTED;
     private static volatile SourceError deviceError = null;
+    private static volatile boolean recoveryPending = false;
+    private static volatile boolean recoveryCancelledByStop = false;
     // the device data on the screen is the only thing that may replace it without asking: set when a device writes
     // to the screen, cleared when a file or another device takes it over
     private static volatile boolean screenFromDevice = false;
@@ -809,6 +811,8 @@ public class AtomSpectraService extends Service {
         deviceChannelCount = 0;
         deviceStatus = SpectrumSource.STATUS_DISCONNECTED;
         deviceError = null;
+        recoveryPending = false;
+        recoveryCancelledByStop = false;
         screenFromDevice = false;
         connectDecisionPending = false;
     }
@@ -965,10 +969,18 @@ public class AtomSpectraService extends Service {
                 break;
             case SpectrumSource.ACTION_SOURCE_STATUS:
                 int nextStatus = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
-                if (nextStatus == SpectrumSource.STATUS_RECOVERING
-                        && deviceStatus != SpectrumSource.STATUS_RECOVERING) {
-                    AtomSpectraLog.addMessage(service_context,
+                if (nextStatus == SpectrumSource.STATUS_RECOVERING) {
+                    if (!recoveryPending) AtomSpectraLog.addMessage(service_context,
                             getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
+                    recoveryPending = true;
+                } else if (nextStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+                    if (recoveryPending && !recoveryCancelledByStop)
+                        AtomSpectraLog.addMessage(service_context,
+                                getStringOrDefaultLocale(R.string.log_device_recovered, active.deviceId()));
+                    recoveryPending = false;
+                } else if (nextStatus == SpectrumSource.STATUS_DISCONNECTED
+                        || nextStatus == SpectrumSource.STATUS_CLOSED) {
+                    recoveryPending = false;
                 }
                 deviceStatus = nextStatus;
                 updateMenu();
@@ -988,12 +1000,9 @@ public class AtomSpectraService extends Service {
     }
 
     private void onSourceReady(Intent ready) {
-        boolean wasRecovering = deviceStatus == SpectrumSource.STATUS_RECOVERING;
+        recoveryPending = false;
+        recoveryCancelledByStop = false;
         deviceStatus = ready.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
-        if (wasRecovering && deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
-            AtomSpectraLog.addMessage(service_context,
-                    getStringOrDefaultLocale(R.string.log_device_recovered, activeSource.deviceId()));
-        }
         if (firstConnectPending) {
             deviceChannelCount = ready.getIntExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, 0);
             onFirstReady();
@@ -1059,6 +1068,7 @@ public class AtomSpectraService extends Service {
     }
 
     private void onSourceDisconnected(Intent intent) {
+        recoveryPending = false;
         deviceStatus = SpectrumSource.STATUS_DISCONNECTED;
         final String reason = intent.getStringExtra(SpectrumSource.EXTRA_SOURCE_DISCONNECT_REASON);
 
@@ -1096,6 +1106,7 @@ public class AtomSpectraService extends Service {
 
     private void onSourceError(Intent intent) {
         final int op = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_ERROR_OP, -1);
+        if (op == SpectrumSource.OP_CONNECT) recoveryPending = false;
         final int reason = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_ERROR_REASON, SpectrumSource.REASON_ERROR);
         final String text = intent.getStringExtra(SpectrumSource.EXTRA_SOURCE_ERROR_TEXT);
 
@@ -1590,7 +1601,7 @@ public class AtomSpectraService extends Service {
             }
             if (Constants.ACTION.ACTION_START_RECORDING.equals(action)) {
                 if (isDeviceConnected() && deviceState() != DeviceState.BUSY
-                    && deviceState() != DeviceState.RECOVERING && !is_recording && !connectDecisionPending
+                        && deviceState() != DeviceState.RECOVERING && !is_recording && !connectDecisionPending
                         && settleForeignSpectrumForStart(intent.getIntExtra(Constants.ACTION_PARAMETERS.START_FOREIGN_SPECTRUM,
                         Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_UNDECIDED))) {
                     startStopRecording(true);
@@ -1926,6 +1937,8 @@ public class AtomSpectraService extends Service {
 
     // updates the recording state and everything derived from it, without commanding the source
     private void setRecordingState(boolean recording) {
+        recoveryCancelledByStop = !recording;
+        if (!recording) recoveryPending = false;
         if (recording != is_recording) {
             // log event to debug view
             String inputTypeText = lockedSourceName("audio", "usb", "bluz", "none");

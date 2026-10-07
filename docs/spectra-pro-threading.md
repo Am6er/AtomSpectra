@@ -6,6 +6,7 @@ It covers thread ownership, cross-thread communication, command ordering,
 connection invalidation, recovery deadlines and shutdown. Application-level
 recording and device selection are covered separately in
 [Device session state machine](device-state-machine.md).
+All sources follow its [Recovery Event Contract](device-state-machine.md#recovery-event-contract).
 
 The central rule is: **one source handler owns connection decisions; USB I/O
 and packet assembly feed it without waiting for those decisions.**
@@ -179,8 +180,10 @@ A reply that already completed the command makes the number check fail. A
 teardown makes the generation check fail. Completed commands' timeout tasks
 need not be individually removed for correctness.
 
-Genuine write errors, negative replies and command timeouts still use the normal
-error path. Calibration batches aggregate command results on the source handler;
+Write errors, negative replies and command timeouts during a recovery handshake
+invalidate the failed transport and retry within the same fixed deadline. They
+do not report a terminal connect error or reset the recovery budget. Ordinary
+command failures use the normal error path. Calibration batches aggregate results on the source handler;
 a failed batch drains its remaining queued commands before calling its callback.
 Connection teardown instead cancels the queue and batch bookkeeping without
 inventing command failures.
@@ -296,6 +299,12 @@ SERIAL_MANAGER_WRITE_TIMEOUT)`: 600 ms plus four command timeout/write budgets.
 It is a bounded handshake allowance, not an extension granted by arbitrary
 incoming spectrum data.
 
+The first permitted recovery attempt establishes the handshake deadline.
+Subsequent failed attempts retain it. `recoveryRetry` schedules another attempt
+after USB settling; each attempt refreshes the matching device token and
+invalidates its failed transport generation. Exhaustion reports disconnected.
+Permission denial reports disconnect followed by a terminal connect error.
+
 ```mermaid
 sequenceDiagram
     participant Android as Android USB events
@@ -333,6 +342,12 @@ sequenceDiagram
 
 No ready event is emitted by the successful collecting recovery path. Ordinary
 initial connection and the returned-idle path use their existing ready events.
+
+Stop during recovery invalidates the attempt, reports disconnected and retains
+`stopOnReturn`. If the device is present, a normal handshake follows; otherwise
+the source waits for USB return. A collecting return is stopped before initial
+idle histogram loading and readiness. An explicit Start supersedes that Stop
+intent. Cancellation is not reported as successful recovery.
 This threading change does not unify readiness or recovery-log behavior across
 device types.
 

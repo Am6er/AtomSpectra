@@ -431,23 +431,29 @@ final class BluZBleSource implements SpectrumSource {
                 handler.removeCallbacks(connectionDeadline);
                 coefficients = frame.calibration();
                 lastError = null;
-                status = frame.isCollecting() ? STATUS_CONNECTED_COLLECTING : STATUS_CONNECTED_IDLE;
+                boolean recovering = silentRetry;
                 debug("First frame");
-                if (silentRetry) {
+                if (recovering) {
                     cancelSilentRetry();
-                    // the device restarted while we were away: let the service take its normal resume path
-                    if (!frame.isCollecting())
+                    if (!frame.isCollecting() || stopOnReturn) {
+                        status = STATUS_DISCONNECTED;
                         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, silentReason));
+                    }
                 }
-                if (stopOnReturn) {
-                    if (frame.isCollecting()) requestCollecting(false);
-                    else stopOnReturn = false;
+                if (recovering && frame.isCollecting() && !stopOnReturn) {
+                    setStatus(STATUS_CONNECTED_COLLECTING);
+                } else {
+                    status = frame.isCollecting() ? STATUS_CONNECTED_COLLECTING : STATUS_CONNECTED_IDLE;
+                    if (stopOnReturn) {
+                        if (frame.isCollecting()) requestCollecting(false);
+                        else stopOnReturn = false;
+                    }
+                    reply(new Intent(ACTION_SOURCE_READY)
+                            .putExtra(EXTRA_SOURCE_STATUS, status)
+                            .putExtra(EXTRA_SOURCE_DEVICE_ID, deviceId())
+                            .putExtra(EXTRA_SOURCE_CHANNEL_COUNT, channelCount())
+                            .putExtra(EXTRA_SOURCE_CALIBRATION_COEFFS, coefficients.clone()));
                 }
-                reply(new Intent(ACTION_SOURCE_READY)
-                        .putExtra(EXTRA_SOURCE_STATUS, status)
-                        .putExtra(EXTRA_SOURCE_DEVICE_ID, deviceId())
-                        .putExtra(EXTRA_SOURCE_CHANNEL_COUNT, channelCount())
-                        .putExtra(EXTRA_SOURCE_CALIBRATION_COEFFS, coefficients.clone()));
             }
             if (stopOnReturn && !frame.isCollecting()) stopOnReturn = false;
             if (toggleOp != 0 && toggleSent && frame.isCollecting() == desiredCollecting) {
@@ -557,6 +563,13 @@ final class BluZBleSource implements SpectrumSource {
             if (closed) return;
             if (silentRetry || (!ready && hasBeenReady)) {
                 stopOnReturn = true;
+                if (silentRetry) {
+                    cancelSilentRetry();
+                    setStatus(STATUS_DISCONNECTED);
+                    reply(new Intent(ACTION_SOURCE_DISCONNECTED)
+                            .putExtra(EXTRA_SOURCE_DISCONNECT_REASON, "BluZ recovery cancelled by stop"));
+                    if (gatt == null) waitForDevice();
+                }
                 return;
             }
             requestCollecting(false);
@@ -850,11 +863,16 @@ final class BluZBleSource implements SpectrumSource {
             silentAttemptFailed();
             return;
         }
+        boolean recovering = silentRetry;
         terminal = true;
         cancelSilentRetry();
         releaseGatt();
         stopScan();
         handler.removeCallbacks(retry);
+        if (recovering) {
+            setStatus(STATUS_DISCONNECTED);
+            reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, text));
+        }
         error(OP_CONNECT, reason, text);
     }
 

@@ -98,8 +98,9 @@ without waiting for lifecycle locks, and `close()` waits for source cleanup.
 
 The device has five seconds to return during silent recovery. Once a permitted
 reconnect starts, a separate bounded 26.6-second deadline covers the four-command
-handshake. Commands still report busy; collecting confirmation cancels recovery.
-Actual command errors and timeouts remain errors.
+handshake and transient retries without resetting the budget. Commands still
+report busy; collecting confirmation completes recovery. Stop cancels recovery
+and retains a Stop-on-return request.
 
 ### Audio Source
 
@@ -180,6 +181,8 @@ stateDiagram-v2
     CONNECTED_IDLE --> DISCONNECTED: device lost → DISCONNECTED
     CONNECTED_COLLECTING --> RECOVERING: eligible loss while collecting
     CONNECTED_COLLECTING --> DISCONNECTED: ineligible loss / command interruption
+    RECOVERING --> EXECUTING_COMMAND: recovery handshake in progress
+    EXECUTING_COMMAND --> RECOVERING: transient recovery attempt failed
     RECOVERING --> CONNECTED_COLLECTING: reconnected and collecting confirmed
     RECOVERING --> DISCONNECTED: recovery expires or cannot resume
     DISCONNECTED --> CONNECTED_IDLE: device returned → READY
@@ -192,6 +195,37 @@ stateDiagram-v2
 Audio and Pro USB use a 5-second recovery window after loss while collecting. Audio restarts capture when the selected input returns within the window. Pro USB reconnects and checks device status; if it is still collecting, recovery completes in place, otherwise it reports a disconnect and follows the regular ready/resume flow. The Pro source also has a data watchdog that reconnects a silent serial link by itself; that watchdog runs independently of physical detach recovery.
 
 BluZ's bounded, progress-extended silent window is described in [BluZ threading and connection lifecycle](bluz-threading.md). `RECOVERING` is a source status, not a separate session state. It is shown only while the source has already reported ready; after a reported disconnect the device state returns to `WAITING`.
+
+### Recovery Event Contract
+
+All three sources use the same recovery outcomes. Busy may be an intermediate
+status; recovery is an episode, not a requirement to remain in one status until
+the device returns.
+
+| Outcome | Source reporting |
+|---|---|
+| Eligible collecting loss | Emit `STATUS_RECOVERING` |
+| Collecting is confirmed again | Emit `STATUS_CONNECTED_COLLECTING`; do not emit `READY` |
+| Device unavailable or recovery budget exhausted | Set disconnected and emit `DISCONNECTED` |
+| Returned device is idle | Emit `DISCONNECTED`, then `READY` with idle status |
+| Terminal recovery failure | End recovery, emit `DISCONNECTED`, then `ERROR(OP_CONNECT)` |
+| Stop during recovery | End recovery and emit `DISCONNECTED`; use ordinary readiness if the device is available |
+
+The service latches recovery independently of `deviceStatus`. It logs recovering
+once per episode and recovered once on the collecting status event, including
+after a busy handshake. Disconnect, readiness and terminal connect errors end
+the latch. Stop clears recovery intent and suppresses a late recovered log.
+There is no persistent recovered status.
+
+Transient reconnect/setup failures retry within the source's existing budget
+without terminal errors. Permission loss remains terminal and lets the service
+release the unusable session. Transport-specific timeout values and retry pacing
+are documented in the three source threading documents.
+
+An idle-ready event after disconnect is ordinary initialization: the service,
+not the source recovery path, decides whether to restart acquisition. A device
+that returns after Stop must not auto-start; Pro and BluZ retain a Stop-on-return
+intent until idle is established.
 
 ## 4. Device state (derived) and what the user sees
 
