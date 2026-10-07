@@ -52,6 +52,11 @@
     <string name="bluetooth_scan_failed">Bluetooth discovery failed</string>
     <string name="device_waiting_notification">Waiting for the selected device</string>
     <string name="device_none_selected_notification">No device selected</string>
+    <string name="device_name_audio">Audio</string>
+    <string name="device_name_spectra_pro">Spectra Pro</string>
+    <string name="device_name_bluz">BluZ</string>
+    <string name="device_name_generic">Device</string>
+    <string name="device_recovering_notification">Reconnecting to %1$s</string>
     <string name="device_waiting_description">%1$s - waiting for the device</string>
     <string name="action_switch_device">Switch device</string>
     <string name="device_select_title">Select a device</string>

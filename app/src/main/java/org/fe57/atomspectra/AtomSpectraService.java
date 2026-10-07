@@ -394,6 +394,19 @@ public class AtomSpectraService extends Service {
         return START_NOT_STICKY;
     }
 
+    private String notificationDeviceName() {
+        switch (lockedSourceType()) {
+            case SpectrumSource.TYPE_AUDIO:
+                return getStringOrDefaultLocale(R.string.device_name_audio);
+            case SpectrumSource.TYPE_SPECTRA_PRO:
+                return getStringOrDefaultLocale(R.string.device_name_spectra_pro);
+            case SpectrumSource.TYPE_BLUZ:
+                return getStringOrDefaultLocale(R.string.device_name_bluz);
+            default:
+                return getStringOrDefaultLocale(R.string.device_name_generic);
+        }
+    }
+
     private Notification createNewServiceNotification() {
         String notifyString = "";
         if (isRecordingSuspended) {
@@ -404,16 +417,10 @@ public class AtomSpectraService extends Service {
             notifyString = getStringOrDefaultLocale(R.string.device_waiting_notification);
         } else if (sessionState == DeviceSessionState.UNSELECTED) {
             notifyString = getStringOrDefaultLocale(R.string.device_none_selected_notification);
+        } else if (deviceState() == DeviceState.RECOVERING) {
+            notifyString = getStringOrDefaultLocale(R.string.device_recovering_notification, notificationDeviceName());
         } else if (is_recording) {
-            if (lockedSourceType() == SpectrumSource.TYPE_AUDIO) {
-                notifyString = getStringOrDefaultLocale(R.string.app_bar_audio_action);
-            }
-            if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
-                notifyString = getStringOrDefaultLocale(R.string.app_bar_usb_action);
-            }
-            if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
-                notifyString = getStringOrDefaultLocale(R.string.app_bar_bluetooth_action);
-            }
+            notifyString = notificationDeviceName();
             notifyString += " " + getStringOrDefaultLocale(R.string.app_bar_spectrum_update);
         } else {
             notifyString = getStringOrDefaultLocale(R.string.app_bar_pause);
