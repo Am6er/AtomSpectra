@@ -196,7 +196,6 @@ public class AtomSpectraSpectrogramView extends View {
     private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
     private float COLOR_BAR_HEIGHT_DP = 16f;
     private float COLOR_BAR_MARGIN_TOP_DP = 4f;
-    private int GAP_BAND_HEIGHT_ROWS = 25;
 
     private int POINT_SIZE_PX = POINT_SIZE_DP;
     private int TIME_AXIS_WIDTH_PX = (int) TIME_AXIS_WIDTH_DP;
@@ -211,13 +210,13 @@ public class AtomSpectraSpectrogramView extends View {
     private int PADDING_RIGHT_PX = (int) HANDLE_SIZE_DP;
     private int COLOR_BAR_HEIGHT_PX = (int) COLOR_BAR_HEIGHT_DP;
     private int COLOR_BAR_MARGIN_TOP_PX = (int) COLOR_BAR_MARGIN_TOP_DP;
-    private int GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_PX;
 
     private int TIMESTAMP_EACH_BINS = 25;
 
     // gap band appearance
     private static final int GAP_BAND_COLOR = 0xFF000000;
     private static final int GAP_MISMATCH_TEXT_COLOR = 0xFFFF9800; // amber warning
+    private static final float GAP_LABEL_VERTICAL_PADDING_DP = 2f;
 
     // region handle constants
     public static final int HANDLE_NONE = 0;
@@ -240,11 +239,13 @@ public class AtomSpectraSpectrogramView extends View {
     // gaps data
     private static final class GapMeta {
         final int middleLinePx; // spectrogram-related
+        final int heightRows;
         final String durationLabel;
         final boolean isMismatch;
 
-        private GapMeta(int middleLinePx, String durationLabel, boolean isMismatch) {
+        private GapMeta(int middleLinePx, int heightRows, String durationLabel, boolean isMismatch) {
             this.middleLinePx = middleLinePx;
+            this.heightRows = heightRows;
             this.durationLabel = durationLabel;
             this.isMismatch = isMismatch;
         }
@@ -272,7 +273,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
-    // single row per row-bin, GAP_BAND_HEIGHT_ROWS per gap
+    // single row per row-bin; gaps use enough rows for their labels
     private VirtualRowMeta[] virtualRowsMeta = null;
 
     // user selected range
@@ -679,10 +680,10 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     private float rowToViewportYpx(SelectionBound row) {
-        // sum full preceding segments plus one gap band per boundary, then the bin offset within the target segment
+        // Sum preceding segment and gap rows, then the bin offset within the target segment.
         int virtualRowIndex = getBinForRow(row.rowIndex, spectrumBinning);
         for (int s = 0; s < row.segmentIndex; s++) {
-            virtualRowIndex += segmentsBinData.get(s).size() + GAP_BAND_HEIGHT_ROWS;
+            virtualRowIndex += segmentsBinData.get(s).size() + gapsMeta.get(s).heightRows;
         }
 
         float y = PADDING_TOP_PX + (virtualRowIndex * POINT_SIZE_PX - snappedVerticalOffsetPx()) + POINT_SIZE_PX / 2f;
@@ -851,10 +852,10 @@ public class AtomSpectraSpectrogramView extends View {
                 long gapMillis = Math.max(0, gapEnd - gapStart);
                 boolean mismatch = isSegmentMismatch(baseSegment.getBaseSpectrum(), segment.getBaseSpectrum());
                 String durationLabel = getResources().getString(R.string.spectrogram_gap_label, formatGapDuration(gapMillis));
-                int middleLinePx = virtualRows.size() * POINT_SIZE_PX + GAP_BAND_HEIGHT_PX / 2;
-                GapMeta gap = new GapMeta(middleLinePx, durationLabel, mismatch);
+                int rowsToAdd = gapBandHeightRows(mismatch);
+                int middleLinePx = virtualRows.size() * POINT_SIZE_PX + rowsToAdd * POINT_SIZE_PX / 2;
+                GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch);
                 this.gapsMeta.add(gap);
-                int rowsToAdd = GAP_BAND_HEIGHT_ROWS; // TODO: gap size based on mismatch (one/two lines of text)
                 while (rowsToAdd > 0) {
                     virtualRows.add(new VirtualRowMeta(this.gapsMeta.size() - 1));
                     rowsToAdd--;
@@ -1045,6 +1046,17 @@ public class AtomSpectraSpectrogramView extends View {
         verticalOffsetPx = virtualRow * POINT_SIZE_PX - spgViewHeight / 2;
     }
 
+    private int gapBandHeightRows(boolean isMismatch) {
+        int pointSizePx = Math.max(1, POINT_SIZE_PX);
+        Paint paint = new Paint();
+        paint.setTextSize(TEXT_FONT_SIZE_PX);
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        float lineHeight = fontMetrics.descent - fontMetrics.ascent;
+        int lineCount = isMismatch ? 2 : 1;
+        float requiredHeightPx = lineCount * lineHeight + 2 * dpToPx(GAP_LABEL_VERTICAL_PADDING_DP);
+        return Math.max(1, (int) Math.ceil(requiredHeightPx / pointSizePx));
+    }
+
     // Gap mismatch check:
     // 1. device info must match exactly
     // 2. calibration coefficients must match as they would in a saved spectrum file
@@ -1128,11 +1140,6 @@ public class AtomSpectraSpectrogramView extends View {
         PADDING_RIGHT_PX = dpToPx(PADDING_RIGHT_DP);
         COLOR_BAR_HEIGHT_PX = dpToPx(COLOR_BAR_HEIGHT_DP);
         COLOR_BAR_MARGIN_TOP_PX = dpToPx(COLOR_BAR_MARGIN_TOP_DP);
-        // The gap band is rendered as GAP_BAND_HEIGHT_ROWS virtual rows, each POINT_SIZE_PX
-        // tall, so its true on-screen height must be derived from the (density-bucketed)
-        // POINT_SIZE_PX - not dpToPx(GAP_BAND_HEIGHT_DP), which diverges from it at densities
-        // where POINT_SIZE_PX is overridden, mis-centering the gap label.
-        GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_PX;
     }
 
     private void recycleBitmap() {
