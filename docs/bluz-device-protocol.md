@@ -1,8 +1,10 @@
 # BluZ Device Protocol
 
 BLE transport, device acquisition states, periodic frames and command payloads.
-Updated 2026-10-06. Application session ownership, selection, reconnect and
-screen-spectrum decisions are described in [device-state-machine.md](device-state-machine.md).
+Updated 2026-10-06. Application session ownership, selection and screen-spectrum
+decisions are described in [device-state-machine.md](device-state-machine.md).
+Thread ownership, callback validation, reconnect and shutdown are described in
+[bluz-threading.md](bluz-threading.md).
 
 ## Reference and Confidence
 

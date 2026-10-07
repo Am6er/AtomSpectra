@@ -59,37 +59,13 @@ Responsibilities:
 ### BluZ Source
 
 Wire states, transmission timing, frame headers and command payloads are in
-[bluz-device-protocol.md](bluz-device-protocol.md). This document covers the
-application's session and source lifecycle, not firmware command layouts.
+[bluz-device-protocol.md](bluz-device-protocol.md). Handler ownership, callback
+validation, frame-confirmed operations, recovery deadlines, deferred Stop and
+shutdown are described in [BluZ threading and connection lifecycle](bluz-threading.md).
 
-`BluZBleSource` owns its locked-MAC waiting scan and GATT connection; callbacks
-and operations are serialized on the service input handler. Every reply carries
-the instance ID, and callbacks from old GATT connections are ignored. If a ready
-source loses its link while its latest frame is collecting and no command is
-pending, it enters `RECOVERING`: it attempts a direct GATT connection while
-scanning, and scan hits can supply a fresh device token. The silent recovery
-window starts at 30 seconds; a scan hit or physical connection extends it by up
-to 30 seconds, capped at 60 seconds from the loss. Failed scanned-device attempts
-resume scanning. If no valid normal frame arrives before the deadline, the source
-reports `DISCONNECTED` and continues background scanning. A successful frame
-that is still collecting completes recovery without suspending the service's
-recording; a returned idle frame reports a disconnect first so the normal
-service resume flow can restart acquisition. Loss while idle, before readiness,
-or during a command follows the regular disconnect/error path instead.
-
-Before the first valid normal frame, handshake timeout or link loss is terminal
-until Retry. Incompatible GATT service, characteristics or MTU remain terminal
-until Retry; missing permission returns the session to UNSELECTED.
-
-First checksum-valid normal frame supplies status, calibration and `READY` with
-4096 output channels. Lower-resolution live frames are count-preservingly
-expanded, including while a bounded settings change is pending. Idle connection
-does not probe resolution, write settings or start acquisition. Only a proven
-live mismatch queues a preserving resolution change; a type 3 frame confirms it.
-Repeated mismatched frames do not cause repeated flash writes. Start/stop and
-reset also require frame confirmation; failures use the existing operation error
-flow. Explicit Retry reconnects with a fresh snapshot. Idle show returns an
-empty histogram, and calibration writing is explicitly unsupported.
+BluZ can silently recover an eligible collecting device without suspending the
+service's recording. A returned idle device follows the normal disconnect/ready
+resume flow. Recovery remains a device state within the existing locked session.
 
 Selection discovery is separate from source waiting and never owns a GATT.
 Bluetooth-off produces a persistent selection-screen warning and enable action;
@@ -215,7 +191,7 @@ stateDiagram-v2
 
 Audio and Pro USB use a 5-second recovery window after loss while collecting. Audio restarts capture when the selected input returns within the window. Pro USB reconnects and checks device status; if it is still collecting, recovery completes in place, otherwise it reports a disconnect and follows the regular ready/resume flow. The Pro source also has a data watchdog that reconnects a silent serial link by itself; that watchdog runs independently of physical detach recovery.
 
-BluZ uses the bounded, progress-extended silent window described above. `RECOVERING` is a source status, not a separate session state. It is shown only while the source has already reported ready; after a reported disconnect the device state returns to `WAITING`.
+BluZ's bounded, progress-extended silent window is described in [BluZ threading and connection lifecycle](bluz-threading.md). `RECOVERING` is a source status, not a separate session state. It is shown only while the source has already reported ready; after a reported disconnect the device state returns to `WAITING`.
 
 ## 4. Device state (derived) and what the user sees
 
