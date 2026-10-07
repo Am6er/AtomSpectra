@@ -110,6 +110,8 @@
     <string name="hist_continue_update">Continue recording</string>
     <string name="hist_ask_delete_title">Clear spectrum</string>
     <string name="hist_ask_delete_text">Are you sure to clear spectrum data?</string>
+    <string name="hist_clear_button">Clear spectrum</string>
+    <string name="hist_add_mismatch_button">Combine anyway</string>
     <string name="hist_smooth">Smooth</string>
     <string name="hist_unsmooth">Unsmooth</string>
     <string name="hist_delta">Spectrum change</string>
@@ -456,6 +458,7 @@
     <string name="dialog_no_button">No</string>
     <string name="dialog_continue_button">Continue</string>
     <string name="dialog_cancel_button">Cancel</string>
+    <string name="dialog_exit_anyway_button">Exit anyway</string>
     <string name="dialog_discard_button">Discard changes</string>
     <string name="dialog_keep_editing_button">Keep editing</string>
     <string name="sens_discard_message">Your configuration change hasn\'t applied.</string>

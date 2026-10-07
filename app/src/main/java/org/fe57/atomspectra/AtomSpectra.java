@@ -1001,7 +1001,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             getString(R.string.hist_ask_delete_title),
             getString(R.string.hist_ask_delete_text),
             true,
-            new DialogHelper.StackedAction(getString(android.R.string.ok), () -> {
+            new DialogHelper.StackedAction(getString(R.string.hist_clear_button), () -> {
                     AtomSpectraIsotopes.showFoundIsotopes = false;
                     AtomSpectraIsotopes.foundList.clear();
                     sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_SPECTRUM).setPackage(Constants.PACKAGE_NAME));
@@ -2354,13 +2354,17 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         } else if (item.getItemId() == R.id.action_exit) {
             if (AtomSpectraService.isRecording()) {
                 // spectrum recording is in progress, confirm action
-                DialogHelper.showActionConfirmationDialog(this, getString(R.string.dialog_confirm_exit_while_recording_message), () -> {
-                    exitProgramCompletely();
-                });
+                DialogHelper.showActionConfirmationDialog(this,
+                        getString(R.string.dialog_confirm_exit_while_recording_message),
+                        getString(R.string.dialog_exit_anyway_button),
+                        getString(R.string.dialog_cancel_button),
+                        this::exitProgramCompletely);
             } else if (SpectrumData.instance.foreground.isChanged()) {
-                DialogHelper.showActionConfirmationDialog(this, getString(R.string.dialog_confirm_exit_unsaved_message), () -> {
-                    exitProgramCompletely();
-                });
+                DialogHelper.showActionConfirmationDialog(this,
+                        getString(R.string.dialog_confirm_exit_unsaved_message),
+                        getString(R.string.dialog_exit_anyway_button),
+                        getString(R.string.dialog_cancel_button),
+                        this::exitProgramCompletely);
             } else {
                 exitProgramCompletely();
             }
@@ -2880,7 +2884,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
 
             if (isSpectrumCombineMismatch(current, spectrum)) {
-                DialogHelper.showActionConfirmationDialog(this, getString(R.string.hist_add_mismatch_confirm), () -> applyAddedSpectrum(spectrum));
+                DialogHelper.showActionConfirmationDialog(this,
+                        getString(R.string.hist_add_mismatch_confirm),
+                        getString(R.string.hist_add_mismatch_button),
+                        getString(R.string.dialog_cancel_button),
+                        () -> applyAddedSpectrum(spectrum));
                 return;
             }
             applyAddedSpectrum(spectrum);

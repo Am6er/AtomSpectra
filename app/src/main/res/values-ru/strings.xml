@@ -110,6 +110,8 @@
     <string name="hist_continue_update">Продолжить</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
     <string name="hist_ask_delete_text">Вы действительно хотите очистить данные спектра?</string>
+    <string name="hist_clear_button">Очистить спектр</string>
+    <string name="hist_add_mismatch_button">Всё равно объединить</string>
     <string name="hist_smooth">Сгладить</string>
     <string name="hist_unsmooth">Восстановить</string>
     <string name="hist_delta">Изменение спектра</string>
@@ -456,6 +458,7 @@
     <string name="dialog_no_button">Нет</string>
     <string name="dialog_continue_button">Продолжить</string>
     <string name="dialog_cancel_button">Отмена</string>
+    <string name="dialog_exit_anyway_button">Всё равно выйти</string>
     <string name="dialog_discard_button">Сбросить изменения</string>
     <string name="dialog_keep_editing_button">Продолжить редактирование</string>
     <string name="sens_discard_message">Изменения конфигурации не применены.</string>
