@@ -107,6 +107,24 @@ Unavailable USB/audio devices cannot be selected until present; missing micropho
 permission can still be requested. Discovery availability does not change the
 service's lock or its reconnection behavior.
 
+### Spectra Pro Source
+
+Thread ownership, callback invalidation and detailed sequence diagrams are in
+[Spectra Pro threading and connection lifecycle](spectra-pro-threading.md).
+
+USB events, requests, command replies, recovery deadlines and the data watchdog
+run on one dedicated source handler. The serial worker only assembles packets
+and posts them with a connection generation. Teardown invalidates that generation
+before cancelling commands and closing the transport; old packets, serial
+callbacks and command timeouts cannot affect a replacement connection. Cancelled
+commands do not report artificial connection failures. The worker can exit
+without waiting for lifecycle locks, and `close()` waits for source cleanup.
+
+The device has five seconds to return during silent recovery. Once a permitted
+reconnect starts, a separate bounded 26.6-second deadline covers the four-command
+handshake. Commands still report busy; collecting confirmation cancels recovery.
+Actual command errors and timeouts remain errors.
+
 ## 2. Session state (what the user chose)
 
 ```mermaid
