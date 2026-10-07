@@ -81,7 +81,6 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         ActionBar bar = getActionBar();
         if (bar != null) {
             bar.setDisplayShowHomeEnabled(true);
-            bar.setDisplayHomeAsUpEnabled(true);
         }
         CheckBox rememberChoice = findViewById(R.id.rememberChoice);
         rememberChoice.setChecked(PrefHelper.shouldRememberDeviceChoice(this));
@@ -234,6 +233,10 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 || AtomSpectraService.isSelectionPending();
         if (backCallback != null) {
             backCallback.setEnabled(gate);
+        }
+        ActionBar bar = getActionBar();
+        if (bar != null) {
+            bar.setDisplayHomeAsUpEnabled(!gate);
         }
     }
 
