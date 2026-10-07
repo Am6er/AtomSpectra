@@ -38,7 +38,7 @@ final class BluZBleSource implements SpectrumSource {
     private static final long HANDSHAKE_MS = 20000;
     private static final long COMMAND_MS = 15000;
     private static final long ASSEMBLY_MS = 10000;
-    private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it adds timing messages to the log on every reconnect
+    private static final boolean DEBUG_LOG = false; // logs reconnect timing
     private static final String LOG_TAG = "BluZ";
     // a lost link is retried silently, the service hears about it only if the whole window passes without a valid frame
     private static final long[] FAST_RETRY_DELAYS_MS = {1000, 3000, 5000};
@@ -604,7 +604,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean usable(int op) {
         if (closed) return false;
         if (ready && gatt != null && latest != null) return true;
-        error(op, REASON_ERROR, "BluZ is not ready");
+        error(op, REASON_ERROR, silentRetry ? "BluZ is reconnecting" : "BluZ is not ready");
         return false;
     }
 
@@ -689,14 +689,24 @@ final class BluZBleSource implements SpectrumSource {
 
     // a working link was lost: retry quietly first, the service is told only if that fails
     private void connectionLost(String reason) {
+        // the service must hear about a lost link while a command is pending
         if (!ready) {
+            connectionLostNow(reason);
+            return;
+        }
+        if (toggleOp != 0 || resetPending || resolutionPending || calibrationPending) {
+            int op = toggleOp != 0 ? toggleOp
+                    : resetPending ? OP_RESET
+                    : resolutionPending ? OP_SETTINGS_SAVE
+                    : OP_CALIBRATION_SAVE;
+            writeFailed(op, reason);
             connectionLostNow(reason);
             return;
         }
         silentRetry = true;
         silentAttempt = 0;
         silentReason = reason;
-        silentCollecting = status == STATUS_CONNECTED_COLLECTING;
+        silentCollecting = latest != null && latest.isCollecting();
         AtomSpectraLog.addMessage(context, reason + ", retrying");
         stopScan();
         releaseGatt();
@@ -715,12 +725,14 @@ final class BluZBleSource implements SpectrumSource {
         scheduleRetry();
     }
 
-    private final Runnable silentAttemptStart = () -> {
+    private final Runnable silentAttemptStart = this::startSilentAttempt;
+
+    private void startSilentAttempt() {
         if (closed || terminal || !silentRetry || gatt != null) return;
         silentAttempt++;
         debug("Fast retry attempt " + silentAttempt);
         connect(adapter.getRemoteDevice(address));
-    };
+    }
 
     private final Runnable silentWindowEnd = this::endSilentRetry;
 
