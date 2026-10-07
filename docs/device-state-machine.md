@@ -125,6 +125,12 @@ reconnect starts, a separate bounded 26.6-second deadline covers the four-comman
 handshake. Commands still report busy; collecting confirmation cancels recovery.
 Actual command errors and timeouts remain errors.
 
+### Audio Source
+
+Audio handler ownership, PCM handoff, capture confirmation, recovery and shutdown
+are described separately in
+[Audio source threading and capture lifecycle](audio-source-threading.md).
+
 ## 2. Session state (what the user chose)
 
 ```mermaid
