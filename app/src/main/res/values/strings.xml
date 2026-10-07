@@ -256,7 +256,7 @@
     <string name="total_time_format">time: <xliff:g id="total_time">%1$s</xliff:g></string>
     <string name="spectrum_time_hms_format"><xliff:g id="hours">%1$02d</xliff:g>:<xliff:g id="minutes">%2$02d</xliff:g>:<xliff:g id="seconds">%3$02d</xliff:g></string>
     <string name="spectrum_time_days_hms_format"><xliff:g id="days">%1$d</xliff:g>d <xliff:g id="hours">%2$02d</xliff:g>:<xliff:g id="minutes">%3$02d</xliff:g>:<xliff:g id="seconds">%4$02d</xliff:g></string>
-    <string name="delta_time_format">time: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> s</string>
+    <string name="delta_time_format">time: <xliff:g id="delta_time">%1$.0f</xliff:g>/<xliff:g id="delta_back_time">%2$.0f</xliff:g> s</string>
     <string name="dose_rate_interval_prefix">int.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
     <string name="dose_rate_compensated_prefix">dr(c): <xliff:g id="dose_rate">%1$s</xliff:g></string>
     <string name="dose_rate_noncompensated_prefix">dr(n): <xliff:g id="dose_rate">%1$s</xliff:g></string>

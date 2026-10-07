@@ -86,6 +86,7 @@ public class AtomSpectraService extends Service {
     private static boolean atomSwiftHasIntermediateData = false;
 
     private static final LinkedList<long[]> histogram_all_queue = new LinkedList<long[]>();      //array to store delta window
+    private static final LinkedList<Double> histogram_all_times = new LinkedList<>();
     private static boolean is_recording = false;
 
     private int skippedIncompleteHistogramCount = 0;
@@ -1703,7 +1704,7 @@ public class AtomSpectraService extends Service {
 
         calcAndSendFoundIsotopesData();
         if (isReliableData) {
-            calcSpectrumChangeData();
+            calcSpectrumChangeData(new_time);
         }
         notifyDataAvailable();
         if (isReliableData) {
@@ -2094,9 +2095,9 @@ public class AtomSpectraService extends Service {
     }
 
     // Sum the most-recent samples until both the count target and the minimum period are reached.
-// Each sample is an array of per-bin counts (a single-element array for the interval source);
-// counts is the sum across the sample's bins - for the energy-binned source this equals the
-// total count, since every detected event is assigned to a bin (see getEnergyBinIndex).
+    // Each sample is an array of per-bin counts (a single-element array for the interval source);
+    // counts is the sum across the sample's bins - for the energy-binned source this equals the
+    // total count, since every detected event is assigned to a bin (see getEnergyBinIndex).
     private WindowSum accumulateWindow(LinkedList<int[]> source, int target, double minPeriod) {
         WindowSum s = new WindowSum();
         synchronized (windowBinnedCounts) {
@@ -2139,30 +2140,46 @@ public class AtomSpectraService extends Service {
     }
 
     // spectrum change mode
-// shows spectrum for the last n seconds (sliding window)
-// window size - delta_time
-    private final void calcSpectrumChangeData() {
+    // shows spectrum for the last n seconds (sliding window)
+    // window size ~ delta_time
+    private final void calcSpectrumChangeData(double currentTime) {
         long[] currentState = Arrays.copyOf(SpectrumData.instance.foreground.getDataArray(), SpectrumData.instance.foreground.getDataArray().length);
         long[] previousState = currentState;
         long[] backState = currentState;
-        int queueSize;
+        double foregroundTime = 0;
+        double backgroundTime = 0;
         synchronized (histogram_all_queue) {
             if (!histogram_all_queue.isEmpty() && histogram_all_queue.peek().length != currentState.length) {
                 histogram_all_queue.clear();
+                histogram_all_times.clear();
             }
             histogram_all_queue.add(currentState);
-            while (histogram_all_queue.size() > delta_time * delta_back_time_ratio + 1) {
+            histogram_all_times.add(currentTime);
+
+            double backgroundWindow = (double) delta_time * delta_back_time_ratio;
+            double oldestNeededTime = currentTime - backgroundWindow;
+            while (histogram_all_queue.size() > 2 && histogram_all_times.get(1) < oldestNeededTime) {
                 histogram_all_queue.remove();
+                histogram_all_times.remove();
             }
 
-            if (histogram_all_queue.size() <= delta_time + 1) {
-                previousState = histogram_all_queue.peek();
-                backState = previousState;
-            } else {
-                previousState = histogram_all_queue.get(histogram_all_queue.size() - delta_time);
-                backState = histogram_all_queue.peek();
+            for (int i = histogram_all_queue.size() - 2; i >= 0; i--) {
+                double elapsed = currentTime - histogram_all_times.get(i);
+                previousState = histogram_all_queue.get(i);
+                foregroundTime = elapsed;
+                if (elapsed >= delta_time) {
+                    break;
+                }
             }
-            queueSize = histogram_all_queue.size();
+
+            for (int i = histogram_all_queue.size() - 2; i >= 0; i--) {
+                double elapsed = currentTime - histogram_all_times.get(i);
+                backState = histogram_all_queue.get(i);
+                backgroundTime = elapsed;
+                if (elapsed >= backgroundWindow) {
+                    break;
+                }
+            }
         }
 
         long[] deltaFg = new long[currentState.length];
@@ -2172,7 +2189,7 @@ public class AtomSpectraService extends Service {
             deltaBg[i] = currentState[i] - backState[i];
         }
 
-        SpectrumChangeData.instance.set(deltaFg, deltaBg, Math.min(queueSize - 1, delta_time), queueSize - 1);
+        SpectrumChangeData.instance.set(deltaFg, deltaBg, foregroundTime, backgroundTime);
     }
 
     private void notifyDataAvailable() {
@@ -2508,6 +2525,7 @@ public class AtomSpectraService extends Service {
         if (!histogram_all_queue.isEmpty()) {
             synchronized (histogram_all_queue) {
                 histogram_all_queue.clear();
+                histogram_all_times.clear();
             }
         }
     }
