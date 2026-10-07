@@ -497,6 +497,7 @@
     <string name="log_start_recording">Start recording (%1$s)</string>
     <string name="log_stop_recording">Stop recording (%1$s)</string>
     <string name="log_device_recovering">Recovering connection to %1$s</string>
+    <string name="log_device_recovered">Connection recovered to %1$s</string>
     <string name="log_no_perm_to_save_spectrum">No permission to save spectrum file (%1$s)</string>
     <string name="log_spg_no_perm_to_save">No permission to save spectrogram file</string>
     <string name="log_spg_midnight_restart">Restarting spectrogram at midnight</string>
