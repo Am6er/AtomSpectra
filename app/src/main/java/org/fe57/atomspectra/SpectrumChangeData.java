@@ -17,7 +17,7 @@ public final class SpectrumChangeData {
      * the caller must not modify them afterwards.
      */
     public void set(long[] foregroundDelta, long[] backgroundDelta,
-                    int foregroundTimeSeconds, int backgroundTimeSeconds) {
+                    double foregroundTimeSeconds, double backgroundTimeSeconds) {
         long foregroundCounts = 0;
         long backgroundCounts = 0;
         for (int i = 0; i < foregroundDelta.length; i++) {
@@ -47,12 +47,12 @@ public final class SpectrumChangeData {
         public final long[] backgroundDelta;
         public final long foregroundTotalCounts;
         public final long backgroundTotalCounts;
-        public final int foregroundTimeSeconds;
-        public final int backgroundTimeSeconds;
+        public final double foregroundTimeSeconds;
+        public final double backgroundTimeSeconds;
 
         private Snapshot(long[] foregroundDelta, long[] backgroundDelta,
                          long foregroundTotalCounts, long backgroundTotalCounts,
-                         int foregroundTimeSeconds, int backgroundTimeSeconds) {
+                         double foregroundTimeSeconds, double backgroundTimeSeconds) {
             this.foregroundDelta = foregroundDelta;
             this.backgroundDelta = backgroundDelta;
             this.foregroundTotalCounts = foregroundTotalCounts;

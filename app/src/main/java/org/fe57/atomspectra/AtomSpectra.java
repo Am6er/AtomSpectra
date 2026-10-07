@@ -713,8 +713,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 break;
             case Constants.DISPLAY_MODE_SPECTRUM_CHANGE:
                 SpectrumChangeData.Snapshot change = SpectrumChangeData.instance.get();
-                int delta_time = change.foregroundTimeSeconds;
-                int delta_back_time = change.backgroundTimeSeconds;
+                double delta_time = change.foregroundTimeSeconds;
+                double delta_back_time = change.backgroundTimeSeconds;
 
                 double delta_cps = delta_time > 0 ? change.foregroundTotalCounts / (double) delta_time : 0.0;
                 double delta_back_cps = delta_back_time > 0 ? change.backgroundTotalCounts / (double) delta_back_time : 0.0;
