@@ -63,6 +63,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean closed;
     private boolean terminal;
     private boolean ready;
+    private boolean hasBeenReady;
     private boolean physicalConnection;
     private boolean subscribed;
     private boolean writing;
@@ -231,7 +232,8 @@ final class BluZBleSource implements SpectrumSource {
         else if (!physicalConnection) {
             releaseGatt();
             scheduleRetry();
-        } else failHandshake(REASON_TIMEOUT, "BluZ handshake timed out");
+        } else if (hasBeenReady) connectionLostNow("BluZ handshake timed out");
+        else failHandshake(REASON_TIMEOUT, "BluZ handshake timed out");
     };
 
     private boolean current(BluetoothGatt candidate) {
@@ -245,7 +247,7 @@ final class BluZBleSource implements SpectrumSource {
                 if (!current(candidate)) return;
                 if (newState == BluetoothProfile.STATE_DISCONNECTED || result != BluetoothGatt.GATT_SUCCESS) {
                     if (silentRetry) silentAttemptFailed();
-                    else if (physicalConnection && !ready)
+                    else if (physicalConnection && !ready && !hasBeenReady)
                         failHandshake(REASON_ERROR, "BluZ disconnected during handshake");
                     else connectionLost("BluZ connection lost (" + result + ")");
                 } else if (newState == BluetoothProfile.STATE_CONNECTED) {
@@ -410,6 +412,7 @@ final class BluZBleSource implements SpectrumSource {
             latest = frame;
             if (!ready) {
                 ready = true;
+                hasBeenReady = true;
                 retryDelay = 1000;
                 handler.removeCallbacks(connectionDeadline);
                 coefficients = frame.calibration();
