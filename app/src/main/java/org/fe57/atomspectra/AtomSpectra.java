@@ -997,18 +997,17 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     public void onClickDeleteSpc(View v) {
-        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.hist_ask_delete_title))
-                .setMessage(getString(R.string.hist_ask_delete_text))
-                .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+        DialogHelper.showStackedActions(this,
+            getString(R.string.hist_ask_delete_title),
+            getString(R.string.hist_ask_delete_text),
+            true,
+            new DialogHelper.StackedAction(getString(android.R.string.ok), () -> {
                     AtomSpectraIsotopes.showFoundIsotopes = false;
                     AtomSpectraIsotopes.foundList.clear();
                     sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_SPECTRUM).setPackage(Constants.PACKAGE_NAME));
                     ((TextView) findViewById(R.id.suffixView)).setText(getString(R.string.hist_suffix));
-                })
-                .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                });
-        alert.show();
+            }),
+            new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
     }
 
     public void onClick_renderModeSpectrum(View v) {
@@ -1255,11 +1254,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         for (Isotope i : AtomSpectraIsotopes.foundList) {
                             if (i.getCoord().contains(e1.getX(), e1.getY())) {
                                 getInside = true;
-                                final Context id = AtomSpectra.this;
                                 final int channel_x = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(i.getEnergy(0));
-                                final AlertDialog.Builder alert = new AlertDialog.Builder(id)
-                                        .setTitle(getString(R.string.calibration_add_nuclid_title))
-                                        .setMessage(getString(R.string.calibration_add_nuclid2_text, channel_x, i.getName(), i.getEnergy(0)));
                                 final EditText input = new EditText(AtomSpectra.this);
                                 input.setKeyListener(new NumberKeyListener() {
                                     @NonNull
@@ -1274,8 +1269,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                     }
                                 });
                                 input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                                alert.setView(input);
-                                alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+                                DialogHelper.showStackedActions(AtomSpectra.this,
+                                    getString(R.string.calibration_add_nuclid_title),
+                                    getString(R.string.calibration_add_nuclid2_text, channel_x, i.getName(), i.getEnergy(0)),
+                                    true,
+                                    input,
+                                    new DialogHelper.StackedAction(getString(android.R.string.ok), () -> {
                                             float fValue;// = value.valueOf(value);
                                             try {
                                                 fValue = Float.parseFloat(input.getText().toString().replaceAll(",", "."));
@@ -1293,10 +1292,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                             }
                                             updateCalibrationMenu();
                                             showCursorInfo(true);
-                                        })
-                                        .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                                        });
-                                alert.show();
+                                        }),
+                                        new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
                             }
                         }
                     }
@@ -1304,11 +1301,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         for (Isotope i : AtomSpectraIsotopes.isotopeLineArray) {
                             if (i.getCoord().contains(e1.getX(), e1.getY())) {
                                 getInside = true;
-                                final Context id = AtomSpectra.this;
-                                final AlertDialog.Builder alert = new AlertDialog.Builder(id)
-                                        .setTitle(getString(R.string.calibration_add_nuclid_title))
-                                        .setMessage(getString(R.string.calibration_add_nuclid_text, UIViewState.instance.cursorX, i.getName(), i.getEnergy(0)))
-                                        .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+                                DialogHelper.showStackedActions(AtomSpectra.this,
+                                    getString(R.string.calibration_add_nuclid_title),
+                                    getString(R.string.calibration_add_nuclid_text, UIViewState.instance.cursorX, i.getName(), i.getEnergy(0)),
+                                    true,
+                                    new DialogHelper.StackedAction(getString(android.R.string.ok), () -> {
                                             SpectrumData.instance.newCalibration.addPoint(UIViewState.instance.cursorX, i.getEnergy(0));
                                             if (SpectrumData.instance.newCalibration.getPointsCount() > 1) {
                                                 SpectrumData.instance.newCalibration.Calculate(sharedPreferences.getInt(Constants.CONFIG.CONF_MAX_POLI_FACTOR, Constants.DEFAULT_POLI_FACTOR));
@@ -1319,10 +1316,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                             }
                                             updateCalibrationMenu();
                                             showCursorInfo(true);
-                                        })
-                                        .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                                        });
-                                alert.show();
+                                        }),
+                                        new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
                             }
                         }
                     }
@@ -2261,10 +2256,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             if (item.getItemId() == R.id.action_cal_new_point10)
                 number = 9;
             int finalNumber = number;
-            final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.ask_delete_calibration_line_title))
-                    .setMessage(getString(R.string.ask_delete_calibration_line_text, SpectrumData.instance.newCalibration.getPointChannel(finalNumber), SpectrumData.instance.newCalibration.getPointEnergy(finalNumber)))
-                    .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
+                DialogHelper.showStackedActions(this,
+                    getString(R.string.ask_delete_calibration_line_title),
+                    getString(R.string.ask_delete_calibration_line_text, SpectrumData.instance.newCalibration.getPointChannel(finalNumber), SpectrumData.instance.newCalibration.getPointEnergy(finalNumber)),
+                    true,
+                    new DialogHelper.StackedAction(getString(android.R.string.ok), () -> {
                         int channel_x = SpectrumData.instance.newCalibration.getPointChannel(finalNumber);
                         double fValue = SpectrumData.instance.newCalibration.getPointEnergy(finalNumber);
                         SpectrumData.instance.newCalibration.removePoint(finalNumber);
@@ -2280,10 +2276,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         }
                         updateCalibrationMenu();
                         showCursorInfo(true);
-                    })
-                    .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-                    });
-            alert.show();
+                    }),
+                    new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
             return true;
         } else if (item.getItemId() == R.id.action_cal_function) {
             try {
@@ -3578,12 +3572,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
             return;
         }
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.device_status_title))
-                .setMessage(message.toString())
-                .setPositiveButton(getString(R.string.device_status_select_other), (dialog, which) -> openDeviceSelection(false))
-                .setNegativeButton(getString(R.string.dialog_cancel_button), null)
-                .show();
+        DialogHelper.showStackedActions(this,
+            getString(R.string.device_status_title),
+            message.toString(),
+            true,
+            new DialogHelper.StackedAction(getString(R.string.device_status_select_other),
+                () -> openDeviceSelection(false)),
+            new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
     }
 
     private AlertDialog connectDecisionDialog = null;
@@ -3778,24 +3773,23 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private void showRecordingSuspendedDialog(long episode) {
         String message = getString(R.string.recording_suspended_dialog_message);
         message += "\n" + AtomSpectraService.formatLocalTimeAsISOLikeString(AtomSpectraService.recordingSuspendedAt);
-        final AlertDialog.Builder alert = new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.recording_suspended_dialog_title))
-                .setMessage(message)
-                .setNegativeButton(R.string.recording_suspended_dialog_wait, (dialog, whichButton) -> {
+        recordingSuspendedDialogEpisode = episode;
+        recordingSuspendedAlert = DialogHelper.showStackedActions(this,
+                getString(R.string.recording_suspended_dialog_title),
+                message,
+                false,
+                new DialogHelper.StackedAction(getString(R.string.recording_suspended_dialog_wait), () -> {
                     AtomSpectraService.acknowledgeRecordingSuspension(episode);
                     dismissRecordingSuspendedDialog();
                     checkRecordingSuspended();
-                })
-                .setPositiveButton(getString(R.string.recording_suspended_dialog_dismiss), (dialog, whichButton) -> {
+                }),
+                new DialogHelper.StackedAction(getString(R.string.recording_suspended_dialog_dismiss), () -> {
                     // stop recording and release the device; the loaded spectrum and the remembered device stay
                     if (boundService != null) {
                         boundService.stopAndGoOffline();
                     }
                     dismissRecordingSuspendedDialog();
-                })
-                .setCancelable(false);
-        recordingSuspendedDialogEpisode = episode;
-        recordingSuspendedAlert = alert.show();
+                }));
     }
 
     private void dismissRecordingSuspendedDialog() {

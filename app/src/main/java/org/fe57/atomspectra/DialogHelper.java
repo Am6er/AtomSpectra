@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -26,15 +27,12 @@ public class DialogHelper {
 
     public static void showActionConfirmationDialog(@NonNull Context context, String message,
                                                     String positiveLabel, String negativeLabel, Runnable action) {
-        final AlertDialog.Builder alert = new AlertDialog.Builder(context)
-                .setTitle(context.getString(R.string.dialog_confirm_title))
-                .setMessage(message)
-                .setPositiveButton(positiveLabel, (dialog, whichButton) -> {
-                    action.run();
-                })
-                .setNegativeButton(negativeLabel, (dialog, whichButton) -> {
-                });
-        alert.show();
+        showStackedActions(context,
+                context.getString(R.string.dialog_confirm_title),
+                message,
+                true,
+                new StackedAction(positiveLabel, action),
+                new StackedAction(negativeLabel, null));
     }
 
     public static class StackedAction {
@@ -51,8 +49,19 @@ public class DialogHelper {
     public static AlertDialog showStackedActions(@NonNull Context context, @NonNull String title,
                                                  @NonNull String message, boolean cancelable,
                                                  @NonNull StackedAction... actions) {
+        return showStackedActions(context, title, message, cancelable, null, actions);
+    }
+
+    public static AlertDialog showStackedActions(@NonNull Context context, @NonNull String title,
+                                                 @NonNull String message, boolean cancelable,
+                                                 @Nullable View content,
+                                                 @NonNull StackedAction... actions) {
         LinearLayout column = (LinearLayout) LayoutInflater.from(context)
                 .inflate(R.layout.dialog_stacked_actions, null);
+        if (content != null) {
+            column.addView(content, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
         final AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(title)
                 .setMessage(message)

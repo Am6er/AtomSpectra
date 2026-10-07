@@ -647,14 +647,12 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
         final OnClickListener listener = v -> {
             int num = v.getId();
             if (num == Constants.GROUPS.GROUP_ID_ALIGN - 1) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.dialog_confirm_title);
-                builder.setMessage(R.string.isotopes_clear_selection_confirm);
-                builder.setPositiveButton(R.string.dialog_yes_button, (dialog, which) -> resetSelection());
-                builder.setNegativeButton(R.string.dialog_no_button, (dialog, which) -> dialog.dismiss());
-
-                AlertDialog dialog = builder.create();
-                dialog.show();
+                DialogHelper.showStackedActions(this,
+                        getString(R.string.dialog_confirm_title),
+                        getString(R.string.isotopes_clear_selection_confirm),
+                        true,
+                        new DialogHelper.StackedAction(getString(R.string.dialog_yes_button), this::resetSelection),
+                        new DialogHelper.StackedAction(getString(R.string.dialog_no_button), null));
                 return;
             }
             if ((num >= Constants.GROUPS.GROUP_ID_ALIGN) && (num < Constants.GROUPS.ENERGY_ID_ALIGN)) {
