@@ -68,8 +68,12 @@ and operations are serialized on the service input handler. Every reply carries
 the instance ID, and callbacks from old GATT connections are ignored. Physical
 loss or Bluetooth-off emits `DISCONNECTED`, clears the scan/GATT and waits again.
 The service uses `RECORDING_SUSPEND_REASON_BT_DISCONNECT` and its existing resume
-flow when the source returns. Failed handshake is terminal until Retry; missing
-permission returns the session to UNSELECTED.
+flow when the source returns. Before the first valid normal frame, a handshake
+timeout or handshake link loss is terminal until Retry. Once this source instance
+has received a valid normal frame, later handshake timeouts and link losses keep
+retrying in the background, including after the fast retry window expires.
+Incompatible GATT service, characteristics or MTU remain terminal until Retry;
+missing permission returns the session to UNSELECTED.
 
 First checksum-valid normal frame supplies status, calibration and `READY` with
 4096 output channels. Lower-resolution live frames are count-preservingly
