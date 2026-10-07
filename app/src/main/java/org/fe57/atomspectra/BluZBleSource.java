@@ -38,6 +38,13 @@ final class BluZBleSource implements SpectrumSource {
     private static final long HANDSHAKE_MS = 20000;
     private static final long COMMAND_MS = 15000;
     private static final long ASSEMBLY_MS = 10000;
+    private static final boolean DEBUG_LOG = false; // set to true only briefly for debugging - it adds timing messages to the log on every reconnect
+    private static final String LOG_TAG = "BluZ";
+    // a lost link is retried silently, the service hears about it only if the whole window passes without a valid frame
+    private static final long[] FAST_RETRY_DELAYS_MS = {1000, 3000, 5000};
+    private static final long FAST_ATTEMPT_MS = 2000; // time to establish the physical connection in one fast attempt
+    private static final long FAST_WINDOW_MS = 15000;
+    private static final long SLOW_RETRY_MS = 30000;
     private final Context context;
     private final Handler handler;
     private final String address;
@@ -60,6 +67,10 @@ final class BluZBleSource implements SpectrumSource {
     private boolean subscribed;
     private boolean writing;
     private long retryDelay = 1000;
+    private boolean silentRetry;
+    private int silentAttempt;
+    private String silentReason;
+    private boolean silentCollecting;
     private BluZFrameDecoder.Frame latest;
     private int toggleOp;
     private boolean desiredCollecting;
@@ -97,8 +108,8 @@ final class BluZBleSource implements SpectrumSource {
                 failHandshake(REASON_ERROR, "Invalid BluZ Bluetooth address");
                 return;
             }
-            if (ready && lastError != null) connectionLost("Retrying BluZ connection");
-            else if (ready || physicalConnection) return;
+            if (ready && lastError != null) connectionLostNow("Retrying BluZ connection");
+            else if (ready || physicalConnection || silentRetry) return;
             terminal = false;
             lastError = null;
             if (!AppPermissions.isBluetoothGranted(context)) {
@@ -116,7 +127,8 @@ final class BluZBleSource implements SpectrumSource {
                         dispatch(() -> {
                             if (closed || terminal) return;
                             try {
-                                if (!adapter.isEnabled()) connectionLost("Bluetooth is off");
+                                if (!adapter.isEnabled()) connectionLostNow("Bluetooth is off");
+                                else if (silentRetry) return;
                                 else waitForDevice();
                             } catch (SecurityException error) {
                                 permissionLost();
@@ -152,6 +164,7 @@ final class BluZBleSource implements SpectrumSource {
                 public void onScanResult(int callbackType, ScanResult result) {
                     dispatch(() -> {
                         if (closed || terminal || scanCallback != this) return;
+                        debug("Scan hit");
                         stopScan();
                         connect(result.getDevice());
                     });
@@ -167,6 +180,7 @@ final class BluZBleSource implements SpectrumSource {
                 }
             };
             scanCallback = callback;
+            debug("Scan started");
             adapter.getBluetoothLeScanner().startScan(
                     Collections.singletonList(new ScanFilter.Builder().setDeviceAddress(address).build()),
                     new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
@@ -199,18 +213,22 @@ final class BluZBleSource implements SpectrumSource {
     private void connect(BluetoothDevice device) {
         if (closed || terminal || gatt != null) return;
         try {
+            debug("Connecting");
             gatt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                     ? device.connectGatt(context, false, callbacks, BluetoothDevice.TRANSPORT_LE)
                     : device.connectGatt(context, false, callbacks);
-            if (gatt == null) scheduleRetry();
-            else handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
+            if (gatt == null) {
+                if (silentRetry) silentAttemptFailed();
+                else scheduleRetry();
+            } else handler.postDelayed(connectionDeadline, silentRetry ? FAST_ATTEMPT_MS : HANDSHAKE_MS);
         } catch (SecurityException error) {
             permissionLost();
         }
     }
 
     private final Runnable connectionDeadline = () -> {
-        if (!physicalConnection) {
+        if (silentRetry) silentAttemptFailed();
+        else if (!physicalConnection) {
             releaseGatt();
             scheduleRetry();
         } else failHandshake(REASON_TIMEOUT, "BluZ handshake timed out");
@@ -226,12 +244,15 @@ final class BluZBleSource implements SpectrumSource {
             dispatch(() -> {
                 if (!current(candidate)) return;
                 if (newState == BluetoothProfile.STATE_DISCONNECTED || result != BluetoothGatt.GATT_SUCCESS) {
-                    if (physicalConnection && !ready)
+                    if (silentRetry) silentAttemptFailed();
+                    else if (physicalConnection && !ready)
                         failHandshake(REASON_ERROR, "BluZ disconnected during handshake");
                     else connectionLost("BluZ connection lost (" + result + ")");
                 } else if (newState == BluetoothProfile.STATE_CONNECTED) {
                     physicalConnection = true;
-                    setStatus(STATUS_CONNECTING);
+                    debug("Connected");
+                    if (silentRetry) handler.removeCallbacks(connectionDeadline);
+                    else setStatus(STATUS_CONNECTING);
                     try {
                         candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                         if (!candidate.discoverServices())
@@ -394,6 +415,13 @@ final class BluZBleSource implements SpectrumSource {
                 coefficients = frame.calibration();
                 lastError = null;
                 status = frame.isCollecting() ? STATUS_CONNECTED_COLLECTING : STATUS_CONNECTED_IDLE;
+                debug("First frame");
+                if (silentRetry) {
+                    cancelSilentRetry();
+                    // the device restarted while we were away: let the service take its normal resume path
+                    if (silentCollecting && !frame.isCollecting())
+                        reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, silentReason));
+                }
                 reply(new Intent(ACTION_SOURCE_READY)
                         .putExtra(EXTRA_SOURCE_STATUS, status)
                         .putExtra(EXTRA_SOURCE_DEVICE_ID, deviceId())
@@ -659,14 +687,75 @@ final class BluZBleSource implements SpectrumSource {
         error(op, REASON_ERROR, text);
     }
 
+    // a working link was lost: retry quietly first, the service is told only if that fails
     private void connectionLost(String reason) {
-        boolean wasReady = ready;
+        if (!ready) {
+            connectionLostNow(reason);
+            return;
+        }
+        silentRetry = true;
+        silentAttempt = 0;
+        silentReason = reason;
+        silentCollecting = status == STATUS_CONNECTED_COLLECTING;
+        AtomSpectraLog.addMessage(context, reason + ", retrying");
+        stopScan();
+        releaseGatt();
+        handler.postDelayed(silentWindowEnd, FAST_WINDOW_MS);
+        scheduleSilentAttempt();
+    }
+
+    private void connectionLostNow(String reason) {
+        boolean wasActive = ready || silentRetry;
+        cancelSilentRetry();
         stopScan();
         releaseGatt();
         setStatus(STATUS_DISCONNECTED);
-        if (wasReady)
+        if (wasActive)
             reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
         scheduleRetry();
+    }
+
+    private final Runnable silentAttemptStart = () -> {
+        if (closed || terminal || !silentRetry || gatt != null) return;
+        silentAttempt++;
+        debug("Fast retry attempt " + silentAttempt);
+        connect(adapter.getRemoteDevice(address));
+    };
+
+    private final Runnable silentWindowEnd = this::endSilentRetry;
+
+    private void scheduleSilentAttempt() {
+        if (silentAttempt >= FAST_RETRY_DELAYS_MS.length) endSilentRetry();
+        else handler.postDelayed(silentAttemptStart, FAST_RETRY_DELAYS_MS[silentAttempt]);
+    }
+
+    private void silentAttemptFailed() {
+        if (!silentRetry) return;
+        debug("Fast retry attempt " + silentAttempt + " failed");
+        releaseGatt();
+        scheduleSilentAttempt();
+    }
+
+    private void cancelSilentRetry() {
+        silentRetry = false;
+        handler.removeCallbacks(silentAttemptStart);
+        handler.removeCallbacks(silentWindowEnd);
+    }
+
+    // fast retries did not help: report the loss and wait for the device in the background
+    private void endSilentRetry() {
+        if (!silentRetry) return;
+        String reason = silentReason;
+        cancelSilentRetry();
+        releaseGatt();
+        retryDelay = SLOW_RETRY_MS;
+        setStatus(STATUS_DISCONNECTED);
+        reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
+        waitForDevice();
+    }
+
+    private void debug(String message) {
+        if (DEBUG_LOG) AtomSpectraLog.addMessage(context, LOG_TAG, message);
     }
 
     private void permissionLost() {
@@ -675,6 +764,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void failHandshake(int reason, String text) {
         terminal = true;
+        cancelSilentRetry();
         releaseGatt();
         stopScan();
         handler.removeCallbacks(retry);
@@ -726,6 +816,7 @@ final class BluZBleSource implements SpectrumSource {
         dispatch(() -> {
             if (closed) return;
             closed = true;
+            cancelSilentRetry();
             stopScan();
             releaseGatt();
             handler.removeCallbacks(retry);
