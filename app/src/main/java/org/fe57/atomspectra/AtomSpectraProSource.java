@@ -181,8 +181,11 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private BroadcastReceiver usbEventReceiver = null;
     private volatile UsbDevice permissionRequestedDevice = null;
     private volatile boolean recoveryConnectPending;
+    private boolean recoveryHandshakeStarted;
+    private boolean stopOnReturn;
     private long recoveryDeadline;
     private final Runnable recoveryTimeout = this::onRecoveryTimeout;
+    private final Runnable recoveryRetry = this::retryRecoveryConnect;
 
     public AtomSpectraProSource(Context context, UsbDevice device) {
         this(context, device, DeviceIdentity.usb(device));
@@ -254,17 +257,19 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
 
-        if (recovering) {
+        if (recovering && !this.recoveryHandshakeStarted) {
+            this.recoveryHandshakeStarted = true;
             this.armRecoveryTimeout(USB_RECOVERY_HANDSHAKE_WINDOW_MS);
         }
         this.setAndEmitStatus(recovering ? SpectrumSource.STATUS_RECOVERING : SpectrumSource.STATUS_CONNECTING);
         String openError = this.openPort();
         if (openError != null) {
-            this.teardownConnection();
             if (recovering) {
-                this.emitDisconnected("USB recovery failed: " + openError);
+                this.retryRecovery("USB recovery failed: " + openError);
+            } else {
+                this.teardownConnection();
+                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, openError);
             }
-            this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, openError);
             return;
         }
 
@@ -296,12 +301,26 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     @Override
     public void requestStart() {
         if (this.deferToSourceThread(this::requestStart)) return;
+        this.stopOnReturn = false;
         this.requestStart(false);
     }
 
     @Override
     public void requestStop() {
         if (this.deferToSourceThread(this::requestStop)) return;
+        if (this.recoveryConnectPending) {
+            this.stopOnReturn = true;
+            this.teardownConnection();
+            this.emitDisconnected("USB recovery cancelled by stop");
+            UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
+            this.device = this.findLockedDevice(manager);
+            this.requestConnect();
+            return;
+        }
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING) {
+            this.stopOnReturn = true;
+            return;
+        }
         if (this.rejectIfDisconnected(SpectrumSource.OP_STOP)) return;
 
         this.cancelDataWatchdog();
@@ -546,7 +565,12 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.processingThread.start();
         } catch (Exception e) {
             log(this.context, "USB port setup failed: " + e.getMessage());
-            this.teardownConnection();
+            synchronized (this.circularBufferSync) {
+                this.connectionGeneration++;
+            }
+            this.closePortAndConnection();
+            this.stopUsbManager();
+            this.stopProcessingThread();
             return "USB port setup failed: " + e.getMessage();
         }
         return null;
@@ -589,6 +613,14 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void emitError(int op, int reason, String text) {
+        if (op == SpectrumSource.OP_CONNECT && this.recoveryConnectPending) {
+            if (reason != SpectrumSource.REASON_PERMISSION) {
+                this.retryRecovery("USB recovery failed: " + text);
+                return;
+            }
+            this.teardownConnection();
+            this.emitDisconnected("USB recovery permission denied");
+        }
         this.lastError = new SourceError(op, reason, text);
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_ERROR)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_OP, op)
@@ -645,12 +677,20 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         if (COMMAND_RESULT_ERR.equals(answer)) {
             log(ctx, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") failed: " + answer.trim());
+            if (this.recoveryConnectPending && op == SpectrumSource.OP_CONNECT) {
+                this.retryRecovery("USB recovery command failed: " + command.trim());
+                return;
+            }
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
             this.emitError(op, REASON_ERROR, command);
             return;
         }
         if (COMMAND_RESULT_TIMEOUT.equals(answer)) {
             log(ctx, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") timed out");
+            if (this.recoveryConnectPending && op == SpectrumSource.OP_CONNECT) {
+                this.retryRecovery("USB recovery command timed out: " + command.trim());
+                return;
+            }
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
             this.emitError(op, REASON_TIMEOUT, command);
             return;
@@ -668,6 +708,15 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 this.readDeviceCalibrationAndId(answer);
                 break;
             case OP_ID_CHECK_STATUS:
+                if (this.stopOnReturn) {
+                    if (COMMAND_RESULT_OK_COLLECTING.equals(answer)) {
+                        this.enqueueTextCommand("-sto", OP_ID_STOP_COLLECTING, SpectrumSource.OP_STOP);
+                    } else {
+                        this.stopOnReturn = false;
+                        this.requestShowData(true);
+                    }
+                    break;
+                }
                 if (COMMAND_RESULT_OK_COLLECTING.equals(answer)) {
                     if (this.recoveryConnectPending) {
                         this.completeRecoveryWhileCollecting();
@@ -705,6 +754,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             case OP_ID_STOP_COLLECTING:
                 this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
                 this.flushErrorSuppressionLog();
+                if (this.stopOnReturn) {
+                    this.stopOnReturn = false;
+                    this.requestShowData(true);
+                }
                 break;
             case OP_ID_RESET_HISTOGRAM:
                 this.resetHistogramCompleteness();
@@ -970,7 +1023,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.connectionGeneration++;
         }
         this.recoveryConnectPending = false;
+        this.recoveryHandshakeStarted = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
         this.status = SpectrumSource.STATUS_DISCONNECTED;
         this.cancelDataWatchdog();
         this.cancelPendingCommands();
@@ -1050,6 +1105,11 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (this.device == null || !detached.getDeviceName().equals(this.device.getDeviceName()))
             return;
 
+        if (this.recoveryConnectPending) {
+            log(ctx, "USB device detached during recovery");
+            this.retryRecovery("USB device detached during recovery");
+            return;
+        }
         boolean canRecover = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING;
         this.teardownConnection();
         log(ctx, "USB device detached");
@@ -1127,6 +1187,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (!this.recoveryConnectPending) return;
         this.recoveryConnectPending = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
         this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
         this.resetHistogramCompleteness();
         this.flushErrorSuppressionLog();
@@ -1137,6 +1198,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (!this.recoveryConnectPending) return;
         this.recoveryConnectPending = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
         this.setAndEmitStatus(SpectrumSource.STATUS_DISCONNECTED);
         this.emitDisconnected(reason);
     }
@@ -1145,6 +1207,32 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.recoveryDeadline = SystemClock.uptimeMillis() + windowMs;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.postDelayed(this.recoveryTimeout, windowMs);
+    }
+
+    private void retryRecovery(String reason) {
+        long deadline = this.recoveryDeadline;
+        boolean handshakeStarted = this.recoveryHandshakeStarted;
+        this.teardownConnection();
+        long remaining = deadline - SystemClock.uptimeMillis();
+        if (remaining <= 0) {
+            this.emitDisconnected(reason);
+            return;
+        }
+        this.recoveryConnectPending = true;
+        this.recoveryHandshakeStarted = handshakeStarted;
+        this.recoveryDeadline = deadline;
+        this.lastError = null;
+        this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
+        this.asyncTasksHandler.postDelayed(this.recoveryTimeout, remaining);
+        this.asyncTasksHandler.postDelayed(this.recoveryRetry, USB_WAIT_DEVICE);
+    }
+
+    private void retryRecoveryConnect() {
+        if (this.context == null || !this.recoveryConnectPending
+                || this.status != SpectrumSource.STATUS_RECOVERING) return;
+        UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
+        this.device = this.findLockedDevice(manager);
+        this.requestConnect();
     }
 
     private void onRecoveryTimeout() {

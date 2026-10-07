@@ -7,6 +7,7 @@ deadlines, recovery and shutdown. Wire layouts and firmware acquisition behavior
 are described in [BluZ Device Protocol](bluz-device-protocol.md). Session ownership,
 recording intent and picker behavior belong to
 [Device session state machine](device-state-machine.md).
+All sources follow its [Recovery Event Contract](device-state-machine.md#recovery-event-contract).
 
 The central rule is: **all mutable BluZ source state belongs to the service input
 handler; Android callbacks are dispatched there and validated before use.**
@@ -151,8 +152,9 @@ sequenceDiagram
 
 A complete, checksum-valid normal frame establishes source readiness. Idle is
 type 0; collecting is types 1-3. History frames do not establish current
-acquisition state. The first normal frame supplies calibration and the current
-status along with `READY`.
+acquisition state. During ordinary initialization, the first normal frame supplies
+calibration and the current status along with `READY`. Silent collecting recovery
+instead completes with `STATUS_CONNECTED_COLLECTING`, without a ready event.
 
 Status is assigned before this ready event. A subsequent observed-status update
 does not emit a duplicate status event when the value is unchanged. Later
@@ -169,7 +171,8 @@ acquisition changes use `ACTION_SOURCE_STATUS`.
 - During silent recovery, non-permission setup failures fail that attempt and
   continue within the bounded recovery window.
 - Permission loss is terminal for the source; the service handles the permission
-  error by releasing the unusable session.
+    error by releasing the unusable session. During recovery, disconnect is reported
+    before the terminal connect error.
 
 Explicit Retry clears terminal/error state and reconnects for a fresh frame
 snapshot. The source does not treat a physical connection alone as recovery.
@@ -306,7 +309,7 @@ sequenceDiagram
     Android-->>Owner: First valid returned normal frame
     Owner->>Owner: Cancel silent recovery and scan
     alt Device is collecting
-        Owner-->>Service: READY with collecting status
+        Owner-->>Service: STATUS_CONNECTED_COLLECTING without READY
     else Device is idle
         Owner-->>Service: DISCONNECTED
         Owner-->>Service: READY with idle status
@@ -333,8 +336,10 @@ take its normal resume path.
 
 Stop requested during silent recovery, or while a previously ready source is
 awaiting reconnection, sets `stopOnReturn` instead of reporting a not-ready
-operation error. This flag belongs to the source instance and survives
-`releaseGatt()` and further attempts.
+operation error. Active silent recovery is cancelled and reports disconnected;
+an in-progress GATT attempt may continue as an ordinary connection. If no GATT
+attempt exists, normal waiting resumes. The flag belongs to the source instance
+and survives `releaseGatt()` and further attempts.
 
 ```mermaid
 sequenceDiagram
@@ -343,6 +348,7 @@ sequenceDiagram
     participant Device as Returned BluZ device
     Caller-->>Owner: requestStop while reconnecting
     Owner->>Owner: Retain stopOnReturn
+    Owner-->>Caller: DISCONNECTED if silent recovery was pending
     Device-->>Owner: First valid returned frame
     alt Frame is collecting
         Owner->>Owner: Queue Stop before READY
