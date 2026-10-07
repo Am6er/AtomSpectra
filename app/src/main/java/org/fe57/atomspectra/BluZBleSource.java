@@ -21,6 +21,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import androidx.core.content.ContextCompat;
 
@@ -40,10 +41,10 @@ final class BluZBleSource implements SpectrumSource {
     private static final long ASSEMBLY_MS = 10000;
     private static final boolean DEBUG_LOG = false; // logs reconnect timing
     private static final String LOG_TAG = "BluZ";
-    // a lost link is retried silently, the service hears about it only if the whole window passes without a valid frame
-    private static final long[] FAST_RETRY_DELAYS_MS = {1000, 3000, 5000};
-    private static final long FAST_ATTEMPT_MS = 2000; // time to establish the physical connection in one fast attempt
-    private static final long FAST_WINDOW_MS = 15000;
+    // A scan hit or physical connection extends silent recovery, up to a bounded maximum.
+    private static final long SILENT_INITIAL_WINDOW_MS = 30000;
+    private static final long SILENT_PROGRESS_WINDOW_MS = 30000;
+    private static final long SILENT_MAX_WINDOW_MS = 60000;
     private static final long SLOW_RETRY_MS = 30000;
     private final Context context;
     private final Handler handler;
@@ -69,9 +70,12 @@ final class BluZBleSource implements SpectrumSource {
     private boolean writing;
     private long retryDelay = 1000;
     private boolean silentRetry;
-    private int silentAttempt;
     private String silentReason;
     private boolean silentCollecting;
+    private long silentStartedAt;
+    private long silentDeadlineAt;
+    private BluetoothDevice silentScannedDevice;
+    private boolean silentScannedAttemptStarted;
     private BluZFrameDecoder.Frame latest;
     private int toggleOp;
     private boolean desiredCollecting;
@@ -149,7 +153,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void waitForDevice() {
         handler.removeCallbacks(retry);
-        if (closed || terminal || gatt != null || scanCallback != null) return;
+        if (closed || terminal || (gatt != null && !silentRetry) || scanCallback != null) return;
         if (!AppPermissions.isBluetoothGranted(context)) {
             permissionLost();
             return;
@@ -157,7 +161,7 @@ final class BluZBleSource implements SpectrumSource {
         try {
             if (adapter == null || !adapter.isEnabled()) return;
             if (adapter.getBluetoothLeScanner() == null) {
-                scheduleRetry();
+                if (!silentRetry) scheduleRetry();
                 return;
             }
             ScanCallback callback = new ScanCallback() {
@@ -166,6 +170,13 @@ final class BluZBleSource implements SpectrumSource {
                     dispatch(() -> {
                         if (closed || terminal || scanCallback != this) return;
                         debug("Scan hit");
+                        if (silentRetry) {
+                            silentScannedDevice = result.getDevice();
+                            stopScan();
+                            extendSilentWindow();
+                            if (gatt == null) startSilentScannedAttempt();
+                            return;
+                        }
                         stopScan();
                         connect(result.getDevice());
                     });
@@ -176,7 +187,7 @@ final class BluZBleSource implements SpectrumSource {
                     dispatch(() -> {
                         if (scanCallback != this) return;
                         stopScan();
-                        scheduleRetry();
+                        if (!silentRetry) scheduleRetry();
                     });
                 }
             };
@@ -189,7 +200,7 @@ final class BluZBleSource implements SpectrumSource {
             permissionLost();
         } catch (IllegalStateException error) {
             stopScan();
-            scheduleRetry();
+            if (!silentRetry) scheduleRetry();
         }
     }
 
@@ -221,7 +232,7 @@ final class BluZBleSource implements SpectrumSource {
             if (gatt == null) {
                 if (silentRetry) silentAttemptFailed();
                 else scheduleRetry();
-            } else handler.postDelayed(connectionDeadline, silentRetry ? FAST_ATTEMPT_MS : HANDSHAKE_MS);
+            } else handler.postDelayed(connectionDeadline, silentRetry ? SILENT_INITIAL_WINDOW_MS : HANDSHAKE_MS);
         } catch (SecurityException error) {
             permissionLost();
         }
@@ -253,12 +264,10 @@ final class BluZBleSource implements SpectrumSource {
                 } else if (newState == BluetoothProfile.STATE_CONNECTED) {
                     physicalConnection = true;
                     debug("Connected");
-                    if (silentRetry) handler.removeCallbacks(connectionDeadline);
-                    else {
-                        handler.removeCallbacks(connectionDeadline);
-                        handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
-                        setStatus(STATUS_CONNECTING);
-                    }
+                    handler.removeCallbacks(connectionDeadline);
+                    handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
+                    if (silentRetry) extendSilentWindow();
+                    else setStatus(STATUS_CONNECTING);
                     try {
                         candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                         if (!candidate.discoverServices())
@@ -711,14 +720,20 @@ final class BluZBleSource implements SpectrumSource {
             return;
         }
         silentRetry = true;
-        silentAttempt = 0;
         silentReason = reason;
         silentCollecting = latest != null && latest.isCollecting();
+        silentStartedAt = SystemClock.uptimeMillis();
+        silentDeadlineAt = silentStartedAt + SILENT_INITIAL_WINDOW_MS;
+        silentScannedDevice = null;
+        silentScannedAttemptStarted = false;
         AtomSpectraLog.addMessage(context, reason + ", retrying");
         stopScan();
         releaseGatt();
-        handler.postDelayed(silentWindowEnd, FAST_WINDOW_MS);
-        scheduleSilentAttempt();
+        handler.removeCallbacks(silentWindowEnd);
+        handler.postDelayed(silentWindowEnd, SILENT_INITIAL_WINDOW_MS);
+        waitForDevice();
+        debug("Direct silent reconnect attempt");
+        connect(adapter.getRemoteDevice(address));
     }
 
     private void connectionLostNow(String reason) {
@@ -732,36 +747,61 @@ final class BluZBleSource implements SpectrumSource {
         scheduleRetry();
     }
 
-    private final Runnable silentAttemptStart = this::startSilentAttempt;
-
-    private void startSilentAttempt() {
-        if (closed || terminal || !silentRetry || gatt != null) return;
-        silentAttempt++;
-        debug("Fast retry attempt " + silentAttempt);
-        connect(adapter.getRemoteDevice(address));
+    private void extendSilentWindow() {
+        if (!silentRetry) return;
+        long now = SystemClock.uptimeMillis();
+        long maximumDeadline = silentStartedAt + SILENT_MAX_WINDOW_MS;
+        long extendedDeadline = Math.min(maximumDeadline, now + SILENT_PROGRESS_WINDOW_MS);
+        if (extendedDeadline <= silentDeadlineAt) return;
+        silentDeadlineAt = extendedDeadline;
+        handler.removeCallbacks(silentWindowEnd);
+        handler.postDelayed(silentWindowEnd, silentDeadlineAt - now);
     }
 
-    private final Runnable silentWindowEnd = this::endSilentRetry;
-
-    private void scheduleSilentAttempt() {
-        if (silentAttempt >= FAST_RETRY_DELAYS_MS.length) endSilentRetry();
-        else handler.postDelayed(silentAttemptStart, FAST_RETRY_DELAYS_MS[silentAttempt]);
+    private void startSilentScannedAttempt() {
+        if (closed || terminal || !silentRetry || gatt != null || silentScannedDevice == null
+                || silentScannedAttemptStarted) return;
+        silentScannedAttemptStarted = true;
+        debug("Connecting to scanned BluZ device");
+        connect(silentScannedDevice);
     }
 
     private void silentAttemptFailed() {
         if (!silentRetry) return;
-        debug("Fast retry attempt " + silentAttempt + " failed");
+        debug("Silent reconnect attempt failed");
         releaseGatt();
-        scheduleSilentAttempt();
+        if (silentScannedDevice != null && !silentScannedAttemptStarted) {
+            startSilentScannedAttempt();
+        } else if (silentScannedAttemptStarted) {
+            endSilentRetry();
+        } else if (scanCallback == null) {
+            waitForDevice();
+        }
     }
 
     private void cancelSilentRetry() {
         silentRetry = false;
-        handler.removeCallbacks(silentAttemptStart);
         handler.removeCallbacks(silentWindowEnd);
+        silentStartedAt = 0;
+        silentDeadlineAt = 0;
+        silentScannedDevice = null;
+        silentScannedAttemptStarted = false;
+        stopScan();
     }
 
-    // fast retries did not help: report the loss and wait for the device in the background
+    private final Runnable silentWindowEnd = this::onSilentWindowEnd;
+
+    private void onSilentWindowEnd() {
+        if (!silentRetry) return;
+        long remaining = silentDeadlineAt - SystemClock.uptimeMillis();
+        if (remaining > 0) {
+            handler.postDelayed(silentWindowEnd, remaining);
+            return;
+        }
+        endSilentRetry();
+    }
+
+    // Silent recovery expired: report the loss and continue waiting in the background.
     private void endSilentRetry() {
         if (!silentRetry) return;
         String reason = silentReason;
@@ -782,6 +822,11 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void failHandshake(int reason, String text) {
+        if (silentRetry && reason != REASON_PERMISSION) {
+            debug("Silent GATT setup failed: " + text);
+            silentAttemptFailed();
+            return;
+        }
         terminal = true;
         cancelSilentRetry();
         releaseGatt();
