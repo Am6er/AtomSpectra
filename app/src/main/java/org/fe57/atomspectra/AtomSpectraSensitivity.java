@@ -465,19 +465,18 @@ public class AtomSpectraSensitivity extends Activity {
             return;
         }
         int rowIndex = getRowIndexById(v.getId());
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.sens_delete_row_dialog_title)
-                .setMessage(getString(R.string.sens_delete_row_dialog_message, rowIndex + 1))
-                .setPositiveButton(R.string.sens_delete_row_dialog_delete_btn, (dialog, whichButton) -> {
+        DialogHelper.showStackedActions(this,
+                getString(R.string.sens_delete_row_dialog_title),
+                getString(R.string.sens_delete_row_dialog_message, rowIndex + 1),
+                true,
+                new DialogHelper.StackedAction(getString(R.string.sens_delete_row_dialog_delete_btn), () -> {
                     ArrayList<Float> energies = new ArrayList<>(curve.keySet());
                     curve.remove(energies.get(rowIndex));
                     workingProfile.setCompCurveFromMap(curve);
                     renderSensitivityTable();
                     applyEditableState();
-                })
-                .setNegativeButton(android.R.string.cancel, (d, b) -> {
-                })
-                .show();
+                }),
+                new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
     }
 
     public void onEditButton(View v) {
