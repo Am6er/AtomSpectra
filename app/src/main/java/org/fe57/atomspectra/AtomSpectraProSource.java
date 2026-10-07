@@ -11,6 +11,7 @@ import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 
@@ -28,8 +29,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import java.util.zip.CRC32;
 
 public class AtomSpectraProSource implements SerialInputOutputManager.Listener, SpectrumSource {
@@ -70,13 +70,6 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private volatile String deviceId = null;
     private volatile double[] calibrationCoeffs = new double[CALIBRATION_COEFFICIENTS];
 
-    // Guards the connect/disconnect/reconnect lifecycle (driver, connection, port, manager,
-    // processingThread, device) as one atomic sequence, so a watchdog-triggered reconnect can
-    // never interleave with a caller-triggered connect/close. Always the outermost lock relative
-    // to syncCommand/batchSync/watchdogSync/errorReportingLock - never taken while already
-    // holding one of those - to avoid lock-order inversion.
-    private final Object connectionLock = new Object();
-    private final Object batchSync = new Object();
     // keyed by batchId, which is also reused as the id on each CommandCode in the batch
     private final HashMap<String, CommandBatch> pendingBatches = new HashMap<>();
     private UsbSerialDriver driver;
@@ -93,7 +86,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private final Object circularBufferSync = new Object();
     private Thread processingThread = null;
-    private Handler asyncTasksHandler = null;
+    private final HandlerThread sourceThread;
+    private final Handler asyncTasksHandler;
+    private volatile long connectionGeneration;
 
     public long[] histogram = new long[HIST_POINTS];
     private final boolean[] histBinsReceived = new boolean[HIST_POINTS];
@@ -115,8 +110,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     // android delivers no data through the serial port and every command ends with a timeout. This
     // timer checks that data keeps arriving and restarts the serial interface when it does not.
     private static final int DATA_WATCHDOG_INTERVAL_SECONDS = 30;
-    private final Object watchdogSync = new Object();
-    private Timer dataWatchdogTimer = null;
+    private final Runnable dataWatchdogTimeout = this::dataWatchdogTask;
 
     // serial data error counting
     private static final long SUPPRESSION_DURATION_MINUTES = 2;
@@ -181,11 +175,13 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private static final int USB_PERMISSION_WAIT_MS = 2000;
     private static final int USB_PERMISSION_POLL_MS = 100;
     private static final long USB_RECOVERY_INITIAL_WINDOW_MS = 5000;
+    private static final long USB_RECOVERY_HANDSHAKE_WINDOW_MS =
+            USB_WAIT_DEVICE + 4 * (CommandCode.DROP_TIMEOUT + 500 + SERIAL_MANAGER_WRITE_TIMEOUT);
     private final String identity;
-    private HandlerThread usbEventThread = null;
     private BroadcastReceiver usbEventReceiver = null;
     private volatile UsbDevice permissionRequestedDevice = null;
     private volatile boolean recoveryConnectPending;
+    private long recoveryDeadline;
     private final Runnable recoveryTimeout = this::onRecoveryTimeout;
 
     public AtomSpectraProSource(Context context, UsbDevice device) {
@@ -203,61 +199,79 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.context = context;
         this.device = device;
         this.identity = identity;
-        this.asyncTasksHandler = new Handler(context.getMainLooper());
+        this.sourceThread = new HandlerThread("AtomSpectraProSource");
+        this.sourceThread.start();
+        this.asyncTasksHandler = new Handler(this.sourceThread.getLooper());
+    }
+
+    private boolean deferToSourceThread(Runnable task) {
+        if (this.context == null) return true;
+        if (Looper.myLooper() == this.asyncTasksHandler.getLooper()) return false;
+        this.asyncTasksHandler.post(() -> {
+            if (this.context != null) task.run();
+        });
+        return true;
+    }
+
+    private void postForConnection(long generation, Runnable task) {
+        this.asyncTasksHandler.post(() -> {
+            if (this.context != null && generation == this.connectionGeneration) task.run();
+        });
     }
 
     @Override
     public void requestConnect() {
-        synchronized (this.connectionLock) {
-            if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
+        if (this.deferToSourceThread(this::requestConnect)) return;
+        if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
 
-            if (this.isOpened()) {
-                return;
-            }
-
-            if (this.status == SpectrumSource.STATUS_CONNECTING) {
-                return;
-            }
-            boolean recovering = this.recoveryConnectPending && this.status == SpectrumSource.STATUS_RECOVERING;
-
-            this.loadAppPreferences();
-            this.registerUsbEventReceiver();
-
-            UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
-            if (this.device == null) {
-                this.device = this.findLockedDevice(manager);
-            }
-            if (this.device == null) {
-                return;
-            }
-            if (manager == null || !manager.hasPermission(this.device)) {
-                if (manager != null) {
-                    this.permissionRequestedDevice = this.device;
-                    final int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
-                    PendingIntent pi = PendingIntent.getBroadcast(this.context, 0,
-                            new Intent(ACTION_USB_PERMISSION_RESULT).setPackage(Constants.PACKAGE_NAME), flags);
-                    manager.requestPermission(this.device, pi);
-                }
-                return;
-            }
-
-            this.setAndEmitStatus(recovering ? SpectrumSource.STATUS_RECOVERING : SpectrumSource.STATUS_CONNECTING);
-            String openError = this.openPort();
-            if (openError != null) {
-                if (recovering) {
-                    this.finishRecoveryWithDisconnect("USB recovery failed: " + openError);
-                } else {
-                    this.setAndEmitStatus(SpectrumSource.STATUS_DISCONNECTED);
-                }
-                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, openError);
-                return;
-            }
-
-            this.enqueueTextCommand("-inf", OP_ID_CHECK_FIRMWARE, SpectrumSource.OP_CONNECT);
-            this.enqueueTextCommand("-mode 0", OP_ID_ENABLE_SPECTROMETER_MODE, SpectrumSource.OP_CONNECT);
-            this.enqueueTextCommand("-cal", OP_ID_LOAD_CALIBRATION_AND_ID, SpectrumSource.OP_CONNECT);
-            this.enqueueTextCommand("-stt", OP_ID_CHECK_STATUS, SpectrumSource.OP_CONNECT);
+        if (this.isOpened()) {
+            return;
         }
+
+        if (this.status == SpectrumSource.STATUS_CONNECTING) {
+            return;
+        }
+        boolean recovering = this.recoveryConnectPending && this.status == SpectrumSource.STATUS_RECOVERING;
+
+        this.loadAppPreferences();
+        this.registerUsbEventReceiver();
+
+        UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
+        if (this.device == null) {
+            this.device = this.findLockedDevice(manager);
+        }
+        if (this.device == null) {
+            return;
+        }
+        if (manager == null || !manager.hasPermission(this.device)) {
+            if (manager != null) {
+                this.permissionRequestedDevice = this.device;
+                final int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
+                PendingIntent pi = PendingIntent.getBroadcast(this.context, 0,
+                        new Intent(ACTION_USB_PERMISSION_RESULT).setPackage(Constants.PACKAGE_NAME), flags);
+                manager.requestPermission(this.device, pi);
+            }
+            return;
+        }
+
+        if (recovering) {
+            this.armRecoveryTimeout(USB_RECOVERY_HANDSHAKE_WINDOW_MS);
+        }
+        this.setAndEmitStatus(recovering ? SpectrumSource.STATUS_RECOVERING : SpectrumSource.STATUS_CONNECTING);
+        String openError = this.openPort();
+        if (openError != null) {
+            this.teardownConnection();
+            if (recovering) {
+                this.emitDisconnected("USB recovery failed: " + openError);
+            }
+            this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, openError);
+            return;
+        }
+
+        this.enqueueTextCommand("-inf", OP_ID_CHECK_FIRMWARE, SpectrumSource.OP_CONNECT);
+        this.enqueueTextCommand("-mode 0", OP_ID_ENABLE_SPECTROMETER_MODE, SpectrumSource.OP_CONNECT);
+        this.enqueueTextCommand("-cal", OP_ID_LOAD_CALIBRATION_AND_ID, SpectrumSource.OP_CONNECT);
+        this.enqueueTextCommand("-stt", OP_ID_CHECK_STATUS, SpectrumSource.OP_CONNECT);
     }
 
     private void loadAppPreferences() {
@@ -267,6 +281,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void onAppPreferencesChanged() {
+        if (this.deferToSourceThread(this::onAppPreferencesChanged)) return;
         if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
             return;
         this.loadAppPreferences();
@@ -274,16 +289,19 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void requestShowData() {
+        if (this.deferToSourceThread(this::requestShowData)) return;
         this.requestShowData(false);
     }
 
     @Override
     public void requestStart() {
+        if (this.deferToSourceThread(this::requestStart)) return;
         this.requestStart(false);
     }
 
     @Override
     public void requestStop() {
+        if (this.deferToSourceThread(this::requestStop)) return;
         if (this.rejectIfDisconnected(SpectrumSource.OP_STOP)) return;
 
         this.cancelDataWatchdog();
@@ -292,6 +310,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void requestReset() {
+        if (this.deferToSourceThread(this::requestReset)) return;
         if (this.rejectIfDisconnected(SpectrumSource.OP_RESET)) return;
 
         this.armUnreliableDataWindow();
@@ -300,6 +319,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void requestSaveCalibration(double[] coeffs) {
+        double[] savedCoeffs = Arrays.copyOf(coeffs, coeffs.length);
+        if (this.deferToSourceThread(() -> this.requestSaveCalibration(savedCoeffs))) return;
         if (this.rejectIfDisconnected(SpectrumSource.OP_CALIBRATION_SAVE)) return;
 
         // the batch may pause spectrum updates; the watchdog is re-armed once the status is resynced
@@ -318,20 +339,34 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void close() {
-        synchronized (this.connectionLock) {
-            this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
-            this.recoveryConnectPending = false;
-            this.unregisterUsbEventReceiver();
-            this.cancelDataWatchdog();
-            this.stopProcessingThread();
-            this.cancelAsyncTasks();
-            this.closePortAndConnection();
-            this.stopUsbManager();
-            this.reportIncompleteCommandsAsFailed();
-
-            this.setAndEmitStatus(SpectrumSource.STATUS_CLOSED);
-            this.context = null;
+        if (this.context == null) return;
+        if (Looper.myLooper() != this.asyncTasksHandler.getLooper()) {
+            CountDownLatch closed = new CountDownLatch(1);
+            if (!this.asyncTasksHandler.post(() -> {
+                try {
+                    this.close();
+                } finally {
+                    closed.countDown();
+                }
+            })) return;
+            boolean interrupted = false;
+            while (true) {
+                try {
+                    closed.await();
+                    break;
+                } catch (InterruptedException ignored) {
+                    interrupted = true;
+                }
+            }
+            if (interrupted) Thread.currentThread().interrupt();
+            return;
         }
+        this.unregisterUsbEventReceiver();
+        this.teardownConnection();
+
+        this.setAndEmitStatus(SpectrumSource.STATUS_CLOSED);
+        this.context = null;
+        this.sourceThread.quitSafely();
     }
 
     @Override
@@ -341,6 +376,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void setInitialHistogram(long[] histogram, double recordingTimeSec) {
+        if (this.deferToSourceThread(() -> this.setInitialHistogram(histogram, recordingTimeSec)))
+            return;
         this.emitError(SpectrumSource.OP_RESET, SpectrumSource.REASON_ERROR, "Initial histogram is not supported");
     }
 
@@ -415,19 +452,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         return false;
     }
 
-    private void reportIncompleteCommandsAsFailed() {
-        LinkedList<CommandCode> failedCommands = new LinkedList<>();
-        synchronized (this.syncCommand) {
-            while (!this.commands.isEmpty()) {
-                CommandCode failed = this.commands.pop();
-                failedCommands.add(failed);
-                log(this.context, "Serial command failed due close() call: " + new String(failed.command));
-            }
-            this.answerNumber = 0;
-        }
-        for (CommandCode failed : failedCommands) {
-            this.handleDeviceAnswer(failed, COMMAND_RESULT_ERR);
-        }
+    private void cancelPendingCommands() {
+        this.commands.clear();
+        this.answerNumber = 0;
+        this.pendingBatches.clear();
     }
 
     private void stopUsbManager() {
@@ -497,26 +525,31 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.port.setParameters(600000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
             this.inputDataHead = 0;
             this.inputDataEnd = 0;
-            this.manager = new SerialInputOutputManager(this.port, this);
+            final long generation = this.connectionGeneration;
+            this.manager = new SerialInputOutputManager(this.port, new SerialInputOutputManager.Listener() {
+                @Override
+                public void onNewData(byte[] data) {
+                    AtomSpectraProSource.this.onNewData(generation, data);
+                }
+
+                @Override
+                public void onRunError(Exception error) {
+                    AtomSpectraProSource.this.postForConnection(generation,
+                            () -> AtomSpectraProSource.this.onRunError(error));
+                }
+            });
             this.manager.setReadBufferSize(SERIAL_MANAGER_READ_BUFFER_SIZE);
             this.manager.setReadQueue(SERIAL_MANAGER_READ_QUEUE_SIZE);
             this.manager.start();
-            this.processingThread = new Thread(this::processBufferLoop, "AtomSpectra-Packet-Processor");
+            this.processingThread = new Thread(() -> this.processBufferLoop(generation), "AtomSpectra-Packet-Processor");
             this.processingThread.setDaemon(true);
             this.processingThread.start();
         } catch (Exception e) {
             log(this.context, "USB port setup failed: " + e.getMessage());
-            this.closePortAndConnection();
+            this.teardownConnection();
             return "USB port setup failed: " + e.getMessage();
         }
         return null;
-    }
-
-    private void cancelAsyncTasks() {
-        if (this.asyncTasksHandler != null) {
-            this.asyncTasksHandler.removeCallbacksAndMessages(null);
-        }
-        this.asyncTasksHandler = null;
     }
 
     // test if port is actually working
@@ -742,9 +775,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
      * Sends commands as one all-or-nothing unit: callback fires once every answer is in, or as soon as one fails.
      */
     private void executeCommandBatch(@NonNull String[] commands, @NonNull String batchId, int op, @NonNull BatchCallback callback) {
-        synchronized (this.batchSync) {
-            this.pendingBatches.put(batchId, new CommandBatch(commands.length, callback));
-        }
+        this.pendingBatches.put(batchId, new CommandBatch(commands.length, callback));
         for (String command : commands) {
             this.enqueueTextCommand(command, batchId, op);
         }
@@ -762,20 +793,18 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         boolean failed;
         int failureReason;
         BatchCallback callback;
-        synchronized (this.batchSync) {
-            CommandBatch batch = this.pendingBatches.get(batchId);
-            if (batch == null) return false;
-            if (isFailureAnswer) {
-                batch.failed = true;
-                batch.failureReason = reason;
-            }
-            batch.remaining--;
-            failed = batch.failed;
-            finished = failed || batch.remaining == 0;
-            failureReason = batch.failureReason;
-            callback = batch.callback;
-            if (finished) this.pendingBatches.remove(batchId);
+        CommandBatch batch = this.pendingBatches.get(batchId);
+        if (batch == null) return false;
+        if (isFailureAnswer) {
+            batch.failed = true;
+            batch.failureReason = reason;
         }
+        batch.remaining--;
+        failed = batch.failed;
+        finished = failed || batch.remaining == 0;
+        failureReason = batch.failureReason;
+        callback = batch.callback;
+        if (finished) this.pendingBatches.remove(batchId);
         if (finished && failed) {
             log(this.context, "Command batch \"" + batchId + "\" failed: " + answer.trim());
         }
@@ -790,14 +819,12 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
      * Removes any not-yet-sent commands belonging to a failed batch so they never reach the device.
      */
     private void drainQueuedCommands(String id) {
-        synchronized (this.syncCommand) {
-            Iterator<CommandCode> it = this.commands.iterator();
-            while (it.hasNext()) {
-                CommandCode dropped = it.next();
-                if (id.equals(dropped.id)) {
-                    log(this.context, "Dropping queued command \"" + new String(dropped.command).trim() + "\" from failed batch \"" + id + "\"");
-                    it.remove();
-                }
+        Iterator<CommandCode> it = this.commands.iterator();
+        while (it.hasNext()) {
+            CommandCode dropped = it.next();
+            if (id.equals(dropped.id)) {
+                log(this.context, "Dropping queued command \"" + new String(dropped.command).trim() + "\" from failed batch \"" + id + "\"");
+                it.remove();
             }
         }
     }
@@ -881,78 +908,53 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     // +++ data watchdog +++
 
     private void restartDataWatchdog() {
-        synchronized (this.watchdogSync) {
-            this.cancelDataWatchdog();
-            if (this.status != SpectrumSource.STATUS_CONNECTED_COLLECTING) {
-                return;
-            }
-
-            this.dataWatchdogTimer = new Timer();
-            this.dataWatchdogTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    AtomSpectraProSource.this.dataWatchdogTask();
-                }
-            }, DATA_WATCHDOG_INTERVAL_SECONDS * 1000L);
+        this.cancelDataWatchdog();
+        if (this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            this.asyncTasksHandler.postDelayed(this.dataWatchdogTimeout, DATA_WATCHDOG_INTERVAL_SECONDS * 1000L);
         }
     }
 
     private void cancelDataWatchdog() {
-        synchronized (this.watchdogSync) {
-            if (this.dataWatchdogTimer != null) {
-                this.dataWatchdogTimer.cancel();
-                this.dataWatchdogTimer.purge();
-                this.dataWatchdogTimer = null;
-            }
-        }
+        this.asyncTasksHandler.removeCallbacks(this.dataWatchdogTimeout);
     }
 
     private void dataWatchdogTask() {
-        // context becomes null only via close(); Timer.cancel() does not interrupt an already-running
-        // task, so this task can still be executing after close() has nulled it out. The whole check+
-        // teardown+reopen sequence runs under connectionLock so it can never interleave with a
-        // caller-triggered close()/requestConnect() - a concurrent close() just makes the status/isOpened
-        // check below observe STATUS_CLOSED and bail out once this task gets the lock.
-        synchronized (this.connectionLock) {
-            final Context ctx = this.context;
-            if (ctx == null || this.status != SpectrumSource.STATUS_CONNECTED_COLLECTING || !this.isOpened()) {
-                return;
-            }
-
-            // discard previous connection as unreliable
-            this.teardownConnection();
-
-            ToastHelper.showToastAndLog(ctx, ctx.getString(R.string.log_usb_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
-            UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
-            UsbDevice device = findLockedDevice(manager);
-            boolean hasPermission = device != null && manager.hasPermission(device);
-
-            if (device == null) {
-                ToastHelper.showToastAndLog(ctx, R.string.log_usb_watchdog_device_not_found);
-                this.emitDisconnected("Device not found");
-                return;
-            }
-
-            if (!hasPermission) {
-                ToastHelper.showToastAndLog(ctx, R.string.log_usb_watchdog_device_no_perm);
-                this.emitDisconnected("No permission for device");
-                return;
-            }
-
-            // TODO: Status still moves through EXECUTING_COMMAND -> COLLECTING like any other command - check if it harms
-            String openError = this.reopenLocked(device);
-            if (openError != null) {
-                ToastHelper.showToastAndLog(ctx, "Watchdog reconnect failed: " + openError);
-                this.emitDisconnected("Watchdog reconnect failed: " + openError);
-                return;
-            }
-            this.armUnreliableDataWindow();
-            this.enqueueTextCommand("-sta", OP_ID_WATCHDOG_RESTART_COLLECTING, SpectrumSource.OP_START);
+        final Context ctx = this.context;
+        if (ctx == null || this.status != SpectrumSource.STATUS_CONNECTED_COLLECTING || !this.isOpened()) {
+            return;
         }
+
+        this.teardownConnection();
+
+        ToastHelper.showToastAndLog(ctx, ctx.getString(R.string.log_usb_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
+        UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
+        UsbDevice device = findLockedDevice(manager);
+        boolean hasPermission = device != null && manager.hasPermission(device);
+
+        if (device == null) {
+            ToastHelper.showToastAndLog(ctx, R.string.log_usb_watchdog_device_not_found);
+            this.emitDisconnected("Device not found");
+            return;
+        }
+
+        if (!hasPermission) {
+            ToastHelper.showToastAndLog(ctx, R.string.log_usb_watchdog_device_no_perm);
+            this.emitDisconnected("No permission for device");
+            return;
+        }
+
+        String openError = this.reopenLocked(device);
+        if (openError != null) {
+            ToastHelper.showToastAndLog(ctx, "Watchdog reconnect failed: " + openError);
+            this.emitDisconnected("Watchdog reconnect failed: " + openError);
+            return;
+        }
+        this.armUnreliableDataWindow();
+        this.enqueueTextCommand("-sta", OP_ID_WATCHDOG_RESTART_COLLECTING, SpectrumSource.OP_START);
     }
 
     /**
-     * Points the source at a fresh device token and opens the port; returns an error text or null. Caller holds connectionLock.
+     * Points the source at a fresh device token and opens the port; returns an error text or null.
      */
     private String reopenLocked(UsbDevice fresh) {
         this.device = fresh;
@@ -961,15 +963,20 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     /**
-     * Releases the hardware and leaves the source in DISCONNECTED; caller holds connectionLock.
+     * Releases the hardware and leaves the source in DISCONNECTED.
      */
     private void teardownConnection() {
+        synchronized (this.circularBufferSync) {
+            this.connectionGeneration++;
+        }
+        this.recoveryConnectPending = false;
+        this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.status = SpectrumSource.STATUS_DISCONNECTED;
         this.cancelDataWatchdog();
-        this.reportIncompleteCommandsAsFailed();
+        this.cancelPendingCommands();
         this.closePortAndConnection();
         this.stopUsbManager();
         this.stopProcessingThread();
-        this.status = SpectrumSource.STATUS_DISCONNECTED;
     }
 
     // +++ device loss and return +++
@@ -978,8 +985,6 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         final Context ctx = this.context;
         if (ctx == null || this.usbEventReceiver != null) return;
 
-        this.usbEventThread = new HandlerThread("AtomSpectraProUsbEvents");
-        this.usbEventThread.start();
         this.usbEventReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -991,7 +996,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(ACTION_USB_PERMISSION_RESULT);
-        Handler handler = new Handler(this.usbEventThread.getLooper());
+        Handler handler = this.asyncTasksHandler;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ctx.registerReceiver(this.usbEventReceiver, filter, null, handler, Context.RECEIVER_NOT_EXPORTED);
         } else {
@@ -1009,10 +1014,6 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             }
         }
         this.usbEventReceiver = null;
-        if (this.usbEventThread != null) {
-            this.usbEventThread.quitSafely();
-            this.usbEventThread = null;
-        }
     }
 
     @SuppressWarnings("deprecation")
@@ -1043,24 +1044,21 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private void onDeviceDetached(UsbDevice detached) {
         if (detached == null) return;
 
-        synchronized (this.connectionLock) {
-            final Context ctx = this.context;
-            if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
-                return;
-            if (this.device == null || !detached.getDeviceName().equals(this.device.getDeviceName()))
-                return;
+        final Context ctx = this.context;
+        if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+            return;
+        if (this.device == null || !detached.getDeviceName().equals(this.device.getDeviceName()))
+            return;
 
-                boolean canRecover = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING;
-            this.teardownConnection();
-            log(ctx, "USB device detached");
-            if (canRecover) {
-                this.recoveryConnectPending = true;
-                this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
-                this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
-                this.asyncTasksHandler.postDelayed(this.recoveryTimeout, USB_RECOVERY_INITIAL_WINDOW_MS);
-            } else {
-                this.emitDisconnected("USB device detached");
-            }
+        boolean canRecover = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING;
+        this.teardownConnection();
+        log(ctx, "USB device detached");
+        if (canRecover) {
+            this.recoveryConnectPending = true;
+            this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
+            this.armRecoveryTimeout(USB_RECOVERY_INITIAL_WINDOW_MS);
+        } else {
+            this.emitDisconnected("USB device detached");
         }
     }
 
@@ -1113,13 +1111,11 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     // takes a fresh UsbDevice token (the old one is stale after re-enumeration) and runs the normal connect sequence
     private void reconnect(UsbDevice returned) {
-        synchronized (this.connectionLock) {
-            if (this.context == null || !this.isAwaitingUsbReturn()) return;
+        if (this.context == null || !this.isAwaitingUsbReturn()) return;
 
-            this.device = returned;
-            SystemClock.sleep(USB_WAIT_DEVICE);
-            this.requestConnect();
-        }
+        this.device = returned;
+        SystemClock.sleep(USB_WAIT_DEVICE);
+        this.requestConnect();
     }
 
     private boolean isAwaitingUsbReturn() {
@@ -1128,34 +1124,39 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void completeRecoveryWhileCollecting() {
-        synchronized (this.connectionLock) {
-            if (!this.recoveryConnectPending) return;
-            this.recoveryConnectPending = false;
-            this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
-            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
-            this.resetHistogramCompleteness();
-            this.flushErrorSuppressionLog();
-            this.restartDataWatchdog();
-        }
+        if (!this.recoveryConnectPending) return;
+        this.recoveryConnectPending = false;
+        this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
+        this.resetHistogramCompleteness();
+        this.flushErrorSuppressionLog();
+        this.restartDataWatchdog();
     }
 
     private void finishRecoveryWithDisconnect(String reason) {
-        synchronized (this.connectionLock) {
-            if (!this.recoveryConnectPending) return;
-            this.recoveryConnectPending = false;
-            this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
-            this.setAndEmitStatus(SpectrumSource.STATUS_DISCONNECTED);
-            this.emitDisconnected(reason);
-        }
+        if (!this.recoveryConnectPending) return;
+        this.recoveryConnectPending = false;
+        this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.setAndEmitStatus(SpectrumSource.STATUS_DISCONNECTED);
+        this.emitDisconnected(reason);
+    }
+
+    private void armRecoveryTimeout(long windowMs) {
+        this.recoveryDeadline = SystemClock.uptimeMillis() + windowMs;
+        this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+        this.asyncTasksHandler.postDelayed(this.recoveryTimeout, windowMs);
     }
 
     private void onRecoveryTimeout() {
-        synchronized (this.connectionLock) {
-            if (!this.recoveryConnectPending) return;
-            this.recoveryConnectPending = false;
-            this.teardownConnection();
-            this.emitDisconnected("USB recovery timed out");
+        if (!this.recoveryConnectPending) return;
+        long remaining = this.recoveryDeadline - SystemClock.uptimeMillis();
+        if (remaining > 0) {
+            this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
+            this.asyncTasksHandler.postDelayed(this.recoveryTimeout, remaining);
+            return;
         }
+        this.teardownConnection();
+        this.emitDisconnected("USB recovery timed out");
     }
 
     // CRC-16 (MODBUS version)
@@ -1425,186 +1426,182 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
     }
 
-    private void findPackets(int tillInputDataEnd) {
-        byte[] newPacket;
-        while (true) {
-            newPacket = this.searchPacket(tillInputDataEnd);
+    private void findPackets(int tillInputDataEnd, long generation) {
+        while (!Thread.currentThread().isInterrupted()) {
+            byte[] newPacket = this.searchPacket(tillInputDataEnd);
             if (newPacket == null || newPacket.length == 0) {
                 return;
             }
+            this.postForConnection(generation, () -> this.handlePacket(newPacket));
+        }
+    }
 
-            int code = newPacket[0] & 0xFF;
-            switch (code) {
-                case CODE_HIST:
-                    if (newPacket.length % 4 != 1) {
-                        // TODO: report discrepancy (but keep in mind CODE_HIST is sent very often)
-                        break;
-                    }
-
-                    int pos = (newPacket[1] & 0xFF) | ((newPacket[2] & 0xFF) << 8);
-                    if (DEBUG_LOG) {
-                        log(this.context, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
-                    }
-
-                    // The device emits each sweep as chunks with strictly ascending pos (chunk
-                    // size may vary, but the order is guaranteed); when pos steps back a new sweep
-                    // has begun. Reset completeness here (not only on the DATA packet) so that a
-                    // DATA packet lost to a CRC error cannot leave stale received-flags that
-                    // mislabel a partially-refreshed frame as complete.
-                    if (pos <= this.lastHistStartPos) {
-                        this.resetHistogramCompleteness();
-                    }
-                    this.lastHistStartPos = pos;
-
-                    int bin;
-                    for (int i = 3; i < newPacket.length - 2; i += 4) {
-                        if (pos >= HIST_POINTS)
-                            break;
-                        bin = (newPacket[i] & 0xFF) |
-                                ((newPacket[i + 1] & 0xFF) << 8) |
-                                ((newPacket[i + 2] & 0xFF) << 16) |
-                                ((newPacket[i + 3] & 0xFF) << 24);
-                        this.histogram[pos] = bin;
-                        if (!this.histBinsReceived[pos]) {
-                            this.histBinsReceived[pos] = true;
-                            this.histBinsMissing--;
-                        }
-                        pos++;
-                    }
+    private void handlePacket(byte[] newPacket) {
+        int code = newPacket[0] & 0xFF;
+        switch (code) {
+            case CODE_HIST:
+                if (newPacket.length % 4 != 1) {
+                    // TODO: report discrepancy (but keep in mind CODE_HIST is sent very often)
                     break;
+                }
 
-                case CODE_SCOPE:
-                    if (newPacket.length % 2 != 1) {
+                int pos = (newPacket[1] & 0xFF) | ((newPacket[2] & 0xFF) << 8);
+                if (DEBUG_LOG) {
+                    log(this.context, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
+                }
+
+                // The device emits each sweep as chunks with strictly ascending pos (chunk
+                // size may vary, but the order is guaranteed); when pos steps back a new sweep
+                // has begun. Reset completeness here (not only on the DATA packet) so that a
+                // DATA packet lost to a CRC error cannot leave stale received-flags that
+                // mislabel a partially-refreshed frame as complete.
+                if (pos <= this.lastHistStartPos) {
+                    this.resetHistogramCompleteness();
+                }
+                this.lastHistStartPos = pos;
+
+                int bin;
+                for (int i = 3; i < newPacket.length - 2; i += 4) {
+                    if (pos >= HIST_POINTS)
                         break;
+                    bin = (newPacket[i] & 0xFF) |
+                            ((newPacket[i + 1] & 0xFF) << 8) |
+                            ((newPacket[i + 2] & 0xFF) << 16) |
+                            ((newPacket[i + 3] & 0xFF) << 24);
+                    this.histogram[pos] = bin;
+                    if (!this.histBinsReceived[pos]) {
+                        this.histBinsReceived[pos] = true;
+                        this.histBinsMissing--;
                     }
+                    pos++;
+                }
+                break;
 
-                    if (DEBUG_LOG) {
-                        log(this.context, "Packet SCOPE code=0x02");
-                    }
-
-                    long[] scope = new long[(newPacket.length - 3) >> 1];
-                    for (int i = 1, j = 0; i < newPacket.length - 2; i += 2, j += 1) {
-                        scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
-                    }
-
-                    // no consumer for that data for now
+            case CODE_SCOPE:
+                if (newPacket.length % 2 != 1) {
                     break;
+                }
 
-                case CODE_TEXT:
-                    CommandCode answered = null;
-                    String answer;
-                    synchronized (this.syncCommand) {
-                        int newLength = newPacket.length - 3;    //remove 0x03 code operation and trailing crc16 two-byte code
-                        byte[] answerPacket = new byte[newLength];   //remove first code byte and last 0x0D,0x0A bytes
-                        System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
-                        answer = new String(answerPacket);
-                        //fix some sort of error in Spectra Pro
-                        if (COMMAND_RESULT_OK2.equals(answer)) {
-                            answer = COMMAND_RESULT_OK;
-                        }
-                        if (this.commands.isEmpty()) {
-                            log(this.context, "Unexpected TEXT from device (no pending commands): " + answer.trim());
-                            break;
-                        }
-                        if (DEBUG_LOG) {
-                            log(this.context, "Packet TEXT code=0x03 text=" + answer.trim());
-                        }
-                        answered = this.commands.pop();
-                        this.answerNumber = 0; //data received
-                    }
+                if (DEBUG_LOG) {
+                    log(this.context, "Packet SCOPE code=0x02");
+                }
 
-                    // delivered outside syncCommand: handling an own answer may restart the
-                    // watchdog, whose recovery path takes syncCommand itself
-                    this.handleDeviceAnswer(answered, answer);
+                long[] scope = new long[(newPacket.length - 3) >> 1];
+                for (int i = 1, j = 0; i < newPacket.length - 2; i += 2, j += 1) {
+                    scope[j] = (newPacket[i] & 0xFF) | ((newPacket[i + 1] & 0xFF) << 8);
+                }
 
-                    this.sendPacket(); // send next packet
+                // no consumer for that data for now
+                break;
+
+            case CODE_TEXT:
+                int newLength = newPacket.length - 3;    //remove 0x03 code operation and trailing crc16 two-byte code
+                byte[] answerPacket = new byte[newLength];   //remove first code byte and last 0x0D,0x0A bytes
+                System.arraycopy(newPacket, 1, answerPacket, 0, newLength);
+                String answer = new String(answerPacket);
+                //fix some sort of error in Spectra Pro
+                if (COMMAND_RESULT_OK2.equals(answer)) {
+                    answer = COMMAND_RESULT_OK;
+                }
+                if (this.commands.isEmpty()) {
+                    log(this.context, "Unexpected TEXT from device (no pending commands): " + answer.trim());
                     break;
+                }
+                if (DEBUG_LOG) {
+                    log(this.context, "Packet TEXT code=0x03 text=" + answer.trim());
+                }
+                CommandCode answered = this.commands.pop();
+                this.answerNumber = 0; //data received
 
-                case CODE_DATA:
-                    if (newPacket.length < (11 + 2)) {
-                        break;
-                    }
+                this.handleDeviceAnswer(answered, answer);
 
-                    int total_time = (newPacket[1] & 0xFF) |
-                            ((newPacket[2] & 0xFF) << 8) |
-                            ((newPacket[3] & 0xFF) << 16) |
-                            ((newPacket[4] & 0xFF) << 24);
-                    int cpu_load = (newPacket[5] & 0xFF) |
-                            ((newPacket[6] & 0xFF) << 8);
-                    int cps = (newPacket[7] & 0xFF) |
-                            ((newPacket[8] & 0xFF) << 8) |
-                            ((newPacket[9] & 0xFF) << 16) |
-                            ((newPacket[10] & 0xFF) << 24);
+                this.sendPacket(); // send next packet
+                break;
 
-                    if (DEBUG_LOG) {
-                        log(this.context, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
-                    }
+            case CODE_DATA:
+                if (newPacket.length < (11 + 2)) {
+                    break;
+                }
 
-                    int lost_impulses = 0;
-                    if (newPacket.length >= (15 + 2)) {
-                        lost_impulses = (newPacket[11] & 0xFF) |
-                                ((newPacket[12] & 0xFF) << 8) |
-                                ((newPacket[13] & 0xFF) << 16) |
-                                ((newPacket[14] & 0xFF) << 24);
-                    }
+                int total_time = (newPacket[1] & 0xFF) |
+                        ((newPacket[2] & 0xFF) << 8) |
+                        ((newPacket[3] & 0xFF) << 16) |
+                        ((newPacket[4] & 0xFF) << 24);
+                int cpu_load = (newPacket[5] & 0xFF) |
+                        ((newPacket[6] & 0xFF) << 8);
+                int cps = (newPacket[7] & 0xFF) |
+                        ((newPacket[8] & 0xFF) << 8) |
+                        ((newPacket[9] & 0xFF) << 16) |
+                        ((newPacket[10] & 0xFF) << 24);
 
-                    if (newPacket.length >= (28 + 2)) {
-                        //newPacket[15] & 0x01 - has temperature sensor1
-                        //newPacket[15] & 0x02 - has temperature sensor2
-                        //newPacket[15] & 0x04 - has temperature sensor3
-                        //newPacket[15-18] - float temperature 1
-                        //newPacket[19-23] - float temperature 2
-                        //newPacket[24-28] - float temperature 3
+                if (DEBUG_LOG) {
+                    log(this.context, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
+                }
+
+                int lost_impulses = 0;
+                if (newPacket.length >= (15 + 2)) {
+                    lost_impulses = (newPacket[11] & 0xFF) |
+                            ((newPacket[12] & 0xFF) << 8) |
+                            ((newPacket[13] & 0xFF) << 16) |
+                            ((newPacket[14] & 0xFF) << 24);
+                }
+
+                if (newPacket.length >= (28 + 2)) {
+                    //newPacket[15] & 0x01 - has temperature sensor1
+                    //newPacket[15] & 0x02 - has temperature sensor2
+                    //newPacket[15] & 0x04 - has temperature sensor3
+                    //newPacket[15-18] - float temperature 1
+                    //newPacket[19-23] - float temperature 2
+                    //newPacket[24-28] - float temperature 3
 //                        total_impulse_length = (newPacket[15] & 0xFF) |
 //                                ((newPacket[16] & 0xFF) << 8) |
 //                                ((newPacket[17] & 0xFF) << 16) |
 //                                ((newPacket[18] & 0xFF) << 24);
-                    }
+                }
 
-                    boolean isHistogramComplete = this.histBinsMissing == 0;
-                    boolean isUnreliable = false;
-                    if (this.unreliableDataReportsLeft > 0) {
-                        if (isHistogramComplete) {
-                            this.unreliableDataReportsLeft = 0;
-                        } else {
-                            this.unreliableDataReportsLeft--;
-                            isUnreliable = true;
-                        }
-                    }
-
-                    if (this.recoveryConnectPending) {
-                        this.resetHistogramCompleteness();
-                        this.restartDataWatchdog();
-                        break;
-                    }
-
-                    Intent intent;
-                    if (isHistogramComplete || this.allowIncompleteData) {
-                        intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA).setPackage(Constants.PACKAGE_NAME);
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM, this.histogram);
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_CP1S, cps);
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, (double) total_time);
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_INPUT_TYPE, this.inputType());
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_INSTANCE_ID, this.instanceId);
+                boolean isHistogramComplete = this.histBinsMissing == 0;
+                boolean isUnreliable = false;
+                if (this.unreliableDataReportsLeft > 0) {
+                    if (isHistogramComplete) {
+                        this.unreliableDataReportsLeft = 0;
                     } else {
-                        intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED).setPackage(Constants.PACKAGE_NAME);
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_INPUT_TYPE, this.inputType());
-                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_INSTANCE_ID, this.instanceId);
-                        if (isUnreliable) {
-                            intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_SKIPPED_REASON, "Skip due to recording start");
-                        } else {
-                            intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_SKIPPED_REASON, "Incomplete histogram received");
-                        }
+                        this.unreliableDataReportsLeft--;
+                        isUnreliable = true;
                     }
+                }
 
+                if (this.recoveryConnectPending) {
                     this.resetHistogramCompleteness();
-                    this.context.sendBroadcast(intent);
                     this.restartDataWatchdog();
                     break;
-                default:
-                    //Toast.makeText(context, context.getString(R.string.unknown_code, code & 0xFF), Toast.LENGTH_SHORT).show();
-                    break;
-            }
+                }
+
+                Intent intent;
+                if (isHistogramComplete || this.allowIncompleteData) {
+                    intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA).setPackage(Constants.PACKAGE_NAME);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM, this.histogram);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_CP1S, cps);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, (double) total_time);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_INPUT_TYPE, this.inputType());
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_INSTANCE_ID, this.instanceId);
+                } else {
+                    intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED).setPackage(Constants.PACKAGE_NAME);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_INPUT_TYPE, this.inputType());
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_INSTANCE_ID, this.instanceId);
+                    if (isUnreliable) {
+                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_SKIPPED_REASON, "Skip due to recording start");
+                    } else {
+                        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_SKIPPED_REASON, "Incomplete histogram received");
+                    }
+                }
+
+                this.resetHistogramCompleteness();
+                this.context.sendBroadcast(intent);
+                this.restartDataWatchdog();
+                break;
+            default:
+                //Toast.makeText(context, context.getString(R.string.unknown_code, code & 0xFF), Toast.LENGTH_SHORT).show();
+                break;
         }
     }
 
@@ -1651,80 +1648,77 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private final LinkedList<CommandCode> commands = new LinkedList<>();
     private long answerNumber = 0;
-    private final Object syncCommand = new Object();
 
     private boolean sendPacket() {
-        synchronized (this.syncCommand) {
-            //nothing or nowhere to send
-            if (this.commands.isEmpty())
-                return false;
+        //nothing or nowhere to send
+        if (this.commands.isEmpty())
+            return false;
 
-            if (!this.isOpened()) {
-                CommandCode failed = this.commands.pop();
-                this.answerNumber = 0;
-                this.handleDeviceAnswer(failed, COMMAND_RESULT_ERR);
-                this.sendPacket();
-                return false;
-            }
+        if (!this.isOpened()) {
+            CommandCode failed = this.commands.pop();
+            this.answerNumber = 0;
+            this.handleDeviceAnswer(failed, COMMAND_RESULT_ERR);
+            this.sendPacket();
+            return false;
+        }
 
-            final CommandCode cmd = this.commands.getFirst();
-            //waiting the device to answer
-            if (this.answerNumber == cmd.Number) {
-                return true;
-            }
+        final CommandCode cmd = this.commands.getFirst();
+        //waiting the device to answer
+        if (this.answerNumber == cmd.Number) {
+            return true;
+        }
 
-            //AnswerNumber=0 - nothing is sent before
-            int crc = 0xFFFF;
-            crc = crc16(crc, cmd.code);
-            ArrayList<Byte> outputArray = new ArrayList<>();
-            outputArray.add((byte) PACKET_BEGIN);
-            outputArray.add((byte) PACKET_START);
-            this.addWithEscape(outputArray, cmd.code);
-            for (byte datum : cmd.command) {
-                this.addWithEscape(outputArray, datum);
-                crc = crc16(crc, datum);
-            }
-            byte d = (byte) (crc & 0xFF);
-            this.addWithEscape(outputArray, d);
-            d = (byte) ((crc >> 8) & 0xFF);
-            this.addWithEscape(outputArray, d);
-            outputArray.add((byte) PACKET_END);
-            byte[] command_data = new byte[outputArray.size()];
-            for (int i = 0; i < outputArray.size(); i++) {
-                command_data[i] = outputArray.get(i);
-            }
-            try {
-                this.answerNumber = cmd.Number;
-                this.port.write(command_data, SERIAL_MANAGER_WRITE_TIMEOUT);
-                this.asyncTasksHandler.postDelayed(new Runnable() {
-                    final long Number = cmd.Number;
+        //AnswerNumber=0 - nothing is sent before
+        int crc = 0xFFFF;
+        crc = crc16(crc, cmd.code);
+        ArrayList<Byte> outputArray = new ArrayList<>();
+        outputArray.add((byte) PACKET_BEGIN);
+        outputArray.add((byte) PACKET_START);
+        this.addWithEscape(outputArray, cmd.code);
+        for (byte datum : cmd.command) {
+            this.addWithEscape(outputArray, datum);
+            crc = crc16(crc, datum);
+        }
+        byte d = (byte) (crc & 0xFF);
+        this.addWithEscape(outputArray, d);
+        d = (byte) ((crc >> 8) & 0xFF);
+        this.addWithEscape(outputArray, d);
+        outputArray.add((byte) PACKET_END);
+        byte[] command_data = new byte[outputArray.size()];
+        for (int i = 0; i < outputArray.size(); i++) {
+            command_data[i] = outputArray.get(i);
+        }
+        try {
+            this.answerNumber = cmd.Number;
+            this.port.write(command_data, SERIAL_MANAGER_WRITE_TIMEOUT);
+            final long generation = this.connectionGeneration;
+            this.asyncTasksHandler.postDelayed(new Runnable() {
+                final long Number = cmd.Number;
 
-                    @Override
-                    public void run() {
-                        final Context ctx = AtomSpectraProSource.this.context;
-                        if (ctx == null) return;
-                        CommandCode code = null;
-                        synchronized (AtomSpectraProSource.this.syncCommand) {
-                            if (!AtomSpectraProSource.this.commands.isEmpty() && Number == AtomSpectraProSource.this.answerNumber) {
-                                //timeout is here, remove old packet
-                                code = AtomSpectraProSource.this.commands.pop();
-                                AtomSpectraProSource.this.answerNumber = 0;
-                            }
-                        }
-                        if (code != null) {
-                            AtomSpectraProSource.this.handleDeviceAnswer(code, COMMAND_RESULT_TIMEOUT);
-                        }
-                        AtomSpectraProSource.this.sendPacket(); //try to send next packet
+                @Override
+                public void run() {
+                    final Context ctx = AtomSpectraProSource.this.context;
+                    if (ctx == null || generation != AtomSpectraProSource.this.connectionGeneration)
+                        return;
+                    CommandCode code = null;
+                    if (!AtomSpectraProSource.this.commands.isEmpty() && Number == AtomSpectraProSource.this.answerNumber) {
+                        //timeout is here, remove old packet
+                        code = AtomSpectraProSource.this.commands.pop();
+                        AtomSpectraProSource.this.answerNumber = 0;
                     }
-                }, CommandCode.DROP_TIMEOUT + 500);
-            } catch (Exception e) {
-                log(this.context, "USB write failed: " + e.getMessage());
-                CommandCode failed = this.commands.pop();
-                this.answerNumber = 0;
-                this.handleDeviceAnswer(failed, COMMAND_RESULT_ERR);
-                this.sendPacket();
-                return false;
-            }
+                    if (code != null) {
+                        AtomSpectraProSource.this.handleDeviceAnswer(code, COMMAND_RESULT_TIMEOUT);
+                    }
+                    AtomSpectraProSource.this.sendPacket(); //try to send next packet
+                }
+            }, CommandCode.DROP_TIMEOUT + 500);
+        } catch (Exception e) {
+            log(this.context, "USB write failed: " + e.getMessage());
+            CommandCode failed = this.commands.pop();
+            this.answerNumber = 0;
+            this.handleDeviceAnswer(failed, COMMAND_RESULT_ERR);
+            this.sendPacket();
+            return false;
         }
         return true;
     }
@@ -1734,9 +1728,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             log(this.context, "Enqueuing command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ")");
         }
         this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND);
-        synchronized (this.syncCommand) {
-            this.commands.add(new CommandCode(command, id, op));
-        }
+        this.commands.add(new CommandCode(command, id, op));
 
         return this.sendPacket();
     }
@@ -1790,24 +1782,29 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private void stopProcessingThread() {
         if (this.processingThread != null) {
             this.processingThread.interrupt();
-            try {
-                this.processingThread.join();
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
+            boolean interrupted = false;
+            while (true) {
+                try {
+                    this.processingThread.join();
+                    break;
+                } catch (InterruptedException ignored) {
+                    interrupted = true;
+                }
             }
             this.processingThread = null;
+            if (interrupted) Thread.currentThread().interrupt();
         }
     }
 
     // local thread method to perform read from circular buffer
-    private void processBufferLoop() {
+    private void processBufferLoop(long generation) {
         if (DEBUG_LOG) {
             log(this.context, "Packet processing thread started");
         }
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
 
         int currentInputDataEnd = this.inputDataEnd;
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             synchronized (this.circularBufferSync) {
                 // input data end could only be changed under sync block in onNewData
                 // if this sync block is reached before onNewData sync block, this thread will wait until notify
@@ -1826,29 +1823,33 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             }
 
             // called only once per new data arrival, even if contains partial packet in the end, next loop cycle will wait for new data
-            this.findPackets(currentInputDataEnd);
+            this.findPackets(currentInputDataEnd, generation);
         }
     }
 
     @Override
     // serial thread method to perform write to circular buffer
     public void onNewData(byte[] data) {
-        int currentDataEnd = this.inputDataEnd;
-        int bytesWritten = 0;
-        // write bytes to circular buffer
-        for (int i = 0; i < data.length; i++) {
-            if ((currentDataEnd + 1) % CIRCULAR_BUFFER_SIZE == this.inputDataHead) {
-                int bytesLost = data.length - i;
-                log(this.context, "Circular buffer overflow: " + bytesLost + " bytes lost");
-                break;
+        this.onNewData(this.connectionGeneration, data);
+    }
+
+    private void onNewData(long generation, byte[] data) {
+        synchronized (this.circularBufferSync) {
+            if (generation != this.connectionGeneration || this.context == null) return;
+            int currentDataEnd = this.inputDataEnd;
+            int bytesWritten = 0;
+            // write bytes to circular buffer
+            for (int i = 0; i < data.length; i++) {
+                if ((currentDataEnd + 1) % CIRCULAR_BUFFER_SIZE == this.inputDataHead) {
+                    int bytesLost = data.length - i;
+                    log(this.context, "Circular buffer overflow: " + bytesLost + " bytes lost");
+                    break;
+                }
+                this.inputData[currentDataEnd] = data[i];
+                currentDataEnd = (currentDataEnd + 1) % CIRCULAR_BUFFER_SIZE;
+                bytesWritten++;
             }
-            this.inputData[currentDataEnd] = data[i];
-            currentDataEnd = (currentDataEnd + 1) % CIRCULAR_BUFFER_SIZE;
-            bytesWritten++;
-        }
-        if (bytesWritten > 0) {
-            // bump up end pointer and notify processing thread
-            synchronized (this.circularBufferSync) {
+            if (bytesWritten > 0) {
                 this.inputDataEnd = currentDataEnd;
                 this.circularBufferSync.notify();
             }
