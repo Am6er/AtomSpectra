@@ -988,12 +988,20 @@ public class AtomSpectraService extends Service {
     }
 
     private void onSourceReady(Intent ready) {
+        boolean wasRecovering = deviceStatus == SpectrumSource.STATUS_RECOVERING;
         deviceStatus = ready.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
+        if (wasRecovering && deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            AtomSpectraLog.addMessage(service_context,
+                    getStringOrDefaultLocale(R.string.log_device_recovered, activeSource.deviceId()));
+        }
         if (firstConnectPending) {
             deviceChannelCount = ready.getIntExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, 0);
             onFirstReady();
         } else if (!deviceReady) {
             onDeviceReturned();
+        } else {
+            updateMenu();
+            refreshServiceNotification();
         }
     }
 
