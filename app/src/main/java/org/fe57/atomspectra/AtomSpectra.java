@@ -3504,6 +3504,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             case BUSY:
                 inputType.setContentDescription(getString(R.string.device_busy_description, info));
                 break;
+            case RECOVERING:
+                inputType.setContentDescription(getString(R.string.device_recovering_description, info));
+                break;
             case ERROR:
                 inputType.setContentDescription(getString(R.string.device_error_description, info));
                 break;
@@ -3528,6 +3531,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 return ContextCompat.getDrawable(this, R.drawable.badge_recording);
             case BUSY:
                 return ContextCompat.getDrawable(this, R.drawable.badge_busy);
+            case RECOVERING:
+                return ContextCompat.getDrawable(this, R.drawable.badge_recovering);
             case ERROR:
                 return ContextCompat.getDrawable(this, R.drawable.badge_error);
             default:
@@ -3743,7 +3748,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 app_menu.findItem(R.id.action_record_toggle).setTitle(R.string.hist_pause_update);
             }
             app_menu.findItem(R.id.action_record_toggle)
-                    .setEnabled(AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.BUSY);
+                    .setEnabled(AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.BUSY
+                        && AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.RECOVERING);
             app_menu.findItem(R.id.action_hist_from_file).setEnabled(recordingPaused);
             app_menu.findItem(R.id.action_hist_add_from_file).setEnabled(recordingPaused);
         }

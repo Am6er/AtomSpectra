@@ -23,6 +23,7 @@ public interface SpectrumSource {
     public static final int STATUS_CONNECTED_EXECUTING_COMMAND = 4; // device is executing command
     public static final int STATUS_CONNECTED_COMMAND_FAILED = 5; // last command errored out or timed out
     public static final int STATUS_CLOSED = 6; // source is closed and couldn't be reused anymore
+    public static final int STATUS_RECOVERING = 7; // source is reconnecting without reporting a disconnect yet
 
     // op codes
     int OP_CONNECT = 1;

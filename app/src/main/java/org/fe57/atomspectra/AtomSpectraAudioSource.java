@@ -11,6 +11,8 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
@@ -45,6 +47,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private static final int REPORT_PERIOD_MS = 100;
     // raw audio snapshots are independent of the report interval: fast enough for a scope view
     private static final int SCOPE_SNAPSHOT_PERIOD_MS = 200;
+    private static final long DEVICE_RECOVERY_WINDOW_MS = 5000;
 
     private static final String LOG_TAG = "Audio";
 
@@ -62,6 +65,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private volatile String deviceId = "default";
     // non-null only for a non-default device; watches for it disappearing while connected, idle or collecting; guarded by stateLock
     private AudioDeviceCallback deviceLossCallback = null;
+    private final Handler recoveryHandler = new Handler(Looper.getMainLooper());
+    private final Runnable recoveryTimeout = this::onDeviceRecoveryTimeout;
 
     // pulse-detection tuning, read in requestConnect() and on every application preferences change
     private volatile int frontCountsMin = MIN_FRONT_POINTS_DEFAULT;
@@ -298,7 +303,6 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
                 for (AudioDeviceInfo added : addedDevices) {
                     if (added.isSource() && identity.equals(DeviceIdentity.audio(added))) {
-                        // TODO: debounce removed/added jitter, every flap suspends and resumes recording
                         AtomSpectraAudioSource.this.onSelectedDeviceReturned(added);
                         return;
                     }
@@ -326,22 +330,49 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         synchronized (this.stateLock) {
             if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
                 return;
+            if (this.status == SpectrumSource.STATUS_RECOVERING) return;
 
+            boolean wasCollecting = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING;
             this.stopTimersAndCapture();
-            this.status = SpectrumSource.STATUS_DISCONNECTED;
-            this.emitDisconnected("Selected audio device disconnected: " + this.deviceId);
+            if (!wasCollecting) {
+                this.status = SpectrumSource.STATUS_DISCONNECTED;
+                this.emitDisconnected("Selected audio device disconnected: " + this.deviceId);
+                return;
+            }
+            this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
+            this.recoveryHandler.removeCallbacks(this.recoveryTimeout);
+            this.recoveryHandler.postDelayed(this.recoveryTimeout, DEVICE_RECOVERY_WINDOW_MS);
         }
     }
 
     private void onSelectedDeviceReturned(AudioDeviceInfo returned) {
         synchronized (this.stateLock) {
-            if (this.status != SpectrumSource.STATUS_DISCONNECTED) return;
+            boolean recovering = this.status == SpectrumSource.STATUS_RECOVERING;
+            if (!recovering && this.status != SpectrumSource.STATUS_DISCONNECTED) return;
 
             final Context ctx = this.context;
             if (ctx == null || !AppPermissions.isMicGranted(ctx)) return;
 
+            this.recoveryHandler.removeCallbacks(this.recoveryTimeout);
             this.device = returned;
             this.completeConnectLocked(ctx);
+            if (recovering) {
+                this.requestStart();
+                if (this.status != SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+                    this.stopTimersAndCapture();
+                    this.status = SpectrumSource.STATUS_DISCONNECTED;
+                    this.emitDisconnected("Audio capture did not resume after recovery");
+                }
+            }
+        }
+    }
+
+    private void onDeviceRecoveryTimeout() {
+        synchronized (this.stateLock) {
+            if (this.status != SpectrumSource.STATUS_RECOVERING) return;
+
+            this.status = SpectrumSource.STATUS_DISCONNECTED;
+            this.emitDisconnected("Selected audio device disconnected: " + this.deviceId);
         }
     }
 
@@ -432,6 +463,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     @Override
     public void close() {
         synchronized (this.stateLock) {
+            this.recoveryHandler.removeCallbacks(this.recoveryTimeout);
             this.stopTimersAndCapture();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 this.unregisterDeviceLossCallback();
@@ -714,7 +746,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     private boolean rejectIfDisconnected(int op) {
         if (this.rejectIfClosed(op)) return true;
-        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING) {
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING
+            || this.status == SpectrumSource.STATUS_RECOVERING) {
             this.emitError(op, SpectrumSource.REASON_ERROR, "Request to a disconnected source");
             return true;
         }
