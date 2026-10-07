@@ -76,6 +76,7 @@ final class BluZBleSource implements SpectrumSource {
     private BluetoothDevice silentScannedDevice;
     private boolean silentScannedAttemptStarted;
     private BluZFrameDecoder.Frame latest;
+    private boolean stopOnReturn;
     private int toggleOp;
     private boolean desiredCollecting;
     private boolean toggleSent;
@@ -231,7 +232,8 @@ final class BluZBleSource implements SpectrumSource {
             if (gatt == null) {
                 if (silentRetry) silentAttemptFailed();
                 else scheduleRetry();
-            } else handler.postDelayed(connectionDeadline, silentRetry ? SILENT_INITIAL_WINDOW_MS : HANDSHAKE_MS);
+            } else
+                handler.postDelayed(connectionDeadline, silentRetry ? SILENT_INITIAL_WINDOW_MS : HANDSHAKE_MS);
         } catch (SecurityException error) {
             permissionLost();
         }
@@ -437,12 +439,17 @@ final class BluZBleSource implements SpectrumSource {
                     if (!frame.isCollecting())
                         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, silentReason));
                 }
+                if (stopOnReturn) {
+                    if (frame.isCollecting()) requestCollecting(false);
+                    else stopOnReturn = false;
+                }
                 reply(new Intent(ACTION_SOURCE_READY)
                         .putExtra(EXTRA_SOURCE_STATUS, status)
                         .putExtra(EXTRA_SOURCE_DEVICE_ID, deviceId())
                         .putExtra(EXTRA_SOURCE_CHANNEL_COUNT, channelCount())
                         .putExtra(EXTRA_SOURCE_CALIBRATION_COEFFS, coefficients.clone()));
             }
+            if (stopOnReturn && !frame.isCollecting()) stopOnReturn = false;
             if (toggleOp != 0 && toggleSent && frame.isCollecting() == desiredCollecting) {
                 handler.removeCallbacks(toggleDeadline);
                 toggleOp = 0;
@@ -537,12 +544,23 @@ final class BluZBleSource implements SpectrumSource {
 
     @Override
     public void requestStart() {
-        dispatch(() -> requestCollecting(true));
+        dispatch(() -> {
+            if (closed) return;
+            stopOnReturn = false;
+            requestCollecting(true);
+        });
     }
 
     @Override
     public void requestStop() {
-        dispatch(() -> requestCollecting(false));
+        dispatch(() -> {
+            if (closed) return;
+            if (silentRetry || (!ready && hasBeenReady)) {
+                stopOnReturn = true;
+                return;
+            }
+            requestCollecting(false);
+        });
     }
 
     private void requestCollecting(boolean collecting) {
@@ -668,7 +686,7 @@ final class BluZBleSource implements SpectrumSource {
         PendingWrite pending = writes.peek();
         if (pending != null) {
             writeFailed(pending.op, "BluZ GATT write timed out");
-            connectionLost("BluZ transport write timed out");
+            connectionLostNow("BluZ transport write timed out");
         }
     };
 
@@ -712,8 +730,8 @@ final class BluZBleSource implements SpectrumSource {
         if (toggleOp != 0 || resetPending || resolutionPending || calibrationPending) {
             int op = toggleOp != 0 ? toggleOp
                     : resetPending ? OP_RESET
-                    : resolutionPending ? OP_SETTINGS_SAVE
-                    : OP_CALIBRATION_SAVE;
+                      : resolutionPending ? OP_SETTINGS_SAVE
+                        : OP_CALIBRATION_SAVE;
             writeFailed(op, reason);
             connectionLostNow(reason);
             return;
