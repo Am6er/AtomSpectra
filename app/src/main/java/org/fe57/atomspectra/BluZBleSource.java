@@ -254,7 +254,11 @@ final class BluZBleSource implements SpectrumSource {
                     physicalConnection = true;
                     debug("Connected");
                     if (silentRetry) handler.removeCallbacks(connectionDeadline);
-                    else setStatus(STATUS_CONNECTING);
+                    else {
+                        handler.removeCallbacks(connectionDeadline);
+                        handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
+                        setStatus(STATUS_CONNECTING);
+                    }
                     try {
                         candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                         if (!candidate.discoverServices())
