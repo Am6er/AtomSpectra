@@ -189,6 +189,7 @@ public class AtomSpectraService extends Service {
         IDLE,                   // connected, not collecting
         RECORDING,              // connected and collecting
         BUSY,                   // connecting or executing a command
+        RECOVERING,             // source is attempting a silent reconnection
         ERROR                   // a failed connect, or the last command failed
     }
 
@@ -245,6 +246,8 @@ public class AtomSpectraService extends Service {
             return deviceStatus == SpectrumSource.STATUS_CONNECTING ? DeviceState.BUSY : DeviceState.WAITING;
         }
         switch (deviceStatus) {
+            case SpectrumSource.STATUS_RECOVERING:
+                return DeviceState.RECOVERING;
             case SpectrumSource.STATUS_CONNECTED_COLLECTING:
                 return DeviceState.RECORDING;
             case SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND:
@@ -954,7 +957,13 @@ public class AtomSpectraService extends Service {
                 notifyDeviceStateChanged();
                 break;
             case SpectrumSource.ACTION_SOURCE_STATUS:
-                deviceStatus = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
+                int nextStatus = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
+                if (nextStatus == SpectrumSource.STATUS_RECOVERING
+                        && deviceStatus != SpectrumSource.STATUS_RECOVERING) {
+                    AtomSpectraLog.addMessage(service_context,
+                            getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
+                }
+                deviceStatus = nextStatus;
                 updateMenu();
                 refreshServiceNotification();
                 notifyDeviceStateChanged();
@@ -1565,7 +1574,8 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_START_RECORDING.equals(action)) {
-                if (isDeviceConnected() && deviceState() != DeviceState.BUSY && !is_recording && !connectDecisionPending
+                if (isDeviceConnected() && deviceState() != DeviceState.BUSY
+                    && deviceState() != DeviceState.RECOVERING && !is_recording && !connectDecisionPending
                         && settleForeignSpectrumForStart(intent.getIntExtra(Constants.ACTION_PARAMETERS.START_FOREIGN_SPECTRUM,
                         Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_UNDECIDED))) {
                     startStopRecording(true);
@@ -1573,7 +1583,7 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_STOP_RECORDING.equals(action)) {
-                if (deviceState() != DeviceState.BUSY) {
+                if (deviceState() != DeviceState.BUSY && deviceState() != DeviceState.RECOVERING) {
                     startStopRecording(false);
                 }
                 return;

@@ -71,7 +71,6 @@ final class BluZBleSource implements SpectrumSource {
     private long retryDelay = 1000;
     private boolean silentRetry;
     private String silentReason;
-    private boolean silentCollecting;
     private long silentStartedAt;
     private long silentDeadlineAt;
     private BluetoothDevice silentScannedDevice;
@@ -435,7 +434,7 @@ final class BluZBleSource implements SpectrumSource {
                 if (silentRetry) {
                     cancelSilentRetry();
                     // the device restarted while we were away: let the service take its normal resume path
-                    if (silentCollecting && !frame.isCollecting())
+                    if (!frame.isCollecting())
                         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, silentReason));
                 }
                 reply(new Intent(ACTION_SOURCE_READY)
@@ -719,9 +718,13 @@ final class BluZBleSource implements SpectrumSource {
             connectionLostNow(reason);
             return;
         }
+        if (latest == null || !latest.isCollecting()) {
+            connectionLostNow(reason);
+            return;
+        }
         silentRetry = true;
+        setStatus(STATUS_RECOVERING);
         silentReason = reason;
-        silentCollecting = latest != null && latest.isCollecting();
         silentStartedAt = SystemClock.uptimeMillis();
         silentDeadlineAt = silentStartedAt + SILENT_INITIAL_WINDOW_MS;
         silentScannedDevice = null;
@@ -770,10 +773,12 @@ final class BluZBleSource implements SpectrumSource {
         if (!silentRetry) return;
         debug("Silent reconnect attempt failed");
         releaseGatt();
-        if (silentScannedDevice != null && !silentScannedAttemptStarted) {
+        if (silentScannedAttemptStarted) {
+            silentScannedDevice = null;
+            silentScannedAttemptStarted = false;
+        }
+        if (silentScannedDevice != null) {
             startSilentScannedAttempt();
-        } else if (silentScannedAttemptStarted) {
-            endSilentRetry();
         } else if (scanCallback == null) {
             waitForDevice();
         }

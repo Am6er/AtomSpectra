@@ -4,10 +4,9 @@ How `AtomSpectraService` and the spectrum sources (`AtomSpectraAudioSource`, `At
 
 Diagrams are Mermaid; they render on GitHub and in most IDE markdown previews.
 
-> Updated 2026-10-06: debug compilation and assembly succeeded using the existing
-> JDK/Android SDK. Project-wide lint remains blocked by existing menu and receiver
-> errors. No tests were added or run. Device behaviour and indicator screenshots
-> remain unverified; no ADB device/emulator was attached.
+> Updated 2026-10-07: debug Java compilation succeeds using the existing JDK/Android
+> SDK. Recovery behaviour has not been verified on physical hardware; no ADB
+> device/emulator was attached.
 
 ## 1. The idea in one picture
 
@@ -15,7 +14,7 @@ The UI never shows "a state"; it shows a **pair**:
 
 ```
 session state  (what the user chose)   +   device state  (what the chosen device is doing)
-UNSELECTED | LOCKED | OFFLINE               NONE | WAITING | IDLE | RECORDING | BUSY | ERROR
+UNSELECTED | LOCKED | OFFLINE               NONE | WAITING | IDLE | RECORDING | BUSY | RECOVERING | ERROR
 ```
 
 The device state only exists while the session is `LOCKED`, and it is **derived**, never stored: it is computed from the source's status, whether the source has reported ready, and the source's last error.
@@ -65,15 +64,22 @@ application's session and source lifecycle, not firmware command layouts.
 
 `BluZBleSource` owns its locked-MAC waiting scan and GATT connection; callbacks
 and operations are serialized on the service input handler. Every reply carries
-the instance ID, and callbacks from old GATT connections are ignored. Physical
-loss or Bluetooth-off emits `DISCONNECTED`, clears the scan/GATT and waits again.
-The service uses `RECORDING_SUSPEND_REASON_BT_DISCONNECT` and its existing resume
-flow when the source returns. Before the first valid normal frame, a handshake
-timeout or handshake link loss is terminal until Retry. Once this source instance
-has received a valid normal frame, later handshake timeouts and link losses keep
-retrying in the background, including after the fast retry window expires.
-Incompatible GATT service, characteristics or MTU remain terminal until Retry;
-missing permission returns the session to UNSELECTED.
+the instance ID, and callbacks from old GATT connections are ignored. If a ready
+source loses its link while its latest frame is collecting and no command is
+pending, it enters `RECOVERING`: it attempts a direct GATT connection while
+scanning, and scan hits can supply a fresh device token. The silent recovery
+window starts at 30 seconds; a scan hit or physical connection extends it by up
+to 30 seconds, capped at 60 seconds from the loss. Failed scanned-device attempts
+resume scanning. If no valid normal frame arrives before the deadline, the source
+reports `DISCONNECTED` and continues background scanning. A successful frame
+that is still collecting completes recovery without suspending the service's
+recording; a returned idle frame reports a disconnect first so the normal
+service resume flow can restart acquisition. Loss while idle, before readiness,
+or during a command follows the regular disconnect/error path instead.
+
+Before the first valid normal frame, handshake timeout or link loss is terminal
+until Retry. Incompatible GATT service, characteristics or MTU remain terminal
+until Retry; missing permission returns the session to UNSELECTED.
 
 First checksum-valid normal frame supplies status, calibration and `READY` with
 4096 output channels. Lower-resolution live frames are count-preservingly
@@ -154,7 +160,7 @@ flowchart TD
 
 ## 3. Source status (what the device is doing)
 
-Sources report through broadcasts: `READY`, `STATUS`, `ERROR`, `DISCONNECTED`, `DATA`. A source that cannot find its device is **not** in error: it stays `STATUS_DISCONNECTED`, listens for the device (USB attach, audio device callback) and connects when it shows up. The same wait is used after a loss.
+Sources report through broadcasts: `READY`, `STATUS`, `ERROR`, `DISCONNECTED`, `DATA`. A source that cannot find its device is **not** in error: it stays `STATUS_DISCONNECTED`, waits for it (USB attach, audio device callback, or BLE scan) and connects when it shows up. On loss while collecting, audio, Pro USB and BluZ may first enter `STATUS_RECOVERING`; losses while idle or during a command use the regular disconnect/error path.
 
 ```mermaid
 stateDiagram-v2
@@ -172,14 +178,20 @@ stateDiagram-v2
     EXECUTING_COMMAND --> COMMAND_FAILED: error / timeout → ERROR(op)
     COMMAND_FAILED --> CONNECTED_IDLE: next command ok<br/>(error cleared)
     CONNECTED_IDLE --> DISCONNECTED: device lost → DISCONNECTED
-    CONNECTED_COLLECTING --> DISCONNECTED: device lost → DISCONNECTED
+    CONNECTED_COLLECTING --> RECOVERING: eligible loss while collecting
+    CONNECTED_COLLECTING --> DISCONNECTED: ineligible loss / command interruption
+    RECOVERING --> CONNECTED_COLLECTING: reconnected and collecting confirmed
+    RECOVERING --> DISCONNECTED: recovery expires or cannot resume
     DISCONNECTED --> CONNECTED_IDLE: device returned → READY
+    DISCONNECTED --> CONNECTED_COLLECTING: device returned already collecting
     CONNECTED_IDLE --> CLOSED: close()
     DISCONNECTED --> CLOSED: close()
     CLOSED --> [*]
 ```
 
-The Pro source additionally has a data watchdog that reconnects a silent serial link by itself. That happens *before* anything is reported; only when the watchdog gives up does the source report `DISCONNECTED`.
+Audio and Pro USB use a 5-second recovery window after loss while collecting. Audio restarts capture when the selected input returns within the window. Pro USB reconnects and checks device status; if it is still collecting, recovery completes in place, otherwise it reports a disconnect and follows the regular ready/resume flow. The Pro source also has a data watchdog that reconnects a silent serial link by itself; that watchdog runs independently of physical detach recovery.
+
+BluZ uses the bounded, progress-extended silent window described above. `RECOVERING` is a source status, not a separate session state. It is shown only while the source has already reported ready; after a reported disconnect the device state returns to `WAITING`.
 
 ## 4. Device state (derived) and what the user sees
 
@@ -195,6 +207,7 @@ flowchart TD
     D -- yes --> BUSY
     D -- no --> WAITING
     C -- yes --> E{status}
+    E -- RECOVERING --> RECOVERING
     E -- COLLECTING --> RECORDING
     E -- EXECUTING_COMMAND --> BUSY
     E -- COMMAND_FAILED --> ERROR
@@ -208,6 +221,7 @@ flowchart TD
 | `IDLE` | base icon + pause badge | selection screen | 7B |
 | `RECORDING` | base icon + red dot | selection screen | 7C |
 | `BUSY` | base icon + hourglass | selection screen | 7D |
+| `RECOVERING` | base icon + recovering badge | selection screen; record toggle unavailable | |
 | `ERROR` | base icon + amber triangle "!" | error text, **Retry** (failed connect only), **Select device** | 7E |
 
 While a connect decision is pending (section 5), a tap on the icon reopens that decision dialog instead.
@@ -315,28 +329,42 @@ sequenceDiagram
     participant D as Source
 
     Note over S,D: LOCKED, RECORDING
-    D->>S: DISCONNECTED
-    S->>S: deviceReady = false → WAITING<br/>recording intent kept → recording suspended
-    S->>U: suspended dialog "Wait for device" / "Stop and work offline"
-    opt user chooses "Wait for device"
-        U->>S: acknowledge current suspension episode
-        U->>U: dismiss dialog; indicator and notification remain suspended
-    end
-    opt user selects same device in picker
-        U->>S: selectDevice(same type and identity)
-        S->>D: requestConnect if not connected
-        S->>S: keep source, spectrum ownership and recording intent
-        S->>U: ACTION_DEVICE_SELECTED (picker may close while waiting)
-    end
-    alt device returns, with or without user action
-        D->>S: READY
-        opt device is not already collecting
-            S->>D: push screen spectrum, requestStart
+    alt eligible collecting loss (Audio, Pro USB, or BluZ)
+        D->>S: STATUS RECOVERING
+        S->>U: RECOVERING indicator; recording intent retained
+        alt recovery succeeds before its deadline
+            D->>S: collecting confirmed / READY
+            S->>S: remain RECORDING; no suspension episode
+        else recovery expires or cannot resume
+            D->>S: DISCONNECTED
+            S->>S: deviceReady = false → WAITING<br/>recording intent kept → recording suspended
         end
-        S->>U: dialog dismissed, RECORDING again
-    else user chooses "Stop and work offline"
-        U->>S: stopAndGoOffline()
-        S->>S: recording stopped, OFFLINE<br/>remembered device unchanged
+    else idle loss, command interruption, or unsupported recovery
+        D->>S: DISCONNECTED
+        S->>S: deviceReady = false → WAITING<br/>recording intent kept → recording suspended
+    end
+    opt source has reported DISCONNECTED
+        S->>U: suspended dialog "Wait for device" / "Stop and work offline"
+        opt user chooses "Wait for device"
+            U->>S: acknowledge current suspension episode
+            U->>U: dismiss dialog; indicator and notification remain suspended
+        end
+        opt user selects same device in picker
+            U->>S: selectDevice(same type and identity)
+            S->>D: requestConnect if not connected
+            S->>S: keep source, spectrum ownership and recording intent
+            S->>U: ACTION_DEVICE_SELECTED (picker may close while waiting)
+        end
+        alt device returns after a reported disconnect, with or without user action
+            D->>S: READY
+            opt device is not already collecting
+                S->>D: push screen spectrum, requestStart
+            end
+            S->>U: dialog dismissed, RECORDING again
+        else user chooses "Stop and work offline"
+            U->>S: stopAndGoOffline()
+            S->>S: recording stopped, OFFLINE<br/>remembered device unchanged
+        end
     end
 ```
 
@@ -357,7 +385,9 @@ switching and spectrum-protection rules.
 `requestConnect()` ensures connection or source-owned waiting, retries a failed
 connect, and leaves an existing connection attempt alone. Repeated requests do not
 clear acquisition data. This is not a forced transport restart; UI and service do
-not implement source-specific recovery.
+not implement transport retries. During `RECOVERING`, the service keeps the
+recording intent but blocks start/stop actions until recovery succeeds or the
+source reports a disconnect.
 
 ## 7. Errors
 
@@ -374,7 +404,7 @@ The error itself lives on the source (`SpectrumSource.lastError()`), is cleared 
 
 The following flow applies to a different device. Reselecting the locked device
 keeps the session, requests connection if needed, and does not gate leaving the
-picker during recovery. The picker displays waiting, connecting or error status
+picker during recovery. The picker displays waiting, connecting, recovering or error status
 for suspended recording and refreshes on `ACTION_DEVICE_STATE_CHANGED`, emitted
 for source lifecycle, selection, recovery and recording-state updates, not menu
 refreshes. An already-recording
@@ -426,4 +456,5 @@ The screen cannot be left (Cancel hidden, back disabled) while the session is `U
 - A remembered Pro without USB permission makes the system permission dialog appear from the background wait; if the user refuses, the session falls back to `UNSELECTED`.
 - A `COMMAND_FAILED` source relies on the source to recover; the service does not poll it.
 - Audio devices that re-enumerate with a different product name are a different identity and are not recognised as "the same device returning".
-- Nothing here has been compiled or run on a device.
+- The source recovery state and UI have only been compile-checked; their timing
+    and indicator behaviour have not been verified on a physical device.
