@@ -184,6 +184,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private boolean recoveryHandshakeStarted;
     private boolean stopOnReturn;
     private long recoveryDeadline;
+    private long recoveryStartedAt;
+    private String lastSerialError;
     private final Runnable recoveryTimeout = this::onRecoveryTimeout;
     private final Runnable recoveryRetry = this::retryRecoveryConnect;
 
@@ -1119,6 +1121,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.teardownConnection();
         AtomSpectraLog.detail(ctx, LOG_TAG, "USB device detached");
         if (canRecover) {
+            log(ctx, "USB device detached while collecting"
+                    + (this.lastSerialError == null ? "" : " (last serial error: " + this.lastSerialError + ")")
+                    + ", waiting up to " + USB_RECOVERY_INITIAL_WINDOW_MS / 1000 + " s for it to return");
+            this.recoveryStartedAt = SystemClock.uptimeMillis();
             this.recoveryConnectPending = true;
             this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
             this.armRecoveryTimeout(USB_RECOVERY_INITIAL_WINDOW_MS);
@@ -1251,7 +1257,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
         this.teardownConnection();
-        this.emitDisconnected("USB recovery timed out");
+        this.emitDisconnected("USB recovery timed out after "
+                + (SystemClock.uptimeMillis() - this.recoveryStartedAt) / 1000 + " s");
     }
 
     // CRC-16 (MODBUS version)
@@ -1602,9 +1609,6 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                     log(this.context, "Unexpected TEXT from device (no pending commands): " + answer.trim());
                     break;
                 }
-                if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-                    AtomSpectraLog.detail(this.context, LOG_TAG, "Packet TEXT code=0x03 text=" + answer.trim());
-                }
                 CommandCode answered = this.commands.pop();
                 this.answerNumber = 0; //data received
 
@@ -1953,6 +1957,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     @Override
     public void onRunError(Exception e) {
+        this.lastSerialError = e.getMessage();
         log(this.context, "USB serial error: " + e.getMessage());
     }
 

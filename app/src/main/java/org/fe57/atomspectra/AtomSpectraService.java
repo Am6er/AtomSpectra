@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -205,6 +206,7 @@ public class AtomSpectraService extends Service {
     private static volatile int deviceStatus = SpectrumSource.STATUS_DISCONNECTED;
     private static volatile SourceError deviceError = null;
     private static volatile boolean recoveryPending = false;
+    private static volatile long recoveryStartedAt;
     private static volatile boolean recoveryCancelledByStop = false;
     // the device data on the screen is the only thing that may replace it without asking: set when a device writes
     // to the screen, cleared when a file or another device takes it over
@@ -979,13 +981,17 @@ public class AtomSpectraService extends Service {
             case SpectrumSource.ACTION_SOURCE_STATUS:
                 int nextStatus = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
                 if (nextStatus == SpectrumSource.STATUS_RECOVERING) {
-                    if (!recoveryPending) AtomSpectraLog.warning(service_context,
-                            getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
+                    if (!recoveryPending) {
+                        recoveryStartedAt = SystemClock.uptimeMillis();
+                        AtomSpectraLog.warning(service_context,
+                                getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
+                    }
                     recoveryPending = true;
                 } else if (nextStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
                     if (recoveryPending && !recoveryCancelledByStop)
                         AtomSpectraLog.event(service_context,
-                                getStringOrDefaultLocale(R.string.log_device_recovered, active.deviceId()));
+                                getStringOrDefaultLocale(R.string.log_device_recovered, active.deviceId())
+                                        + " after " + (SystemClock.uptimeMillis() - recoveryStartedAt) / 1000 + " s");
                     recoveryPending = false;
                 } else if (nextStatus == SpectrumSource.STATUS_DISCONNECTED
                         || nextStatus == SpectrumSource.STATUS_CLOSED) {
@@ -1052,10 +1058,11 @@ public class AtomSpectraService extends Service {
         final SpectrumSource source = activeSource;
         deviceReady = true;
         AtomSpectraLog.event(service_context, "Device connection restored: " + inputDeviceInfo);
+        // the toast repeats the line logged above
         if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
-            toastAndLog(R.string.action_usb_attached, Toast.LENGTH_SHORT);
+            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.action_usb_attached), Toast.LENGTH_SHORT);
         } else if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
-            toastAndLog(R.string.action_bluetooth_attached, Toast.LENGTH_SHORT);
+            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.action_bluetooth_attached), Toast.LENGTH_SHORT);
         }
 
         final boolean collecting = deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING;

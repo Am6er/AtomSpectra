@@ -2,6 +2,7 @@ package org.fe57.atomspectra;
 
 import android.app.Activity;
 import android.app.Application;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,6 +28,8 @@ public class AtomSpectraApplication extends Application implements Application.A
         super.onCreate();
         registerActivityLifecycleCallbacks(this);
         AtomSpectraLog.event(this, "App started: " + BuildConfig.VERSION_NAME);
+        AtomSpectraLog.event(this, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android "
+                + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
     }
 
     static void externalUiStarted(Activity activity) {
