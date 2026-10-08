@@ -18,6 +18,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannedString;
 import android.text.style.ForegroundColorSpan;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
@@ -28,6 +29,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
@@ -35,6 +40,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class AtomSpectraLog extends Activity {
+    private static final int REQUEST_SAVE_LOG = 1;
+    private static final String LOG_FILE_NAME = "AtomSpectra-log.txt";
     private static final Object logSync = new Object();
     private static final LinkedList<String> log = new LinkedList<>();
     private static final int MAX_MESSAGES = 1000;
@@ -134,12 +141,50 @@ public class AtomSpectraLog extends Activity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.atom_spectra_log, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
         }
+        if (item.getItemId() == R.id.action_log_save) {
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_TITLE, LOG_FILE_NAME);
+            try {
+                startActivityForResult(intent, REQUEST_SAVE_LOG);
+            } catch (Exception exception) {
+                Toast.makeText(this, getString(R.string.hist_save_error, LOG_FILE_NAME), Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_SAVE_LOG || resultCode != RESULT_OK || data == null || data.getData() == null) {
+            return;
+        }
+        try (OutputStream output = getContentResolver().openOutputStream(data.getData(), "wt")) {
+            if (output == null) {
+                throw new IOException("Unable to open log destination");
+            }
+            try (OutputStreamWriter writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
+                writer.write(getText());
+            }
+            Toast.makeText(this, getString(R.string.hist_save_success, LOG_FILE_NAME), Toast.LENGTH_SHORT).show();
+        } catch (Exception exception) {
+            AtomSpectraLog.addMessage(this, android.util.Log.getStackTraceString(exception));
+            Toast.makeText(this, getString(R.string.hist_save_error, LOG_FILE_NAME), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private final BroadcastReceiver mDataUpdateReceiver = new BroadcastReceiver() {
