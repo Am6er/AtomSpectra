@@ -53,6 +53,13 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     private GestureDetector gestureDetector;
     private TextView countsTextField;
     private SharedPreferences sp;
+    private final SharedPreferences.OnSharedPreferenceChangeListener logPreferenceChange = (preferences, key) -> {
+        if (!active || key == null) return;
+        Object value = preferences.getAll().get(key);
+        // strings may hold device names/identities, URLs or paths: log their key only
+        boolean plain = value instanceof Boolean || value instanceof Number;
+        AtomSpectraLog.action(this, "Preference changed: " + key + (plain ? " = " + value : ""));
+    };
     private TextView doseRateFreqLabel;
     private TextView workingDirText;
     private TextView outputDeviceText;
@@ -1262,9 +1269,21 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
     }
 
+    @Override
+    public void startActivityForResult(Intent intent, int requestCode, Bundle options) {
+        if (requestCode >= 0) AtomSpectraApplication.externalUiStarted(this);
+        try {
+            super.startActivityForResult(intent, requestCode, options);
+        } catch (RuntimeException error) {
+            AtomSpectraApplication.externalUiFinished(this);
+            throw error;
+        }
+    }
+
     @SuppressLint("WrongConstant")
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        AtomSpectraApplication.externalUiFinished(this);
         if (requestCode == SELECT_DIR_CODE_SETTINGS) {
             if (resultCode == RESULT_OK && (data != null)) {
                 SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
@@ -1277,6 +1296,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                             | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     getContentResolver().takePersistableUriPermission(uri, takeFlags);
                     workingDirText.setText(uri.getPath());
+                    AtomSpectraLog.action(this, "Working directory selected");
                 }
                 editor.apply();
             }
@@ -1337,6 +1357,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     @Override
     public void onStart() {
         super.onStart();
+        sp.registerOnSharedPreferenceChangeListener(logPreferenceChange);
         Log.d(TAG, "-XxX-  onStart");
     }
 
@@ -1362,6 +1383,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     @Override
     protected void onStop() {
         super.onStop();
+        sp.unregisterOnSharedPreferenceChangeListener(logPreferenceChange);
     }
 
     @Override

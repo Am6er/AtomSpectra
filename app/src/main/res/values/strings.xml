@@ -861,4 +861,9 @@
         \n
     </string>
     <string name="help_version">Version: <xliff:g id="version">%1$s</xliff:g>, build: <xliff:g id="build">%2$d</xliff:g>.</string>
+    <string name="log_capture_diagnostics">Capture diagnostics</string>
+    <string name="log_show_details">Show details</string>
+    <string name="log_save">Save log</string>
+    <string name="log_capture_enabled">Diagnostic capture enabled</string>
+    <string name="log_capture_disabled">Diagnostic capture disabled</string>
 </resources>

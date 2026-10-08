@@ -39,7 +39,6 @@ final class BluZBleSource implements SpectrumSource {
     private static final long HANDSHAKE_MS = 20000;
     private static final long COMMAND_MS = 15000;
     private static final long ASSEMBLY_MS = 10000;
-    private static final boolean DEBUG_LOG = false; // logs reconnect timing
     private static final String LOG_TAG = "BluZ";
     // A scan hit or physical connection extends silent recovery, up to a bounded maximum.
     private static final long SILENT_INITIAL_WINDOW_MS = 30000;
@@ -257,6 +256,7 @@ final class BluZBleSource implements SpectrumSource {
         public void onConnectionStateChange(BluetoothGatt candidate, int result, int newState) {
             dispatch(() -> {
                 if (!current(candidate)) return;
+                debug("GATT connection state=" + newState + ", status=" + result);
                 if (newState == BluetoothProfile.STATE_DISCONNECTED || result != BluetoothGatt.GATT_SUCCESS) {
                     if (silentRetry) silentAttemptFailed();
                     else if (physicalConnection && !ready && !hasBeenReady)
@@ -284,6 +284,7 @@ final class BluZBleSource implements SpectrumSource {
         public void onServicesDiscovered(BluetoothGatt candidate, int result) {
             dispatch(() -> {
                 if (!current(candidate)) return;
+                debug("Services discovered, status=" + result);
                 if (result != BluetoothGatt.GATT_SUCCESS || candidate.getService(SERVICE) == null) {
                     failHandshake(REASON_ERROR, "BluZ GATT service is missing");
                     return;
@@ -308,6 +309,7 @@ final class BluZBleSource implements SpectrumSource {
         public void onMtuChanged(BluetoothGatt candidate, int mtu, int result) {
             dispatch(() -> {
                 if (!current(candidate) || subscribed) return;
+                debug("MTU=" + mtu + ", status=" + result);
                 if (result != BluetoothGatt.GATT_SUCCESS || mtu < 251) {
                     failHandshake(REASON_ERROR, "BluZ requires an MTU of at least 251");
                     return;
@@ -320,6 +322,7 @@ final class BluZBleSource implements SpectrumSource {
         public void onDescriptorWrite(BluetoothGatt candidate, BluetoothGattDescriptor descriptor, int result) {
             dispatch(() -> {
                 if (!current(candidate) || !CCCD.equals(descriptor.getUuid())) return;
+                debug("Notification subscription status=" + result);
                 if (result != BluetoothGatt.GATT_SUCCESS) {
                     failHandshake(REASON_ERROR, "Cannot subscribe to BluZ frames");
                     return;
@@ -760,7 +763,7 @@ final class BluZBleSource implements SpectrumSource {
         silentDeadlineAt = silentStartedAt + SILENT_INITIAL_WINDOW_MS;
         silentScannedDevice = null;
         silentScannedAttemptStarted = false;
-        AtomSpectraLog.addMessage(context, reason + ", retrying");
+        AtomSpectraLog.warning(context, LOG_TAG, reason + ", retrying");
         stopScan();
         releaseGatt();
         handler.removeCallbacks(silentWindowEnd);
@@ -850,7 +853,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void debug(String message) {
-        if (DEBUG_LOG) AtomSpectraLog.addMessage(context, LOG_TAG, message);
+        AtomSpectraLog.detail(context, LOG_TAG, message);
     }
 
     private void permissionLost() {
@@ -907,11 +910,13 @@ final class BluZBleSource implements SpectrumSource {
         if (previous != null) {
             try {
                 previous.disconnect();
-            } catch (SecurityException ignored) {
+            } catch (SecurityException error) {
+                debug("GATT disconnect failed: " + error);
             }
             try {
                 previous.close();
-            } catch (SecurityException ignored) {
+            } catch (SecurityException error) {
+                debug("GATT close failed: " + error);
             }
         }
     }
@@ -953,6 +958,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void skipped(String text) {
+        if (AtomSpectraLog.isDiagnosticsEnabled(context)) debug("Frame skipped: " + text);
         reply(new Intent(ACTION_SOURCE_DATA_SKIPPED).putExtra(EXTRA_SOURCE_DATA_SKIPPED_REASON, text));
     }
 

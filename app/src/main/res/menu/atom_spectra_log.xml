@@ -2,9 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/action_log_capture"
+        android:checkable="true"
+        android:showAsAction="never"
+        android:title="@string/log_capture_diagnostics" />
+
+    <item
+        android:id="@+id/action_log_details"
+        android:checkable="true"
+        android:showAsAction="never"
+        android:title="@string/log_show_details" />
+
+    <item
         android:id="@+id/action_log_save"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="@string/hist_save_file" />
+        android:title="@string/log_save" />
 
 </menu>

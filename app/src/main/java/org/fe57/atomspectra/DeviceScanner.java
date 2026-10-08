@@ -48,6 +48,7 @@ final class DeviceScanner {
 
     private static final String ACTION_USB_PERMISSION_RESULT = "org.fe57.atomspectra.ACTION_SCANNER_USB_PERMISSION";
 
+    private static final String LOG_TAG = "Scanner";
     private final Context context;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private Listener listener = null;
@@ -145,6 +146,7 @@ final class DeviceScanner {
         UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
         if (manager == null) return;
 
+        AtomSpectraLog.action(this.context, "Requesting USB permission: " + device.getDeviceName());
         final int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
         PendingIntent pi = PendingIntent.getBroadcast(this.context, 0,
                 new Intent(ACTION_USB_PERMISSION_RESULT).setPackage(Constants.PACKAGE_NAME), flags);
@@ -231,6 +233,7 @@ final class DeviceScanner {
             if (listener != null && bluetoothScan == null && !scanFailed) startBluetoothScan();
             result.addAll(bluetoothDevices.values());
         } catch (SecurityException error) {
+            AtomSpectraLog.warning(context, LOG_TAG, "Bluetooth device list denied: " + error);
             stopBluetoothScan();
             if (listener != null)
                 listener.onBluetoothStateChanged(BluetoothState.PERMISSION_REQUIRED);
@@ -296,6 +299,7 @@ final class DeviceScanner {
             public void onScanFailed(int errorCode) {
                 mainHandler.post(() -> {
                     if (bluetoothScan != this || listener == null) return;
+                    AtomSpectraLog.warning(context, LOG_TAG + ": Bluetooth scan failed, error code " + errorCode);
                     stopBluetoothScan();
                     scanFailed = true;
                     refresh();
@@ -308,6 +312,7 @@ final class DeviceScanner {
                     Collections.singletonList(new ScanFilter.Builder().setDeviceName("BluZ").build()),
                     new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), callback);
         } catch (IllegalStateException error) {
+            AtomSpectraLog.warning(context, LOG_TAG, "Bluetooth scan start failed: " + error);
             stopBluetoothScan();
         }
     }
@@ -320,7 +325,8 @@ final class DeviceScanner {
         try {
             if (bluetoothAdapter.getBluetoothLeScanner() != null)
                 bluetoothAdapter.getBluetoothLeScanner().stopScan(previous);
-        } catch (SecurityException | IllegalStateException ignored) {
+        } catch (SecurityException | IllegalStateException error) {
+            AtomSpectraLog.warning(context, LOG_TAG, "Bluetooth scan stop failed: " + error);
         }
     }
 
@@ -350,6 +356,11 @@ final class DeviceScanner {
         this.usbReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                if (ACTION_USB_PERMISSION_RESULT.equals(intent.getAction())) {
+                    boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
+                    if (granted) AtomSpectraLog.event(context, "USB permission granted");
+                    else AtomSpectraLog.warning(context, "USB permission denied");
+                }
                 DeviceScanner.this.refresh();
             }
         };
