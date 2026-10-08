@@ -57,6 +57,25 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.WARNING, LOG_TAG, message);
     }
 
+    private static String audioSourceName(int source) {
+        switch (source) {
+            case MediaRecorder.AudioSource.DEFAULT:
+                return "DEFAULT";
+            case MediaRecorder.AudioSource.MIC:
+                return "MIC";
+            case MediaRecorder.AudioSource.CAMCORDER:
+                return "CAMCORDER";
+            case MediaRecorder.AudioSource.VOICE_RECOGNITION:
+                return "VOICE_RECOGNITION";
+            case MediaRecorder.AudioSource.VOICE_COMMUNICATION:
+                return "VOICE_COMMUNICATION";
+            case MediaRecorder.AudioSource.UNPROCESSED:
+                return "UNPROCESSED";
+            default:
+                return "unknown";
+        }
+    }
+
     private volatile Context context;
     private final int instanceId = SourceInstanceId.next();
     // replaced with a fresh token when the same device returns after re-enumeration
@@ -343,9 +362,11 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         this.stopCapture();
         if (!wasCollecting) {
             this.status = SpectrumSource.STATUS_DISCONNECTED;
-            this.emitDisconnected("Selected audio device disconnected: " + this.deviceId);
+            this.emitDisconnected("Audio device removed");
             return;
         }
+        log(this.context, "Audio device removed during capture, waiting up to "
+                + DEVICE_RECOVERY_WINDOW_MS / 1000 + " s for it to return");
         this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
         this.sourceHandler.removeCallbacks(this.recoveryTimeout);
         this.sourceHandler.postDelayed(this.recoveryTimeout, DEVICE_RECOVERY_WINDOW_MS);
@@ -383,7 +404,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (this.status != SpectrumSource.STATUS_RECOVERING || this.capturing) return;
 
         this.status = SpectrumSource.STATUS_DISCONNECTED;
-        this.emitDisconnected("Selected audio device disconnected: " + this.deviceId);
+        this.emitDisconnected("Audio recovery timed out after " + DEVICE_RECOVERY_WINDOW_MS / 1000
+                + " s: the device did not return");
     }
 
     @Override
@@ -436,7 +458,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                 throw new IllegalStateException("Audio recording did not start");
             }
             AtomSpectraLog.detail(ctx, LOG_TAG, "Audio capture configured: sampleRate=" + SAMPLE_RATE
-                    + ", bufferSize=" + this.bufferSize + ", source=" + this.audioSourceMode);
+                    + ", bufferSize=" + this.bufferSize + ", source=" + this.audioSourceMode
+                    + " (" + audioSourceName(this.audioSourceMode) + ")");
             final long generation = this.captureGeneration;
             final AudioRecord record = this.audioRecord;
             final byte[] readBuffer = new byte[this.bufferSize];
