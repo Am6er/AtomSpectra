@@ -221,7 +221,7 @@ public class AtomSpectraLog extends Activity {
         for (Entry entry : snapshot) {
             stringBuilder.append(dateFormat.format(new Date(entry.timestamp)))
                     .append(" [").append(entry.type).append('/').append(entry.severity)
-                    .append("] ").append(entry.text).append("\n\n");
+                    .append("] ").append("\n").append(entry.text).append("\n\n");
         }
 
         return stringBuilder.toString();
