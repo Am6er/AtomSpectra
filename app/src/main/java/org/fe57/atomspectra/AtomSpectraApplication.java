@@ -19,7 +19,7 @@ public class AtomSpectraApplication extends Application implements Application.A
     private final Runnable backgroundCheck = () -> {
         if (startedActivities == 0 && externalUi.isEmpty() && foreground) {
             foreground = false;
-            AtomSpectraLog.action(this, "App moved to background");
+            AtomSpectraLog.detail(this, "APP", "App moved to background");
         }
     };
 
@@ -52,7 +52,7 @@ public class AtomSpectraApplication extends Application implements Application.A
         handler.removeCallbacks(backgroundCheck);
         if (!foreground) {
             foreground = true;
-            AtomSpectraLog.action(this, "App moved to foreground");
+            AtomSpectraLog.detail(this, "APP", "App moved to foreground");
         }
     }
 
