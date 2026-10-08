@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.PermissionChecker;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -210,6 +211,7 @@ public final class AppPermissions {
             // nothing to ask on this SDK (or already granted) -> report current state immediately
             deliverResult();
         } else {
+            AtomSpectraLog.action(activity, "Requesting permissions: " + Arrays.toString(caps));
             launcher.launch(toRequest);
         }
     }
@@ -226,6 +228,9 @@ public final class AppPermissions {
             for (Capability cap : pendingCaps) {
                 result.put(cap, isGranted(activity, cap));
             }
+        }
+        if (!result.isEmpty()) {
+            AtomSpectraLog.event(activity, "Permission result: " + result);
         }
         ResultListener listener = pendingListener;
         pendingListener = null;

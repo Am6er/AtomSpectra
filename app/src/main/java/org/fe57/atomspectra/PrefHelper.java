@@ -40,6 +40,22 @@ public class PrefHelper {
         return context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
     }
 
+    public static boolean isLogDiagnosticsEnabled(@NonNull Context context) {
+        return getASSharedPreferences(context).getBoolean("log_capture_diagnostics", false);
+    }
+
+    public static void setLogDiagnosticsEnabled(@NonNull Context context, boolean enabled) {
+        getASSharedPreferences(context).edit().putBoolean("log_capture_diagnostics", enabled).apply();
+    }
+
+    public static boolean isLogDetailsVisible(@NonNull Context context) {
+        return getASSharedPreferences(context).getBoolean("log_show_details", false);
+    }
+
+    public static void setLogDetailsVisible(@NonNull Context context, boolean visible) {
+        getASSharedPreferences(context).edit().putBoolean("log_show_details", visible).apply();
+    }
+
     // --- Energy calibration -------------------------------------------------------------------
 
     /**
@@ -155,11 +171,15 @@ public class PrefHelper {
 
     static synchronized void setRememberDeviceChoice(@NonNull Context context, boolean remember) {
         SharedPreferences sp = getASSharedPreferences(context);
+        boolean previous = sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false);
         SharedPreferences.Editor editor = sp.edit();
         if (!remember || !sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
             clearDeviceChoice(editor);
         }
         editor.putBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, remember).apply();
+        if (previous != remember) {
+            AtomSpectraLog.action(context, "Remember device choice: " + remember);
+        }
     }
 
     private static void clearDeviceChoice(@NonNull SharedPreferences.Editor editor) {
@@ -404,13 +424,13 @@ public class PrefHelper {
     public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {
         SharedPreferences sharedPreferences = getASSharedPreferences(context);
         if (sharedPreferences == null) {
-            ToastHelper.showToastAndLog(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
+            ToastHelper.showErrorAndLog(context, "Unable to get working dir, sharedPreferences instance is null");
             return null;
         }
 
         String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
         if (workingDir == null && notifyUserIfNotSet) {
-            ToastHelper.showToastAndLog(context, context.getString(R.string.error_working_dir_not_set));
+            ToastHelper.showErrorAndLog(context, context.getString(R.string.error_working_dir_not_set));
         }
 
         return workingDir;

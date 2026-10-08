@@ -94,6 +94,7 @@ public final class SpectrumData {
     public void applyLastCalibrationChannel(@NonNull Context context, int channel) {
         lastCalibrationChannel = Constants.MinMax(channel, Constants.MIN_LAST_CALIBRATION_CHANNEL, getChannelCount());
         PrefHelper.setLastCalibrationChannel(context, lastCalibrationChannel);
+        AtomSpectraLog.action(context, "Last calibration channel set to " + lastCalibrationChannel);
         notifyDataAvailable(context);
     }
 
@@ -105,12 +106,12 @@ public final class SpectrumData {
         calibration.Calculate(coeffs);
         if (calibration.isCorrect()) {
             applyCalibration(context, calibration);
-            ToastHelper.showToastAndLog(context, R.string.cal_apply_device);
+            ToastHelper.showActionAndLog(context, context.getString(R.string.cal_apply_device));
         } else {
             calibration.Calculate(defaultLinearCalibrationCoeffs(getChannelCount()));
             applyCalibration(context, calibration);
             // TODO: rename string resource so it tells "Incorrect calibration from device, default applied"
-            ToastHelper.showToastAndLog(context, R.string.cal_wrong_device);
+            ToastHelper.showWarningAndLog(context, R.string.cal_wrong_device);
         }
     }
 

@@ -865,4 +865,9 @@
         \n
     </string>
     <string name="help_version">Версия: <xliff:g id="version">%1$s</xliff:g>, сборка: <xliff:g id="build">%2$d</xliff:g>.</string>
+    <string name="log_capture_diagnostics">Записывать диагностику</string>
+    <string name="log_show_details">Показать подробности</string>
+    <string name="log_save">Сохранить журнал</string>
+    <string name="log_capture_enabled">Запись диагностики включена</string>
+    <string name="log_capture_disabled">Запись диагностики выключена</string>
 </resources>

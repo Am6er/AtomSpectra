@@ -405,7 +405,19 @@ public class AtomSpectraSensitivity extends Activity {
     }
 
     @Override
+    public void startActivityForResult(Intent intent, int requestCode, Bundle options) {
+        if (requestCode >= 0) AtomSpectraApplication.externalUiStarted(this);
+        try {
+            super.startActivityForResult(intent, requestCode, options);
+        } catch (RuntimeException error) {
+            AtomSpectraApplication.externalUiFinished(this);
+            throw error;
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        AtomSpectraApplication.externalUiFinished(this);
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != RESULT_OK || data == null || data.getData() == null) {
             return;
@@ -423,8 +435,9 @@ public class AtomSpectraSensitivity extends Activity {
              OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
             SensitivityProfileFile.write(writer, customWorking);
             toast(getString(R.string.profile_saved));
+            AtomSpectraLog.action(this, "Saved sensitivity profile");
         } catch (Exception e) {
-            AtomSpectraLog.addMessage(this, android.util.Log.getStackTraceString(e));
+            AtomSpectraLog.error(this, "Cannot save sensitivity profile", e);
             toast(getString(R.string.profile_save_error));
         }
     }
@@ -435,14 +448,16 @@ public class AtomSpectraSensitivity extends Activity {
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             loaded = SensitivityProfileFile.read(reader);
         } catch (SensitivityProfileFile.FormatException e) {
+            AtomSpectraLog.error(this, "Cannot parse sensitivity profile", e);
             toast(getString(R.string.profile_load_error, e.getMessage()));
             return;
         } catch (Exception e) {
-            AtomSpectraLog.addMessage(this, android.util.Log.getStackTraceString(e));
+            AtomSpectraLog.error(this, "Cannot load sensitivity profile", e);
             toast(getString(R.string.profile_load_error, ""));
             return;
         }
         customWorking = loaded;
+        AtomSpectraLog.action(this, "Loaded sensitivity profile");
         rebuildSpinnerLabels();
         if (SensitivityProfile.ID_CUSTOM.equals(selectedId)) {
             selectWorkingFor(SensitivityProfile.ID_CUSTOM);

@@ -8,18 +8,37 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 public class ToastHelper {
-    public static void showToastAndLog(@NonNull Context context, int text) {
-        showToastAndLog(context, context.getString(text));
+    public static void showActionAndLog(@NonNull Context context, String text) {
+        AtomSpectraLog.action(context, text);
+        showToast(context, text);
     }
 
-    public static void showToastAndLog(@NonNull Context context, String text) {
-        showToastInMainLooper(context.getApplicationContext(), text);
+    public static void showErrorAndLog(@NonNull Context context, String text) {
+        AtomSpectraLog.error(context, text);
+        showToast(context, text);
     }
 
-    private static void showToastInMainLooper(@NonNull Context appContext, String text) {
-        AtomSpectraLog.addMessage(appContext, text);
+    public static void showErrorAndLog(@NonNull Context context, int resource) {
+        showErrorAndLog(context, context.getString(resource));
+    }
+
+    public static void showWarningAndLog(@NonNull Context context, String text) {
+        AtomSpectraLog.warning(context, text);
+        showToast(context, text);
+    }
+
+    public static void showWarningAndLog(@NonNull Context context, int resource) {
+        showWarningAndLog(context, context.getString(resource));
+    }
+
+    public static void showToast(@NonNull Context context, String text) {
+        showToast(context, text, Toast.LENGTH_SHORT);
+    }
+
+    public static void showToast(@NonNull Context context, String text, int duration) {
+        Context appContext = context.getApplicationContext();
         new Handler(Looper.getMainLooper()).post(() -> {
-            Toast.makeText(appContext, text, Toast.LENGTH_SHORT).show();
+            Toast.makeText(appContext, text, duration).show();
         });
     }
 }

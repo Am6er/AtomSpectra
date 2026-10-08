@@ -45,6 +45,7 @@
     </queries>
 
     <application
+        android:name=".AtomSpectraApplication"
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
         android:icon="@drawable/logo_atom"
