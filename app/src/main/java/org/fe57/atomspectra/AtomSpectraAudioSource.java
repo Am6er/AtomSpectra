@@ -51,10 +51,9 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private static final long DEVICE_RECOVERY_WINDOW_MS = 5000;
     private static final long CAPTURE_START_WINDOW_MS = 5000;
 
-    private static final String LOG_TAG = "Audio";
 
     private static void log(Context ctx, String message) {
-        AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.WARNING, LOG_TAG, message);
+        AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.WARNING, LogTag.AUDIO, message);
     }
 
     private static String audioSourceName(int source) {
@@ -457,7 +456,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             if (this.audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
                 throw new IllegalStateException("Audio recording did not start");
             }
-            AtomSpectraLog.detail(ctx, LOG_TAG, "Audio capture configured: sampleRate=" + SAMPLE_RATE
+            AtomSpectraLog.detail(ctx, LogTag.AUDIO, "Audio capture configured: sampleRate=" + SAMPLE_RATE
                     + ", bufferSize=" + this.bufferSize + ", source=" + this.audioSourceMode
                     + " (" + audioSourceName(this.audioSourceMode) + ")");
             final long generation = this.captureGeneration;
@@ -579,7 +578,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             this.recoveryCapture = false;
             this.sourceHandler.removeCallbacks(this.captureStartTimeout);
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
-            AtomSpectraLog.detail(this.context, LOG_TAG, "Audio capture started, device=" + this.deviceId);
+            AtomSpectraLog.detail(this.context, LogTag.AUDIO, "Audio capture started, device=" + this.deviceId);
             this.sourceHandler.postDelayed(this.reportRunnable, REPORT_PERIOD_MS);
         }
         this.audioBytes = samples;
@@ -735,7 +734,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                     this.audioRecord.stop();
                 }
             } catch (RuntimeException error) {
-                if (this.context != null) AtomSpectraLog.error(this.context, "Audio stop failed", error);
+                if (this.context != null) AtomSpectraLog.error(this.context, LogTag.AUDIO, "Audio stop failed", error);
             }
         }
         if (this.captureThread != null) {
@@ -757,7 +756,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             try {
                 this.audioRecord.release();
             } catch (RuntimeException error) {
-                if (this.context != null) AtomSpectraLog.error(this.context, "Audio release failed", error);
+                if (this.context != null) AtomSpectraLog.error(this.context, LogTag.AUDIO, "Audio release failed", error);
             } finally {
                 this.audioRecord = null;
             }

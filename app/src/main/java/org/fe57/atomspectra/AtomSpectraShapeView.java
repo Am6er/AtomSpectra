@@ -732,14 +732,14 @@ public class AtomSpectraShapeView extends View {
     private void reportViewError(String error) {
         if (!error.equals(lastReportedViewError)) {
             lastReportedViewError = error;
-            AtomSpectraLog.error(getContext(), error);
+            AtomSpectraLog.error(getContext(), LogTag.SHAPE_VIEW, error);
         }
     }
 
     private void reportPlotError(String error) {
         if (!error.equals(lastReportedPlotError)) {
             lastReportedPlotError = error;
-            AtomSpectraLog.error(getContext(), error);
+            AtomSpectraLog.error(getContext(), LogTag.SHAPE_VIEW, error);
         }
     }
 
@@ -955,7 +955,7 @@ public class AtomSpectraShapeView extends View {
             int size = fg.length;
             if (size == 0) {
                 String message = "Empty array provided to render spectrum plot";
-                AtomSpectraLog.detail(getContext(), "Plot", message);
+                AtomSpectraLog.detail(getContext(), LogTag.SHAPE_VIEW, message);
                 return;
             }
 
@@ -1114,7 +1114,7 @@ public class AtomSpectraShapeView extends View {
             int size = search_values.length;
             if (size == 0) {
                 String message = "Empty array provided to render search plot";
-                AtomSpectraLog.detail(getContext(), "Plot", message);
+                AtomSpectraLog.detail(getContext(), LogTag.SHAPE_VIEW, message);
                 return;
             }
 
@@ -1193,7 +1193,7 @@ public class AtomSpectraShapeView extends View {
             int size = Math.min(non_compensated_values.length, compensated_values.length);
             if (size == 0) {
                 String message = "Empty array provided to render search plot";
-                AtomSpectraLog.detail(getContext(), "Plot", message);
+                AtomSpectraLog.detail(getContext(), LogTag.SHAPE_VIEW, message);
                 return;
             }
 
@@ -1250,7 +1250,7 @@ public class AtomSpectraShapeView extends View {
             int size = calibration_values.length;
             if (size == 0) {
                 String message = "Empty array provided to render calibration plot";
-                AtomSpectraLog.detail(getContext(), "Plot", message);
+                AtomSpectraLog.detail(getContext(), LogTag.SHAPE_VIEW, message);
                 return;
             }
 
@@ -1307,7 +1307,7 @@ public class AtomSpectraShapeView extends View {
             int size = audio_data.length;
             if (size == 0) {
                 String message = "Empty array provided to render oscilloscope plot";
-                AtomSpectraLog.detail(getContext(), "Plot", message);
+                AtomSpectraLog.detail(getContext(), LogTag.SHAPE_VIEW, message);
                 return;
             }
 
@@ -1339,7 +1339,7 @@ public class AtomSpectraShapeView extends View {
             int size = pulse_data.length;
             if (size == 0) {
                 String message = "Empty array provided to render pulse shape plot";
-                AtomSpectraLog.detail(getContext(), "Plot", message);
+                AtomSpectraLog.detail(getContext(), LogTag.SHAPE_VIEW, message);
                 return;
             }
 

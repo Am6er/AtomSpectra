@@ -702,7 +702,7 @@ public class AtomSpectraSpectrogramView extends View {
     // always selects bin start for row index within a segment
     private SelectionBound touchYToBinStartRow(float y) {
         if (POINT_SIZE_PX <= 0) {
-            AtomSpectraLog.error(getContext(), "Cannot render spectrogram: point size is zero");
+            AtomSpectraLog.error(getContext(), LogTag.SPECTROGRAM_VIEW, "Cannot render spectrogram: point size is zero");
             return visibleStartRow;
         }
 
@@ -756,7 +756,7 @@ public class AtomSpectraSpectrogramView extends View {
             return candidateBound;
         } else {
             // TODO: log? it is quite unexpected to get here
-            AtomSpectraLog.detail(getContext(), "Spectrogram", "touchYToBinStartRow failed to find segment");
+            AtomSpectraLog.detail(getContext(), LogTag.SPECTROGRAM_VIEW, "touchYToBinStartRow failed to find segment");
             return null;
         }
     }

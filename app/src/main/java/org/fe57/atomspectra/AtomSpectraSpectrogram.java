@@ -492,7 +492,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private void exportSpectrogramSelection() {
         if (isExportingSpectrum) {
             String message = "ERROR: exportSpectrogramSelection called while spectrum is already exporting.";
-            ToastHelper.showErrorAndLog(this, message);
+            ToastHelper.showErrorAndLog(this, LogTag.SPECTROGRAM_ACT, message);
             return;
         }
 
@@ -516,7 +516,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             for (int i = start; i < end; i++) {
                 char c = source.charAt(i);
                 if ("/\\*?<>|:\"'".indexOf(c) >= 0) {
-                    ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_name_invalid_char));
+                    ToastHelper.showToastAndLog(this, LogTag.SPECTROGRAM_ACT, getString(R.string.spectrogram_spectrum_export_name_invalid_char));
                     return "";
                 }
             }
@@ -562,13 +562,13 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                     boolean exportFg = fgCheckBox.isChecked();
                     boolean exportBg = bgCheckBox.isChecked();
                     if (!exportFg && !exportBg) {
-                        ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_nothing_selected_error));
+                        ToastHelper.showToastAndLog(this, LogTag.SPECTROGRAM_ACT, getString(R.string.spectrogram_spectrum_export_nothing_selected_error));
                         return;
                     }
                     String bgName = bgNameInput.getText().toString().trim();
                     String fgName = fgNameInput.getText().toString().trim();
                     if ((exportBg && bgName.isEmpty()) || (exportFg && fgName.isEmpty())) {
-                        ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_name_empty_error));
+                        ToastHelper.showToastAndLog(this, LogTag.SPECTROGRAM_ACT, getString(R.string.spectrogram_spectrum_export_name_empty_error));
                         return;
                     }
 
@@ -657,11 +657,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             }
 
             if (spectrumFileName != null) {
-                ToastHelper.showActionAndLog(this, getString(R.string.spectrogram_spectrum_export_save_success, spectrumFileName));
+                ToastHelper.showActionAndLog(this, LogTag.SPECTROGRAM_ACT, getString(R.string.spectrogram_spectrum_export_save_success, spectrumFileName));
             } // otherwise cancelled
         } catch (Exception e) {
-            AtomSpectraLog.error(this, "Cannot export spectrogram selection", e);
-            ToastHelper.showToast(this, getString(R.string.spectrogram_spectrum_export_save_error, spectrumName, e.getMessage()));
+            AtomSpectraLog.error(this, LogTag.SPECTROGRAM_ACT, "Cannot export spectrogram selection", e);
+            ToastHelper.showToastOnly(this, getString(R.string.spectrogram_spectrum_export_save_error, spectrumName, e.getMessage()));
         }
     }
 

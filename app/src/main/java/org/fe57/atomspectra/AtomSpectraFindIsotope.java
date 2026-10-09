@@ -22,7 +22,6 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.text.NumberFormat;
 import java.util.Locale;
@@ -293,7 +292,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
             if (val != null)
                 window = val.intValue();
         } catch (Exception e) {
-            Toast.makeText(this, getString(R.string.find_error_window), Toast.LENGTH_LONG).show();
+            ToastHelper.showErrorAndLog(this, LogTag.FIND_ISOTOPE_ACT, getString(R.string.find_error_window));
             return;
         }
         window = Constants.MinMax(window, 5, 200);
@@ -305,7 +304,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
             if (val != null)
                 threshold = val.floatValue();
         } catch (Exception e) {
-            Toast.makeText(this, getString(R.string.find_error_threshold), Toast.LENGTH_LONG).show();
+            ToastHelper.showErrorAndLog(this, LogTag.FIND_ISOTOPE_ACT, getString(R.string.find_error_threshold));
             return;
         }
         threshold = (float) Math.rint(Constants.MinMax(threshold * 100, 0, 1000000)) / 100.0f;
@@ -317,7 +316,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
             if (val != null)
                 tolerance = val.floatValue();
         } catch (Exception e) {
-            Toast.makeText(this, getString(R.string.find_error_tolerance), Toast.LENGTH_LONG).show();
+            ToastHelper.showErrorAndLog(this, LogTag.FIND_ISOTOPE_ACT, getString(R.string.find_error_tolerance));
             return;
         }
         tolerance = (float) Math.rint(Constants.MinMax(tolerance * 100, 1, 5000)) / 100.0f;

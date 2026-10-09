@@ -27,7 +27,6 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -389,6 +388,7 @@ public class AtomSpectraSensitivity extends Activity {
         try {
             startActivityForResult(intent, REQUEST_SAVE_PROFILE);
         } catch (Exception e) {
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot start sensitivity profile save", e);
             toast(getString(R.string.profile_save_error));
         }
     }
@@ -400,6 +400,7 @@ public class AtomSpectraSensitivity extends Activity {
         try {
             startActivityForResult(Intent.createChooser(intent, getString(R.string.ask_select_profile_file)), REQUEST_LOAD_PROFILE);
         } catch (Exception e) {
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot start sensitivity profile load", e);
             toast(getString(R.string.profile_load_error, ""));
         }
     }
@@ -435,9 +436,9 @@ public class AtomSpectraSensitivity extends Activity {
              OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
             SensitivityProfileFile.write(writer, customWorking);
             toast(getString(R.string.profile_saved));
-            AtomSpectraLog.action(this, "Saved sensitivity profile");
+            AtomSpectraLog.action(this, LogTag.SENSITIVITY_ACT, "Saved sensitivity profile");
         } catch (Exception e) {
-            AtomSpectraLog.error(this, "Cannot save sensitivity profile", e);
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot save sensitivity profile", e);
             toast(getString(R.string.profile_save_error));
         }
     }
@@ -448,16 +449,16 @@ public class AtomSpectraSensitivity extends Activity {
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             loaded = SensitivityProfileFile.read(reader);
         } catch (SensitivityProfileFile.FormatException e) {
-            AtomSpectraLog.error(this, "Cannot parse sensitivity profile", e);
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot parse sensitivity profile", e);
             toast(getString(R.string.profile_load_error, e.getMessage()));
             return;
         } catch (Exception e) {
-            AtomSpectraLog.error(this, "Cannot load sensitivity profile", e);
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot load sensitivity profile", e);
             toast(getString(R.string.profile_load_error, ""));
             return;
         }
         customWorking = loaded;
-        AtomSpectraLog.action(this, "Loaded sensitivity profile");
+        AtomSpectraLog.action(this, LogTag.SENSITIVITY_ACT, "Loaded sensitivity profile");
         rebuildSpinnerLabels();
         if (SensitivityProfile.ID_CUSTOM.equals(selectedId)) {
             selectWorkingFor(SensitivityProfile.ID_CUSTOM);
@@ -707,7 +708,7 @@ public class AtomSpectraSensitivity extends Activity {
     }
 
     private void toast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        ToastHelper.showToastOnly(this, message);
     }
 
     private int getEnergyBinTextId(int rowIndex) {

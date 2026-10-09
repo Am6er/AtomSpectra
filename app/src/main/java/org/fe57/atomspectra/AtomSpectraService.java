@@ -30,7 +30,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -340,13 +339,13 @@ public class AtomSpectraService extends Service {
     public void onCreate() {
         super.onCreate();
         Start(this);
-        AtomSpectraLog.detail(this, TAG, "Service created");
+        AtomSpectraLog.detail(this, LogTag.SERVICE, "Service created");
         Log.d(TAG, "onCreate");
     }
 
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
-        AtomSpectraLog.event(this, "Service stopped");
+        AtomSpectraLog.event(this, LogTag.SERVICE, "Service stopped");
         super.onDestroy();
         Stop();
         DeleteSpc();
@@ -388,8 +387,8 @@ public class AtomSpectraService extends Service {
             // e.g. ForegroundServiceStartNotAllowedException / SecurityException when the granted
             // permissions do not cover the requested FGS type. Don't crash the app over it.
             Log.e(TAG, "startForeground failed", e);
-            AtomSpectraLog.error(this, "startForeground failed", e);
-            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.log_foreground_start_failed, String.valueOf(e.getMessage())), Toast.LENGTH_LONG);
+            AtomSpectraLog.error(this, LogTag.SERVICE, "startForeground failed", e);
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.log_foreground_start_failed, String.valueOf(e.getMessage())));
         }
         if (isStarted)
             return START_NOT_STICKY;
@@ -531,7 +530,7 @@ public class AtomSpectraService extends Service {
             return;
         double[] coeffs = activeSource.calibration();
         if (coeffs == null) {
-            toastAndLog(R.string.cal_none_stored, Toast.LENGTH_SHORT);
+            toastAndLog(R.string.cal_none_stored);
             return;
         }
         SpectrumData.instance.applyDeviceCalibration(this, coeffs);
@@ -559,14 +558,14 @@ public class AtomSpectraService extends Service {
         if (!isDeviceAvailable())
             return;
         Calibration calibration = SpectrumData.instance.foreground.getSpectrumCalibration();
-        toastAndLog(R.string.cal_store_wait, Toast.LENGTH_SHORT);
+        toastAndLog(R.string.cal_store_wait);
         activeSource.requestSaveCalibration(calibration.getCoeffArray(AtomSpectraProSource.CALIBRATION_COEFFICIENTS));
     }
 
     private boolean isDeviceAvailable() {
         if (isDeviceConnected() && activeSource != null)
             return true;
-        toastAndLog(R.string.device_not_available, Toast.LENGTH_SHORT, AtomSpectraLog.Severity.WARNING);
+        toastAndLog(R.string.device_not_available, AtomSpectraLog.Severity.WARNING);
         return false;
     }
 
@@ -620,7 +619,7 @@ public class AtomSpectraService extends Service {
         postToInputThread(() -> {
             final SpectrumSource source = activeSource;
             if (sessionState != DeviceSessionState.LOCKED || source == null) return;
-            AtomSpectraLog.action(this, "Reconnect requested: " + inputDeviceInfo);
+            AtomSpectraLog.action(this, LogTag.SERVICE, "Reconnect requested: " + inputDeviceInfo);
             deviceError = null;
             source.requestConnect();
             updateMenu();
@@ -690,7 +689,7 @@ public class AtomSpectraService extends Service {
                                 AppPermissions.foregroundServiceType(this));
                     } catch (SecurityException error) {
                         Log.e(TAG, "Cannot update Bluetooth foreground service type", error);
-                        AtomSpectraLog.error(this, "Cannot update Bluetooth foreground service type", error);
+                        AtomSpectraLog.error(this, LogTag.SERVICE, "Cannot update Bluetooth foreground service type", error);
                     }
                 }
                 return new BluZBleSource(this, identity, inputHandler);
@@ -721,7 +720,7 @@ public class AtomSpectraService extends Service {
         if (sessionState == DeviceSessionState.LOCKED && activeSource != null && locked != null
                 && device.matches(locked.type, locked.identity)) {
             if (!isDeviceConnected()) {
-                AtomSpectraLog.action(this, "Reconnect requested: " + device.displayName);
+                AtomSpectraLog.action(this, LogTag.SERVICE, "Reconnect requested: " + device.displayName);
                 deviceError = null;
                 activeSource.requestConnect();
             }
@@ -745,7 +744,7 @@ public class AtomSpectraService extends Service {
     // locks the device and lets its source connect; the source waits if the device is not there
     private void lockDevice(int type, String identity, String name, boolean byUser) {
         selectionPending = byUser;
-        AtomSpectraLog.action(this, "Selected device: " + name
+        AtomSpectraLog.action(this, LogTag.SERVICE, "Selected device: " + name
             + (byUser ? " (user)" : " (saved preference)"));
         SpectrumSource source = createSource(type, identity);
         if (source == null) {
@@ -781,7 +780,7 @@ public class AtomSpectraService extends Service {
         closeSources();
         releaseLock();
         sessionState = DeviceSessionState.OFFLINE;
-        AtomSpectraLog.action(this, "Selected Offline" + (byUser ? " (user)" : " (saved preference)"));
+        AtomSpectraLog.action(this, LogTag.SERVICE, "Selected Offline" + (byUser ? " (user)" : " (saved preference)"));
         if (remember) {
             PrefHelper.setDeviceChoice(this, DeviceChoice.offline());
         }
@@ -840,9 +839,9 @@ public class AtomSpectraService extends Service {
         updateInputDeviceInfo(null);
         resetRecordingSuspendedStatus(false);
 
-        AtomSpectraLog.error(service_context, "Device selection failed: " + text);
+        AtomSpectraLog.error(service_context, LogTag.SERVICE, "Device selection failed: " + text);
         if (!wasSelecting && text != null) {
-            toastAndLog(text, Toast.LENGTH_LONG);
+            ToastHelper.showToastOnly(this, text);
         }
         Intent required = new Intent(Constants.ACTION.ACTION_DEVICE_SELECTION_REQUIRED).setPackage(Constants.PACKAGE_NAME);
         if (text != null) {
@@ -905,7 +904,7 @@ public class AtomSpectraService extends Service {
         SpectrumData.instance.foreground.setDeviceInfo(inputDeviceInfo).updateComments();
         requestDeviceSpectrum(source);
         if (replacesData) {
-            toastAndLog(R.string.device_spectrum_adopted, Toast.LENGTH_SHORT);
+            toastAndLog(R.string.device_spectrum_adopted);
         }
     }
 
@@ -983,13 +982,13 @@ public class AtomSpectraService extends Service {
                 if (nextStatus == SpectrumSource.STATUS_RECOVERING) {
                     if (!recoveryPending) {
                         recoveryStartedAt = SystemClock.elapsedRealtime();
-                        AtomSpectraLog.warning(service_context,
+                        AtomSpectraLog.warning(service_context, LogTag.SERVICE,
                                 getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
                     }
                     recoveryPending = true;
                 } else if (nextStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
                     if (recoveryPending && !recoveryCancelledByStop)
-                        AtomSpectraLog.event(service_context,
+                        AtomSpectraLog.event(service_context, LogTag.SERVICE,
                                 getStringOrDefaultLocale(R.string.log_device_recovered, active.deviceId())
                                         + " after " + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s");
                     recoveryPending = false;
@@ -1009,7 +1008,7 @@ public class AtomSpectraService extends Service {
                 onSourceDataSkipped();
                 break;
             case SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED:
-                ToastHelper.showActionAndLog(this, getStringOrDefaultLocale(R.string.cal_stored));
+                ToastHelper.showActionAndLog(this, LogTag.SERVICE, getStringOrDefaultLocale(R.string.cal_stored));
                 break;
         }
     }
@@ -1043,7 +1042,7 @@ public class AtomSpectraService extends Service {
             PrefHelper.setDeviceChoice(this, DeviceChoice.device(locked.type, locked.identity, locked.name));
         }
         reconcileScreenWithDevice(source, true);
-        AtomSpectraLog.event(service_context, "Device ready (first): " + inputDeviceInfo + ", channels: " + deviceChannelCount);
+        AtomSpectraLog.event(service_context, LogTag.SERVICE, "Device ready (first): " + inputDeviceInfo + ", channels: " + deviceChannelCount);
 
         if (byUser) {
             sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_SELECTED).setPackage(Constants.PACKAGE_NAME));
@@ -1057,12 +1056,12 @@ public class AtomSpectraService extends Service {
     private void onDeviceReturned() {
         final SpectrumSource source = activeSource;
         deviceReady = true;
-        AtomSpectraLog.event(service_context, "Device ready (restored): " + inputDeviceInfo);
+        AtomSpectraLog.event(service_context, LogTag.SERVICE, "Device ready (restored): " + inputDeviceInfo);
         // the toast repeats the line logged above
         if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
-            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.action_usb_attached), Toast.LENGTH_SHORT);
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_usb_attached));
         } else if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
-            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.action_bluetooth_attached), Toast.LENGTH_SHORT);
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_bluetooth_attached));
         }
 
         final boolean collecting = deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING;
@@ -1102,7 +1101,7 @@ public class AtomSpectraService extends Service {
 
         deviceReady = false;
         connectDecisionPending = false;
-        AtomSpectraLog.warning(service_context, "Device disconnected: " + inputDeviceInfo + ": " + reason);
+        AtomSpectraLog.warning(service_context, LogTag.SERVICE, "Device disconnected: " + inputDeviceInfo + ": " + reason);
 
         if (is_recording) {
             synchronized (recordingSuspendedSync) {
@@ -1137,7 +1136,7 @@ public class AtomSpectraService extends Service {
         }
         if (op == SpectrumSource.OP_CONNECT) {
             // the device stays locked; the source does not retry and the status icon offers the recovery
-            AtomSpectraLog.error(service_context, "Device connect failed: " + text);
+            AtomSpectraLog.error(service_context, LogTag.SERVICE, "Device connect failed: " + text);
             updateMenu();
             refreshServiceNotification();
             return;
@@ -1160,7 +1159,7 @@ public class AtomSpectraService extends Service {
 
         if (op == SpectrumSource.OP_CALIBRATION_SAVE
                 && lockedSourceType() != SpectrumSource.TYPE_BLUZ) {
-            toastAndLog(R.string.cal_wrong_store_device, Toast.LENGTH_SHORT, AtomSpectraLog.Severity.WARNING);
+            toastAndLog(R.string.cal_wrong_store_device, AtomSpectraLog.Severity.WARNING);
             return;
         }
 
@@ -1170,7 +1169,7 @@ public class AtomSpectraService extends Service {
                             ? R.string.log_source_operation_timeout
                             : R.string.log_source_operation_failed,
                 label);
-            toastAndLog(message, Toast.LENGTH_SHORT, AtomSpectraLog.Severity.ERROR);
+            toastAndLog(message, AtomSpectraLog.Severity.ERROR);
         }
     }
 
@@ -1181,7 +1180,7 @@ public class AtomSpectraService extends Service {
             if (intervalSearchAlarmTimer != null) {
                 // TODO: localize
                 String message = "ERROR: trying to start interval search alarm timer while timer is already in progress";
-                toastAndLog(message, Toast.LENGTH_SHORT, AtomSpectraLog.Severity.ERROR);
+                toastAndLog(message, AtomSpectraLog.Severity.ERROR);
                 return;
             }
             intervalSearchAlarmTimer = new Timer();
@@ -1433,13 +1432,13 @@ public class AtomSpectraService extends Service {
                             .build();
                 } catch (Exception ignored) {
                     intervalSearchAlarmAudioTrack = null;
-                    AtomSpectraLog.error(service_context, "Unable to configure output audio", ignored);
-                    ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.no_audio_output_available));
+                    AtomSpectraLog.error(service_context, LogTag.SERVICE, "Unable to configure output audio", ignored);
+                    ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.no_audio_output_available));
                 }
                 if (intervalSearchAlarmAudioTrack != null && intervalSearchAlarmAudioTrack.getState() != AudioTrack.STATE_NO_STATIC_DATA) {
                     intervalSearchAlarmAudioTrack.release();
                     intervalSearchAlarmAudioTrack = null;
-                    toastAndLog(R.string.no_audio_output_available, Toast.LENGTH_SHORT, AtomSpectraLog.Severity.ERROR);
+                    toastAndLog(R.string.no_audio_output_available, AtomSpectraLog.Severity.ERROR);
                 }
             }
         }
@@ -1637,7 +1636,7 @@ public class AtomSpectraService extends Service {
             }
             if (Constants.ACTION.ACTION_STOP_FOREGROUND.equals(action)) {
                 Log.i(TAG, "Received Stop Foreground Intent");
-                AtomSpectraLog.action(service_context, "Exit requested");
+                AtomSpectraLog.action(service_context, LogTag.SERVICE, "Exit requested");
                 releaseOutputAudioTrack();
                 Log.d(TAG, "recording Stop");
                 Stop();
@@ -1861,7 +1860,7 @@ public class AtomSpectraService extends Service {
             if (!screenFromDevice && !SpectrumData.instance.foreground.isEmpty() && !canContinueScreenSpectrum()) {
                 resetServiceSpectrum();
                 restoreDeviceCalibration();
-                toastAndLog(R.string.start_screen_replaced, Toast.LENGTH_SHORT);
+                toastAndLog(R.string.start_screen_replaced);
             }
             return true;
         }
@@ -1924,7 +1923,7 @@ public class AtomSpectraService extends Service {
         }
         if (!wrongFrameLogged) {
             wrongFrameLogged = true;
-            AtomSpectraLog.error(service_context, "Error: histogram of " + histogram.length
+            AtomSpectraLog.error(service_context, LogTag.SERVICE, "Error: histogram of " + histogram.length
                     + " channels ignored, the screen has " + SpectrumData.instance.getChannelCount());
         }
         onSourceDataSkipped();
@@ -1961,9 +1960,9 @@ public class AtomSpectraService extends Service {
             String inputTypeText = lockedSourceName("audio", "usb", "bluz", "none");
 
             if (recording) {
-                AtomSpectraLog.action(service_context, getStringOrDefaultLocale(R.string.log_start_recording, inputTypeText));
+                AtomSpectraLog.action(service_context, LogTag.SERVICE, getStringOrDefaultLocale(R.string.log_start_recording, inputTypeText));
             } else {
-                AtomSpectraLog.action(service_context, getStringOrDefaultLocale(R.string.log_stop_recording, inputTypeText));
+                AtomSpectraLog.action(service_context, LogTag.SERVICE, getStringOrDefaultLocale(R.string.log_stop_recording, inputTypeText));
             }
         }
 
@@ -2299,10 +2298,10 @@ public class AtomSpectraService extends Service {
             saveFile.addSpectrum(spectrum)
                     .setChannelCompression(1)
                     .saveSpectrumAndCloseStream(docStream, this);
-            AtomSpectraLog.action(service_context, "Saved spectrum (" + suffix + "): " + AtomSpectraLog.fileName(this, streamInfo.second));
+            AtomSpectraLog.action(service_context, LogTag.SERVICE, "Saved spectrum (" + suffix + "): " + AtomSpectraLog.fileName(this, streamInfo.second));
         } catch (Exception e) {
-            AtomSpectraLog.error(service_context, "Cannot save spectrum (" + suffix + ")", e);
-            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.hist_save_error, suffix));
+            AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot save spectrum (" + suffix + ")", e);
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.hist_save_error, suffix));
         }
     }
 
@@ -2338,7 +2337,7 @@ public class AtomSpectraService extends Service {
                 if (now.getDate() != spgAutosaveFileCreated.getDate()) {
                     appendDeltaToSpectrogram(foregroundSpectrumCopy);
                     completeSpectrogramRecording();
-                    toastAndLog(R.string.log_spg_midnight_restart, Toast.LENGTH_SHORT);
+                    toastAndLog(R.string.log_spg_midnight_restart);
                 }
             }
 
@@ -2359,10 +2358,10 @@ public class AtomSpectraService extends Service {
 
                     AtomSpectraSpectrogramData.instance.addSegment(spgAutosaveSpectrum, spgAutosaveFilePath);
                     notifySpectrogramUpdated();
-                    this.toastAndLog(R.string.log_spg_autosave_start, Toast.LENGTH_SHORT);
+                    this.toastAndLog(R.string.log_spg_autosave_start);
                 } catch (Exception e) {
-                    AtomSpectraLog.error(service_context, "Cannot start spectrogram autosave", e);
-                    ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()));
+                    AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot start spectrogram autosave", e);
+                    ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()));
                 }
 
                 return;
@@ -2403,8 +2402,8 @@ public class AtomSpectraService extends Service {
             notifySpectrogramUpdated();
             spgAutosaveSpectrum = foregroundSpectrumCopy;
         } catch (Exception e) {
-            ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()));
-            AtomSpectraLog.error(service_context, "Cannot append spectrogram", e);
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()));
+            AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot append spectrogram", e);
         }
     }
 
@@ -2412,7 +2411,7 @@ public class AtomSpectraService extends Service {
         synchronized (spgAutosaveSync) {
             spgAutosaveSpectrum = null;
             if (spgAutosaveFilePath != null) {
-                toastAndLog(R.string.log_spg_autosave_completed, Toast.LENGTH_SHORT);
+                toastAndLog(R.string.log_spg_autosave_completed);
             }
 
             spgAutosaveFilePath = null;
@@ -2502,8 +2501,7 @@ public class AtomSpectraService extends Service {
 //        toastAndLog(
 //                "cp2s: " + cp2s
 //                + "; dr: " + dr + " (+-" + dr_error + "%)"
-//                + "; search: " + searchMode + ";",
-//                Toast.LENGTH_SHORT);
+//                + "; search: " + searchMode + ";");
     }
 
     private static void resetAtomSwiftIntermediateData() {
@@ -2511,22 +2509,26 @@ public class AtomSpectraService extends Service {
         atomSwiftIntermediateCps = 0;
     }
 
-    private void toastAndLog(String text, int duration) {
-        toastAndLog(text, duration, AtomSpectraLog.Severity.INFO);
+    private void toastAndLog(String text) {
+        toastAndLog(text, AtomSpectraLog.Severity.INFO);
     }
 
-    private void toastAndLog(String text, int duration, AtomSpectraLog.Severity severity) {
-        ToastHelper.showToast(this, text, duration);
-        AtomSpectraLog.add(service_context, AtomSpectraLog.Type.EVENT, severity, null, text);
+    private void toastAndLog(String text, AtomSpectraLog.Severity severity) {
+        if (severity == AtomSpectraLog.Severity.ERROR) {
+            ToastHelper.showErrorAndLog(this, LogTag.SERVICE, text);
+        } else if (severity == AtomSpectraLog.Severity.WARNING) {
+            ToastHelper.showWarningAndLog(this, LogTag.SERVICE, text);
+        } else {
+            ToastHelper.showToastAndLog(this, LogTag.SERVICE, text);
+        }
     }
 
-    private void toastAndLog(int res_id, int duration) {
-        String text = getStringOrDefaultLocale(res_id);
-        toastAndLog(text, duration);
+    private void toastAndLog(int res_id) {
+        toastAndLog(getStringOrDefaultLocale(res_id));
     }
 
-    private void toastAndLog(int res_id, int duration, AtomSpectraLog.Severity severity) {
-        toastAndLog(getStringOrDefaultLocale(res_id), duration, severity);
+    private void toastAndLog(int res_id, AtomSpectraLog.Severity severity) {
+        toastAndLog(getStringOrDefaultLocale(res_id), severity);
     }
 
     private void onRecordingSuspended() {
@@ -2535,7 +2537,7 @@ public class AtomSpectraService extends Service {
             recordingSuspensionAcknowledged = false;
         }
         recordingSuspendedAt = new Date();
-        AtomSpectraLog.warning(service_context, getStringOrDefaultLocale(R.string.log_recording_suspended));
+        AtomSpectraLog.warning(service_context, LogTag.SERVICE, getStringOrDefaultLocale(R.string.log_recording_suspended));
 
         saveCurrentSpectrum("recording_suspended");
         completeSpectrogramRecording();
@@ -2555,7 +2557,7 @@ public class AtomSpectraService extends Service {
         refreshServiceNotification();
         playNotificationSound();
 
-        AtomSpectraLog.event(service_context, getStringOrDefaultLocale(R.string.log_recording_resumed));
+        AtomSpectraLog.event(service_context, LogTag.SERVICE, getStringOrDefaultLocale(R.string.log_recording_resumed));
     }
 
     // the consecutive-rejection counter behind ACTION_HISTOGRAM_SKIPPED: a restart is not the user's
@@ -2576,7 +2578,7 @@ public class AtomSpectraService extends Service {
             Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
             r.play();
         } catch (Exception e) {
-            AtomSpectraLog.detail(service_context, TAG, "Notification sound failed: " + e);
+            AtomSpectraLog.detail(service_context, LogTag.SERVICE, "Notification sound failed: " + e);
         }
     }
 
