@@ -860,7 +860,7 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(silentWindowEnd);
         handler.postDelayed(silentWindowEnd, SILENT_INITIAL_WINDOW_MS);
         waitForDevice();
-        debug("Direct silent reconnect attempt");
+        debug("Direct reconnect attempt");
         connect(adapter.getRemoteDevice(address));
     }
 
@@ -891,12 +891,13 @@ final class BluZBleSource implements SpectrumSource {
                 || silentScannedAttemptStarted) return;
         silentScannedAttemptStarted = true;
         debug("Connecting to scanned BluZ device");
+        extendSilentWindow();
         connect(silentScannedDevice);
     }
 
     private void silentAttemptFailed() {
         if (!silentRetry) return;
-        AtomSpectraLog.warning(context, LOG_TAG, "Silent reconnect attempt failed after "
+        AtomSpectraLog.warning(context, LOG_TAG, "Recovery: attempt failed after "
                 + (SystemClock.elapsedRealtime() - silentStartedAt) / 1000 + " s of recovery");
         releaseGatt();
         if (silentScannedAttemptStarted) {
@@ -946,7 +947,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void debug(String message) {
-        AtomSpectraLog.detail(context, LOG_TAG, message);
+        AtomSpectraLog.detail(context, LOG_TAG, silentRetry ? "Recovery: " + message : message);
     }
 
     private void permissionLost() {
@@ -955,7 +956,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void failHandshake(int reason, String text) {
         if (silentRetry && reason != REASON_PERMISSION) {
-            AtomSpectraLog.warning(context, LOG_TAG, "Silent GATT setup failed: " + text);
+            AtomSpectraLog.warning(context, LOG_TAG, "Recovery: GATT setup failed: " + text);
             silentAttemptFailed();
             return;
         }
