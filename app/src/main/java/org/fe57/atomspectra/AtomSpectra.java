@@ -3762,9 +3762,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
     private void updateVersionInMenu() {
         if (app_menu != null) {
-            String testSuffix = "";
             AtomSpectraHelp.VersionInfo versionInfo = AtomSpectraHelp.getVersionInfo(this);
-            app_menu.findItem(R.id.action_app_version).setTitle("Ver. " + versionInfo.version + "." + versionInfo.verCode + testSuffix);
+            app_menu.findItem(R.id.action_app_version).setTitle(
+                    "Ver. " + versionInfo.version + "." + versionInfo.verCode
+                            + Constants.TEST_DISPLAY_SUFFIX);
         }
     }
 

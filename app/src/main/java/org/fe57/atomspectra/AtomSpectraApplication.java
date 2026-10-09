@@ -27,7 +27,8 @@ public class AtomSpectraApplication extends Application implements Application.A
     public void onCreate() {
         super.onCreate();
         registerActivityLifecycleCallbacks(this);
-        AtomSpectraLog.event(this, "App started: " + BuildConfig.VERSION_NAME);
+        AtomSpectraLog.event(this, "App started: " + BuildConfig.VERSION_NAME
+                + "." + BuildConfig.VERSION_CODE + Constants.TEST_DISPLAY_SUFFIX);
         AtomSpectraLog.event(this, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android "
                 + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
     }
