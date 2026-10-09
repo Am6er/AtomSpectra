@@ -225,8 +225,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     @Override
-    public void requestConnect() {
-        if (this.deferToSourceThread(this::requestConnect)) return;
+    public void requestConnect(boolean userInitiated) {
+        if (this.deferToSourceThread(() -> this.requestConnect(userInitiated))) return;
         if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
 
         if (this.isOpened()) {
@@ -316,7 +316,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.emitDisconnected("USB recovery cancelled by stop");
             UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
             this.device = this.findLockedDevice(manager);
-            this.requestConnect();
+            this.requestConnect(false);
             return;
         }
         if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING) {
@@ -1187,7 +1187,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         this.device = returned;
         SystemClock.sleep(USB_WAIT_DEVICE);
-        this.requestConnect();
+        this.requestConnect(false);
     }
 
     private boolean isAwaitingUsbReturn() {
@@ -1244,7 +1244,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 || this.status != SpectrumSource.STATUS_RECOVERING) return;
         UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
         this.device = this.findLockedDevice(manager);
-        this.requestConnect();
+        this.requestConnect(false);
     }
 
     private void onRecoveryTimeout() {

@@ -57,6 +57,7 @@ final class DeviceScanner {
     private ScanCallback bluetoothScan;
     private BluetoothAdapter bluetoothAdapter;
     private boolean scanFailed;
+    private boolean bluetoothScanPaused;
     private final Map<String, DeviceDescriptor> bluetoothDevices = new LinkedHashMap<>();
 
     DeviceScanner(Context context) {
@@ -229,7 +230,8 @@ final class DeviceScanner {
                 if ("BluZ".equals(device.getName()))
                     addBluetoothDevice(device, device.getName(), false);
             }
-            if (listener != null && bluetoothScan == null && !scanFailed) startBluetoothScan();
+            if (listener != null && bluetoothScan == null && !scanFailed && !bluetoothScanPaused)
+                startBluetoothScan();
             result.addAll(bluetoothDevices.values());
         } catch (SecurityException error) {
             AtomSpectraLog.warning(context, LogTag.SCANNER, "Bluetooth device list denied: " + error);
@@ -327,6 +329,19 @@ final class DeviceScanner {
         } catch (SecurityException | IllegalStateException error) {
             AtomSpectraLog.warning(context, LogTag.SCANNER, "Bluetooth scan stop failed: " + error);
         }
+    }
+
+    // the radio is left to a connection in progress; the list keeps what was found
+    void pauseBluetoothScan() {
+        if (bluetoothScanPaused) return;
+        bluetoothScanPaused = true;
+        stopBluetoothScan();
+    }
+
+    void resumeBluetoothScan() {
+        if (!bluetoothScanPaused) return;
+        bluetoothScanPaused = false;
+        refresh();
     }
 
     void restartBluetoothScan() {
