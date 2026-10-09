@@ -1043,7 +1043,7 @@ public class AtomSpectraService extends Service {
             PrefHelper.setDeviceChoice(this, DeviceChoice.device(locked.type, locked.identity, locked.name));
         }
         reconcileScreenWithDevice(source, true);
-        AtomSpectraLog.event(service_context, "Device connected: " + inputDeviceInfo + ", channels: " + deviceChannelCount);
+        AtomSpectraLog.event(service_context, "Device ready (first): " + inputDeviceInfo + ", channels: " + deviceChannelCount);
 
         if (byUser) {
             sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_SELECTED).setPackage(Constants.PACKAGE_NAME));
@@ -1057,7 +1057,7 @@ public class AtomSpectraService extends Service {
     private void onDeviceReturned() {
         final SpectrumSource source = activeSource;
         deviceReady = true;
-        AtomSpectraLog.event(service_context, "Device connection restored: " + inputDeviceInfo);
+        AtomSpectraLog.event(service_context, "Device ready (restored): " + inputDeviceInfo);
         // the toast repeats the line logged above
         if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
             ToastHelper.showToast(this, getStringOrDefaultLocale(R.string.action_usb_attached), Toast.LENGTH_SHORT);
