@@ -9,6 +9,7 @@ public class Constants {
 
     public static final String ATOMSPECTRA_PREFERENCES = "AtomSpectra Preferences";
     public static final String PACKAGE_NAME = "org.fe57.atomspectra";
+    public static final String TEST_DISPLAY_SUFFIX = "";
     public static final int SEARCH_FAST_DEFAULT = 100, SEARCH_MEDIUM_DEFAULT = 500, SEARCH_SLOW_DEFAULT = 2000;          //dose rate impulse count
     public static final int MIN_CHANNEL_COUNT = 1024;
     public static final int DEFAULT_CHANNEL_COUNT = 8192;
