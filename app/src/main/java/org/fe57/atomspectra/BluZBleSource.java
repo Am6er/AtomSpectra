@@ -40,11 +40,10 @@ final class BluZBleSource implements SpectrumSource {
     private static final long COMMAND_MS = 15000;
     private static final long ASSEMBLY_MS = 10000;
     private static final String LOG_TAG = "BluZ";
-    // A scan hit or physical connection extends silent recovery, up to a bounded maximum.
-    private static final long SILENT_INITIAL_WINDOW_MS = 30000;
-    private static final long SILENT_PROGRESS_WINDOW_MS = 30000;
-    private static final long SILENT_MAX_WINDOW_MS = 60000;
-    private static final long SLOW_RETRY_MS = 30000;
+    // A scan hit or physical connection extends recovery, up to a bounded maximum.
+    private static final long RECOVERY_MAX_WINDOW_MS = 60000;
+    private static final long MAX_RETRY_MS = 30000;
+    private static final long SCAN_RESTART_MS = 120000;
     private static String gattStatus(int status) {
         String name;
         switch (status) {
@@ -132,14 +131,14 @@ final class BluZBleSource implements SpectrumSource {
     private boolean subscribed;
     private boolean writing;
     private long retryDelay = 1000;
-    private boolean silentRetry;
-    private String silentReason;
-    private long silentStartedAt;
-    private long silentDeadlineAt;
+    private boolean recoveryActive;
+    private String recoveryReason;
+    private long recoveryStartedAt;
+    private long recoveryDeadlineAt;
     private long scanStartedAt;
     private long connectStartedAt;
-    private BluetoothDevice silentScannedDevice;
-    private boolean silentScannedAttemptStarted;
+    private BluetoothDevice recoveryScannedDevice;
+    private boolean recoveryScannedAttemptStarted;
     private BluZFrameDecoder.Frame latest;
     private boolean stopOnReturn;
     private int toggleOp;
@@ -179,7 +178,7 @@ final class BluZBleSource implements SpectrumSource {
                 return;
             }
             if (ready && lastError != null) connectionLostNow("Retrying BluZ connection");
-            else if (ready || physicalConnection || silentRetry) return;
+            else if (ready || physicalConnection || recoveryActive) return;
             terminal = false;
             lastError = null;
             if (!AppPermissions.isBluetoothGranted(context)) {
@@ -198,7 +197,7 @@ final class BluZBleSource implements SpectrumSource {
                             if (closed || terminal) return;
                             try {
                                 if (!adapter.isEnabled()) connectionLostNow("Bluetooth is off");
-                                else if (silentRetry) return;
+                                else if (recoveryActive) return;
                                 else waitForDevice();
                             } catch (SecurityException error) {
                                 permissionLost();
@@ -218,7 +217,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void waitForDevice() {
         handler.removeCallbacks(retry);
-        if (closed || terminal || (gatt != null && !silentRetry) || scanCallback != null) return;
+        if (closed || terminal || (gatt != null && !recoveryActive) || scanCallback != null) return;
         if (!AppPermissions.isBluetoothGranted(context)) {
             permissionLost();
             return;
@@ -226,7 +225,7 @@ final class BluZBleSource implements SpectrumSource {
         try {
             if (adapter == null || !adapter.isEnabled()) return;
             if (adapter.getBluetoothLeScanner() == null) {
-                if (!silentRetry) scheduleRetry();
+                if (!recoveryActive) scheduleRetry();
                 return;
             }
             ScanCallback callback = new ScanCallback() {
@@ -235,11 +234,11 @@ final class BluZBleSource implements SpectrumSource {
                     dispatch(() -> {
                         if (closed || terminal || scanCallback != this) return;
                         debug("Scan hit");
-                        if (silentRetry) {
-                            silentScannedDevice = result.getDevice();
+                        if (recoveryActive) {
+                            recoveryScannedDevice = result.getDevice();
                             stopScan();
-                            extendSilentWindow();
-                            if (gatt == null) startSilentScannedAttempt();
+                            extendRecoveryWindow();
+                            if (gatt == null) startRecoveryScannedAttempt();
                             else debug("Scan hit deferred: connect attempt in progress");
                             return;
                         }
@@ -253,7 +252,7 @@ final class BluZBleSource implements SpectrumSource {
                     dispatch(() -> {
                         if (scanCallback != this) return;
                         stopScan();
-                        if (!silentRetry) scheduleRetry();
+                        if (!recoveryActive) scheduleRetry();
                     });
                 }
             };
@@ -262,13 +261,14 @@ final class BluZBleSource implements SpectrumSource {
             debug("Scan started");
             adapter.getBluetoothLeScanner().startScan(
                     Collections.singletonList(new ScanFilter.Builder().setDeviceAddress(address).build()),
-                    new ScanSettings.Builder().setScanMode(silentRetry
+                    new ScanSettings.Builder().setScanMode(recoveryActive
                             ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
+            handler.postDelayed(scanRestart, SCAN_RESTART_MS);
         } catch (SecurityException error) {
             permissionLost();
         } catch (IllegalStateException error) {
             stopScan();
-            if (!silentRetry) scheduleRetry();
+            if (!recoveryActive) scheduleRetry();
         }
     }
 
@@ -276,10 +276,19 @@ final class BluZBleSource implements SpectrumSource {
         if (closed || terminal) return;
         handler.removeCallbacks(retry);
         handler.postDelayed(retry, retryDelay);
-        retryDelay = Math.min(30000, retryDelay * 2);
+        retryDelay = Math.min(MAX_RETRY_MS, retryDelay * 2);
     }
 
+    // A scan that produced no events for SCAN_RESTART_MS is restarted.
+    private final Runnable scanRestart = () -> {
+        if (scanCallback == null) return;
+        debug("Scan restart, no scan events for " + (SystemClock.elapsedRealtime() - scanStartedAt) / 1000 + " s");
+        stopScan();
+        waitForDevice();
+    };
+
     private void stopScan() {
+        handler.removeCallbacks(scanRestart);
         ScanCallback callback = scanCallback;
         scanCallback = null;
         if (callback == null || adapter == null) return;
@@ -300,17 +309,17 @@ final class BluZBleSource implements SpectrumSource {
                     ? device.connectGatt(context, false, callbacks, BluetoothDevice.TRANSPORT_LE)
                     : device.connectGatt(context, false, callbacks);
             if (gatt == null) {
-                if (silentRetry) silentAttemptFailed();
+                if (recoveryActive) recoveryAttemptFailed();
                 else scheduleRetry();
             } else
-                handler.postDelayed(connectionDeadline, silentRetry ? SILENT_INITIAL_WINDOW_MS : HANDSHAKE_MS);
+                handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
         } catch (SecurityException error) {
             permissionLost();
         }
     }
 
     private final Runnable connectionDeadline = () -> {
-        if (silentRetry) silentAttemptFailed();
+        if (recoveryActive) recoveryAttemptFailed();
         else if (!physicalConnection) {
             releaseGatt();
             scheduleRetry();
@@ -329,7 +338,7 @@ final class BluZBleSource implements SpectrumSource {
                 if (!current(candidate)) return;
                 debug("GATT connection state=" + newState + ", status=" + gattStatus(result));
                 if (newState == BluetoothProfile.STATE_DISCONNECTED || result != BluetoothGatt.GATT_SUCCESS) {
-                    if (silentRetry) silentAttemptFailed();
+                    if (recoveryActive) recoveryAttemptFailed();
                     else if (physicalConnection && !ready && !hasBeenReady)
                         failHandshake(REASON_ERROR, "BluZ disconnected during handshake");
                     else connectionLost("Connection lost, status " + gattStatus(result));
@@ -338,10 +347,10 @@ final class BluZBleSource implements SpectrumSource {
                     debug("Connected after " + (SystemClock.elapsedRealtime() - connectStartedAt) + " ms");
                     handler.removeCallbacks(connectionDeadline);
                     handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
-                    if (silentRetry) extendSilentWindow();
+                    if (recoveryActive) extendRecoveryWindow();
                     else setStatus(STATUS_CONNECTING);
                     try {
-                        candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                        candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) candidate.readPhy();
                         if (!candidate.discoverServices())
                             failHandshake(REASON_ERROR, "Cannot discover BluZ services");
@@ -522,15 +531,15 @@ final class BluZBleSource implements SpectrumSource {
                 handler.removeCallbacks(connectionDeadline);
                 coefficients = frame.calibration();
                 lastError = null;
-                boolean recovering = silentRetry;
+                boolean recovering = recoveryActive;
                 debug("First frame");
                 if (recovering) {
-                    cancelSilentRetry();
+                    cancelRecovery();
                     if (!frame.isCollecting() || stopOnReturn) {
                         status = STATUS_DISCONNECTED;
                         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON,
                                 (stopOnReturn ? "Reconnected, acquisition was stopped during recovery"
-                                        : "Reconnected, but the device is not collecting") + "; cause: " + silentReason));
+                                        : "Reconnected, but the device is not collecting") + "; cause: " + recoveryReason));
                     }
                 }
                 if (recovering && frame.isCollecting() && !stopOnReturn) {
@@ -654,10 +663,10 @@ final class BluZBleSource implements SpectrumSource {
     public void requestStop() {
         dispatch(() -> {
             if (closed) return;
-            if (silentRetry || (!ready && hasBeenReady)) {
+            if (recoveryActive || (!ready && hasBeenReady)) {
                 stopOnReturn = true;
-                if (silentRetry) {
-                    cancelSilentRetry();
+                if (recoveryActive) {
+                    cancelRecovery();
                     setStatus(STATUS_DISCONNECTED);
                     reply(new Intent(ACTION_SOURCE_DISCONNECTED)
                             .putExtra(EXTRA_SOURCE_DISCONNECT_REASON, "BluZ recovery cancelled by stop"));
@@ -743,7 +752,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean usable(int op) {
         if (closed) return false;
         if (ready && gatt != null && latest != null) return true;
-        error(op, REASON_ERROR, silentRetry ? "BluZ is reconnecting" : "BluZ is not ready");
+        error(op, REASON_ERROR, recoveryActive ? "BluZ is reconnecting" : "BluZ is not ready");
         return false;
     }
 
@@ -846,27 +855,25 @@ final class BluZBleSource implements SpectrumSource {
             connectionLostNow(reason);
             return;
         }
-        silentRetry = true;
+        recoveryActive = true;
         setStatus(STATUS_RECOVERING);
-        silentReason = reason;
-        silentStartedAt = SystemClock.elapsedRealtime();
-        silentDeadlineAt = silentStartedAt + SILENT_INITIAL_WINDOW_MS;
-        silentScannedDevice = null;
-        silentScannedAttemptStarted = false;
-        AtomSpectraLog.warning(context, LOG_TAG, reason + ", retrying silently for up to "
-                + SILENT_INITIAL_WINDOW_MS / 1000 + " s");
+        recoveryReason = reason;
+        recoveryStartedAt = SystemClock.elapsedRealtime();
+        recoveryDeadlineAt = recoveryStartedAt + HANDSHAKE_MS;
+        recoveryScannedDevice = null;
+        recoveryScannedAttemptStarted = false;
+        AtomSpectraLog.warning(context, LOG_TAG, "Recovery: started after " + reason + ", initial window "
+                + HANDSHAKE_MS / 1000 + " s, up to " + RECOVERY_MAX_WINDOW_MS / 1000 + " s");
         stopScan();
         releaseGatt();
-        handler.removeCallbacks(silentWindowEnd);
-        handler.postDelayed(silentWindowEnd, SILENT_INITIAL_WINDOW_MS);
+        handler.removeCallbacks(recoveryWindowEnd);
+        handler.postDelayed(recoveryWindowEnd, HANDSHAKE_MS);
         waitForDevice();
-        debug("Direct reconnect attempt");
-        connect(adapter.getRemoteDevice(address));
     }
 
     private void connectionLostNow(String reason) {
-        boolean wasActive = ready || silentRetry;
-        cancelSilentRetry();
+        boolean wasActive = ready || recoveryActive;
+        cancelRecovery();
         stopScan();
         releaseGatt();
         setStatus(STATUS_DISCONNECTED);
@@ -875,79 +882,80 @@ final class BluZBleSource implements SpectrumSource {
         scheduleRetry();
     }
 
-    private void extendSilentWindow() {
-        if (!silentRetry) return;
+    private void extendRecoveryWindow() {
+        if (!recoveryActive) return;
         long now = SystemClock.elapsedRealtime();
-        long maximumDeadline = silentStartedAt + SILENT_MAX_WINDOW_MS;
-        long extendedDeadline = Math.min(maximumDeadline, now + SILENT_PROGRESS_WINDOW_MS);
-        if (extendedDeadline <= silentDeadlineAt) return;
-        silentDeadlineAt = extendedDeadline;
-        handler.removeCallbacks(silentWindowEnd);
-        handler.postDelayed(silentWindowEnd, silentDeadlineAt - now);
+        long maximumDeadline = recoveryStartedAt + RECOVERY_MAX_WINDOW_MS;
+        long extendedDeadline = Math.min(maximumDeadline, now + HANDSHAKE_MS);
+        if (extendedDeadline <= recoveryDeadlineAt) return;
+        recoveryDeadlineAt = extendedDeadline;
+        handler.removeCallbacks(recoveryWindowEnd);
+        handler.postDelayed(recoveryWindowEnd, recoveryDeadlineAt - now);
     }
 
-    private void startSilentScannedAttempt() {
-        if (closed || terminal || !silentRetry || gatt != null || silentScannedDevice == null
-                || silentScannedAttemptStarted) return;
-        silentScannedAttemptStarted = true;
+    private void startRecoveryScannedAttempt() {
+        if (closed || terminal || !recoveryActive || gatt != null || recoveryScannedDevice == null
+                || recoveryScannedAttemptStarted) return;
+        recoveryScannedAttemptStarted = true;
         debug("Connecting to scanned BluZ device");
-        extendSilentWindow();
-        connect(silentScannedDevice);
+        extendRecoveryWindow();
+        connect(recoveryScannedDevice);
     }
 
-    private void silentAttemptFailed() {
-        if (!silentRetry) return;
+    private void recoveryAttemptFailed() {
+        if (!recoveryActive) return;
         AtomSpectraLog.warning(context, LOG_TAG, "Recovery: attempt failed after "
-                + (SystemClock.elapsedRealtime() - silentStartedAt) / 1000 + " s of recovery");
+                + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s of recovery");
         releaseGatt();
-        if (silentScannedAttemptStarted) {
-            silentScannedDevice = null;
-            silentScannedAttemptStarted = false;
+        if (recoveryScannedAttemptStarted) {
+            recoveryScannedDevice = null;
+            recoveryScannedAttemptStarted = false;
         }
-        if (silentScannedDevice != null) {
-            startSilentScannedAttempt();
+        if (recoveryScannedDevice != null) {
+            startRecoveryScannedAttempt();
         } else if (scanCallback == null) {
             waitForDevice();
         }
     }
 
-    private void cancelSilentRetry() {
-        silentRetry = false;
-        handler.removeCallbacks(silentWindowEnd);
-        silentStartedAt = 0;
-        silentDeadlineAt = 0;
-        silentScannedDevice = null;
-        silentScannedAttemptStarted = false;
+    private void cancelRecovery() {
+        recoveryActive = false;
+        handler.removeCallbacks(recoveryWindowEnd);
+        recoveryStartedAt = 0;
+        recoveryDeadlineAt = 0;
+        recoveryScannedDevice = null;
+        recoveryScannedAttemptStarted = false;
         stopScan();
     }
 
-    private final Runnable silentWindowEnd = this::onSilentWindowEnd;
+    private final Runnable recoveryWindowEnd = this::onRecoveryWindowEnd;
 
-    private void onSilentWindowEnd() {
-        if (!silentRetry) return;
-        long remaining = silentDeadlineAt - SystemClock.elapsedRealtime();
+    private void onRecoveryWindowEnd() {
+        if (!recoveryActive) return;
+        long remaining = recoveryDeadlineAt - SystemClock.elapsedRealtime();
         if (remaining > 0) {
-            handler.postDelayed(silentWindowEnd, remaining);
+            handler.postDelayed(recoveryWindowEnd, remaining);
             return;
         }
-        endSilentRetry();
+        endRecovery();
     }
 
-    // Silent recovery expired: report the loss and continue waiting in the background.
-    private void endSilentRetry() {
-        if (!silentRetry) return;
-        String reason = "Recovery timed out after " + (SystemClock.elapsedRealtime() - silentStartedAt) / 1000
-                + " s; cause: " + silentReason;
-        cancelSilentRetry();
+    // Recovery expired: report the loss and continue waiting in the background.
+    private void endRecovery() {
+        if (!recoveryActive) return;
+        String reason = "Recovery timed out after " + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000
+                + " s; cause: " + recoveryReason;
+        cancelRecovery();
         releaseGatt();
-        retryDelay = SLOW_RETRY_MS;
+        retryDelay = MAX_RETRY_MS;
         setStatus(STATUS_DISCONNECTED);
         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
         waitForDevice();
+        debug("Recovery ended, waiting for device");
     }
 
     private void debug(String message) {
-        AtomSpectraLog.detail(context, LOG_TAG, silentRetry ? "Recovery: " + message : message);
+        AtomSpectraLog.detail(context, LOG_TAG, recoveryActive ? "Recovery: " + message : message);
     }
 
     private void permissionLost() {
@@ -955,14 +963,14 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void failHandshake(int reason, String text) {
-        if (silentRetry && reason != REASON_PERMISSION) {
+        if (recoveryActive && reason != REASON_PERMISSION) {
             AtomSpectraLog.warning(context, LOG_TAG, "Recovery: GATT setup failed: " + text);
-            silentAttemptFailed();
+            recoveryAttemptFailed();
             return;
         }
-        boolean recovering = silentRetry;
+        boolean recovering = recoveryActive;
         terminal = true;
-        cancelSilentRetry();
+        cancelRecovery();
         releaseGatt();
         stopScan();
         handler.removeCallbacks(retry);
@@ -1020,7 +1028,7 @@ final class BluZBleSource implements SpectrumSource {
         dispatch(() -> {
             if (closed) return;
             closed = true;
-            cancelSilentRetry();
+            cancelRecovery();
             stopScan();
             releaseGatt();
             handler.removeCallbacks(retry);

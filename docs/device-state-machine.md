@@ -194,7 +194,7 @@ stateDiagram-v2
 
 Audio and Pro USB use a 5-second recovery window after loss while collecting. Audio restarts capture when the selected input returns within the window. Pro USB reconnects and checks device status; if it is still collecting, recovery completes in place, otherwise it reports a disconnect and follows the regular ready/resume flow. The Pro source also has a data watchdog that reconnects a silent serial link by itself; that watchdog runs independently of physical detach recovery.
 
-BluZ's bounded, progress-extended silent window is described in [BluZ threading and connection lifecycle](bluz-threading.md). `RECOVERING` is a source status, not a separate session state. It is shown only while the source has already reported ready; after a reported disconnect the device state returns to `WAITING`.
+BluZ's bounded, progress-extended scan-based recovery window is described in [BluZ threading and connection lifecycle](bluz-threading.md). `RECOVERING` is a source status, not a separate session state. It is shown only while the source has already reported ready; after a reported disconnect the device state returns to `WAITING`.
 
 ### Recovery Event Contract
 

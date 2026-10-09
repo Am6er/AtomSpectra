@@ -62,7 +62,7 @@ all enter through this boundary. Delayed tasks are scheduled on that handler.
 | `scanCallback`, adapter receiver and retry scheduling | Input handler only |
 | Decoder, `latest`, `latestSettings` | Input handler only |
 | `writes`, `writing`, toggle/reset/settings confirmation state | Input handler only |
-| Silent recovery state, deadline and scanned-device attempt bookkeeping | Input handler only |
+| Recovery state, deadline and scanned-device attempt bookkeeping | Input handler only |
 | `stopOnReturn` | Input handler only; survives GATT replacement |
 | `closed`, `terminal`, `hasBeenReady` | Input handler only |
 | `status`, `lastError`, `coefficients` | Input-handler writes; volatile publication for getters |
@@ -118,10 +118,13 @@ removed when their operation or connection is cleared.
 ## 4. Discovery, connection and readiness
 
 Source waiting is separate from picker discovery. The source scans for its
-locked MAC address using low-power scan mode, or low-latency scan mode during silent
+locked MAC address using low-power scan mode, or low-latency scan mode during
 recovery; it does not choose a new device.
 If Bluetooth is off, it waits for an adapter-state change. Retry backoff starts
 at one second and doubles to a 30-second cap.
+
+A scan that produces no result for two minutes is stopped and started again. Any
+scan result, failure or `stopScan()` cancels that restart timer.
 
 Connection setup proceeds through physical connection, service discovery, MTU
 251, notification/indication enablement and the CCCD write. Subscription is
@@ -154,7 +157,7 @@ sequenceDiagram
 A complete, checksum-valid normal frame establishes source readiness. Idle is
 type 0; collecting is types 1-3. History frames do not establish current
 acquisition state. During ordinary initialization, the first normal frame supplies
-calibration and the current status along with `READY`. Silent collecting recovery
+calibration and the current status along with `READY`. Collecting recovery
 instead completes with `STATUS_CONNECTED_COLLECTING`, without a ready event.
 
 Status is assigned before this ready event. A subsequent observed-status update
@@ -169,7 +172,7 @@ acquisition changes use `ACTION_SOURCE_STATUS`.
   be terminal until explicit Retry.
 - A handshake timeout after an earlier ready connection takes the regular
   disconnect/retry path.
-- During silent recovery, non-permission setup failures fail that attempt and
+- During recovery, non-permission setup failures fail that attempt and
   continue within the bounded recovery window.
 - Permission loss is terminal for the source; the service handles the permission
     error by releasing the unusable session. During recovery, disconnect is reported
@@ -265,12 +268,13 @@ end-to-end bound for every public request.
 
 | Callback | Delay / budget | Purpose |
 |---|---|---|
-| `connectionDeadline` | 20 seconds normally; 30 seconds for an initial silent attempt | Bound physical connection / setup stages; physical connection rearms setup at 20 seconds |
+| `connectionDeadline` | 20 seconds | Bound physical connection / setup stages; physical connection rearms setup at 20 seconds |
 | `assemblyDeadline` | 10 seconds | Reject an incomplete incoming frame |
 | `writeDeadline` | 15 seconds per write chunk | Bound GATT transport completion |
 | Toggle/reset/resolution/calibration deadlines | 15 seconds after logical command is sent | Require confirmation from a normal frame |
-| `silentWindowEnd` | Initial 30 seconds, progress extension capped at 60 seconds from loss | Bound silent recovery as a whole |
+| `recoveryWindowEnd` | Initial 20 seconds, progress extension capped at 60 seconds from loss | Bound recovery as a whole |
 | `retry` | Backoff up to 30 seconds | Continue ordinary device waiting |
+| `scanRestart` | 2 minutes after scan start | Restart a scan that produced no events |
 
 Callbacks run on the same owner as frame processing and teardown. Connection
 release removes its setup, assembly, write and command-confirmation callbacks.
@@ -279,18 +283,19 @@ another source thread.
 
 `writeFailed()` clears queued writes, cancels command deadlines and reports errors
 for interrupted pending operations. A write timeout then calls
-`connectionLostNow()`: it disconnects and schedules ordinary retry, not silent
+`connectionLostNow()`: it disconnects and schedules ordinary retry, not
 recovery. Link loss with a pending command also reports command failure and
 takes that regular path.
 
-## 8. Silent recovery and progress extension
+## 8. Recovery and progress extension
 
-Silent recovery requires a ready source whose latest frame is collecting and
+Recovery requires a ready source whose latest frame is collecting and
 has no pending acquisition, reset or settings command. Other losses report the
 regular disconnect/error flow.
 
-The source first releases GATT, starts scanning and attempts a direct connection
-to the locked address. A scan result can provide a fresh `BluetoothDevice` token.
+The source releases GATT and starts a low-latency scan for the locked address;
+there is no direct reconnect attempt. A scan result provides a fresh
+`BluetoothDevice` token, the scan stops and the source connects to that device.
 Failed scanned attempts discard their token and resume scanning.
 
 ```mermaid
@@ -301,14 +306,14 @@ sequenceDiagram
     Android-->>Owner: Current collecting link lost
     Owner->>Owner: Verify no pending command
     Owner-->>Service: STATUS_RECOVERING
-    Owner->>Owner: Record 30-second silent deadline
-    Owner->>Android: Release GATT, scan and attempt direct reconnect
+    Owner->>Owner: Record 20-second recovery deadline
+    Owner->>Android: Release GATT and start scan
     Android-->>Owner: Current scan finds selected device
-    Owner->>Owner: Retain fresh device token and extend deadline
+    Owner->>Owner: Retain fresh device token, extend deadline, connect
     Android-->>Owner: Current GATT physically connects
     Owner->>Owner: Extend deadline and run setup
     Android-->>Owner: First valid returned normal frame
-    Owner->>Owner: Cancel silent recovery and scan
+    Owner->>Owner: Cancel recovery and scan
     alt Device is collecting
         Owner-->>Service: STATUS_CONNECTED_COLLECTING without READY
     else Device is idle
@@ -317,30 +322,32 @@ sequenceDiagram
     end
 ```
 
-Silent recovery times (start, deadline, logged durations) use `SystemClock.elapsedRealtime()`,
-which keeps counting in deep sleep. Progress extension:
+Recovery times (start, deadline, logged durations) use `SystemClock.elapsedRealtime()`,
+which keeps counting in deep sleep. The window is the 20-second handshake budget,
+extended on a scan hit, on the start of a scanned attempt and on physical connection:
 
 ```text
 maximum deadline = loss time + 60 seconds
-extended deadline = min(maximum deadline, current time + 30 seconds)
+extended deadline = min(maximum deadline, current time + 20 seconds)
 ```
 
-Only a later deadline replaces the existing one. `onSilentWindowEnd()` rechecks
+Only a later deadline replaces the existing one. `onRecoveryWindowEnd()` rechecks
 the stored deadline and reschedules when time remains. Handler delays use uptime, so
 after deep sleep the callback can fire later than the deadline; the deadline check and
 the logged durations still use elapsed real time. A scan hit or physical connection
 does not remove the requirement for a valid normal frame.
 
-When silent recovery expires, the source reports disconnected and continues
-background waiting. Collecting confirmation preserves the service's recording
+When recovery expires, the source reports disconnected, sets the retry delay to
+its 30-second maximum and continues background waiting with a slow scan.
+Collecting confirmation preserves the service's recording
 without suspension; an idle return reports disconnect first so the service can
 take its normal resume path.
 
 ## 9. Deferred Stop during reconnect
 
-Stop requested during silent recovery, or while a previously ready source is
+Stop requested during recovery, or while a previously ready source is
 awaiting reconnection, sets `stopOnReturn` instead of reporting a not-ready
-operation error. Active silent recovery is cancelled and reports disconnected;
+operation error. Active recovery is cancelled and reports disconnected;
 an in-progress GATT attempt may continue as an ordinary connection. If no GATT
 attempt exists, normal waiting resumes. The flag belongs to the source instance
 and survives `releaseGatt()` and further attempts.
@@ -352,7 +359,7 @@ sequenceDiagram
     participant Device as Returned BluZ device
     Caller-->>Owner: requestStop while reconnecting
     Owner->>Owner: Retain stopOnReturn
-    Owner-->>Caller: DISCONNECTED if silent recovery was pending
+    Owner-->>Caller: DISCONNECTED if recovery was pending
     Device-->>Owner: First valid returned frame
     alt Frame is collecting
         Owner->>Owner: Queue Stop before READY
@@ -393,7 +400,7 @@ sequenceDiagram
     participant Android as Android BLE stack
     Caller-->>Owner: Dispatch close if off-handler
     Owner->>Owner: Set closed true
-    Owner->>Owner: Cancel silent recovery, scanning and retry
+    Owner->>Owner: Cancel recovery, scanning and retry
     Owner->>Owner: Remove deadlines and set current GATT null
     Owner->>Owner: Clear queues, decoder and pending operations
     Owner->>Android: Disconnect and close released GATT
