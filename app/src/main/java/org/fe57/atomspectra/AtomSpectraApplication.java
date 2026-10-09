@@ -19,7 +19,7 @@ public class AtomSpectraApplication extends Application implements Application.A
     private final Runnable backgroundCheck = () -> {
         if (startedActivities == 0 && externalUi.isEmpty() && foreground) {
             foreground = false;
-            AtomSpectraLog.detail(this, "APP", "App moved to background");
+            AtomSpectraLog.detail(this, LogTag.APP, "App moved to background");
         }
     };
 
@@ -27,9 +27,9 @@ public class AtomSpectraApplication extends Application implements Application.A
     public void onCreate() {
         super.onCreate();
         registerActivityLifecycleCallbacks(this);
-        AtomSpectraLog.event(this, "App started: " + BuildConfig.VERSION_NAME
+        AtomSpectraLog.event(this, LogTag.APP, "App started: " + BuildConfig.VERSION_NAME
                 + "." + BuildConfig.VERSION_CODE + Constants.TEST_DISPLAY_SUFFIX);
-        AtomSpectraLog.event(this, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android "
+        AtomSpectraLog.event(this, LogTag.APP, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android "
                 + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
     }
 
@@ -53,7 +53,7 @@ public class AtomSpectraApplication extends Application implements Application.A
         handler.removeCallbacks(backgroundCheck);
         if (!foreground) {
             foreground = true;
-            AtomSpectraLog.detail(this, "APP", "App moved to foreground");
+            AtomSpectraLog.detail(this, LogTag.APP, "App moved to foreground");
         }
     }
 

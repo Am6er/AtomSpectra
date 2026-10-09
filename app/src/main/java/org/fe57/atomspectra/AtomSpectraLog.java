@@ -16,7 +16,6 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 
 import java.io.IOException;
@@ -60,16 +59,18 @@ public class AtomSpectraLog extends Activity {
         final long timestamp;
         final Type type;
         final Severity severity;
+        final String tag;
         final String text;
         final int bytes;
 
-        Entry(long sequence, Type type, Severity severity, String text) {
+        Entry(long sequence, Type type, Severity severity, String tag, String text) {
             this.sequence = sequence;
             this.timestamp = System.currentTimeMillis();
             this.type = type;
             this.severity = severity;
+            this.tag = tag;
             this.text = text;
-            this.bytes = text.getBytes(StandardCharsets.UTF_8).length;
+            this.bytes = tag.getBytes(StandardCharsets.UTF_8).length + text.getBytes(StandardCharsets.UTF_8).length;
         }
     }
 
@@ -91,32 +92,24 @@ public class AtomSpectraLog extends Activity {
         diagnosticsLoaded = true;
     }
 
-    public static void action(Context context, String message) {
-        add(context, Type.ACTION, Severity.INFO, null, message);
+    public static void action(Context context, String tag, String message) {
+        add(context, Type.ACTION, Severity.INFO, tag, message);
     }
 
-    public static void event(Context context, String message) {
-        add(context, Type.EVENT, Severity.INFO, null, message);
-    }
-
-    public static void warning(Context context, String message) {
-        add(context, Type.EVENT, Severity.WARNING, null, message);
+    public static void event(Context context, String tag, String message) {
+        add(context, Type.EVENT, Severity.INFO, tag, message);
     }
 
     public static void warning(Context context, String tag, String message) {
         add(context, Type.EVENT, Severity.WARNING, tag, message);
     }
 
-    public static void error(Context context, String message) {
-        add(context, Type.EVENT, Severity.ERROR, null, message);
-    }
-
     public static void error(Context context, String tag, String message) {
         add(context, Type.EVENT, Severity.ERROR, tag, message);
     }
 
-    public static void error(Context context, String operation, Throwable error) {
-        error(context, operation + ": " + error.getClass().getSimpleName()
+    public static void error(Context context, String tag, String operation, Throwable error) {
+        error(context, tag, operation + ": " + error.getClass().getSimpleName()
                 + (error.getMessage() == null ? "" : " - " + error.getMessage())
                 + "\n" + android.util.Log.getStackTraceString(error).trim());
     }
@@ -140,9 +133,10 @@ public class AtomSpectraLog extends Activity {
 
     public static void add(Context context, Type type, Severity severity, String tag, String message) {
         if (type == Type.DETAIL && !isDiagnosticsEnabled(context)) return;
-        String text = boundedText(tag, message);
+        String text = boundedText(message);
+        String entryTag = tag == null || tag.isEmpty() ? "UNTAGGED" : tag;
         synchronized (logSync) {
-            Entry entry = new Entry(sequence++, type, severity, text);
+            Entry entry = new Entry(sequence++, type, severity, entryTag, text);
             boolean diagnostic = type == Type.DETAIL;
             LinkedList<Entry> target = diagnostic ? details : log;
             int bytes = (diagnostic ? detailBytes : logBytes) + entry.bytes;
@@ -158,24 +152,20 @@ public class AtomSpectraLog extends Activity {
         notifyLogUpdated(context);
     }
 
-    private static String boundedText(String tag, String message) {
+    private static String boundedText(String message) {
         String marker = "\n[truncated]";
         StringBuilder result = new StringBuilder();
         int bytes = 0;
-        String[] parts = tag == null || tag.isEmpty()
-                ? new String[]{message == null ? "" : message}
-                : new String[]{tag, ": ", message == null ? "" : message};
-        for (String part : parts) {
-            for (int offset = 0; offset < part.length();) {
-                int codePoint = part.codePointAt(offset);
-                int width = codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4;
-                if (bytes + width > MAX_ENTRY_BYTES - marker.length()) {
-                    return result.append(marker).toString();
-                }
-                result.appendCodePoint(codePoint);
-                bytes += width;
-                offset += Character.charCount(codePoint);
+        String text = message == null ? "" : message;
+        for (int offset = 0; offset < text.length();) {
+            int codePoint = text.codePointAt(offset);
+            int width = codePoint <= 0x7f ? 1 : codePoint <= 0x7ff ? 2 : codePoint <= 0xffff ? 3 : 4;
+            if (bytes + width > MAX_ENTRY_BYTES - marker.length()) {
+                return result.append(marker).toString();
             }
+            result.appendCodePoint(codePoint);
+            bytes += width;
+            offset += Character.charCount(codePoint);
         }
         return result.toString();
     }
@@ -220,8 +210,8 @@ public class AtomSpectraLog extends Activity {
         dateFormat.setTimeZone(TimeZone.getDefault());
         for (Entry entry : snapshot) {
             stringBuilder.append(dateFormat.format(new Date(entry.timestamp)))
-                    .append(" [").append(entry.type).append('/').append(entry.severity)
-                    .append("] ").append("\n").append(entry.text).append("\n\n");
+                    .append(" [").append(entry.type).append("] [").append(entry.severity).append("]\n")
+                    .append('[').append(entry.tag).append("] ").append(entry.text).append("\n\n");
         }
 
         return stringBuilder.toString();
@@ -300,7 +290,7 @@ public class AtomSpectraLog extends Activity {
             boolean enabled = !isDiagnosticsEnabled(this);
             setDiagnosticsEnabled(this, enabled);
             item.setChecked(enabled);
-            action(this, getString(enabled ? R.string.log_capture_enabled : R.string.log_capture_disabled));
+            action(this, LogTag.LOG_ACTIVITY, getString(enabled ? R.string.log_capture_enabled : R.string.log_capture_disabled));
             return true;
         }
         if (item.getItemId() == R.id.action_log_details) {
@@ -318,8 +308,8 @@ public class AtomSpectraLog extends Activity {
             try {
                 startActivityForResult(intent, REQUEST_SAVE_LOG);
             } catch (Exception exception) {
-                error(this, "Cannot open log destination picker", exception);
-                Toast.makeText(this, getString(R.string.hist_save_error, LOG_FILE_NAME), Toast.LENGTH_SHORT).show();
+                error(this, LogTag.LOG_ACTIVITY, "Cannot open log destination picker", exception);
+                ToastHelper.showToastOnly(this, getString(R.string.hist_save_error, LOG_FILE_NAME));
             }
             return true;
         }
@@ -352,10 +342,10 @@ public class AtomSpectraLog extends Activity {
             try (OutputStreamWriter writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
                 writer.write(snapshot);
             }
-            Toast.makeText(this, getString(R.string.hist_save_success, LOG_FILE_NAME), Toast.LENGTH_SHORT).show();
+            ToastHelper.showActionAndLog(this, LogTag.LOG_ACTIVITY, getString(R.string.hist_save_success, LOG_FILE_NAME));
         } catch (Exception exception) {
-            error(this, "Cannot save log", exception);
-            Toast.makeText(this, getString(R.string.hist_save_error, LOG_FILE_NAME), Toast.LENGTH_SHORT).show();
+            error(this, LogTag.LOG_ACTIVITY, "Cannot save log", exception);
+            ToastHelper.showToastOnly(this, getString(R.string.hist_save_error, LOG_FILE_NAME));
         }
     }
 

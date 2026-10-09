@@ -350,7 +350,7 @@ public class SpectrumFileAS extends SpectrumFile {
                 }
 
                 if (target.rowCount() >= AtomSpectraSpectrogramData.MAX_ROWS) {
-                    ToastHelper.showWarningAndLog(context, "Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
+                    ToastHelper.showWarningAndLog(context, LogTag.SPECTRUM_FILE_AS, "Spectrogram max rows limit reached: " + AtomSpectraSpectrogramData.MAX_ROWS);
                     break;
                 }
 

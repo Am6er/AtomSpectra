@@ -178,7 +178,7 @@ public class PrefHelper {
         }
         editor.putBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, remember).apply();
         if (previous != remember) {
-            AtomSpectraLog.action(context, "Remember device choice: " + remember);
+            AtomSpectraLog.action(context, LogTag.PREF_HELPER, "Remember device choice: " + remember);
         }
     }
 
@@ -424,13 +424,13 @@ public class PrefHelper {
     public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {
         SharedPreferences sharedPreferences = getASSharedPreferences(context);
         if (sharedPreferences == null) {
-            ToastHelper.showErrorAndLog(context, "Unable to get working dir, sharedPreferences instance is null");
+            ToastHelper.showErrorAndLog(context, LogTag.PREF_HELPER, "Unable to get working dir, sharedPreferences instance is null");
             return null;
         }
 
         String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
         if (workingDir == null && notifyUserIfNotSet) {
-            ToastHelper.showErrorAndLog(context, context.getString(R.string.error_working_dir_not_set));
+            ToastHelper.showErrorAndLog(context, LogTag.PREF_HELPER, context.getString(R.string.error_working_dir_not_set));
         }
 
         return workingDir;

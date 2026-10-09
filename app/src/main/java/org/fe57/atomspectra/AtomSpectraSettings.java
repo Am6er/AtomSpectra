@@ -35,7 +35,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -58,7 +57,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         Object value = preferences.getAll().get(key);
         // strings may hold device names/identities, URLs or paths: log their key only
         boolean plain = value instanceof Boolean || value instanceof Number;
-        AtomSpectraLog.action(this, "Preference changed: " + key + (plain ? " = " + value : ""));
+        AtomSpectraLog.action(this, LogTag.SETTINGS_ACT, "Preference changed: " + key + (plain ? " = " + value : ""));
     };
     private TextView doseRateFreqLabel;
     private TextView workingDirText;
@@ -1001,7 +1000,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 }
             } catch (Exception e) {
                 prefEditor.remove(Constants.CONFIG.CONF_DIRECTORY_SELECTED);
-                Toast.makeText(this, getString(R.string.storage_required), Toast.LENGTH_LONG).show();
+                ToastHelper.showErrorAndLog(this, LogTag.SETTINGS_ACT, getString(R.string.storage_required));
             }
             prefEditor.apply();
         }
@@ -1296,7 +1295,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                             | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     getContentResolver().takePersistableUriPermission(uri, takeFlags);
                     workingDirText.setText(uri.getPath());
-                    AtomSpectraLog.action(this, "Working directory selected");
+                    AtomSpectraLog.action(this, LogTag.SETTINGS_ACT, "Working directory selected");
                 }
                 editor.apply();
             }
@@ -1459,7 +1458,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
             }
 
             private void showToast(String phrase) {
-                Toast.makeText(getApplicationContext(), phrase, Toast.LENGTH_SHORT).show();
+                ToastHelper.showToastAndLog(getApplicationContext(), LogTag.SETTINGS_ACT, phrase);
             }
         });
     }

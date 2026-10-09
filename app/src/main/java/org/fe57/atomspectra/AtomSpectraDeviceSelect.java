@@ -22,7 +22,6 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
@@ -220,7 +219,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             } else {
                 String error = intent.getStringExtra(Constants.ACTION_PARAMETERS.SELECTION_ERROR_TEXT);
                 if (error != null) {
-                    Toast.makeText(AtomSpectraDeviceSelect.this, error, Toast.LENGTH_LONG).show();
+                    ToastHelper.showErrorAndLog(AtomSpectraDeviceSelect.this, LogTag.DEVICE_SELECT_ACT, error);
                 }
                 renderDevices();
             }

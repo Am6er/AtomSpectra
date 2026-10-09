@@ -211,7 +211,7 @@ public final class AppPermissions {
             // nothing to ask on this SDK (or already granted) -> report current state immediately
             deliverResult();
         } else {
-            AtomSpectraLog.action(activity, "Requesting permissions: " + Arrays.toString(caps));
+            AtomSpectraLog.action(activity, LogTag.PERMISSIONS, "Requesting permissions: " + Arrays.toString(caps));
             launcher.launch(toRequest);
         }
     }
@@ -230,7 +230,7 @@ public final class AppPermissions {
             }
         }
         if (!result.isEmpty()) {
-            AtomSpectraLog.event(activity, "Permission result: " + result);
+            AtomSpectraLog.event(activity, LogTag.PERMISSIONS, "Permission result: " + result);
         }
         ResultListener listener = pendingListener;
         pendingListener = null;

@@ -39,7 +39,6 @@ final class BluZBleSource implements SpectrumSource {
     private static final long HANDSHAKE_MS = 20000;
     private static final long COMMAND_MS = 15000;
     private static final long ASSEMBLY_MS = 10000;
-    private static final String LOG_TAG = "BluZ";
     // Silent recovery is abandoned after this long; the retry delay is fixed while it lasts.
     private static final long RECOVERY_MAX_WINDOW_MS = 60000;
     private static final long RECOVERY_RETRY_MS = 1000;
@@ -852,7 +851,7 @@ final class BluZBleSource implements SpectrumSource {
         setStatus(STATUS_RECOVERING);
         recoveryReason = reason;
         recoveryStartedAt = SystemClock.elapsedRealtime();
-        AtomSpectraLog.warning(context, LOG_TAG, "Recovery: started after " + reason + ", window "
+        AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: started after " + reason + ", window "
                 + RECOVERY_MAX_WINDOW_MS / 1000 + " s");
         stopScan();
         releaseGatt();
@@ -874,7 +873,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void recoveryAttemptFailed() {
         if (!recoveryActive) return;
-        AtomSpectraLog.warning(context, LOG_TAG, "Recovery: attempt failed after "
+        AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: attempt failed after "
                 + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s of recovery");
         releaseGatt();
         scheduleRetry();
@@ -904,7 +903,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void debug(String message) {
-        AtomSpectraLog.detail(context, LOG_TAG, recoveryActive ? "Recovery: " + message : message);
+        AtomSpectraLog.detail(context, LogTag.BLUZ, recoveryActive ? "Recovery: " + message : message);
     }
 
     private void permissionLost() {
@@ -913,7 +912,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void failHandshake(int reason, String text) {
         if (recoveryActive && reason != REASON_PERMISSION) {
-            AtomSpectraLog.warning(context, LOG_TAG, "Recovery: GATT setup failed: " + text);
+            AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: GATT setup failed: " + text);
             recoveryAttemptFailed();
             return;
         }

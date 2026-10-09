@@ -146,7 +146,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 }
                 AtomSpectraProSource.this.asyncTasksHandler.postDelayed(AtomSpectraProSource.this.errorReportingRunnable, SUPPRESSION_DURATION_MINUTES * 60 * 1000);
             } else {
-                AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.INFO, LOG_TAG,
+                AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.INFO, LogTag.SPECTRA_PRO,
                     ctx.getString(R.string.log_serial_errors_resolved, SUPPRESSION_DURATION_MINUTES, summary, formatTime(startTime)));
                 AtomSpectraProSource.this.resetErrorSuppression();
             }
@@ -491,7 +491,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             try {
                 this.port.close();
             } catch (Exception error) {
-                AtomSpectraLog.warning(this.context, LOG_TAG, "Port close failed: " + error);
+                AtomSpectraLog.warning(this.context, LogTag.SPECTRA_PRO, "Port close failed: " + error);
             }
         }
         this.port = null;
@@ -503,7 +503,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             try {
                 this.connection.close();
             } catch (Exception error) {
-                AtomSpectraLog.warning(this.context, LOG_TAG, "Connection close failed: " + error);
+                AtomSpectraLog.warning(this.context, LogTag.SPECTRA_PRO, "Connection close failed: " + error);
             }
         }
         this.connection = null;
@@ -522,22 +522,22 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private String openPort() {
         this.driver = UsbSerialProber.getDefaultProber().probeDevice(this.device);
         if (this.driver == null) {
-            AtomSpectraLog.error(this.context, LOG_TAG, "USB connection failed: driver is not available");
+            AtomSpectraLog.error(this.context, LogTag.SPECTRA_PRO, "USB connection failed: driver is not available");
             return "USB driver is not available";
         }
         UsbManager usbManager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
         if (usbManager == null) {
-            AtomSpectraLog.error(this.context, LOG_TAG, "USB connection failed: UsbManager is not available");
+            AtomSpectraLog.error(this.context, LogTag.SPECTRA_PRO, "USB connection failed: UsbManager is not available");
             return "UsbManager is not available";
         }
         try {
             this.connection = usbManager.openDevice(this.driver.getDevice());
             if (this.connection == null) {
-                AtomSpectraLog.error(this.context, LOG_TAG, "USB connection failed: could not open device");
+                AtomSpectraLog.error(this.context, LogTag.SPECTRA_PRO, "USB connection failed: could not open device");
                 return "Could not open device";
             }
         } catch (Exception e) {
-            AtomSpectraLog.error(this.context, "USB connection failed", e);
+            AtomSpectraLog.error(this.context, LogTag.SPECTRA_PRO, "USB connection failed", e);
             return "Could not open device: " + e.getMessage();
         }
         this.port = this.driver.getPorts().get(0);
@@ -566,7 +566,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.processingThread.setDaemon(true);
             this.processingThread.start();
         } catch (Exception e) {
-            AtomSpectraLog.error(this.context, "USB port setup failed", e);
+            AtomSpectraLog.error(this.context, LogTag.SPECTRA_PRO, "USB port setup failed", e);
             synchronized (this.circularBufferSync) {
                 this.connectionGeneration++;
             }
@@ -594,11 +594,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.unreliableDataReportsLeft = UNRELIABLE_DATA_REPORTS;
     }
 
-    private static final String LOG_TAG = "Spectra Pro";
     private static final boolean LOG_BULK_PACKETS = false;
 
     private static void log(Context ctx, String message) {
-        AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.WARNING, LOG_TAG, message);
+        AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.WARNING, LogTag.SPECTRA_PRO, message);
     }
 
     // +++ reply intents +++
@@ -673,14 +672,14 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 && (COMMAND_RESULT_ERR.equals(answer) || COMMAND_RESULT_TIMEOUT.equals(answer))) {
             // TODO: decide if tear down (closePortAndConnection/stopUsbManager/stopProcessingThread)
             // is actually needed here instead of relying on the caller to call close().
-            AtomSpectraLog.error(ctx, LOG_TAG, "Watchdog reconnect failed: " + SpectrumSource.opName(op));
-            AtomSpectraLog.warning(ctx, LOG_TAG, "Command \"" + command.trim() + "\": " + answer.trim());
+            AtomSpectraLog.error(ctx, LogTag.SPECTRA_PRO, "Watchdog reconnect failed: " + SpectrumSource.opName(op));
+            AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\": " + answer.trim());
             this.emitDisconnected("Reconnect failed");
             return;
         }
 
         if (COMMAND_RESULT_ERR.equals(answer)) {
-            AtomSpectraLog.warning(ctx, LOG_TAG, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") failed: " + answer.trim());
+            AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") failed: " + answer.trim());
             if (this.recoveryConnectPending && op == SpectrumSource.OP_CONNECT) {
                 this.retryRecovery("USB recovery command failed: " + command.trim());
                 return;
@@ -690,7 +689,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
         if (COMMAND_RESULT_TIMEOUT.equals(answer)) {
-            AtomSpectraLog.warning(ctx, LOG_TAG, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") timed out");
+            AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") timed out");
             if (this.recoveryConnectPending && op == SpectrumSource.OP_CONNECT) {
                 this.retryRecovery("USB recovery command timed out: " + command.trim());
                 return;
@@ -701,7 +700,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
 
         if (AtomSpectraLog.isDiagnosticsEnabled(ctx)) {
-            AtomSpectraLog.detail(ctx, LOG_TAG, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") succeeded: " + answer.trim());
+            AtomSpectraLog.detail(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") succeeded: " + answer.trim());
         }
 
         switch (cmd.id) {
@@ -807,7 +806,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             startTime = this.errorDetectedEpisodeStartTime;
         }
         if (wasSuppressed) {
-            AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.INFO, LOG_TAG,
+            AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.INFO, LogTag.SPECTRA_PRO,
                     ctx.getString(R.string.log_serial_errors_resolved, SUPPRESSION_DURATION_MINUTES, summary, formatTime(startTime)));
         }
         this.resetErrorSuppression();
@@ -864,7 +863,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         callback = batch.callback;
         if (finished) this.pendingBatches.remove(batchId);
         if (finished && failed) {
-            AtomSpectraLog.warning(this.context, LOG_TAG, "Command batch \"" + batchId + "\" failed: " + answer.trim());
+            AtomSpectraLog.warning(this.context, LogTag.SPECTRA_PRO, "Command batch \"" + batchId + "\" failed: " + answer.trim());
         }
         if (finished) {
             if (failed) this.drainQueuedCommands(batchId);
@@ -881,7 +880,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         while (it.hasNext()) {
             CommandCode dropped = it.next();
             if (id.equals(dropped.id)) {
-                AtomSpectraLog.warning(this.context, LOG_TAG, "Dropping queued command \"" + new String(dropped.command).trim() + "\" from failed batch \"" + id + "\"");
+                AtomSpectraLog.warning(this.context, LogTag.SPECTRA_PRO, "Dropping queued command \"" + new String(dropped.command).trim() + "\" from failed batch \"" + id + "\"");
                 it.remove();
             }
         }
@@ -908,14 +907,14 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         try {
             int parsedVersion = Integer.decode(version);
             this.firmwareVersion = parsedVersion;
-            AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.INFO, LOG_TAG, "Firmware version: " + version);
+            AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.INFO, LogTag.SPECTRA_PRO, "Firmware version: " + version);
             // firmware below MINIMAL_FIRMWARE_VERSION still operates, so this is advisory, not a connect failure
             if (parsedVersion < MINIMAL_FIRMWARE_VERSION)
                 // TODO: think about firmware version as a hard gate, check how actual devices work
-                ToastHelper.showErrorAndLog(ctx, ctx.getString(R.string.usb_below_minimal_version, MINIMAL_FIRMWARE_VERSION));
+                ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, ctx.getString(R.string.usb_below_minimal_version, MINIMAL_FIRMWARE_VERSION));
         } catch (Exception error) {
-            AtomSpectraLog.warning(ctx, LOG_TAG, "Cannot parse firmware version \"" + version + "\": " + error);
-            ToastHelper.showErrorAndLog(ctx, R.string.log_usb_device_version_error);
+            AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Cannot parse firmware version \"" + version + "\": " + error);
+            ToastHelper.showToastOnly(ctx, ctx.getString(R.string.log_usb_device_version_error));
         }
     }
 
@@ -948,7 +947,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         CalibrationAnswer calibration = parseCalibrationAnswer(dataArray);
         this.calibrationCoeffs = calibration.coeffs;
         if (!calibration.checksumValid) {
-            ToastHelper.showErrorAndLog(ctx, R.string.cal_wrong_checksum);
+            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, R.string.cal_wrong_checksum);
         }
 
         this.deviceId = dataArray[CAL_REGISTER_DEVICE_ID];
@@ -986,26 +985,26 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         this.teardownConnection();
 
-        ToastHelper.showWarningAndLog(ctx, ctx.getString(R.string.log_usb_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
+        ToastHelper.showWarningAndLog(ctx, LogTag.SPECTRA_PRO, ctx.getString(R.string.log_usb_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
         UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
         UsbDevice device = findLockedDevice(manager);
         boolean hasPermission = device != null && manager.hasPermission(device);
 
         if (device == null) {
-            ToastHelper.showWarningAndLog(ctx, R.string.log_usb_watchdog_device_not_found);
+            ToastHelper.showWarningAndLog(ctx, LogTag.SPECTRA_PRO, R.string.log_usb_watchdog_device_not_found);
             this.emitDisconnected("Device not found");
             return;
         }
 
         if (!hasPermission) {
-            ToastHelper.showErrorAndLog(ctx, R.string.log_usb_watchdog_device_no_perm);
+            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, R.string.log_usb_watchdog_device_no_perm);
             this.emitDisconnected("No permission for device");
             return;
         }
 
         String openError = this.reopenLocked(device);
         if (openError != null) {
-            ToastHelper.showErrorAndLog(ctx, "Watchdog reconnect failed: " + openError);
+            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, "Watchdog reconnect failed: " + openError);
             this.emitDisconnected("Watchdog reconnect failed: " + openError);
             return;
         }
@@ -1113,13 +1112,13 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
 
         if (this.recoveryConnectPending) {
-            AtomSpectraLog.detail(ctx, LOG_TAG, "USB device detached during recovery");
+            AtomSpectraLog.detail(ctx, LogTag.SPECTRA_PRO, "USB device detached during recovery");
             this.retryRecovery("USB device detached during recovery");
             return;
         }
         boolean canRecover = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING;
         this.teardownConnection();
-        AtomSpectraLog.detail(ctx, LOG_TAG, "USB device detached");
+        AtomSpectraLog.detail(ctx, LogTag.SPECTRA_PRO, "USB device detached");
         if (canRecover) {
             log(ctx, "USB device detached while collecting"
                     + (this.lastSerialError == null ? "" : " (last serial error: " + this.lastSerialError + ")")
@@ -1156,7 +1155,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
 
-        AtomSpectraLog.detail(ctx, LOG_TAG, "Requesting USB permission for returned device");
+        AtomSpectraLog.detail(ctx, LogTag.SPECTRA_PRO, "Requesting USB permission for returned device");
         this.permissionRequestedDevice = attached;
         final int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ? PendingIntent.FLAG_IMMUTABLE : 0;
         PendingIntent pi = PendingIntent.getBroadcast(ctx, 0,
@@ -1173,7 +1172,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
         if (manager != null && manager.hasPermission(requested)) {
-            AtomSpectraLog.detail(ctx, LOG_TAG, "USB permission granted for returned device");
+            AtomSpectraLog.detail(ctx, LogTag.SPECTRA_PRO, "USB permission granted for returned device");
             this.reconnect(requested);
         } else {
             log(ctx, "USB permission denied for returned device");
@@ -1549,7 +1548,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
                 int pos = (newPacket[1] & 0xFF) | ((newPacket[2] & 0xFF) << 8);
                 if (LOG_BULK_PACKETS && AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-                    AtomSpectraLog.detail(this.context, LOG_TAG, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
+                    AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Packet HIST code=0x01 pos=" + pos + " bins=" + ((newPacket.length - 5) / 4));
                 }
 
                 // The device emits each sweep as chunks with strictly ascending pos (chunk
@@ -1585,7 +1584,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 }
 
                 if (LOG_BULK_PACKETS && AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-                    AtomSpectraLog.detail(this.context, LOG_TAG, "Packet SCOPE code=0x02");
+                    AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Packet SCOPE code=0x02");
                 }
 
                 long[] scope = new long[(newPacket.length - 3) >> 1];
@@ -1634,7 +1633,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                         ((newPacket[10] & 0xFF) << 24);
 
                 if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-                    AtomSpectraLog.detail(this.context, LOG_TAG, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
+                    AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
                 }
 
                 int lost_impulses = 0;
@@ -1812,7 +1811,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 }
             }, CommandCode.DROP_TIMEOUT + 500);
         } catch (Exception e) {
-            AtomSpectraLog.error(this.context, "USB write failed", e);
+            AtomSpectraLog.error(this.context, LogTag.SPECTRA_PRO, "USB write failed", e);
             CommandCode failed = this.commands.pop();
             this.answerNumber = 0;
             this.handleDeviceAnswer(failed, COMMAND_RESULT_ERR);
@@ -1824,7 +1823,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private boolean enqueueTextCommand(@NonNull String command, @NonNull String id, int op) {
         if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-            AtomSpectraLog.detail(this.context, LOG_TAG, "Enqueuing command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ")");
+            AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Enqueuing command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ")");
         }
         this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND);
         this.commands.add(new CommandCode(command, id, op));
@@ -1898,7 +1897,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     // local thread method to perform read from circular buffer
     private void processBufferLoop(long generation) {
         if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-            AtomSpectraLog.detail(this.context, LOG_TAG, "Packet processing thread started");
+            AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Packet processing thread started");
         }
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
 
@@ -1913,7 +1912,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                         this.circularBufferSync.wait();
                     } catch (InterruptedException e) {
                         if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
-                            AtomSpectraLog.detail(this.context, LOG_TAG, "Packet processing thread interrupted");
+                            AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Packet processing thread interrupted");
                         }
                         return;
                     }
