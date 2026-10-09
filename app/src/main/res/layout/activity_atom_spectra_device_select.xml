@@ -54,6 +54,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
+        <Button
+            android:id="@+id/cancelConnect"
+            style="?android:attr/buttonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/dialog_cancel_button"
+            android:textSize="16dp"
+            android:visibility="gone" />
+
         <CheckBox
             android:id="@+id/rememberChoice"
             android:layout_width="match_parent"

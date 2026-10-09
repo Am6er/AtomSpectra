@@ -98,6 +98,9 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             statusStartedAt = savedInstanceState.getLong("statusStartedAt", 0);
         }
         showConnecting(connecting);
+        findViewById(R.id.cancelConnect).setOnClickListener(view -> {
+            if (service != null) service.cancelSelection();
+        });
         findViewById(R.id.bluetoothAction).setOnClickListener(view -> onBluetoothAction());
         backCallback = new OnBackPressedCallback(false) {
             @Override
@@ -240,6 +243,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     }
 
     private void showConnecting(boolean show) {
+        findViewById(R.id.cancelConnect).setVisibility(show ? View.VISIBLE : View.GONE);
         boolean suspended = AtomSpectraService.isRecordingSuspended;
         boolean visible = show || suspended;
         TextView status = findViewById(R.id.statusText);
@@ -289,6 +293,8 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         selectedName = selected == null ? null : selected.name;
         connecting = AtomSpectraService.isSelectionPending();
         showConnecting(connecting);
+        if (connecting && selectedType == SpectrumSource.TYPE_BLUZ) scanner.pauseBluetoothScan();
+        else scanner.resumeBluetoothScan();
     }
 
     private void renderDevices() {
@@ -506,6 +512,8 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         connecting = !sameDevice || AtomSpectraService.isSelectionPending();
         if (!sameDevice) statusStartedAt = 0;
         showConnecting(connecting);
+        if (connecting && device.type == SpectrumSource.TYPE_BLUZ) scanner.pauseBluetoothScan();
+        else scanner.resumeBluetoothScan();
         renderDevices();
         service.selectDevice(device);
         updateExitGate();

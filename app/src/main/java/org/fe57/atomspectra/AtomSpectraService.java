@@ -597,6 +597,16 @@ public class AtomSpectraService extends Service {
     }
 
     /**
+     * Gives up a device the user has just picked and is still waiting for; nothing is chosen afterwards.
+     */
+    public void cancelSelection() {
+        postToInputThread(() -> {
+            if (selectionPending) abandonLock(null, true);
+            else notifyDeviceStateChanged();
+        });
+    }
+
+    /**
      * Stops any recording, releases the device and leaves the loaded spectrum as it is.
      * The next launch starts offline too only if the user opted in to remembering the choice.
      */
@@ -621,7 +631,7 @@ public class AtomSpectraService extends Service {
             if (sessionState != DeviceSessionState.LOCKED || source == null) return;
             AtomSpectraLog.action(this, LogTag.SERVICE, "Reconnect requested: " + inputDeviceInfo);
             deviceError = null;
-            source.requestConnect();
+            source.requestConnect(true);
             updateMenu();
             refreshServiceNotification();
             notifyDeviceStateChanged();
@@ -722,7 +732,7 @@ public class AtomSpectraService extends Service {
             if (!isDeviceConnected()) {
                 AtomSpectraLog.action(this, LogTag.SERVICE, "Reconnect requested: " + device.displayName);
                 deviceError = null;
-                activeSource.requestConnect();
+                activeSource.requestConnect(true);
             }
             updateMenu();
             refreshServiceNotification();
@@ -770,7 +780,7 @@ public class AtomSpectraService extends Service {
         updateMenu();
         refreshServiceNotification();
         notifyDeviceStateChanged();
-        source.requestConnect();
+        source.requestConnect(byUser);
     }
 
     private void doGoOffline(boolean remember, boolean byUser) {
@@ -829,6 +839,10 @@ public class AtomSpectraService extends Service {
 
     // the chosen device cannot be used: back to the selection screen, the remembered choice is not touched
     private void abandonLock(String text) {
+        abandonLock(text, false);
+    }
+
+    private void abandonLock(String text, boolean cancelledByUser) {
         final boolean wasSelecting = selectionPending;
         if (is_recording) {
             setRecordingState(false);
@@ -839,7 +853,8 @@ public class AtomSpectraService extends Service {
         updateInputDeviceInfo(null);
         resetRecordingSuspendedStatus(false);
 
-        AtomSpectraLog.error(service_context, LogTag.SERVICE, "Device selection failed: " + text);
+        if (cancelledByUser) AtomSpectraLog.action(service_context, LogTag.SERVICE, "Device selection cancelled");
+        else AtomSpectraLog.error(service_context, LogTag.SERVICE, "Device selection failed: " + text);
         if (!wasSelecting && text != null) {
             ToastHelper.showToastOnly(this, text);
         }

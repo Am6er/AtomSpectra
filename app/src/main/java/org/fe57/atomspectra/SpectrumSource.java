@@ -106,8 +106,11 @@ public interface SpectrumSource {
      * The same wait applies after the device is lost. A failed hand-shake is an error reply and the source stops trying
      * until the next requestConnect().
      * Repeated requests while connected or connecting are harmless and do not reset acquisition or spectrum data.
+     *
+     * @param userInitiated the user is waiting for this connect: a device that cannot be reached is reported
+     *                      as an error reply instead of being waited for. Ignored by sources that have nothing to wait for.
      */
-    void requestConnect();
+    void requestConnect(boolean userInitiated);
 
     /**
      * Request current data state. Success is single data intent.

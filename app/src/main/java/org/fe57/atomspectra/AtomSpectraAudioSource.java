@@ -194,8 +194,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     }
 
     @Override
-    public void requestConnect() {
-        if (this.deferToSourceThread(this::requestConnect)) return;
+    public void requestConnect(boolean userInitiated) {
+        if (this.deferToSourceThread(() -> this.requestConnect(userInitiated))) return;
         if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
 
         if (this.status != SpectrumSource.STATUS_DISCONNECTED) {
