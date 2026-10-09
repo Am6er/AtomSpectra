@@ -982,7 +982,7 @@ public class AtomSpectraService extends Service {
                 int nextStatus = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus);
                 if (nextStatus == SpectrumSource.STATUS_RECOVERING) {
                     if (!recoveryPending) {
-                        recoveryStartedAt = SystemClock.uptimeMillis();
+                        recoveryStartedAt = SystemClock.elapsedRealtime();
                         AtomSpectraLog.warning(service_context,
                                 getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
                     }
@@ -991,7 +991,7 @@ public class AtomSpectraService extends Service {
                     if (recoveryPending && !recoveryCancelledByStop)
                         AtomSpectraLog.event(service_context,
                                 getStringOrDefaultLocale(R.string.log_device_recovered, active.deviceId())
-                                        + " after " + (SystemClock.uptimeMillis() - recoveryStartedAt) / 1000 + " s");
+                                        + " after " + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s");
                     recoveryPending = false;
                 } else if (nextStatus == SpectrumSource.STATUS_DISCONNECTED
                         || nextStatus == SpectrumSource.STATUS_CLOSED) {

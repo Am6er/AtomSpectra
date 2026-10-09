@@ -324,7 +324,7 @@ sequenceDiagram
     Owner-->>Service: STATUS_CONNECTED_EXECUTING_COMMAND
     opt An obsolete recovery callback is encountered
         Queue-->>Owner: onRecoveryTimeout
-        Owner->>Owner: Recheck recoveryDeadline using uptime
+        Owner->>Owner: Recheck recoveryDeadline using elapsed real time
         Owner->>Queue: If time remains, reschedule rather than tear down
     end
     Device-->>Owner: Valid -stt reply through USB and parser
@@ -471,8 +471,9 @@ Serialization establishes ordering, not hard real-time execution. The source
 handler can spend time polling USB permission (up to two seconds), sleeping for
 USB settling (600 ms), opening/closing hardware or writing a command (up to its
 one-second write timeout). Packets and deadline callbacks queue behind that
-work. Recovery deadlines use `SystemClock.uptimeMillis()`, matching handler
-delays; permission polling uses `SystemClock.elapsedRealtime()`.
+work. Recovery deadlines and the logged recovery duration use
+`SystemClock.elapsedRealtime()`, as does permission polling; handler delays still run
+on uptime, so the timeout callback rechecks the deadline when it fires.
 
 Neither the close latch wait nor the worker join has an overall timeout. The
 identified lifecycle-lock deadlock is removed, but a stalled hardware/library

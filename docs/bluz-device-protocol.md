@@ -38,6 +38,7 @@ AtomSpectra implementations:
 | Write type | Write without response |
 | Write chunk size used by v2 | 248 bytes, followed by the remaining 7 command bytes |
 | Connection priority | High |
+| PHY | Not requested by v2 or AtomSpectra; local firmware forces LE 1M on connect. AtomSpectra logs the actual PHY (`readPhy`) after each connect. |
 | Advertised local name | `BluZ` |
 | Manufacturer data | Company ID `0x0030`, four data bytes; local firmware uses `0xFFFFFFFF` on overload |
 

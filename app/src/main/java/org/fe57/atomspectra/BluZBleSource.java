@@ -96,6 +96,19 @@ final class BluZBleSource implements SpectrumSource {
         return status + " (" + name + ")";
     }
 
+    private static String phyName(int phy) {
+        switch (phy) {
+            case BluetoothDevice.PHY_LE_1M:
+                return "1M";
+            case BluetoothDevice.PHY_LE_2M:
+                return "2M";
+            case BluetoothDevice.PHY_LE_CODED:
+                return "Coded";
+            default:
+                return String.valueOf(phy);
+        }
+    }
+
     private final Context context;
     private final Handler handler;
     private final String address;
@@ -245,11 +258,12 @@ final class BluZBleSource implements SpectrumSource {
                 }
             };
             scanCallback = callback;
-            scanStartedAt = SystemClock.uptimeMillis();
+            scanStartedAt = SystemClock.elapsedRealtime();
             debug("Scan started");
             adapter.getBluetoothLeScanner().startScan(
                     Collections.singletonList(new ScanFilter.Builder().setDeviceAddress(address).build()),
-                    new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
+                    new ScanSettings.Builder().setScanMode(silentRetry
+                            ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
         } catch (SecurityException error) {
             permissionLost();
         } catch (IllegalStateException error) {
@@ -269,7 +283,7 @@ final class BluZBleSource implements SpectrumSource {
         ScanCallback callback = scanCallback;
         scanCallback = null;
         if (callback == null || adapter == null) return;
-        debug("Scan stopped after " + (SystemClock.uptimeMillis() - scanStartedAt) + " ms");
+        debug("Scan stopped after " + (SystemClock.elapsedRealtime() - scanStartedAt) + " ms");
         try {
             if (adapter.getBluetoothLeScanner() != null)
                 adapter.getBluetoothLeScanner().stopScan(callback);
@@ -281,7 +295,7 @@ final class BluZBleSource implements SpectrumSource {
         if (closed || terminal || gatt != null) return;
         try {
             debug("Connecting");
-            connectStartedAt = SystemClock.uptimeMillis();
+            connectStartedAt = SystemClock.elapsedRealtime();
             gatt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                     ? device.connectGatt(context, false, callbacks, BluetoothDevice.TRANSPORT_LE)
                     : device.connectGatt(context, false, callbacks);
@@ -321,19 +335,36 @@ final class BluZBleSource implements SpectrumSource {
                     else connectionLost("Connection lost, status " + gattStatus(result));
                 } else if (newState == BluetoothProfile.STATE_CONNECTED) {
                     physicalConnection = true;
-                    debug("Connected after " + (SystemClock.uptimeMillis() - connectStartedAt) + " ms");
+                    debug("Connected after " + (SystemClock.elapsedRealtime() - connectStartedAt) + " ms");
                     handler.removeCallbacks(connectionDeadline);
                     handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
                     if (silentRetry) extendSilentWindow();
                     else setStatus(STATUS_CONNECTING);
                     try {
                         candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) candidate.readPhy();
                         if (!candidate.discoverServices())
                             failHandshake(REASON_ERROR, "Cannot discover BluZ services");
                     } catch (SecurityException error) {
                         permissionLost();
                     }
                 }
+            });
+        }
+
+        @Override
+        public void onPhyRead(BluetoothGatt candidate, int txPhy, int rxPhy, int result) {
+            dispatch(() -> {
+                if (current(candidate)) debug("PHY tx=" + phyName(txPhy) + ", rx=" + phyName(rxPhy)
+                        + ", status=" + gattStatus(result));
+            });
+        }
+
+        @Override
+        public void onPhyUpdate(BluetoothGatt candidate, int txPhy, int rxPhy, int result) {
+            dispatch(() -> {
+                if (current(candidate)) debug("PHY updated: tx=" + phyName(txPhy) + ", rx=" + phyName(rxPhy)
+                        + ", status=" + gattStatus(result));
             });
         }
 
@@ -818,7 +849,7 @@ final class BluZBleSource implements SpectrumSource {
         silentRetry = true;
         setStatus(STATUS_RECOVERING);
         silentReason = reason;
-        silentStartedAt = SystemClock.uptimeMillis();
+        silentStartedAt = SystemClock.elapsedRealtime();
         silentDeadlineAt = silentStartedAt + SILENT_INITIAL_WINDOW_MS;
         silentScannedDevice = null;
         silentScannedAttemptStarted = false;
@@ -846,7 +877,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void extendSilentWindow() {
         if (!silentRetry) return;
-        long now = SystemClock.uptimeMillis();
+        long now = SystemClock.elapsedRealtime();
         long maximumDeadline = silentStartedAt + SILENT_MAX_WINDOW_MS;
         long extendedDeadline = Math.min(maximumDeadline, now + SILENT_PROGRESS_WINDOW_MS);
         if (extendedDeadline <= silentDeadlineAt) return;
@@ -866,7 +897,7 @@ final class BluZBleSource implements SpectrumSource {
     private void silentAttemptFailed() {
         if (!silentRetry) return;
         AtomSpectraLog.warning(context, LOG_TAG, "Silent reconnect attempt failed after "
-                + (SystemClock.uptimeMillis() - silentStartedAt) / 1000 + " s of recovery");
+                + (SystemClock.elapsedRealtime() - silentStartedAt) / 1000 + " s of recovery");
         releaseGatt();
         if (silentScannedAttemptStarted) {
             silentScannedDevice = null;
@@ -893,7 +924,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void onSilentWindowEnd() {
         if (!silentRetry) return;
-        long remaining = silentDeadlineAt - SystemClock.uptimeMillis();
+        long remaining = silentDeadlineAt - SystemClock.elapsedRealtime();
         if (remaining > 0) {
             handler.postDelayed(silentWindowEnd, remaining);
             return;
@@ -904,7 +935,7 @@ final class BluZBleSource implements SpectrumSource {
     // Silent recovery expired: report the loss and continue waiting in the background.
     private void endSilentRetry() {
         if (!silentRetry) return;
-        String reason = "Recovery timed out after " + (SystemClock.uptimeMillis() - silentStartedAt) / 1000
+        String reason = "Recovery timed out after " + (SystemClock.elapsedRealtime() - silentStartedAt) / 1000
                 + " s; cause: " + silentReason;
         cancelSilentRetry();
         releaseGatt();

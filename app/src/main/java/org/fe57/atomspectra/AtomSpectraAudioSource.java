@@ -393,7 +393,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (recovering) {
             this.loadAppPreferences(ctx);
             this.deviceId = returned.getProductName().toString();
-            this.recoveryCaptureDeadline = SystemClock.uptimeMillis() + CAPTURE_START_WINDOW_MS;
+            this.recoveryCaptureDeadline = SystemClock.elapsedRealtime() + CAPTURE_START_WINDOW_MS;
             this.startCapture(true);
         } else {
             this.completeConnect(ctx);
@@ -471,7 +471,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                 @Override
                 public void run() {
                     if (generation != AtomSpectraAudioSource.this.captureGeneration) return;
-                    final long readStarted = SystemClock.uptimeMillis();
+                    final long readStarted = SystemClock.elapsedRealtime();
                     try {
                         int bytesRead = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                                 ? record.read(readBuffer, 0, readBuffer.length, AudioRecord.READ_NON_BLOCKING)
@@ -485,7 +485,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                                 AtomSpectraAudioSource.this.failCapture("Audio processing failed: " + error);
                             }
                             if (generation == AtomSpectraAudioSource.this.captureGeneration) {
-                                long delay = Math.max(0, intervalMs - (SystemClock.uptimeMillis() - readStarted));
+                                long delay = Math.max(0, intervalMs - (SystemClock.elapsedRealtime() - readStarted));
                                 handler.postDelayed(this, delay);
                             }
                         });
@@ -500,7 +500,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                     }
                 }
             });
-            long remaining = recovering ? Math.max(0, this.recoveryCaptureDeadline - SystemClock.uptimeMillis())
+            long remaining = recovering ? Math.max(0, this.recoveryCaptureDeadline - SystemClock.elapsedRealtime())
                     : CAPTURE_START_WINDOW_MS;
             this.sourceHandler.postDelayed(this.captureStartTimeout, remaining);
         } catch (RuntimeException error) {
@@ -523,7 +523,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         boolean recovering = this.recoveryCapture;
         this.stopCapture();
         if (recovering) {
-            long remaining = this.recoveryCaptureDeadline - SystemClock.uptimeMillis();
+            long remaining = this.recoveryCaptureDeadline - SystemClock.elapsedRealtime();
             if (errorReason != SpectrumSource.REASON_PERMISSION && remaining > 0) {
                 this.recoveryCapture = true;
                 this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);

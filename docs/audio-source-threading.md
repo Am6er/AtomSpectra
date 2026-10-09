@@ -165,7 +165,7 @@ sequenceDiagram
     participant Record as AudioRecord
     participant Owner as Source handler
     Worker->>Worker: Verify captured generation
-    Worker->>Worker: Record read start uptime
+    Worker->>Worker: Record read start time
     Worker->>Record: Read into worker-private buffer
     Record-->>Worker: Byte count or error
     Worker->>Worker: Copy positive-length PCM
@@ -427,8 +427,9 @@ the source has closed.
 
 ## 10. Timing and verification boundaries
 
-Handler delays use Android uptime. Five-second confirmation is a queued deadline,
-not a hard wall-clock bound on a platform call that blocks inside recorder setup.
+Handler delays use Android uptime, which does not advance in deep sleep; recovery
+deadlines and logged durations use `SystemClock.elapsedRealtime()`. Five-second
+confirmation is a queued deadline, not a hard wall-clock bound on a platform call that blocks inside recorder setup.
 Likewise, worker join and the close latch have no overall timeout. Shutdown does
 not require the read to acquire a source lock, but still depends on platform
 audio calls returning after stop.

@@ -230,7 +230,7 @@ public class AtomSpectraLog extends Activity {
     private static synchronized void notifyLogUpdated(Context context) {
         if (context == null) return;
         Context appContext = context.getApplicationContext();
-        long now = android.os.SystemClock.uptimeMillis();
+        long now = android.os.SystemClock.elapsedRealtime();
         long elapsed = now - lastNotifyTime;
         if (elapsed >= NOTIFY_INTERVAL_MS) {
             notifyHandler.removeCallbacksAndMessages(null);
@@ -242,7 +242,7 @@ public class AtomSpectraLog extends Activity {
             notifyHandler.postDelayed(() -> {
                 synchronized (AtomSpectraLog.class) {
                     notifyPending = false;
-                    lastNotifyTime = android.os.SystemClock.uptimeMillis();
+                    lastNotifyTime = android.os.SystemClock.elapsedRealtime();
                 }
                 appContext.sendBroadcast(new Intent(Constants.ACTION.ACTION_LOG_UPDATED).setPackage(Constants.PACKAGE_NAME));
             }, NOTIFY_INTERVAL_MS - elapsed);

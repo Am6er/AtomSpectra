@@ -118,7 +118,8 @@ removed when their operation or connection is cleared.
 ## 4. Discovery, connection and readiness
 
 Source waiting is separate from picker discovery. The source scans for its
-locked MAC address using low-power scan mode; it does not choose a new device.
+locked MAC address using low-power scan mode, or low-latency scan mode during silent
+recovery; it does not choose a new device.
 If Bluetooth is off, it waits for an adapter-state change. Retry backoff starts
 at one second and doubles to a 30-second cap.
 
@@ -316,7 +317,8 @@ sequenceDiagram
     end
 ```
 
-Progress extension uses uptime:
+Silent recovery times (start, deadline, logged durations) use `SystemClock.elapsedRealtime()`,
+which keeps counting in deep sleep. Progress extension:
 
 ```text
 maximum deadline = loss time + 60 seconds
@@ -324,8 +326,10 @@ extended deadline = min(maximum deadline, current time + 30 seconds)
 ```
 
 Only a later deadline replaces the existing one. `onSilentWindowEnd()` rechecks
-the stored deadline and reschedules when time remains. A scan hit or physical
-connection does not remove the requirement for a valid normal frame.
+the stored deadline and reschedules when time remains. Handler delays use uptime, so
+after deep sleep the callback can fire later than the deadline; the deadline check and
+the logged durations still use elapsed real time. A scan hit or physical connection
+does not remove the requirement for a valid normal frame.
 
 When silent recovery expires, the source reports disconnected and continues
 background waiting. Collecting confirmation preserves the service's recording
@@ -412,8 +416,9 @@ or explicit notification backpressure. Heavy queue load can delay callbacks,
 frame confirmation and deadlines.
 
 Handler delays use uptime and establish scheduled decisions, not hard real-time
-guarantees. When a valid frame and an expired deadline are both queued, owner
-execution order determines the result. Connection object identity rejects stale
+guarantees; deadlines compared against them use elapsed real time. When a valid
+frame and an expired deadline are both queued, owner execution order determines the
+result. Connection object identity rejects stale
 connections; it does not attach a firmware command ID to frames or writes within
 the same connection.
 

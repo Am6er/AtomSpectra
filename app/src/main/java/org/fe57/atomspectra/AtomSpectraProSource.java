@@ -1124,7 +1124,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             log(ctx, "USB device detached while collecting"
                     + (this.lastSerialError == null ? "" : " (last serial error: " + this.lastSerialError + ")")
                     + ", waiting up to " + USB_RECOVERY_INITIAL_WINDOW_MS / 1000 + " s for it to return");
-            this.recoveryStartedAt = SystemClock.uptimeMillis();
+            this.recoveryStartedAt = SystemClock.elapsedRealtime();
             this.recoveryConnectPending = true;
             this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
             this.armRecoveryTimeout(USB_RECOVERY_INITIAL_WINDOW_MS);
@@ -1217,7 +1217,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void armRecoveryTimeout(long windowMs) {
-        this.recoveryDeadline = SystemClock.uptimeMillis() + windowMs;
+        this.recoveryDeadline = SystemClock.elapsedRealtime() + windowMs;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.postDelayed(this.recoveryTimeout, windowMs);
     }
@@ -1226,7 +1226,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         long deadline = this.recoveryDeadline;
         boolean handshakeStarted = this.recoveryHandshakeStarted;
         this.teardownConnection();
-        long remaining = deadline - SystemClock.uptimeMillis();
+        long remaining = deadline - SystemClock.elapsedRealtime();
         if (remaining <= 0) {
             this.emitDisconnected(reason);
             return;
@@ -1250,7 +1250,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private void onRecoveryTimeout() {
         if (!this.recoveryConnectPending) return;
-        long remaining = this.recoveryDeadline - SystemClock.uptimeMillis();
+        long remaining = this.recoveryDeadline - SystemClock.elapsedRealtime();
         if (remaining > 0) {
             this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
             this.asyncTasksHandler.postDelayed(this.recoveryTimeout, remaining);
@@ -1258,7 +1258,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
         this.teardownConnection();
         this.emitDisconnected("USB recovery timed out after "
-                + (SystemClock.uptimeMillis() - this.recoveryStartedAt) / 1000 + " s");
+                + (SystemClock.elapsedRealtime() - this.recoveryStartedAt) / 1000 + " s");
     }
 
     // CRC-16 (MODBUS version)
