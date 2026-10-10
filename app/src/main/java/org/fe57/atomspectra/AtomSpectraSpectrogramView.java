@@ -237,17 +237,24 @@ public class AtomSpectraSpectrogramView extends View {
     private HashMap<Integer, Integer> energyTicks = null;
 
     // gaps data
+    private enum SegmentMismatch {
+        NONE,
+        DEVICE,
+        CALIBRATION,
+        BOTH
+    }
+
     private static final class GapMeta {
         final int middleLinePx; // spectrogram-related
         final int heightRows;
         final String durationLabel;
-        final boolean isMismatch;
+        final SegmentMismatch mismatch;
 
-        private GapMeta(int middleLinePx, int heightRows, String durationLabel, boolean isMismatch) {
+        private GapMeta(int middleLinePx, int heightRows, String durationLabel, SegmentMismatch mismatch) {
             this.middleLinePx = middleLinePx;
             this.heightRows = heightRows;
             this.durationLabel = durationLabel;
-            this.isMismatch = isMismatch;
+            this.mismatch = mismatch;
         }
     }
 
@@ -405,6 +412,10 @@ public class AtomSpectraSpectrogramView extends View {
 
     public int getVisibleEndChannel() {
         return visibleEndChannel;
+    }
+
+    public int getVisibleStartSegmentIndex() {
+        return visibleStartRow != null ? visibleStartRow.segmentIndex : 0;
     }
 
     @Override
@@ -839,7 +850,6 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         // apply spectrum binning and build virtual rows table
-        AtomSpectraSpectrogramData.SegmentData baseSegment = this.segmentsData.get(0);
         AtomSpectraSpectrogramData.SegmentData previousSegment = null;
         ArrayList<VirtualRowMeta> virtualRows = new ArrayList<>();
         this.gapsMeta = new ArrayList<>(this.segmentsData.size() - 1);
@@ -850,9 +860,10 @@ public class AtomSpectraSpectrogramView extends View {
                 long gapStart = previousSegment.getEndTime();
                 long gapEnd = segment.getStartTime();
                 long gapMillis = Math.max(0, gapEnd - gapStart);
-                boolean mismatch = isSegmentMismatch(baseSegment.getBaseSpectrum(), segment.getBaseSpectrum());
+                SegmentMismatch mismatch = classifySegmentMismatch(
+                        previousSegment.getBaseSpectrum(), segment.getBaseSpectrum());
                 String durationLabel = getResources().getString(R.string.spectrogram_gap_label, formatGapDuration(gapMillis));
-                int rowsToAdd = gapBandHeightRows(mismatch);
+                int rowsToAdd = gapBandHeightRows(mismatch != SegmentMismatch.NONE);
                 int middleLinePx = virtualRows.size() * POINT_SIZE_PX + rowsToAdd * POINT_SIZE_PX / 2;
                 GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch);
                 this.gapsMeta.add(gap);
@@ -913,23 +924,6 @@ public class AtomSpectraSpectrogramView extends View {
         this.minValue = colorBarMinFraction * this.spectrogramMaxCps;
         this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
         buildColorLut();
-
-        // calculate energy for each channel
-        double[] allEnergies = new double[channelBinsCount];
-        for (int i = 0; i < channelBinsCount; i++) {
-            double energy = data.channelToEnergy(i * channelBinning + (channelBinning - 1));
-            allEnergies[i] = energy;
-        }
-
-        // calculate channels for 0, 100, 200, 300... energies
-        this.energyTicks = new HashMap<>();
-        for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 100) {
-            while (allEnergies[channel] < energy) {
-                channel++;
-            }
-
-            energyTicks.put(channel, energy);
-        }
 
         if (pinToBottom) {
             verticalOffsetPx = this.virtualRowsMeta.length * POINT_SIZE_PX;
@@ -1057,12 +1051,33 @@ public class AtomSpectraSpectrogramView extends View {
         return Math.max(1, (int) Math.ceil(requiredHeightPx / pointSizePx));
     }
 
-    // Gap mismatch check:
+    // Energy tick positions for the given segment's calibration (CHANNEL_COUNT-space bins).
+    private void rebuildEnergyTicks(int segmentIndex, int channelBinsCount) {
+        this.energyTicks = new HashMap<>();
+        if (channelBinsCount <= 0) {
+            return;
+        }
+
+        double[] allEnergies = new double[channelBinsCount];
+        for (int i = 0; i < channelBinsCount; i++) {
+            allEnergies[i] = AtomSpectraSpectrogramData.instance.channelToEnergy(
+                    segmentIndex, i * channelBinning + (channelBinning - 1));
+        }
+
+        for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 100) {
+            while (allEnergies[channel] < energy) {
+                channel++;
+            }
+            energyTicks.put(channel, energy);
+        }
+    }
+
+    // Gap mismatch check vs the previous segment:
     // 1. device info must match exactly
     // 2. calibration coefficients must match as they would in a saved spectrum file
-    private boolean isSegmentMismatch(Spectrum a, Spectrum b) {
+    private SegmentMismatch classifySegmentMismatch(Spectrum a, Spectrum b) {
         if (a == null || b == null) {
-            return false;
+            return SegmentMismatch.NONE;
         }
 
         String deviceInfoA = a.getDeviceInfo();
@@ -1073,7 +1088,16 @@ public class AtomSpectraSpectrogramView extends View {
         Calibration calB = b.getSpectrumCalibration();
         boolean calibrationMismatch = calA == null ? calB != null : !calA.hasEquivalentCoefficients(calB);
 
-        return deviceInfoMismatch || calibrationMismatch;
+        if (deviceInfoMismatch && calibrationMismatch) {
+            return SegmentMismatch.BOTH;
+        }
+        if (deviceInfoMismatch) {
+            return SegmentMismatch.DEVICE;
+        }
+        if (calibrationMismatch) {
+            return SegmentMismatch.CALIBRATION;
+        }
+        return SegmentMismatch.NONE;
     }
 
     // Formats a gap duration using the largest two non-zero time units (e.g. "2d 4h", "3h",
@@ -1289,6 +1313,8 @@ public class AtomSpectraSpectrogramView extends View {
         int colBinsToRenderWidthPx = colBinsToRender * colBinWidthPx;
 
         setVisibleRangeSnapshot(virtualRowStart, virtualRowEnd, colBinStart, colBinEnd);
+        int axisSegmentIndex = getVisibleStartSegmentIndex();
+        rebuildEnergyTicks(axisSegmentIndex, colBinsCount);
 
         HashSet<Integer> visibleGaps = new HashSet<>();
         int totalPixels = virtualRowsToRender * virtualRowHeightPx * colBinsToRenderWidthPx;
@@ -1419,11 +1445,14 @@ public class AtomSpectraSpectrogramView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
-                // energy axis render
+                // energy axis render — channel/energy labels follow the first visible segment
                 int energyAxisBaseline = spgViewHeight + PADDING_TOP_PX;
                 int channelAxisBaseline = spgViewHeight + PADDING_TOP_PX + CHANNEL_AXIS_HEIGHT_PX / 2;
-                Spectrum baseSpectrum = segmentsData != null && !segmentsData.isEmpty()
-                        ? segmentsData.get(0).getBaseSpectrum()
+                Spectrum baseSpectrum = segmentsData != null
+                        && !segmentsData.isEmpty()
+                        && axisSegmentIndex >= 0
+                        && axisSegmentIndex < segmentsData.size()
+                        ? segmentsData.get(axisSegmentIndex).getBaseSpectrum()
                         : null;
                 int baseChannelCount = baseSpectrum == null ? 0 : baseSpectrum.getDataArray().length;
                 int baseChannelBinning = baseChannelCount / AtomSpectraSpectrogramData.CHANNEL_COUNT;
@@ -1551,12 +1580,27 @@ public class AtomSpectraSpectrogramView extends View {
                 // gap.middleLinePx is a virtual-layout coordinate; map it to the viewport
                 float middleY = PADDING_TOP_PX + gap.middleLinePx - snappedVerticalOffsetPx();
 
-                if (gap.isMismatch) {
-                    String warning = getResources().getString(R.string.spectrogram_gap_mismatch_warning);
+                if (gap.mismatch != SegmentMismatch.NONE) {
+                    String warning;
+                    switch (gap.mismatch) {
+                        case DEVICE:
+                            warning = getResources().getString(R.string.spectrogram_gap_mismatch_device);
+                            break;
+                        case CALIBRATION:
+                            warning = getResources().getString(R.string.spectrogram_gap_mismatch_calibration);
+                            break;
+                        case BOTH:
+                        default:
+                            warning = getResources().getString(R.string.spectrogram_gap_mismatch_both);
+                            break;
+                    }
                     // stack the two lines around the gap center
+                    paint.setColor(Color.WHITE);
                     drawGapLabelLine(canvas, paint, gap.durationLabel, centerX, middleY - lineHeight / 2f, fm, spgTop, spgBottom);
+                    paint.setColor(GAP_MISMATCH_TEXT_COLOR);
                     drawGapLabelLine(canvas, paint, warning, centerX, middleY + lineHeight / 2f, fm, spgTop, spgBottom);
                 } else {
+                    paint.setColor(Color.WHITE);
                     drawGapLabelLine(canvas, paint, gap.durationLabel, centerX, middleY, fm, spgTop, spgBottom);
                 }
             }
