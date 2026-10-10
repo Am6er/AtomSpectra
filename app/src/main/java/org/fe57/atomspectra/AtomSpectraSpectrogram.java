@@ -55,6 +55,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static AtomSpectraSpectrogramView.SelectionBound fgRightBound = null;
     private static int lastRowCount = 0;
     private static boolean previewVisible = true;
+    private static boolean backgroundVisible = true;
 
     // exporting state
     private static boolean isExportingSpectrum = false;
@@ -172,7 +173,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (bgLeftBound == null || bgRightBound == null || fgLeftBound == null || fgRightBound == null) {
             return;
         }
-        double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound.segmentIndex, bgLeftBound.rowIndex, bgRightBound.segmentIndex, bgRightBound.rowIndex);
+        double[] bg = backgroundVisible
+                ? AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound.segmentIndex, bgLeftBound.rowIndex, bgRightBound.segmentIndex, bgRightBound.rowIndex)
+                : null;
         double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound.segmentIndex, fgLeftBound.rowIndex, fgRightBound.segmentIndex, fgRightBound.rowIndex);
         double[] energies = computeEnergiesArray(spgView.getVisibleStartSegmentIndex());
         preview.setScale(scale);
@@ -225,6 +228,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         optionsMenu = menu;
         updateMapMenu();
         updateScalePaletteMenu();
+        updateBackgroundMenu();
         return true;
     }
 
@@ -232,6 +236,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateMapMenu();
         updateScalePaletteMenu();
+        updateBackgroundMenu();
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -243,6 +248,12 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
         if (item.getItemId() == R.id.action_spectrogram_view_map) {
             AtomSpectraMap.openSpectrogramMap(this);
+            return true;
+        }
+        if (item.getItemId() == R.id.action_spectrogram_show_background) {
+            backgroundVisible = !backgroundVisible;
+            item.setChecked(backgroundVisible);
+            updateSpectrogram(false);
             return true;
         }
 
@@ -310,6 +321,16 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         MenuItem mapItem = optionsMenu.findItem(R.id.action_spectrogram_view_map);
         if (mapItem != null) {
             mapItem.setEnabled(AtomSpectraSpectrogramData.instance.hasLocatedRows());
+        }
+    }
+
+    private void updateBackgroundMenu() {
+        if (optionsMenu == null) {
+            return;
+        }
+        MenuItem backgroundItem = optionsMenu.findItem(R.id.action_spectrogram_show_background);
+        if (backgroundItem != null) {
+            backgroundItem.setChecked(backgroundVisible);
         }
     }
 
@@ -434,7 +455,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
                 spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, sbin, cbin, scale, palette, scrollToBottom,
-                        bgLeftBound, bgRightBound, fgLeftBound, fgRightBound);
+                        bgLeftBound, bgRightBound, fgLeftBound, fgRightBound, backgroundVisible);
             }
 
             TextView rowCount = findViewById(R.id.textViewRowCount);
@@ -638,7 +659,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         container.addView(fgRow);
 
         final CheckBox bgCheckBox = new CheckBox(this);
-        bgCheckBox.setChecked(true);
+        bgCheckBox.setChecked(backgroundVisible);
+        bgCheckBox.setEnabled(backgroundVisible);
 
         final EditText bgNameInput = new EditText(this);
         bgNameInput.setHint(R.string.spectrogram_spectrum_export_bg_name_hint);
@@ -646,6 +668,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         bgNameInput.setTextColor(Color.GREEN);
         bgNameInput.setInputType(InputType.TYPE_CLASS_TEXT);
         bgNameInput.setFilters(new InputFilter[]{filenameFilter});
+        bgNameInput.setEnabled(backgroundVisible);
 
         LinearLayout bgRow = new LinearLayout(this);
         bgRow.setOrientation(LinearLayout.HORIZONTAL);
