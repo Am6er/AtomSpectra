@@ -174,17 +174,17 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
         double[] bg = AtomSpectraSpectrogramData.instance.averageSpectrum(bgLeftBound.segmentIndex, bgLeftBound.rowIndex, bgRightBound.segmentIndex, bgRightBound.rowIndex);
         double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(fgLeftBound.segmentIndex, fgLeftBound.rowIndex, fgRightBound.segmentIndex, fgRightBound.rowIndex);
-        double[] energies = computeEnergiesArray();
+        double[] energies = computeEnergiesArray(spgView.getVisibleStartSegmentIndex());
         preview.setScale(scale);
         preview.setSpectra(bg, fg, energies);
         preview.setVisibleChannelRange(spgView.getVisibleStartChannel(), spgView.getVisibleEndChannel());
     }
 
-    private double[] computeEnergiesArray() {
+    private double[] computeEnergiesArray(int segmentIndex) {
         int channelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
         double[] energies = new double[channelCount];
         for (int i = 0; i < channelCount; i++) {
-            energies[i] = AtomSpectraSpectrogramData.instance.channelToEnergy(i);
+            energies[i] = AtomSpectraSpectrogramData.instance.channelToEnergy(segmentIndex, i);
         }
         return energies;
     }

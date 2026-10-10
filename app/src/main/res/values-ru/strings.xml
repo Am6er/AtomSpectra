@@ -612,7 +612,9 @@
     <string name="spectrogram_gap_duration_minutes_seconds">%1$dм %2$dс</string>
     <string name="spectrogram_gap_duration_minutes">%1$dм</string>
     <string name="spectrogram_gap_duration_seconds">%1$dс</string>
-    <string name="spectrogram_gap_mismatch_warning">⚠ другой детектор/калибровка</string>
+    <string name="spectrogram_gap_mismatch_device">⚠ другой детектор</string>
+    <string name="spectrogram_gap_mismatch_calibration">⚠ другая калибровка</string>
+    <string name="spectrogram_gap_mismatch_both">⚠ другой детектор/калибровка</string>
     <string name="spectrogram_preview_toggle">Показать или скрыть предпросмотр спектра</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Экспорт спектра…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Экспорт…</string>

@@ -416,16 +416,19 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    public double channelToEnergy(int channel) {
+    public double channelToEnergy(int segmentIndex, int channel) {
         synchronized (spectrogramSync) {
-            Segment last = lastSegment();
-            if (last == null || last.baseSpectrum == null) {
+            if (segmentIndex < 0 || segmentIndex >= segments.size()) {
                 return 0;
             }
-            int channelBinning = last.baseSpectrum.getDataArray().length / CHANNEL_COUNT;
+            Segment segment = segments.get(segmentIndex);
+            if (segment == null || segment.baseSpectrum == null) {
+                return 0;
+            }
+            int channelBinning = segment.baseSpectrum.getDataArray().length / CHANNEL_COUNT;
             int originalChannel = channel * channelBinning + (channelBinning - 1);
 
-            return last.baseSpectrum.getSpectrumCalibration().toEnergy(originalChannel);
+            return segment.baseSpectrum.getSpectrumCalibration().toEnergy(originalChannel);
         }
     }
 
