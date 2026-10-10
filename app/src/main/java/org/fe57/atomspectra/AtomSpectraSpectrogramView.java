@@ -341,6 +341,7 @@ public class AtomSpectraSpectrogramView extends View {
     private SelectionBound bgRightHandleRow = null;
     private SelectionBound fgLeftHandleRow = null;
     private SelectionBound fgRightHandleRow = null;
+    private boolean backgroundHandlesVisible = true;
 
     // last visible window snapshot (in original cols / spectrogramData row indices) - used for change-detection
     private SelectionBound visibleStartRow = null;
@@ -561,7 +562,9 @@ public class AtomSpectraSpectrogramView extends View {
 
         // selection handles: distance to the triangle apex
         if (visibleStartRow != null && visibleEndRow != null && POINT_SIZE_PX > 0) {
-            int[] handles = new int[]{HANDLE_FG_LEFT, HANDLE_BG_LEFT, HANDLE_FG_RIGHT, HANDLE_BG_RIGHT};
+            int[] handles = backgroundHandlesVisible
+                    ? new int[]{HANDLE_FG_LEFT, HANDLE_BG_LEFT, HANDLE_FG_RIGHT, HANDLE_BG_RIGHT}
+                    : new int[]{HANDLE_FG_LEFT, HANDLE_FG_RIGHT};
             for (int handle : handles) {
                 SelectionBound row = getRowForSelectionHandle(handle);
                 if (row == null) continue;
@@ -774,8 +777,10 @@ public class AtomSpectraSpectrogramView extends View {
 
     public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBinning, int channelBinning,
                                   String scale, String palette, boolean scrollToBottom,
-                                  SelectionBound bgLeftBound, SelectionBound bgRightBound, SelectionBound fgLeftBound, SelectionBound fgRightBound) {
+                                  SelectionBound bgLeftBound, SelectionBound bgRightBound, SelectionBound fgLeftBound, SelectionBound fgRightBound,
+                                  boolean backgroundVisible) {
         this.segmentsData = data.getSegments();
+        this.backgroundHandlesVisible = backgroundVisible;
         // Treat "no delta rows yet" the same as "no segments": a segment can exist with a base
         // spectrum but zero rows (recording just started). In that case the caller passes null
         // bounds, so we must not fall through to the handle logic. See AtomSpectraSpectrogram
@@ -1762,10 +1767,12 @@ public class AtomSpectraSpectrogramView extends View {
             trianglePaint.setAntiAlias(true);
             trianglePaint.setStyle(Paint.Style.FILL);
 
-            drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
-                    bgLeftHandleRow, true, HANDLE_COLOR_BG);
-            drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
-                    bgRightHandleRow, false, HANDLE_COLOR_BG);
+            if (backgroundHandlesVisible) {
+                drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
+                        bgLeftHandleRow, true, HANDLE_COLOR_BG);
+                drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
+                        bgRightHandleRow, false, HANDLE_COLOR_BG);
+            }
             drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
                     fgLeftHandleRow, true, HANDLE_COLOR_FG);
             drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
