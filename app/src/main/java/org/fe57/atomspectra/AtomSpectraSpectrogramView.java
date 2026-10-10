@@ -1510,8 +1510,8 @@ public class AtomSpectraSpectrogramView extends View {
                 // a base spectrum narrower than CHANNEL_COUNT cannot be mapped onto the bins,
                 // so the channel axis is left empty rather than labeled with zeros
                 boolean hasChannelAxis = baseChannelBinning >= 1;
-                int channelMajorTick = baseChannelCount / 8 * channelBinning;
-                int channelMinorTick = channelMajorTick / 4;
+                int channelMajorTick = baseChannelCount / 16 * channelBinning;
+                int channelMinorTick = channelMajorTick / 2;
                 for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
                     int tickX = (colBin - colBinStart) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
 
@@ -1520,11 +1520,11 @@ public class AtomSpectraSpectrogramView extends View {
 
                         if (energy != null) {
                             // render MeV label
-                            int majorTick = 500;
+                            int majorTick = 200;
                             int minorTick = 100;
                             if (channelBinning == 2) {
-                                majorTick = 1000;
-                                minorTick = 200;
+                                majorTick = 500;
+                                minorTick = 250;
                             }
                             if (channelBinning == 4) {
                                 majorTick = 1000;
