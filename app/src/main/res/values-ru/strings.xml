@@ -595,6 +595,16 @@
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_view_map">Показать на карте</string>
+    <string name="spectrogram_palette">Палитра</string>
+    <string name="spectrogram_palette_iron">Iron</string>
+    <string name="spectrogram_palette_lime">Lime</string>
+    <string name="spectrogram_palette_yellow">Yellow</string>
+    <string name="spectrogram_palette_glow">Glow</string>
+    <string name="spectrogram_palette_gray">Gray</string>
+    <string name="spectrogram_scale">Шкала</string>
+    <string name="spectrogram_scale_lin">Lin</string>
+    <string name="spectrogram_scale_sqrt">Sqrt</string>
+    <string name="spectrogram_scale_log">Log</string>
     <string name="hist_view_map">Показать на карте</string>
     <string name="map_activity_title">Atom Spectra Карта</string>
     <string name="map_center_location">Моё местоположение</string>

@@ -199,20 +199,17 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         // update scale
         switch (scale) {
             case AtomSpectraSpectrogramView.SCALE_LIN:
-                scale = AtomSpectraSpectrogramView.SCALE_SQRT;
+                applyScale(AtomSpectraSpectrogramView.SCALE_SQRT);
                 break;
             case AtomSpectraSpectrogramView.SCALE_SQRT:
-                scale = AtomSpectraSpectrogramView.SCALE_LOG;
+                applyScale(AtomSpectraSpectrogramView.SCALE_LOG);
                 break;
             case AtomSpectraSpectrogramView.SCALE_LOG:
-                scale = AtomSpectraSpectrogramView.SCALE_LIN;
+                applyScale(AtomSpectraSpectrogramView.SCALE_LIN);
                 break;
             default:
-                scale = AtomSpectraSpectrogramView.SCALE_SQRT;
+                applyScale(AtomSpectraSpectrogramView.SCALE_SQRT);
         }
-
-        updateControlPanel();
-        updateSpectrogram(false);
 
         return true;
     }
@@ -227,12 +224,14 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         getMenuInflater().inflate(R.menu.atom_spectra_spectrogram, menu);
         optionsMenu = menu;
         updateMapMenu();
+        updateScalePaletteMenu();
         return true;
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateMapMenu();
+        updateScalePaletteMenu();
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -246,7 +245,62 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             AtomSpectraMap.openSpectrogramMap(this);
             return true;
         }
+
+        int id = item.getItemId();
+        if (id == R.id.action_palette_iron) {
+            applyPalette(AtomSpectraSpectrogramView.PALETTE_IRON);
+            return true;
+        }
+        if (id == R.id.action_palette_lime) {
+            applyPalette(AtomSpectraSpectrogramView.PALETTE_LIME);
+            return true;
+        }
+        if (id == R.id.action_palette_yellow) {
+            applyPalette(AtomSpectraSpectrogramView.PALETTE_YELLOW);
+            return true;
+        }
+        if (id == R.id.action_palette_glow) {
+            applyPalette(AtomSpectraSpectrogramView.PALETTE_GLOW);
+            return true;
+        }
+        if (id == R.id.action_palette_gray) {
+            applyPalette(AtomSpectraSpectrogramView.PALETTE_GRAY);
+            return true;
+        }
+        if (id == R.id.action_scale_lin) {
+            applyScale(AtomSpectraSpectrogramView.SCALE_LIN);
+            return true;
+        }
+        if (id == R.id.action_scale_sqrt) {
+            applyScale(AtomSpectraSpectrogramView.SCALE_SQRT);
+            return true;
+        }
+        if (id == R.id.action_scale_log) {
+            applyScale(AtomSpectraSpectrogramView.SCALE_LOG);
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void applyPalette(String newPalette) {
+        if (newPalette.equals(palette)) {
+            return;
+        }
+        palette = newPalette;
+        updateControlPanel();
+        updateScalePaletteMenu();
+        updateSpectrogram(false);
+    }
+
+    private void applyScale(String newScale) {
+        if (newScale.equals(scale)) {
+            return;
+        }
+        scale = newScale;
+        updateControlPanel();
+        updateScalePaletteMenu();
+        updateSpectrogram(false);
     }
 
     private void updateMapMenu() {
@@ -256,6 +310,54 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         MenuItem mapItem = optionsMenu.findItem(R.id.action_spectrogram_view_map);
         if (mapItem != null) {
             mapItem.setEnabled(AtomSpectraSpectrogramData.instance.hasLocatedRows());
+        }
+    }
+
+    private void updateScalePaletteMenu() {
+        if (optionsMenu == null) {
+            return;
+        }
+
+        int paletteItemId;
+        switch (palette) {
+            case AtomSpectraSpectrogramView.PALETTE_LIME:
+                paletteItemId = R.id.action_palette_lime;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_YELLOW:
+                paletteItemId = R.id.action_palette_yellow;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_GLOW:
+                paletteItemId = R.id.action_palette_glow;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_GRAY:
+                paletteItemId = R.id.action_palette_gray;
+                break;
+            case AtomSpectraSpectrogramView.PALETTE_IRON:
+            default:
+                paletteItemId = R.id.action_palette_iron;
+                break;
+        }
+        MenuItem paletteItem = optionsMenu.findItem(paletteItemId);
+        if (paletteItem != null) {
+            paletteItem.setChecked(true);
+        }
+
+        int scaleItemId;
+        switch (scale) {
+            case AtomSpectraSpectrogramView.SCALE_LIN:
+                scaleItemId = R.id.action_scale_lin;
+                break;
+            case AtomSpectraSpectrogramView.SCALE_LOG:
+                scaleItemId = R.id.action_scale_log;
+                break;
+            case AtomSpectraSpectrogramView.SCALE_SQRT:
+            default:
+                scaleItemId = R.id.action_scale_sqrt;
+                break;
+        }
+        MenuItem scaleItem = optionsMenu.findItem(scaleItemId);
+        if (scaleItem != null) {
+            scaleItem.setChecked(true);
         }
     }
 
@@ -428,25 +530,22 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         // update palette
         switch (palette) {
             case AtomSpectraSpectrogramView.PALETTE_IRON:
-                palette = AtomSpectraSpectrogramView.PALETTE_LIME;
+                applyPalette(AtomSpectraSpectrogramView.PALETTE_LIME);
                 break;
             case AtomSpectraSpectrogramView.PALETTE_LIME:
-                palette = AtomSpectraSpectrogramView.PALETTE_YELLOW;
+                applyPalette(AtomSpectraSpectrogramView.PALETTE_YELLOW);
                 break;
             case AtomSpectraSpectrogramView.PALETTE_YELLOW:
-                palette = AtomSpectraSpectrogramView.PALETTE_GLOW;
+                applyPalette(AtomSpectraSpectrogramView.PALETTE_GLOW);
                 break;
             case AtomSpectraSpectrogramView.PALETTE_GLOW:
-                palette = AtomSpectraSpectrogramView.PALETTE_GRAY;
+                applyPalette(AtomSpectraSpectrogramView.PALETTE_GRAY);
                 break;
             case AtomSpectraSpectrogramView.PALETTE_GRAY:
             default:
-                palette = AtomSpectraSpectrogramView.PALETTE_IRON;
+                applyPalette(AtomSpectraSpectrogramView.PALETTE_IRON);
                 break;
         }
-
-        updateControlPanel();
-        updateSpectrogram(false);
     }
 
     @Override
