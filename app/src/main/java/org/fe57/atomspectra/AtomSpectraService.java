@@ -590,7 +590,6 @@ public class AtomSpectraService extends Service {
 
     /**
      * Asynchronous; the outcome is sent as ACTION_DEVICE_SELECTED or ACTION_DEVICE_SELECTION_REQUIRED.
-     * Once connected, the choice is remembered only if the user opted in.
      */
     public void selectDevice(DeviceDescriptor device) {
         postToInputThread(() -> doSelectDevice(device));
@@ -1043,19 +1042,15 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    // the first time the locked device answers: remember the choice if opted in and reconcile the screen with the device
+    // the first time the locked device answers: reconcile the screen with the device
     private void onFirstReady() {
         final SpectrumSource source = activeSource;
-        final LockedDevice locked = lockedDevice;
         final boolean byUser = selectionPending;
         selectionPending = false;
         firstConnectPending = false;
         deviceReady = true;
         updateInputDeviceInfo(source);
 
-        if (byUser) {
-            PrefHelper.setDeviceChoice(this, DeviceChoice.device(locked.type, locked.identity, locked.name));
-        }
         reconcileScreenWithDevice(source, true);
         AtomSpectraLog.event(service_context, LogTag.SERVICE, "Device ready (first): " + inputDeviceInfo + ", channels: " + deviceChannelCount);
 
