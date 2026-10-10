@@ -41,7 +41,7 @@ final class BluZBleSource implements SpectrumSource {
     private static final long ASSEMBLY_MS = 10000;
     // Silent recovery is abandoned after this long; the retry delay is fixed while it lasts.
     private static final long RECOVERY_MAX_WINDOW_MS = 60000;
-    private static final long RECOVERY_RETRY_MS = 1000;
+    private static final long RECOVERY_RETRY_MS = 2500;
     private static final long MAX_RETRY_MS = 30000;
     private static final long SCAN_RESTART_MS = 120000;
     // A user-initiated connect gives up if the device is not found within this time.
@@ -885,7 +885,7 @@ final class BluZBleSource implements SpectrumSource {
         releaseGatt();
         handler.removeCallbacks(recoveryWindowEnd);
         handler.postDelayed(recoveryWindowEnd, RECOVERY_MAX_WINDOW_MS);
-        waitForDevice();
+        scheduleRetry();
     }
 
     private void connectionLostNow(String reason) {
