@@ -145,6 +145,13 @@ public class Constants {
         String CONF_DEVICE_REMEMBER = "Remember device choice";
         String CONF_SPG_DELTA_DURATION = "File autosave";
         String CONF_SPG_MIDNIGHT_RESET = "Reset spectrogram at midnight";
+        String CONF_SPG_PALETTE = "spg_palette";
+        String CONF_SPG_SCALE = "spg_scale";
+        String CONF_SPG_SBIN = "spg_sbin";
+        String CONF_SPG_CBIN_PORTRAIT = "spg_cbin_portrait";
+        String CONF_SPG_CBIN_LANDSCAPE = "spg_cbin_landscape";
+        String CONF_SPG_PREVIEW_VISIBLE = "spg_preview_visible";
+        String CONF_SPG_BACKGROUND_VISIBLE = "spg_background_visible";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";

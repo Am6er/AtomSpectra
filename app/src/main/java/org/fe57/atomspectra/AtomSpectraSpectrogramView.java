@@ -352,6 +352,7 @@ public class AtomSpectraSpectrogramView extends View {
     private int reportedVisibleEndChannel = -1;
 
     private OnSpectrogramStateChangedListener stateChangedListener = null;
+    private SpectrogramUIViewState boundViewState = null;
 
     private final Object spectrogramBitmapSync = new Object();
     private volatile Bitmap spectrogramBitmap = null;
@@ -494,6 +495,7 @@ public class AtomSpectraSpectrogramView extends View {
                     this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
                     buildColorLut();
                     renderSpectrogramToBitmap();
+                    syncViewportToViewState();
                     invalidate();
                     return true;
                 }
@@ -527,6 +529,7 @@ public class AtomSpectraSpectrogramView extends View {
                         }
 
                         renderSpectrogramToBitmap();
+                        syncViewportToViewState();
                         invalidate();
                     }
                 }
@@ -535,14 +538,19 @@ public class AtomSpectraSpectrogramView extends View {
             case MotionEvent.ACTION_CANCEL:
                 if (draggingColorBarHandle != HANDLE_NONE) {
                     draggingColorBarHandle = HANDLE_NONE;
+                    syncViewportToViewState();
                     return true;
                 }
                 if (draggingSelectionHandle != HANDLE_NONE) {
                     draggingSelectionHandle = HANDLE_NONE;
+                    syncSelectionToViewState();
                     if (stateChangedListener != null) {
                         stateChangedListener.onRowSelectionChanged();
                     }
                     return true;
+                }
+                if (isDragging) {
+                    syncViewportToViewState();
                 }
                 isDragging = false;
                 lockHorizontalMove = false;
@@ -653,6 +661,33 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         ensureHandlesIncludeWholeBins();
+        syncSelectionToViewState();
+    }
+
+    private void applyViewportFromViewState(SpectrogramUIViewState viewState) {
+        colorBarMinFraction = viewState.colorBarMinFraction;
+        colorBarMaxFraction = viewState.colorBarMaxFraction;
+        verticalOffsetPx = viewState.verticalOffsetPx;
+        horizontalOffsetPx = viewState.horizontalOffsetPx;
+        autoScroll = viewState.autoScroll;
+    }
+
+    private void syncViewportToViewState() {
+        if (boundViewState == null) {
+            return;
+        }
+        boundViewState.colorBarMinFraction = colorBarMinFraction;
+        boundViewState.colorBarMaxFraction = colorBarMaxFraction;
+        boundViewState.verticalOffsetPx = verticalOffsetPx;
+        boundViewState.horizontalOffsetPx = horizontalOffsetPx;
+        boundViewState.autoScroll = autoScroll;
+    }
+
+    private void syncSelectionToViewState() {
+        if (boundViewState == null) {
+            return;
+        }
+        boundViewState.setSelection(bgLeftHandleRow, bgRightHandleRow, fgLeftHandleRow, fgRightHandleRow);
     }
 
     private void ensureHandlesIncludeWholeBins() {
@@ -775,12 +810,21 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
-    public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBinning, int channelBinning,
-                                  String scale, String palette, boolean scrollToBottom,
-                                  SelectionBound bgLeftBound, SelectionBound bgRightBound, SelectionBound fgLeftBound, SelectionBound fgRightBound,
-                                  boolean backgroundVisible) {
+    public void renderSpectrogram(AtomSpectraSpectrogramData data, SpectrogramUIViewState viewState, boolean scrollToBottom) {
+        this.boundViewState = viewState;
         this.segmentsData = data.getSegments();
-        this.backgroundHandlesVisible = backgroundVisible;
+        this.backgroundHandlesVisible = viewState.backgroundVisible;
+        applyViewportFromViewState(viewState);
+
+        int spectrumBinning = viewState.sbin;
+        int channelBinning = viewState.getCbin(getResources().getConfiguration().orientation);
+        String scale = viewState.scale;
+        String palette = viewState.palette;
+        SelectionBound bgLeftBound = viewState.bgLeftBound;
+        SelectionBound bgRightBound = viewState.bgRightBound;
+        SelectionBound fgLeftBound = viewState.fgLeftBound;
+        SelectionBound fgRightBound = viewState.fgRightBound;
+
         // Treat "no delta rows yet" the same as "no segments": a segment can exist with a base
         // spectrum but zero rows (recording just started). In that case the caller passes null
         // bounds, so we must not fall through to the handle logic. See AtomSpectraSpectrogram
@@ -797,6 +841,7 @@ public class AtomSpectraSpectrogramView extends View {
             this.gapsMeta = new ArrayList<>();
             this.virtualRowsMeta = new VirtualRowMeta[0];
             this.renderSpectrogramToBitmap();
+            syncViewportToViewState();
             this.invalidate();
             return;
         }
@@ -819,10 +864,10 @@ public class AtomSpectraSpectrogramView extends View {
         // TODO: cap handles?
         this.bgLeftHandleRow = bgLeftBound; // Math.min(bgLeftBound, maxRow);
         this.bgRightHandleRow = bgRightBound; // Math.min(bgRightBound, maxRow);
-        ;
         this.fgLeftHandleRow = fgLeftBound; // Math.min(fgLeftBound, maxRow);
         this.fgRightHandleRow = fgRightBound; // Math.min(fgRightBound, maxRow);
         ensureHandlesIncludeWholeBins();
+        syncSelectionToViewState();
 
         // for each segment apply channel binning first
         int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
@@ -937,6 +982,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         this.renderSpectrogramToBitmap();
+        syncViewportToViewState();
         this.invalidate();
     }
 
@@ -1550,6 +1596,7 @@ public class AtomSpectraSpectrogramView extends View {
         if (this.autoScroll) {
             verticalOffsetPx += virtualRowHeightPx;
         }
+        syncViewportToViewState();
     }
 
     // renders centered duration (and, for mismatched gaps, warning) labels within each visible gap band
