@@ -36,7 +36,7 @@ final class BluZBleSource implements SpectrumSource {
     private static final UUID NOTIFY = UUID.fromString("0000fe81-8e22-4541-9d4c-21edae82ed19");
     private static final UUID WRITE = UUID.fromString("0000fe82-8e22-4541-9d4c-21edae82ed19");
     private static final UUID CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    private static final long HANDSHAKE_MS = 20000;
+    private static final long HANDSHAKE_MS = 30000;
     private static final long COMMAND_MS = 15000;
     private static final long ASSEMBLY_MS = 10000;
     // Silent recovery is abandoned after this long; the retry delay is fixed while it lasts.
@@ -45,7 +45,7 @@ final class BluZBleSource implements SpectrumSource {
     private static final long MAX_RETRY_MS = 30000;
     private static final long SCAN_RESTART_MS = 120000;
     // A user-initiated connect gives up if the device is not found within this time.
-    private static final long USER_SCAN_TIMEOUT_MS = 20000;
+    private static final long USER_SCAN_TIMEOUT_MS = 30000;
     
     private static String gattStatus(int status) {
         String name;
@@ -914,20 +914,18 @@ final class BluZBleSource implements SpectrumSource {
         stopScan();
     }
 
-    private final Runnable recoveryWindowEnd = this::endRecovery;
+    private final Runnable recoveryWindowEnd = this::endRecoveryByTimeout;
 
-    // Recovery expired: report the loss and continue waiting in the background.
-    private void endRecovery() {
+    // Recovery expired: report the loss and keep connecting in the background, leaving any GATT in flight alone.
+    private void endRecoveryByTimeout() {
         if (!recoveryActive) return;
         String reason = "Recovery timed out after " + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000
                 + " s; cause: " + recoveryReason;
         cancelRecovery();
-        releaseGatt();
-        retryDelay = MAX_RETRY_MS;
         setStatus(STATUS_DISCONNECTED);
         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
-        waitForDevice();
-        debug("Recovery ended, waiting for device");
+        if (gatt == null) waitForDevice();
+        debug("Recovery ended, still connecting in background");
     }
 
     private void debug(String message) {
