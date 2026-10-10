@@ -369,7 +369,7 @@ final class BluZBleSource implements SpectrumSource {
                     handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
                     if (!recoveryActive) setStatus(STATUS_CONNECTING);
                     try {
-                        candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+                        candidate.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) candidate.readPhy();
                         if (!candidate.discoverServices())
                             failHandshake(REASON_ERROR, "Cannot discover BluZ services");
