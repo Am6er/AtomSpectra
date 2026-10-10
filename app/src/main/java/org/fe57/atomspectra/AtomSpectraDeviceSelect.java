@@ -85,6 +85,14 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         rememberChoice.setChecked(PrefHelper.shouldRememberDeviceChoice(this));
         rememberChoice.setOnCheckedChangeListener((button, checked) -> {
             PrefHelper.setRememberDeviceChoice(this, checked);
+            if (checked) {
+                AtomSpectraService.LockedDevice locked = AtomSpectraService.selectedDevice();
+                if (locked != null) {
+                    PrefHelper.setDeviceChoice(this, DeviceChoice.device(locked.type, locked.identity, locked.name));
+                } else if (AtomSpectraService.sessionState == AtomSpectraService.DeviceSessionState.OFFLINE) {
+                    PrefHelper.setDeviceChoice(this, DeviceChoice.offline());
+                }
+            }
             if (scanner != null) scanner.refresh();
         });
         startRecordingAfter = getIntent().getBooleanExtra(EXTRA_START_RECORDING_AFTER, false);
@@ -515,6 +523,9 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         if (connecting && device.type == SpectrumSource.TYPE_BLUZ) scanner.pauseBluetoothScan();
         else scanner.resumeBluetoothScan();
         renderDevices();
+        if (PrefHelper.shouldRememberDeviceChoice(this)) {
+            PrefHelper.setDeviceChoice(this, DeviceChoice.device(device.type, device.identity, device.displayName));
+        }
         service.selectDevice(device);
         updateExitGate();
     }
