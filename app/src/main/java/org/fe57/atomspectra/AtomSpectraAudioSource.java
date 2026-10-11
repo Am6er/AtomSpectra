@@ -624,11 +624,12 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     @Override
     public void requestStop() {
         if (this.deferToSourceThread(this::requestStop)) return;
-        if (this.context == null || this.status == SpectrumSource.STATUS_CLOSED) return;
+        if (this.context == null || this.status == SpectrumSource.STATUS_CLOSED
+                || this.status == SpectrumSource.STATUS_DISCONNECTED) return;
         this.sourceHandler.removeCallbacks(this.recoveryTimeout);
         this.recoveryWakeLock.release();
         this.stopCapture();
-        if (this.status == SpectrumSource.STATUS_RECOVERING || this.status == SpectrumSource.STATUS_DISCONNECTED) {
+        if (this.status == SpectrumSource.STATUS_RECOVERING) {
             this.status = SpectrumSource.STATUS_DISCONNECTED;
             this.emitDisconnected("Audio recovery cancelled by stop");
             AudioDeviceInfo available = findAudioDevice(this.context, this.identity);
