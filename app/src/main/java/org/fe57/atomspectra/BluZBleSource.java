@@ -36,13 +36,23 @@ final class BluZBleSource implements SpectrumSource {
     private static final UUID NOTIFY = UUID.fromString("0000fe81-8e22-4541-9d4c-21edae82ed19");
     private static final UUID WRITE = UUID.fromString("0000fe82-8e22-4541-9d4c-21edae82ed19");
     private static final UUID CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-    private static final long HANDSHAKE_MS = 30000;
+    // From connectGatt to STATE_CONNECTED.
+    private static final long CONNECT_MS = 30000;
+    // From STATE_CONNECTED to the first frame.
+    private static final long HANDSHAKE_MS = 15000;
+    // A GATT write must complete, and a sent command must be confirmed by a frame, within this time.
     private static final long COMMAND_MS = 15000;
+    // From a frame header to its last packet.
     private static final long ASSEMBLY_MS = 10000;
-    // Silent recovery is abandoned after this long; the retry delay is fixed while it lasts.
+    // Silent recovery is abandoned after this long.
     private static final long RECOVERY_MAX_WINDOW_MS = 60000;
-    private static final long RECOVERY_RETRY_MS = 2500;
+    // Fixed delay between attempts during recovery.
+    private static final long RECOVERY_RETRY_MS = 2000;
+    // First retry delay outside recovery; it doubles after each attempt.
+    private static final long MIN_RETRY_MS = 1000;
+    // Upper bound of the doubling retry delay outside recovery.
     private static final long MAX_RETRY_MS = 30000;
+    // A scan that produced no results for this long is restarted.
     private static final long SCAN_RESTART_MS = 120000;
     // A user-initiated connect gives up if the device is not found within this time.
     private static final long USER_SCAN_TIMEOUT_MS = 30000;
@@ -133,7 +143,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean physicalConnection;
     private boolean subscribed;
     private boolean writing;
-    private long retryDelay = 1000;
+    private long retryDelay = MIN_RETRY_MS;
     private boolean userInitiated;
     private boolean recoveryActive;
     private String recoveryReason;
@@ -320,7 +330,7 @@ final class BluZBleSource implements SpectrumSource {
                 if (userInitiated && !hasBeenReady) failHandshake(REASON_ERROR, "BluZ connection could not be started");
                 else scheduleRetry();
             } else
-                handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
+                handler.postDelayed(connectionDeadline, CONNECT_MS);
         } catch (SecurityException error) {
             permissionLost();
         }
@@ -549,7 +559,7 @@ final class BluZBleSource implements SpectrumSource {
                 ready = true;
                 hasBeenReady = true;
                 userInitiated = false;
-                retryDelay = 1000;
+                retryDelay = MIN_RETRY_MS;
                 handler.removeCallbacks(connectionDeadline);
                 coefficients = frame.calibration();
                 lastError = null;
