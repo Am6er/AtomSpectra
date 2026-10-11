@@ -698,6 +698,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         int cp1s = MeasurementData.instance.cp1s;
         int cp1s_interval = MeasurementData.instance.cp1sInterval;
 
+        statusLine1Text.setText(MeasurementData.instance.telemetry.format(this));
+
         switch (display_mode) {
             case Constants.DISPLAY_MODE_SPECTRUM:
                 Spectrum foreground = SpectrumData.instance.foreground;

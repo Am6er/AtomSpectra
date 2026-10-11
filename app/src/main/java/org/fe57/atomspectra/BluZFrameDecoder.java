@@ -115,6 +115,22 @@ final class BluZFrameDecoder {
         return count;
     }
 
+    private static final double[] BATTERY_VOLTS = {2.9, 3.0, 3.3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 4.2};
+    private static final int[] BATTERY_PERCENT = {0, 1, 5, 10, 15, 30, 50, 70, 80, 90, 100};
+
+    /**
+     * Battery charge for a voltage, interpolated over the discharge curve used by the BluZ app.
+     */
+    static int batteryPercent(double volts) {
+        if (volts <= BATTERY_VOLTS[0]) return BATTERY_PERCENT[0];
+        int last = BATTERY_VOLTS.length - 1;
+        if (volts >= BATTERY_VOLTS[last]) return BATTERY_PERCENT[last];
+        int upper = 1;
+        while (volts > BATTERY_VOLTS[upper]) upper++;
+        double share = (volts - BATTERY_VOLTS[upper - 1]) / (BATTERY_VOLTS[upper] - BATTERY_VOLTS[upper - 1]);
+        return (int) Math.round(BATTERY_PERCENT[upper - 1] + share * (BATTERY_PERCENT[upper] - BATTERY_PERCENT[upper - 1]));
+    }
+
     static long uint32(byte[] bytes, int offset) {
         return ((long) bytes[offset] & 255)
                 | (((long) bytes[offset + 1] & 255) << 8)
@@ -130,6 +146,14 @@ final class BluZFrameDecoder {
         final double time;
         final long pulses;
         final int cps;
+        /**
+         * Device temperature, °C; null when the frame has no valid reading.
+         */
+        final Integer temperatureC;
+        /**
+         * Battery voltage, V; null when the frame has no valid reading.
+         */
+        final Double batteryVolts;
 
         Frame(int type, int channels, byte[] settings, long[] histogram) {
             this.type = type;
@@ -139,6 +163,11 @@ final class BluZFrameDecoder {
             time = uint32(settings, 86);
             pulses = uint32(settings, 90);
             cps = (int) Math.min(Integer.MAX_VALUE, uint32(settings, 14));
+            ByteBuffer bytes = ByteBuffer.wrap(settings).order(ByteOrder.LITTLE_ENDIAN);
+            float temperature = bytes.getFloat(26);
+            float voltage = bytes.getFloat(30);
+            temperatureC = Float.isFinite(temperature) ? Math.round(temperature) : null;
+            batteryVolts = Float.isFinite(voltage) && voltage > 0 ? Math.round(voltage * 100) / 100.0 : null;
         }
 
         boolean isNormal() {

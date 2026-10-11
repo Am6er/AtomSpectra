@@ -25,6 +25,11 @@ public final class MeasurementData {
 
     public volatile DoseRate doseRate = new DoseRate();
 
+    /**
+     * Device health readings from the last data update.
+     */
+    public volatile DeviceTelemetry telemetry = DeviceTelemetry.EMPTY;
+
     private final Object historyLock = new Object();
     private final LinkedList<Double> doseHistory = new LinkedList<>();
     private final LinkedList<Double> doseCompensatedHistory = new LinkedList<>();
