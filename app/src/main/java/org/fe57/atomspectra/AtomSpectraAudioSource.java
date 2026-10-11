@@ -496,9 +496,11 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                         });
                     } catch (RuntimeException error) {
                         AtomSpectraAudioSource.this.sourceHandler.post(() -> {
-                            if (generation == AtomSpectraAudioSource.this.captureGeneration) {
-                                AtomSpectraAudioSource.this.failCapture("Audio read failed: " + error,
-                                        error instanceof SecurityException ? SpectrumSource.REASON_PERMISSION : SpectrumSource.REASON_ERROR);
+                            if (generation != AtomSpectraAudioSource.this.captureGeneration) return;
+                            if (error instanceof SecurityException) {
+                                AtomSpectraAudioSource.this.failCapture("Audio read failed: " + error, SpectrumSource.REASON_PERMISSION);
+                            } else {
+                                AtomSpectraAudioSource.this.failReadOrRecover("Audio read failed: " + error);
                             }
                         });
                         return;
@@ -549,6 +551,21 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         }
     }
 
+    // a failing read can be the first sign of the selected device removal, ahead of the device callback
+    private void failReadOrRecover(String reason) {
+        if (this.captureConfirmed && this.isSelectedDeviceGone()) {
+            this.onSelectedDeviceLost();
+        } else {
+            this.failCapture(reason);
+        }
+    }
+
+    private boolean isSelectedDeviceGone() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)
+                && findAudioDevice(this.context, this.identity) == null;
+    }
+
     private void retryRecoveryCapture() {
         if (this.context == null || !this.recoveryCapture || this.capturing
                 || this.status != SpectrumSource.STATUS_RECOVERING) return;
@@ -562,12 +579,12 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private void onAudioRead(long generation, AudioRecord record, byte[] samples, int bytesRead) {
         if (this.context == null || !this.capturing || generation != this.captureGeneration) return;
         if (bytesRead < 0) {
-            this.failCapture("Audio read returned error " + bytesRead);
+            this.failReadOrRecover("Audio read returned error " + bytesRead);
             return;
         }
         if (bytesRead == 0) {
             if (++this.audioZeroDataCount >= AUDIO_ZERO_DATA_MAX_COUNT && this.captureConfirmed) {
-                this.failCapture("Audio input stopped delivering samples");
+                this.failReadOrRecover("Audio input stopped delivering samples");
             }
             return;
         }
@@ -575,7 +592,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             AudioDeviceInfo routed = record.getRoutedDevice();
             if (routed == null || this.device == null || routed.getId() != this.device.getId()) {
                 if (this.captureConfirmed)
-                    this.failCapture("Audio input no longer routes to the selected device");
+                    this.failReadOrRecover("Audio input no longer routes to the selected device");
                 return;
             }
         }
