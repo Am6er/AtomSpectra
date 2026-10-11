@@ -249,9 +249,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.registerUsbEventReceiver();
 
         UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
-        if (this.device == null) {
-            this.device = this.findLockedDevice(manager);
-        }
+        // a token kept from before a detach is stale; look the unit up on the bus every time
+        this.device = this.findLockedDevice(manager);
         if (this.device == null) {
             return;
         }
@@ -322,8 +321,6 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.stopOnReturn = true;
             this.teardownConnection();
             this.emitDisconnected("USB recovery cancelled by stop");
-            UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
-            this.device = this.findLockedDevice(manager);
             this.requestConnect(false);
             return;
         }
@@ -1275,8 +1272,6 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private void retryRecoveryConnect() {
         if (this.context == null || !this.recoveryConnectPending
                 || this.status != SpectrumSource.STATUS_RECOVERING) return;
-        UsbManager manager = (UsbManager) this.context.getSystemService(Context.USB_SERVICE);
-        this.device = this.findLockedDevice(manager);
         this.requestConnect(false);
     }
 
