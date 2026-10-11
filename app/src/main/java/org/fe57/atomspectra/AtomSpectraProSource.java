@@ -184,6 +184,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private volatile UsbDevice permissionRequestedDevice = null;
     private volatile boolean recoveryConnectPending;
     private boolean recoveryHandshakeStarted;
+    // the port is open but the connect sequence has not reached READY or collecting confirmation yet;
+    // the status stays CONNECTING (or RECOVERING) instead of EXECUTING_COMMAND while it runs
+    private boolean handshakePending;
     private boolean stopOnReturn;
     private long recoveryDeadline;
     private long recoveryStartedAt;
@@ -279,6 +282,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
 
+        this.handshakePending = true;
         this.enqueueTextCommand("-inf", OP_ID_CHECK_FIRMWARE, SpectrumSource.OP_CONNECT);
         this.enqueueTextCommand("-mode 0", OP_ID_ENABLE_SPECTROMETER_MODE, SpectrumSource.OP_CONNECT);
         this.enqueueTextCommand("-cal", OP_ID_LOAD_CALIBRATION_AND_ID, SpectrumSource.OP_CONNECT);
@@ -323,7 +327,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.requestConnect(false);
             return;
         }
-        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING) {
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.handshakePending) {
             this.stopOnReturn = true;
             return;
         }
@@ -442,7 +446,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void requestStart(boolean isFirstStartAfterConnect) {
-        if (this.rejectIfDisconnected(isFirstStartAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_START))
+        if (!isFirstStartAfterConnect && this.rejectIfDisconnected(SpectrumSource.OP_START))
             return;
 
         this.armUnreliableDataWindow();
@@ -451,7 +455,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private void requestShowData(boolean isFirstShowAfterConnect) {
-        if (this.rejectIfDisconnected(isFirstShowAfterConnect ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_SHOW))
+        if (!isFirstShowAfterConnect && this.rejectIfDisconnected(SpectrumSource.OP_SHOW))
             return;
 
         this.enqueueTextCommand("-sho", isFirstShowAfterConnect ? OP_ID_INITIAL_SHOW_HISTOGRAM : OP_ID_SHOW_HISTOGRAM,
@@ -469,7 +473,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private boolean rejectIfDisconnected(int op) {
         if (this.rejectIfClosed(op)) return true;
 
-        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING) {
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.handshakePending) {
             this.emitError(op, SpectrumSource.REASON_ERROR, "Request to a disconnected source");
             return true;
         }
@@ -737,6 +741,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 } else {
                     if (this.recoveryConnectPending) {
                         this.finishRecoveryWithDisconnect("USB device returned but is no longer collecting");
+                        this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTING);
                         this.enqueueTextCommand("-sho", OP_ID_INITIAL_SHOW_HISTOGRAM, SpectrumSource.OP_CONNECT);
                     } else {
                         // TODO: check with real device if it works, otherwise just report ready
@@ -745,8 +750,17 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 }
                 break;
             case OP_ID_INITIAL_START_COLLECTING:
+                // a Stop that arrived after -stt was answered: stop again before reporting ready
+                if (this.stopOnReturn) {
+                    this.enqueueTextCommand("-sto", OP_ID_STOP_COLLECTING, SpectrumSource.OP_CONNECT);
+                    break;
+                }
+                // fall through
             case OP_ID_START_COLLECTING:
             case OP_ID_WATCHDOG_RESTART_COLLECTING:
+                if (cmd.id == OP_ID_INITIAL_START_COLLECTING) {
+                    this.handshakePending = false;
+                }
                 this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
                 this.resetHistogramCompleteness();
                 this.flushErrorSuppressionLog();
@@ -756,6 +770,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 }
                 break;
             case OP_ID_INITIAL_SHOW_HISTOGRAM:
+                this.handshakePending = false;
+                this.stopOnReturn = false;
                 this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
                 this.emitReady();
                 break;
@@ -763,12 +779,14 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 this.requestStatusResync(SpectrumSource.OP_SHOW);
                 break;
             case OP_ID_STOP_COLLECTING:
-                this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
-                this.flushErrorSuppressionLog();
-                if (this.stopOnReturn) {
+                if (this.handshakePending) {
+                    // Stop-on-return inside the connect sequence: finish it with the idle histogram
                     this.stopOnReturn = false;
                     this.requestShowData(true);
+                    break;
                 }
+                this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
+                this.flushErrorSuppressionLog();
                 break;
             case OP_ID_RESET_HISTOGRAM:
                 this.resetHistogramCompleteness();
@@ -1038,6 +1056,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
         this.recoveryConnectPending = false;
         this.recoveryHandshakeStarted = false;
+        this.handshakePending = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
         this.recoveryWakeLock.release();
@@ -1202,12 +1221,13 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private boolean isAwaitingUsbReturn() {
         return this.status == SpectrumSource.STATUS_DISCONNECTED
-                || this.status == SpectrumSource.STATUS_RECOVERING;
+                || (this.status == SpectrumSource.STATUS_RECOVERING && !this.handshakePending);
     }
 
     private void completeRecoveryWhileCollecting() {
         if (!this.recoveryConnectPending) return;
         this.recoveryConnectPending = false;
+        this.handshakePending = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
         this.recoveryWakeLock.release();
@@ -1838,7 +1858,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
             AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Enqueuing command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ")");
         }
-        this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND);
+        if (!this.handshakePending)
+            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND);
         this.commands.add(new CommandCode(command, id, op));
 
         return this.sendPacket();

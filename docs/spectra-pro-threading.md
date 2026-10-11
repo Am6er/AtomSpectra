@@ -136,7 +136,12 @@ The normal connection handshake queues four text commands:
 | 4 | `-stt` | Confirm whether the device is collecting |
 
 `enqueueTextCommand()` appends to the handler-owned queue and publishes
-`STATUS_CONNECTED_EXECUTING_COMMAND`. `sendPacket()` writes only its head.
+`STATUS_CONNECTED_EXECUTING_COMMAND`, except during the connect handshake:
+`handshakePending` keeps the status at `STATUS_CONNECTING` (or
+`STATUS_RECOVERING`) until READY or collecting confirmation. External requests
+are rejected during the handshake, and Stop is recorded as Stop-on-return. Any
+`OP_CONNECT` failure outside recovery tears the transport down before reporting,
+so the next `requestConnect()` starts over. `sendPacket()` writes only its head.
 `answerNumber` records the command currently awaiting a reply, so subsequent
 enqueue calls do not resend that command.
 
@@ -283,9 +288,9 @@ Before reusing buffer indices, teardown joins the old parser.
 ## 7. Silent USB recovery and near-expiration reconnect
 
 Detach while collecting is eligible for silent recovery. Detach while idle or
-busy takes the regular disconnect path. The status may be busy during a recovery
-handshake; `recoveryConnectPending`, not the visible status alone, tracks that
-handshake after commands have been queued.
+busy takes the regular disconnect path. The status stays `STATUS_RECOVERING`
+during the recovery handshake; `recoveryConnectPending` and `handshakePending`
+distinguish waiting for the device from a handshake on an open port.
 
 Recovery has two budgets:
 
@@ -321,7 +326,7 @@ sequenceDiagram
     Owner->>Owner: Wait for USB settling
     Owner->>Queue: Replace return deadline with handshake deadline
     Owner->>Device: Open transport and run four-command handshake
-    Owner-->>Service: STATUS_CONNECTED_EXECUTING_COMMAND
+    Note over Owner,Service: Status stays STATUS_RECOVERING during the handshake
     opt An obsolete recovery callback is encountered
         Queue-->>Owner: onRecoveryTimeout
         Owner->>Owner: Recheck recoveryDeadline using elapsed real time
@@ -346,8 +351,9 @@ initial connection and the returned-idle path use their existing ready events.
 Stop during recovery invalidates the attempt, reports disconnected and retains
 `stopOnReturn`. If the device is present, a normal handshake follows; otherwise
 the source waits for USB return. A collecting return is stopped before initial
-idle histogram loading and readiness. An explicit Start supersedes that Stop
-intent. Cancellation is not reported as successful recovery.
+idle histogram loading and readiness. Stop during an ordinary handshake also
+sets Stop-on-return; if `-stt` already queued the initial `-sta`, the device is
+stopped again before READY. An explicit Start supersedes that Stop intent. Cancellation is not reported as successful recovery.
 This threading change does not unify readiness or recovery-log behavior across
 device types.
 
