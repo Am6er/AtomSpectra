@@ -470,7 +470,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private boolean rejectIfDisconnected(int op) {
         if (this.rejectIfClosed(op)) return true;
 
-        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.handshakePending) {
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_RECOVERING
+                || this.handshakePending) {
             this.emitError(op, SpectrumSource.REASON_ERROR, "Request to a disconnected source");
             return true;
         }
