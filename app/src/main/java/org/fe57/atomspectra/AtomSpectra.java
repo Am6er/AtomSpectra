@@ -698,7 +698,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         int cp1s = MeasurementData.instance.cp1s;
         int cp1s_interval = MeasurementData.instance.cp1sInterval;
 
-        statusLine1Text.setText(MeasurementData.instance.telemetry.format(this));
+        // TODO: rely on isRecording until we have separate event for telemetry
+        if (AtomSpectraService.isRecording()) {
+            statusLine1Text.setText(MeasurementData.instance.telemetry.format(this));
+        } else {
+            statusLine1Text.setText("");
+        }
+
 
         switch (display_mode) {
             case Constants.DISPLAY_MODE_SPECTRUM:
@@ -2129,7 +2135,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 startRecordingAfterDecision();
             } else {
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_STOP_RECORDING).setPackage(Constants.PACKAGE_NAME));
+                // TODO: temporary cleanup because telemetry is now available only while recording
+                statusLine1Text.setText("");
             }
+
             return true;
         } else if (item.getItemId() == R.id.action_share_export) {
             Log.d(TAG, "sharing file");
