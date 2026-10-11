@@ -124,6 +124,19 @@ final class BluZBleSource implements SpectrumSource {
         }
     }
 
+    private static String priorityName(int priority) {
+        switch (priority) {
+            case BluetoothGatt.CONNECTION_PRIORITY_BALANCED:
+                return "BALANCED";
+            case BluetoothGatt.CONNECTION_PRIORITY_HIGH:
+                return "HIGH";
+            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER:
+                return "LOW_POWER";
+            default:
+                return String.valueOf(priority);
+        }
+    }
+
     private final Context context;
     private final Handler handler;
     private final String address;
@@ -384,9 +397,9 @@ final class BluZBleSource implements SpectrumSource {
                     handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
                     if (!recoveryActive) setStatus(STATUS_CONNECTING);
                     try {
-                        int priority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED;
+                        int priority = BluetoothGatt.CONNECTION_PRIORITY_HIGH;
                         candidate.requestConnectionPriority(priority);
-                        debug("Requested connection priority (" + priority + ")");
+                        debug("Requested connection priority " + priorityName(priority));
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) candidate.readPhy();
                         if (!candidate.discoverServices())
                             failHandshake(REASON_ERROR, "Cannot discover BluZ services");
