@@ -177,6 +177,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private static final long USB_RECOVERY_INITIAL_WINDOW_MS = 5000;
     private static final long USB_RECOVERY_HANDSHAKE_WINDOW_MS =
             USB_WAIT_DEVICE + 4 * (CommandCode.DROP_TIMEOUT + 500 + SERIAL_MANAGER_WRITE_TIMEOUT);
+    private static final long USB_RECOVERY_WAKE_LOCK_MS =
+            USB_RECOVERY_INITIAL_WINDOW_MS + USB_RECOVERY_HANDSHAKE_WINDOW_MS + 10000;
     private final String identity;
     private BroadcastReceiver usbEventReceiver = null;
     private volatile UsbDevice permissionRequestedDevice = null;
@@ -188,6 +190,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private String lastSerialError;
     private final Runnable recoveryTimeout = this::onRecoveryTimeout;
     private final Runnable recoveryRetry = this::retryRecoveryConnect;
+    private final RecoveryWakeLock recoveryWakeLock;
 
     public AtomSpectraProSource(Context context, UsbDevice device) {
         this(context, device, DeviceIdentity.usb(device));
@@ -207,6 +210,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.sourceThread = new HandlerThread("AtomSpectraProSource");
         this.sourceThread.start();
         this.asyncTasksHandler = new Handler(this.sourceThread.getLooper());
+        this.recoveryWakeLock = new RecoveryWakeLock(context, "SpectraProRecovery");
     }
 
     private boolean deferToSourceThread(Runnable task) {
@@ -1032,6 +1036,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.recoveryHandshakeStarted = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
+        this.recoveryWakeLock.release();
         this.status = SpectrumSource.STATUS_DISCONNECTED;
         this.cancelDataWatchdog();
         this.cancelPendingCommands();
@@ -1125,6 +1130,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                     + ", waiting up to " + USB_RECOVERY_INITIAL_WINDOW_MS / 1000 + " s for it to return");
             this.recoveryStartedAt = SystemClock.elapsedRealtime();
             this.recoveryConnectPending = true;
+            this.recoveryWakeLock.acquire(USB_RECOVERY_WAKE_LOCK_MS);
             this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
             this.armRecoveryTimeout(USB_RECOVERY_INITIAL_WINDOW_MS);
         } else {
@@ -1200,6 +1206,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.recoveryConnectPending = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
+        this.recoveryWakeLock.release();
         this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
         this.resetHistogramCompleteness();
         this.flushErrorSuppressionLog();
@@ -1211,6 +1218,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.recoveryConnectPending = false;
         this.asyncTasksHandler.removeCallbacks(this.recoveryTimeout);
         this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
+        this.recoveryWakeLock.release();
         this.setAndEmitStatus(SpectrumSource.STATUS_DISCONNECTED);
         this.emitDisconnected(reason);
     }
@@ -1231,6 +1239,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
         this.recoveryConnectPending = true;
+        this.recoveryWakeLock.acquire(USB_RECOVERY_WAKE_LOCK_MS);
         this.recoveryHandshakeStarted = handshakeStarted;
         this.recoveryDeadline = deadline;
         this.lastError = null;

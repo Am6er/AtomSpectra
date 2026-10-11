@@ -21,7 +21,6 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.os.SystemClock;
 
 import androidx.core.content.ContextCompat;
@@ -164,8 +163,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean recoveryActive;
     private String recoveryReason;
     private long recoveryStartedAt;
-    // Keeps the CPU awake during recovery so the handler timers are not stalled by deep sleep.
-    private PowerManager.WakeLock recoveryWakeLock;
+    private final RecoveryWakeLock recoveryWakeLock;
     private long scanStartedAt;
     private long connectStartedAt;
     private BluZFrameDecoder.Frame latest;
@@ -191,6 +189,7 @@ final class BluZBleSource implements SpectrumSource {
         address = identity != null && identity.startsWith("bluz:") ? identity.substring(5) : "";
         BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         adapter = manager == null ? null : manager.getAdapter();
+        recoveryWakeLock = new RecoveryWakeLock(this.context, "BluZRecovery");
     }
 
     private void dispatch(Runnable action) {
@@ -909,7 +908,7 @@ final class BluZBleSource implements SpectrumSource {
         setStatus(STATUS_RECOVERING);
         recoveryReason = reason;
         recoveryStartedAt = SystemClock.elapsedRealtime();
-        acquireRecoveryWakeLock();
+        recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
         AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: started after " + reason + ", window "
                 + RECOVERY_MAX_WINDOW_MS / 1000 + " s");
         stopScan();
@@ -942,22 +941,8 @@ final class BluZBleSource implements SpectrumSource {
         recoveryActive = false;
         handler.removeCallbacks(recoveryWindowEnd);
         recoveryStartedAt = 0;
-        releaseRecoveryWakeLock();
+        recoveryWakeLock.release();
         stopScan();
-    }
-
-    private void acquireRecoveryWakeLock() {
-        if (recoveryWakeLock == null) {
-            PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-            if (power == null) return;
-            recoveryWakeLock = power.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AtomSpectra:BluZRecovery");
-            recoveryWakeLock.setReferenceCounted(false);
-        }
-        recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
-    }
-
-    private void releaseRecoveryWakeLock() {
-        if (recoveryWakeLock != null && recoveryWakeLock.isHeld()) recoveryWakeLock.release();
     }
 
     private final Runnable recoveryWindowEnd = this::endRecoveryByTimeout;
