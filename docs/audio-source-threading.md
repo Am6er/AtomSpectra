@@ -97,6 +97,9 @@ This keeps cumulative spectrum replacement separate from live accumulation.
 `requestConnect()` verifies microphone permission and locates the selected input.
 A selected non-default device is monitored on API 23+. If it is absent, the
 source remains disconnected and waits for a matching device-add callback.
+A user-initiated connect does not wait: an absent input is reported as
+`ERROR(OP_CONNECT)` and device callbacks stay unregistered until the next
+`requestConnect()`.
 
 `completeConnect()` loads preferences, updates the label, reports connected idle
 and emits `READY`. Readiness describes the selected source and its spectrum

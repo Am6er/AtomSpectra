@@ -213,6 +213,14 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
         if (this.device == null && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
             this.device = findAudioDevice(ctx, this.identity);
+            // the user is waiting for this connect: report the absent input instead of waiting for it
+            if (this.device == null && userInitiated) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    this.unregisterDeviceLossCallback();
+                }
+                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, "Selected audio input is not available");
+                return;
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
