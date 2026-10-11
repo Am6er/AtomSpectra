@@ -197,6 +197,13 @@ public interface SpectrumSource {
      */
     double[] calibration();
 
+    /**
+     * The latest device health readings; {@link DeviceTelemetry#EMPTY} when the source has none. Default is none.
+     */
+    default DeviceTelemetry telemetry() {
+        return DeviceTelemetry.EMPTY;
+    }
+
     // TODO: add specific device stored settings abstraction, calibration is separate as it is required for a spectrum, other settings are optional
     // we might have both software and hardware settings and have to distinguish them
     // for instance, all audio processing settings will be bound to a specific audio device, partial histogram allowed for pro, last calibration channel etc.

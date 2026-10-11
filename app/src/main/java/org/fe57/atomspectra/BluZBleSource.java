@@ -58,6 +58,10 @@ final class BluZBleSource implements SpectrumSource {
     private static final long SCAN_RESTART_MS = 120000;
     // A user-initiated connect gives up if the device is not found within this time.
     private static final long USER_SCAN_TIMEOUT_MS = 30000;
+    // The link strength is read from a frame at most this often.
+    private static final long RSSI_INTERVAL_MS = 2500;
+    // A link strength read that has not been answered for this long is considered lost.
+    private static final long RSSI_STALE_MS = 10000;
     
     private static String gattStatus(int status) {
         String name;
@@ -145,6 +149,10 @@ final class BluZBleSource implements SpectrumSource {
     private volatile int status = STATUS_DISCONNECTED;
     private volatile SourceError lastError;
     private volatile double[] coefficients = new double[]{0, 3000.0 / 4096};
+    private volatile DeviceTelemetry telemetry = DeviceTelemetry.EMPTY;
+    private Integer rssi;
+    private boolean rssiReading;
+    private long rssiReadAt;
     private BluetoothAdapter adapter;
     private BluetoothGatt gatt;
     private BluetoothGattCharacteristic writeCharacteristic;
@@ -498,6 +506,18 @@ final class BluZBleSource implements SpectrumSource {
         }
 
         @Override
+        public void onReadRemoteRssi(BluetoothGatt candidate, int value, int result) {
+            dispatch(() -> {
+                if (!current(candidate)) return;
+                rssiReading = false;
+                rssi = result == BluetoothGatt.GATT_SUCCESS ? value : null;
+                if (latest == null) return;
+                DeviceTelemetry previous = telemetry;
+                telemetry = new DeviceTelemetry(rssi, previous.temperatureC, previous.batteryPercent, previous.batteryVolts);
+            });
+        }
+
+        @Override
         public void onCharacteristicWrite(BluetoothGatt candidate, BluetoothGattCharacteristic characteristic, int result) {
             dispatch(() -> {
                 if (!current(candidate) || !writing || !WRITE.equals(characteristic.getUuid()))
@@ -572,6 +592,7 @@ final class BluZBleSource implements SpectrumSource {
             latestSettings = frame.settings.clone();
             if (!frame.isNormal()) return;
             latest = frame;
+            updateTelemetry(frame);
             if (!ready) {
                 ready = true;
                 hasBeenReady = true;
@@ -653,6 +674,20 @@ final class BluZBleSource implements SpectrumSource {
         } catch (IllegalArgumentException error) {
             handler.removeCallbacks(assemblyDeadline);
             skipped(error.getMessage());
+        }
+    }
+
+    private void updateTelemetry(BluZFrameDecoder.Frame frame) {
+        Integer percent = frame.batteryVolts == null ? null : BluZFrameDecoder.batteryPercent(frame.batteryVolts);
+        telemetry = new DeviceTelemetry(rssi, frame.temperatureC, percent, frame.batteryVolts);
+        long now = SystemClock.elapsedRealtime();
+        if (now - rssiReadAt < RSSI_INTERVAL_MS || (rssiReading && now - rssiReadAt < RSSI_STALE_MS) || gatt == null)
+            return;
+        rssiReadAt = now;
+        try {
+            rssiReading = gatt.readRemoteRssi();
+        } catch (SecurityException error) {
+            permissionLost();
         }
     }
 
@@ -1003,6 +1038,10 @@ final class BluZBleSource implements SpectrumSource {
         writing = false;
         latest = null;
         latestSettings = null;
+        telemetry = DeviceTelemetry.EMPTY;
+        rssi = null;
+        rssiReading = false;
+        rssiReadAt = 0;
         writeCharacteristic = null;
         notifyCharacteristic = null;
         toggleOp = 0;
@@ -1145,6 +1184,11 @@ final class BluZBleSource implements SpectrumSource {
     @Override
     public double[] calibration() {
         return coefficients.clone();
+    }
+
+    @Override
+    public DeviceTelemetry telemetry() {
+        return telemetry;
     }
 
     private static final class PendingWrite {

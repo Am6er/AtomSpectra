@@ -819,6 +819,7 @@ public class AtomSpectraService extends Service {
             activeSource = null;
         }
         if (active != null) active.close();
+        clearTelemetry();
     }
 
     // forgets the locked device; the remembered choice is not touched
@@ -978,6 +979,11 @@ public class AtomSpectraService extends Service {
         if (active == null || active.instanceId() != id) return;
 
         deviceError = active.lastError();
+        if (action.equals(SpectrumSource.ACTION_SOURCE_DISCONNECTED)
+                || (action.equals(SpectrumSource.ACTION_SOURCE_STATUS)
+                && isTelemetryStale(intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus)))) {
+            clearTelemetry();
+        }
         switch (action) {
             case SpectrumSource.ACTION_SOURCE_READY:
                 onSourceReady(intent);
@@ -1694,6 +1700,8 @@ public class AtomSpectraService extends Service {
         if (!isDeviceConnected() || connectDecisionPending) {
             return;
         }
+        final SpectrumSource source = activeSource;
+        MeasurementData.instance.telemetry = source != null ? source.telemetry() : DeviceTelemetry.EMPTY;
         if (!is_recording) {
             showIdleSnapshot(intent);
             return;
@@ -2264,6 +2272,19 @@ public class AtomSpectraService extends Service {
         }
 
         SpectrumChangeData.instance.set(deltaFg, deltaBg, foregroundTime, backgroundTime);
+    }
+
+    // the readings of a device that is reconnecting or gone are not shown
+    private static boolean isTelemetryStale(int status) {
+        return status == SpectrumSource.STATUS_RECOVERING
+                || status == SpectrumSource.STATUS_DISCONNECTED
+                || status == SpectrumSource.STATUS_CLOSED;
+    }
+
+    private void clearTelemetry() {
+        if (MeasurementData.instance.telemetry == DeviceTelemetry.EMPTY) return;
+        MeasurementData.instance.telemetry = DeviceTelemetry.EMPTY;
+        notifyDataAvailable();
     }
 
     private void notifyDataAvailable() {
