@@ -50,6 +50,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private static final int SCOPE_SNAPSHOT_PERIOD_MS = 200;
     private static final long DEVICE_RECOVERY_WINDOW_MS = 5000;
     private static final long CAPTURE_START_WINDOW_MS = 5000;
+    private static final long RECOVERY_WAKE_LOCK_MS = DEVICE_RECOVERY_WINDOW_MS + CAPTURE_START_WINDOW_MS + 10000;
 
 
     private static void log(Context ctx, String message) {
@@ -90,6 +91,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private final Runnable recoveryCaptureRetry = this::retryRecoveryCapture;
     private final Runnable captureStartTimeout = this::onCaptureStartTimeout;
     private final Runnable reportRunnable = this::reportTask;
+    private final RecoveryWakeLock recoveryWakeLock;
 
     // pulse-detection tuning, read in requestConnect() and on every application preferences change
     private volatile int frontCountsMin = MIN_FRONT_POINTS_DEFAULT;
@@ -149,6 +151,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         this.sourceThread = new HandlerThread("AtomSpectraAudioSource");
         this.sourceThread.start();
         this.sourceHandler = new Handler(this.sourceThread.getLooper());
+        this.recoveryWakeLock = new RecoveryWakeLock(context, "AudioRecovery");
     }
 
     private boolean deferToSourceThread(Runnable task) {
@@ -366,6 +369,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         }
         log(this.context, "Audio device removed during capture, waiting up to "
                 + DEVICE_RECOVERY_WINDOW_MS / 1000 + " s for it to return");
+        this.recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
         this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
         this.sourceHandler.removeCallbacks(this.recoveryTimeout);
         this.sourceHandler.postDelayed(this.recoveryTimeout, DEVICE_RECOVERY_WINDOW_MS);
@@ -380,6 +384,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (ctx == null) return;
         if (!AppPermissions.isMicGranted(ctx)) {
             if (recovering) {
+                this.recoveryWakeLock.release();
                 this.status = SpectrumSource.STATUS_DISCONNECTED;
                 this.emitDisconnected("Audio recovery permission denied");
             }
@@ -402,6 +407,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private void onDeviceRecoveryTimeout() {
         if (this.status != SpectrumSource.STATUS_RECOVERING || this.capturing) return;
 
+        this.recoveryWakeLock.release();
         this.status = SpectrumSource.STATUS_DISCONNECTED;
         this.emitDisconnected("Audio recovery timed out after " + DEVICE_RECOVERY_WINDOW_MS / 1000
                 + " s: the device did not return");
@@ -530,6 +536,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                 this.sourceHandler.postDelayed(this.recoveryCaptureRetry, Math.min(250, remaining));
                 return;
             }
+            this.recoveryWakeLock.release();
             this.status = SpectrumSource.STATUS_DISCONNECTED;
             this.emitDisconnected(reason);
             if (errorReason == SpectrumSource.REASON_PERMISSION) {
@@ -577,6 +584,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             this.captureConfirmed = true;
             this.recoveryCapture = false;
             this.sourceHandler.removeCallbacks(this.captureStartTimeout);
+            this.recoveryWakeLock.release();
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
             AtomSpectraLog.detail(this.context, LogTag.AUDIO, "Audio capture started, device=" + this.deviceId);
             this.sourceHandler.postDelayed(this.reportRunnable, REPORT_PERIOD_MS);
@@ -591,6 +599,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (this.deferToSourceThread(this::requestStop)) return;
         if (this.context == null || this.status == SpectrumSource.STATUS_CLOSED) return;
         this.sourceHandler.removeCallbacks(this.recoveryTimeout);
+        this.recoveryWakeLock.release();
         this.stopCapture();
         if (this.status == SpectrumSource.STATUS_RECOVERING || this.status == SpectrumSource.STATUS_DISCONNECTED) {
             this.status = SpectrumSource.STATUS_DISCONNECTED;
@@ -657,6 +666,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             return;
         }
         this.sourceHandler.removeCallbacks(this.recoveryTimeout);
+        this.recoveryWakeLock.release();
         this.stopCapture();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             this.unregisterDeviceLossCallback();
