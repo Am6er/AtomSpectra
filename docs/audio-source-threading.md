@@ -363,6 +363,9 @@ zero-length reads fail capture. A negative read result or read/processing
 exception ends the current attempt. During recovery, it may be retried within
 the budget. A changed or missing selected
 route after confirmation also fails capture; those samples are not accumulated.
+A read failure after confirmation may arrive before the device-removal callback:
+if the selected input is no longer listed by `AudioManager`, the source takes the
+selected-device loss path and enters recovery instead of failing the command.
 
 Preference updates are owner tasks. Pulse-selection changes clear the reference
 pulse before subsequent chunks are processed with the new settings. An audio
