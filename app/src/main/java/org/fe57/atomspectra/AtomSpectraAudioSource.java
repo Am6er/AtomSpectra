@@ -845,8 +845,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                         this.histogram[channel]++;
                         this.countsThisReportPeriod++;
 
-                        if ((i > 128) && (i < (1024 - 128)) && (i < ((this.audioBytesRead - 128) / 2)))
-                            for (int j = -128; j < 127; j++)
+                        if ((i >= 128) && (i + 127 < sampleCount))
+                            for (int j = -128; j < 128; j++)
                                 this.referencePulse[j + 128] += this.audioData[i + j];
                     }
                 }
