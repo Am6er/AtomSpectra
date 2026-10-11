@@ -185,15 +185,25 @@ Only one result awaits owner processing for a session. The owner schedules the
 next read after consuming the result, so the worker does not fill an unbounded
 queue of PCM copies while acquisition state is busy.
 
-Read pacing uses:
+Read pacing on API 23+ uses:
 
 ```text
 interval = max(1, 1000 * bufferSize / 2 / SAMPLE_RATE)
 next delay = max(0, interval - elapsed time since this read began)
 ```
 
-Elapsed time includes the read and owner processing. A blocking read that already
-used the interval can therefore be followed immediately by the next read.
+Elapsed time includes the read and owner processing.
+
+`bufferSize` is twice the platform minimum. The recorder is created with twice
+that, holding two intervals. On API 23+, a non-blocking read can drain the whole
+recorder, so a read delayed by up to one interval loses no samples and catches up
+in one read.
+
+The blocking API 21/22 read stays one interval long, since it waits until its
+buffer is full. It paces itself, so the next read is scheduled without delay; a
+timed delay would make each cycle longer than the audio it reads and let the
+recorder overflow.
+
 The worker never synchronously waits for the owner; an idle worker can always
 exit when its Looper is stopped.
 
