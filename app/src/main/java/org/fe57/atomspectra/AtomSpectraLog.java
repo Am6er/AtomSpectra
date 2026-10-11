@@ -335,6 +335,7 @@ public class AtomSpectraLog extends Activity {
             return;
         }
         String snapshot = getText();
+        String savedName = fileName(this, data.getData());
         try (OutputStream output = getContentResolver().openOutputStream(data.getData(), "wt")) {
             if (output == null) {
                 throw new IOException("Unable to open log destination");
@@ -342,10 +343,10 @@ public class AtomSpectraLog extends Activity {
             try (OutputStreamWriter writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
                 writer.write(snapshot);
             }
-            ToastHelper.showActionAndLog(this, LogTag.LOG_ACTIVITY, getString(R.string.hist_save_success, LOG_FILE_NAME));
+            ToastHelper.showActionAndLog(this, LogTag.LOG_ACTIVITY, getString(R.string.hist_save_success, savedName));
         } catch (Exception exception) {
             error(this, LogTag.LOG_ACTIVITY, "Cannot save log", exception);
-            ToastHelper.showToastOnly(this, getString(R.string.hist_save_error, LOG_FILE_NAME));
+            ToastHelper.showToastOnly(this, getString(R.string.hist_save_error, savedName));
         }
     }
 
