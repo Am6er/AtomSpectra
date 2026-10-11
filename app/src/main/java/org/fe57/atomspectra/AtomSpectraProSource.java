@@ -626,6 +626,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             }
             this.teardownConnection();
             this.emitDisconnected("USB recovery permission denied");
+        } else if (op == SpectrumSource.OP_CONNECT && this.status != SpectrumSource.STATUS_CLOSED) {
+            // a connect that cannot complete releases the port, so the next requestConnect starts over
+            this.teardownConnection();
         }
         this.lastError = new SourceError(op, reason, text);
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_ERROR)
@@ -674,10 +677,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         if (OP_ID_WATCHDOG_RESTART_COLLECTING.equals(cmd.id)
                 && (COMMAND_RESULT_ERR.equals(answer) || COMMAND_RESULT_TIMEOUT.equals(answer))) {
-            // TODO: decide if tear down (closePortAndConnection/stopUsbManager/stopProcessingThread)
-            // is actually needed here instead of relying on the caller to call close().
             AtomSpectraLog.error(ctx, LogTag.SPECTRA_PRO, "Watchdog reconnect failed: " + SpectrumSource.opName(op));
             AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\": " + answer.trim());
+            this.teardownConnection();
             this.emitDisconnected("Reconnect failed");
             return;
         }
@@ -688,7 +690,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 this.retryRecovery("USB recovery command failed: " + command.trim());
                 return;
             }
-            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
+            if (op != SpectrumSource.OP_CONNECT)
+                this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
             this.emitError(op, REASON_ERROR, command);
             return;
         }
@@ -698,7 +701,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 this.retryRecovery("USB recovery command timed out: " + command.trim());
                 return;
             }
-            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
+            if (op != SpectrumSource.OP_CONNECT)
+                this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
             this.emitError(op, REASON_TIMEOUT, command);
             return;
         }
@@ -717,7 +721,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             case OP_ID_CHECK_STATUS:
                 if (this.stopOnReturn) {
                     if (COMMAND_RESULT_OK_COLLECTING.equals(answer)) {
-                        this.enqueueTextCommand("-sto", OP_ID_STOP_COLLECTING, SpectrumSource.OP_STOP);
+                        this.enqueueTextCommand("-sto", OP_ID_STOP_COLLECTING, SpectrumSource.OP_CONNECT);
                     } else {
                         this.stopOnReturn = false;
                         this.requestShowData(true);
