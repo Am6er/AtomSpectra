@@ -398,6 +398,8 @@ reports disconnected rather than leaving a pending automatic restart. Otherwise
 it reports connected idle. If the selected input remains present with microphone
 permission, cancellation is followed by `READY` with idle status. That readiness
 does not start capture; the service's current recording intent controls any start.
+Stop on a disconnected source that is not recovering is a no-op: it neither
+reports another disconnect nor connects the source.
 
 ```mermaid
 sequenceDiagram
