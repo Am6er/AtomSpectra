@@ -453,14 +453,19 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             if (minimumBufferSize <= 0)
                 throw new IllegalStateException("Audio buffer configuration is unsupported");
             this.bufferSize = minimumBufferSize * 2;
-            this.audioData = new int[this.bufferSize / 2];
+            // the recorder holds two read intervals and a non-blocking read drains all of it, so a read delayed by
+            // up to one interval loses no samples; a blocking read waits for a full buffer, so it stays one interval long
+            // and reads back-to-back
+            final int recorderBufferSize = this.bufferSize * 2;
+            final int readSize = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? recorderBufferSize : this.bufferSize;
+            this.audioData = new int[readSize / 2];
             this.audioZeroDataCount = 0;
             this.captureTaskIntervalMs = Math.max(1, 1000L * this.bufferSize / 2 / SAMPLE_RATE);
             this.captureElapsedSamples = 0;
             this.captureBinStartSamples = 0;
             this.elapsedSinceReportMs = 0;
             this.elapsedSinceScopeSnapshotMs = 0;
-            this.audioRecord = new AudioRecord(this.audioSourceMode, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, this.bufferSize);
+            this.audioRecord = new AudioRecord(this.audioSourceMode, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, recorderBufferSize);
             if (this.audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 throw new IllegalStateException("Audio recorder could not initialize");
             }
@@ -474,11 +479,12 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                 throw new IllegalStateException("Audio recording did not start");
             }
             AtomSpectraLog.detail(ctx, LogTag.AUDIO, "Audio capture configured: sampleRate=" + SAMPLE_RATE
-                    + ", bufferSize=" + this.bufferSize + ", source=" + this.audioSourceMode
+                    + ", bufferSize=" + this.bufferSize + ", recorderBufferSize=" + recorderBufferSize
+                    + ", source=" + this.audioSourceMode
                     + " (" + audioSourceName(this.audioSourceMode) + ")");
             final long generation = this.captureGeneration;
             final AudioRecord record = this.audioRecord;
-            final byte[] readBuffer = new byte[this.bufferSize];
+            final byte[] readBuffer = new byte[readSize];
             final long intervalMs = this.captureTaskIntervalMs;
             this.captureThread = new HandlerThread("AtomSpectra-Audio-Capture");
             this.captureThread.start();
@@ -501,7 +507,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                                 AtomSpectraAudioSource.this.failCapture("Audio processing failed: " + error);
                             }
                             if (generation == AtomSpectraAudioSource.this.captureGeneration) {
-                                long delay = Math.max(0, intervalMs - (SystemClock.elapsedRealtime() - readStarted));
+                                long delay = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                        ? Math.max(0, intervalMs - (SystemClock.elapsedRealtime() - readStarted)) : 0;
                                 handler.postDelayed(this, delay);
                             }
                         });
