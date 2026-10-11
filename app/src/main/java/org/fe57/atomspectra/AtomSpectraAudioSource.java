@@ -804,7 +804,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private void captureAudioChunk() {
         // First pass the 2 bytes into one sample - an extra loop, but avoids repeating the same sum many times during the filter below
         int highBitsShift = Math.max(0, 15 - ADC_EFF_BITS);
-        for (int i = 0, r = 0; i < this.audioBytesRead - 2; i += 2, r++) {
+        for (int i = 0, r = 0; i + 1 < this.audioBytesRead; i += 2, r++) {
             if (this.audioBytes[i] < 0)
                 this.audioData[r] = this.audioBytes[i] + 256;
             else
