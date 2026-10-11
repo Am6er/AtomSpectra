@@ -1115,7 +1115,7 @@ public class AtomSpectraSpectrogramView extends View {
                     segmentIndex, i * channelBinning + (channelBinning - 1));
         }
 
-        for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 100) {
+        for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 50) {
             while (allEnergies[channel] < energy) {
                 channel++;
             }
