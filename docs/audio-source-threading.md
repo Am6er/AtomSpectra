@@ -235,8 +235,9 @@ reference pulse, latest samples, total sample count and rolling count-rate bins
 all have the same owner.
 
 Recording time is derived from processed samples at 44,100 samples per second,
-not from the handler's wall-clock reporting interval. Count-rate bookkeeping
-retains its nominal capture/report cadence.
+not from the handler's wall-clock reporting interval. Count-rate bins likewise
+advance by processed samples: one bin per 100 ms of audio (4,410 samples),
+independent of read sizes.
 
 Reports begin after capture confirmation. `reportRunnable` executes every
 nominal 100 ms on the source handler. It advances counters for the configured

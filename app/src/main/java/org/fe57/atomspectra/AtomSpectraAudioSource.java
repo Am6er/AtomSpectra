@@ -46,6 +46,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private static final int AUDIO_ZERO_DATA_MAX_COUNT = 5;
 
     private static final int REPORT_PERIOD_MS = 100;
+    private static final int REPORT_PERIOD_SAMPLES = SAMPLE_RATE * REPORT_PERIOD_MS / 1000;
     // raw audio snapshots are independent of the report interval: fast enough for a scope view
     private static final int SCOPE_SNAPSHOT_PERIOD_MS = 200;
     private static final long DEVICE_RECOVERY_WINDOW_MS = 5000;
@@ -127,8 +128,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private double[] lastCapturedSamples = new double[0];
 
     private long captureTaskIntervalMs = 0;
-    private long captureElapsedMs = 0;
-    private long captureOldElapsedMs = 0;
+    private long captureElapsedSamples = 0;
+    private long captureBinStartSamples = 0;
     private int elapsedSinceReportMs = 0;
     private int elapsedSinceScopeSnapshotMs = 0;
 
@@ -455,8 +456,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             this.audioData = new int[this.bufferSize / 2];
             this.audioZeroDataCount = 0;
             this.captureTaskIntervalMs = Math.max(1, 1000L * this.bufferSize / 2 / SAMPLE_RATE);
-            this.captureElapsedMs = 0;
-            this.captureOldElapsedMs = 0;
+            this.captureElapsedSamples = 0;
+            this.captureBinStartSamples = 0;
             this.elapsedSinceReportMs = 0;
             this.elapsedSinceScopeSnapshotMs = 0;
             this.audioRecord = new AudioRecord(this.audioSourceMode, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, this.bufferSize);
@@ -853,10 +854,10 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             }
         }
 
-        this.captureElapsedMs += this.captureTaskIntervalMs;
-        // expected to be called 10 times per second
-        if ((this.captureOldElapsedMs + REPORT_PERIOD_MS) < this.captureElapsedMs) {
-            this.captureOldElapsedMs += REPORT_PERIOD_MS;
+        // count-rate bins follow the audio time actually processed, one bin per REPORT_PERIOD_MS of samples
+        this.captureElapsedSamples += sampleCount;
+        while (this.captureBinStartSamples + REPORT_PERIOD_SAMPLES <= this.captureElapsedSamples) {
+            this.captureBinStartSamples += REPORT_PERIOD_SAMPLES;
             this.cp1sPos = this.cp1sPos < (this.cp1sArray.length - 1) ? (this.cp1sPos + 1) : 0;
             this.cp1sArray[this.cp1sPos] = this.countsThisReportPeriod;
             this.countsThisReportPeriod = 0;
