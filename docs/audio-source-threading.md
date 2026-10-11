@@ -276,8 +276,9 @@ filter identifies the source object, not the capture generation.
 
 For a selected non-default input on API 23+, removal is matched against the
 current device token's ID and addition against its stable audio identity.
-Callbacks execute on `sourceHandler`. A returned device replaces the token used
-to prefer and verify routing.
+Callbacks execute on `sourceHandler`. Loss clears the device token, so a later
+`requestConnect()` looks the input up again and keeps waiting if it is still
+absent. A returned device supplies the new token used to prefer and verify routing.
 
 Recovery has two separate stages:
 

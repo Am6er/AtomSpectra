@@ -362,6 +362,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
         boolean wasCollecting = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING || this.recoveryCapture;
         this.stopCapture();
+        // the removed token is never valid again; requestConnect() or the device-add callback supplies a fresh one
+        this.device = null;
         if (!wasCollecting) {
             this.status = SpectrumSource.STATUS_DISCONNECTED;
             this.emitDisconnected("Audio device removed");
