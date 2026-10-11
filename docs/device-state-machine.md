@@ -98,9 +98,11 @@ without waiting for lifecycle locks, and `close()` waits for source cleanup.
 
 The device has five seconds to return during silent recovery. Once a permitted
 reconnect starts, a separate bounded 26.6-second deadline covers the four-command
-handshake and transient retries without resetting the budget. Commands still
-report busy; collecting confirmation completes recovery. Stop cancels recovery
-and retains a Stop-on-return request.
+handshake and transient retries without resetting the budget. The status stays
+`RECOVERING` through that handshake, and an ordinary handshake stays
+`CONNECTING`; collecting confirmation completes recovery. Stop cancels recovery
+and retains a Stop-on-return request, as does Stop during an ordinary handshake.
+A failed connect step releases the port, so Retry reconnects.
 
 ### Audio Source
 
