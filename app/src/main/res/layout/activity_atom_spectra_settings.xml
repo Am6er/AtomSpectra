@@ -871,8 +871,7 @@
                     android:layout_weight="4"
                     android:gravity="center"
                     android:text="@string/map_tile_basemap"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp" />
+                    android:textColor="#FFFFFF" />
 
                 <Button
                     android:id="@+id/incMapTileProviderButton"
