@@ -1027,6 +1027,9 @@ public class AtomSpectraService extends Service {
             case SpectrumSource.ACTION_SOURCE_DATA_SKIPPED:
                 onSourceDataSkipped();
                 break;
+            case SpectrumSource.ACTION_SOURCE_TELEMETRY:
+                onSourceTelemetry(active);
+                break;
             case SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED:
                 ToastHelper.showActionAndLog(this, LogTag.SERVICE, getStringOrDefaultLocale(R.string.cal_stored));
                 break;
@@ -1590,6 +1593,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DISCONNECTED);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_TELEMETRY);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED);
         intentFilter.addAction(Constants.ACTION.ACTION_START_RECORDING);
         intentFilter.addAction(Constants.ACTION.ACTION_STOP_RECORDING);
@@ -1700,8 +1704,6 @@ public class AtomSpectraService extends Service {
         if (!isDeviceConnected() || connectDecisionPending) {
             return;
         }
-        final SpectrumSource source = activeSource;
-        MeasurementData.instance.telemetry = source != null ? source.telemetry() : DeviceTelemetry.EMPTY;
         if (!is_recording) {
             showIdleSnapshot(intent);
             return;
@@ -2284,7 +2286,21 @@ public class AtomSpectraService extends Service {
     private void clearTelemetry() {
         if (MeasurementData.instance.telemetry == DeviceTelemetry.EMPTY) return;
         MeasurementData.instance.telemetry = DeviceTelemetry.EMPTY;
-        notifyDataAvailable();
+        notifyTelemetryUpdated();
+    }
+
+    private void onSourceTelemetry(SpectrumSource source) {
+        if (!isDeviceConnected() || connectDecisionPending || isTelemetryStale(deviceStatus)) {
+            return;
+        }
+        MeasurementData.instance.telemetry = source.telemetry();
+        notifyTelemetryUpdated();
+    }
+
+    private void notifyTelemetryUpdated() {
+        if (service_context != null) {
+            service_context.sendBroadcast(new Intent(Constants.ACTION.ACTION_TELEMETRY_UPDATED).setPackage(Constants.PACKAGE_NAME));
+        }
     }
 
     private void notifyDataAvailable() {
