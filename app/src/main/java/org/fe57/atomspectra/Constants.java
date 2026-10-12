@@ -201,6 +201,8 @@ public class Constants {
 
         // shared data changed, consumers re-read what they need
         String ACTION_DATA_AVAILABLE = "org.fe57.atomspectra.ACTION_DATA_AVAILABLE";
+        // payload-less: MeasurementData.telemetry changed
+        String ACTION_TELEMETRY_UPDATED = "org.fe57.atomspectra.ACTION_TELEMETRY_UPDATED";
         // payload-less: AudioScopeData has a new raw audio snapshot, sent by the audio source
         String ACTION_RAW_AUDIO_SNAPSHOT = "org.fe57.atomspectra.ACTION_RAW_AUDIO_SNAPSHOT";
 

@@ -604,6 +604,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private static IntentFilter makeAtomSpectraUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(Constants.ACTION.ACTION_TELEMETRY_UPDATED);
         intentFilter.addAction(AtomSpectraService.ACTION_RECORDING_SUSPENDED);
         intentFilter.addAction(AtomSpectraService.ACTION_RECORDING_RESUMED);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
@@ -644,6 +645,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
             if (Constants.ACTION.ACTION_DATA_AVAILABLE.equals(action)) {
                 refreshDisplay();
+            }
+            if (Constants.ACTION.ACTION_TELEMETRY_UPDATED.equals(action)) {
+                showTelemetry();
             }
             if (Constants.ACTION.ACTION_CLOSE_APP.equals(action)) {
                 finishAndRemoveTask();
@@ -686,6 +690,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private double[] shownCalibrationCoeffs = null;
     private int shownCalibrationChannel = -1;
 
+    private void showTelemetry() {
+        if (statusLine1Text != null) {
+            statusLine1Text.setText(MeasurementData.instance.telemetry.format(this));
+        }
+    }
+
     /**
      * Update the text fields and redraw the view from the shared data and the current view state.
      */
@@ -698,13 +708,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         int cp1s = MeasurementData.instance.cp1s;
         int cp1s_interval = MeasurementData.instance.cp1sInterval;
 
-        // TODO: rely on isRecording until we have separate event for telemetry
-        if (AtomSpectraService.isRecording()) {
-            statusLine1Text.setText(MeasurementData.instance.telemetry.format(this));
-        } else {
-            statusLine1Text.setText("");
-        }
-
+        showTelemetry();
 
         switch (display_mode) {
             case Constants.DISPLAY_MODE_SPECTRUM:
@@ -2135,8 +2139,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 startRecordingAfterDecision();
             } else {
                 sendBroadcast(new Intent(Constants.ACTION.ACTION_STOP_RECORDING).setPackage(Constants.PACKAGE_NAME));
-                // TODO: temporary cleanup because telemetry is now available only while recording
-                statusLine1Text.setText("");
             }
 
             return true;

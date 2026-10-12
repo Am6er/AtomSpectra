@@ -514,6 +514,7 @@ final class BluZBleSource implements SpectrumSource {
                 if (latest == null) return;
                 DeviceTelemetry previous = telemetry;
                 telemetry = new DeviceTelemetry(rssi, previous.temperatureC, previous.batteryPercent, previous.batteryVolts);
+                reply(new Intent(ACTION_SOURCE_TELEMETRY));
             });
         }
 
@@ -680,6 +681,7 @@ final class BluZBleSource implements SpectrumSource {
     private void updateTelemetry(BluZFrameDecoder.Frame frame) {
         Integer percent = frame.batteryVolts == null ? null : BluZFrameDecoder.batteryPercent(frame.batteryVolts);
         telemetry = new DeviceTelemetry(rssi, frame.temperatureC, percent, frame.batteryVolts);
+        reply(new Intent(ACTION_SOURCE_TELEMETRY));
         long now = SystemClock.elapsedRealtime();
         if (now - rssiReadAt < RSSI_INTERVAL_MS || (rssiReading && now - rssiReadAt < RSSI_STALE_MS) || gatt == null)
             return;
