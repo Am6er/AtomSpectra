@@ -287,8 +287,8 @@
     <string name="cursor_format">Cursor position:\nchannel <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> keV\n<xliff:g id="count">%3$d</xliff:g> imp</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
-    <string name="telemetry_rssi"><xliff:g id="rssi">%1$d</xliff:g>dBm</string>
-    <string name="telemetry_temperature"><xliff:g id="temperature">%1$d</xliff:g>°C</string>
+    <string name="telemetry_rssi"><xliff:g id="rssi">%1$d</xliff:g>㏈m</string>
+    <string name="telemetry_temperature"><xliff:g id="temperature">%1$d</xliff:g>°</string>
     <string name="telemetry_battery_percent"><xliff:g id="battery_percent">%1$d</xliff:g>%%</string>
     <string name="telemetry_battery_volts"><xliff:g id="battery_volts">%1$.2f</xliff:g>V</string>
     <string name="cps_delta_show">~cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
