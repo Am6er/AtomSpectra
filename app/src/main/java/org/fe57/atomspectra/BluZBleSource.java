@@ -661,6 +661,8 @@ final class BluZBleSource implements SpectrumSource {
                     && (lastError == null || lastError.op != OP_SETTINGS_SAVE)) {
                 resolutionAttempted = false;
             }
+            // an unconfirmed reset leaves a working link: the next frame shows the device is alive
+            if (lastError != null && lastError.op == OP_RESET) recover();
             if (lastError == null) updateObservedStatus();
             if (frame.isCollecting() && !resetPending) broadcastData(frame);
             if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted
