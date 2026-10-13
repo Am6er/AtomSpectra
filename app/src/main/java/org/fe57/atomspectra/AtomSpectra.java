@@ -192,6 +192,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         statusLine4Text = findViewById(R.id.statusLine4Text);
         briefNotification = findViewById(R.id.briefNotification);
         mAtomSpectraShapeView = findViewById(R.id.shape_area);
+        // shapes are built in view pixels: rebuild them once the view has its size
+        mAtomSpectraShapeView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+                refreshDisplay();
+            }
+        });
     }
 
     /**
