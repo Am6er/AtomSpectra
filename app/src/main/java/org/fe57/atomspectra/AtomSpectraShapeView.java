@@ -102,6 +102,30 @@ public class AtomSpectraShapeView extends View {
         super(context, attrs, defStyle);
     }
 
+    /**
+     * Plot margins and area from the current view size. Shapes are built in these pixel coordinates.
+     *
+     * @return the text height in pixels
+     */
+    private float updateGeometry() {
+        float ht_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, getResources().getDisplayMetrics());
+        margin_top = (int) (2 * ht_px);
+        margin_bottom = (int) (2 * ht_px);
+        margin_left = (int) (2 * ht_px);
+        margin_right = (int) (1 * ht_px);
+        width = getWidth() - margin_left - margin_right;
+        height = getHeight() - margin_top - margin_bottom;
+        return ht_px;
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        synchronized (renderSync) {
+            updateGeometry();
+        }
+    }
+
     public double X2scale(double X) {
         return (x_max_value - x_min_value) * (X - margin_left) / width + x_min_value;
     }
@@ -120,14 +144,7 @@ public class AtomSpectraShapeView extends View {
             int viewWidth = getWidth();
             int viewHeight = getHeight();
 
-            int ht = 12;
-            float ht_px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, ht, getResources().getDisplayMetrics());
-            margin_top = (int) (2 * ht_px);
-            margin_bottom = (int) (2 * ht_px);
-            margin_left = (int) (2 * ht_px);
-            margin_right = (int) (1 * ht_px);
-            width = viewWidth - margin_left - margin_right;
-            height = viewHeight - margin_top - margin_bottom;
+            float ht_px = updateGeometry();
             if (width <= 0 || height <= 0) {
                 // view too small (e.g. transient layout pass): nothing to plot
                 return;
