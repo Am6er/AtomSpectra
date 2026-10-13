@@ -662,7 +662,7 @@ final class BluZBleSource implements SpectrumSource {
                 resolutionAttempted = false;
             }
             if (lastError == null) updateObservedStatus();
-            if (frame.isCollecting()) broadcastData(frame);
+            if (frame.isCollecting() && !resetPending) broadcastData(frame);
             if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted
                     && !calibrationPending) {
                 resolutionAttempted = true;

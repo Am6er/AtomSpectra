@@ -105,6 +105,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     // skipping 2 just in case
     private static final int UNRELIABLE_DATA_REPORTS = 2;
     private int unreliableDataReportsLeft = 0;
+    // frames that precede the answer to -rst still carry the counts from before the reset
+    private boolean resetAnswerPending = false;
 
     // in rare cases spectrum data receiving randomly stops: the physical device keeps working, but
     // android delivers no data through the serial port and every command ends with a timeout. This
@@ -340,7 +342,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (this.rejectIfDisconnected(SpectrumSource.OP_RESET)) return;
 
         this.armUnreliableDataWindow();
-        this.enqueueTextCommand("-rst", OP_ID_RESET_HISTOGRAM, SpectrumSource.OP_RESET);
+        this.resetAnswerPending = true;
+        this.enqueueTextCommand("-rst",OP_ID_RESET_HISTOGRAM, SpectrumSource.OP_RESET);
     }
 
     @Override
@@ -488,6 +491,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private void cancelPendingCommands() {
         this.commands.clear();
+        this.resetAnswerPending = false;
         this.answerNumber = 0;
         this.pendingBatches.clear();
     }
@@ -679,6 +683,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         if (this.trackBatchAnswer(cmd.id, answer)) {
             return;
+        }
+
+        if (OP_ID_RESET_HISTOGRAM.equals(cmd.id)) {
+            this.resetAnswerPending = false;
         }
 
         String command = new String(cmd.command);
@@ -1711,7 +1719,12 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 }
 
                 Intent intent;
-                if (isHistogramComplete || this.allowIncompleteData) {
+                if (this.resetAnswerPending) {
+                    intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED).setPackage(Constants.PACKAGE_NAME);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_INPUT_TYPE, this.inputType());
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_INSTANCE_ID, this.instanceId);
+                    intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_SKIPPED_REASON, "Skip due to pending reset");
+                } else if (isHistogramComplete || this.allowIncompleteData) {
                     intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA).setPackage(Constants.PACKAGE_NAME);
                     intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM, this.histogram);
                     intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_CP1S, cps);
