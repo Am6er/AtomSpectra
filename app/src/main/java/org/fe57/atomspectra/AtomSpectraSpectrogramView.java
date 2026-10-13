@@ -416,8 +416,8 @@ public class AtomSpectraSpectrogramView extends View {
         return visibleEndChannel;
     }
 
-    public int getVisibleStartSegmentIndex() {
-        return visibleStartRow != null ? visibleStartRow.segmentIndex : 0;
+    public int getVisibleEndSegmentIndex() {
+        return visibleEndRow != null ? visibleEndRow.segmentIndex : 0;
     }
 
     @Override
@@ -1364,7 +1364,7 @@ public class AtomSpectraSpectrogramView extends View {
         int colBinsToRenderWidthPx = colBinsToRender * colBinWidthPx;
 
         setVisibleRangeSnapshot(virtualRowStart, virtualRowEnd, colBinStart, colBinEnd);
-        int axisSegmentIndex = getVisibleStartSegmentIndex();
+        int axisSegmentIndex = getVisibleEndSegmentIndex();
         rebuildEnergyTicks(axisSegmentIndex, colBinsCount);
 
         HashSet<Integer> visibleGaps = new HashSet<>();
@@ -1496,7 +1496,7 @@ public class AtomSpectraSpectrogramView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
-                // energy axis render — channel/energy labels follow the first visible segment
+                // energy axis render — channel/energy labels
                 int energyAxisBaseline = spgViewHeight + PADDING_TOP_PX;
                 int channelAxisBaseline = spgViewHeight + PADDING_TOP_PX + CHANNEL_AXIS_HEIGHT_PX / 2;
                 Spectrum baseSpectrum = segmentsData != null

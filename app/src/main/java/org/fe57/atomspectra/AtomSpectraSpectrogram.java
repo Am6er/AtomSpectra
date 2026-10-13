@@ -149,7 +149,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(
                 state.fgLeftBound.segmentIndex, state.fgLeftBound.rowIndex,
                 state.fgRightBound.segmentIndex, state.fgRightBound.rowIndex);
-        double[] energies = computeEnergiesArray(spgView.getVisibleStartSegmentIndex());
+        double[] energies = computeEnergiesArray(spgView.getVisibleEndSegmentIndex());
         preview.setScale(state.scale);
         preview.setSpectra(bg, fg, energies);
         preview.setVisibleChannelRange(spgView.getVisibleStartChannel(), spgView.getVisibleEndChannel());
