@@ -94,6 +94,7 @@
     <string name="device_recording_description">%1$s - идёт запись</string>
     <string name="device_busy_description">%1$s - выполняется команда</string>
     <string name="device_recovering_description">%1$s - восстановление соединения</string>
+    <string name="device_recovering_action_refused">Идёт восстановление соединения, повторите позже</string>
     <string name="device_error_description">%1$s - ошибка</string>
 
     <string name="nav_bar_spectrum">Спектр</string>
@@ -115,8 +116,10 @@
     <string name="hist_pause_update">Пауза</string>
     <string name="hist_continue_update">Продолжить</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
-    <string name="hist_ask_delete_text">Вы действительно хотите очистить данные спектра?</string>
-    <string name="hist_clear_button">Очистить спектр</string>
+    <string name="hist_ask_reset_text">Сброс счёта обнуляет гистограмму и поиск. Очистить всё — полный сброс.</string>
+    <string name="hist_clear_button">Очистить всё</string>
+    <string name="hist_stop_clear_all_button">Остановить и очистить всё</string>
+    <string name="hist_reset_button">Сбросить счёт</string>
     <string name="hist_add_mismatch_button">Всё равно объединить</string>
     <string name="hist_smooth">Сгладить</string>
     <string name="hist_unsmooth">Восстановить</string>

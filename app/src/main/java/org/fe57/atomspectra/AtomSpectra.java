@@ -1011,14 +1011,16 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     public void onClickDeleteSpc(View v) {
         DialogHelper.showStackedActions(this,
             getString(R.string.hist_ask_delete_title),
-            getString(R.string.hist_ask_delete_text),
+            getString(R.string.hist_ask_reset_text),
             true,
-            new DialogHelper.StackedAction(getString(R.string.hist_clear_button), () -> {
+            new DialogHelper.StackedAction(getString(R.string.hist_reset_button), () -> {
+                AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Reset spectrum counts");
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_RESET_SPECTRUM).setPackage(Constants.PACKAGE_NAME));
+            }),
+            new DialogHelper.StackedAction(
+                getString(AtomSpectraService.isRecording() ? R.string.hist_stop_clear_all_button : R.string.hist_clear_button), () -> {
                     AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Cleared spectrum");
-                    AtomSpectraIsotopes.showFoundIsotopes = false;
-                    AtomSpectraIsotopes.foundList.clear();
                     sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_SPECTRUM).setPackage(Constants.PACKAGE_NAME));
-                    ((TextView) findViewById(R.id.suffixView)).setText(getString(R.string.hist_suffix));
             }),
             new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
     }

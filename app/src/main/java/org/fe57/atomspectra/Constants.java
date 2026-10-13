@@ -217,6 +217,8 @@ public class Constants {
         String ACTION_DEVICE_CONNECT_DECISION = "org.fe57.atomspectra.ACTION_DEVICE_CONNECT_DECISION";
         String ACTION_DEVICE_STATE_CHANGED = "org.fe57.atomspectra.ACTION_DEVICE_STATE_CHANGED";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
+        // zeroes the histogram and search of the connected device
+        String ACTION_RESET_SPECTRUM = "org.fe57.atomspectra.ACTION_RESET_SPECTRUM";
 
         // read by AtomSpectra to actualize menu status after capturing status change
         String ACTION_UPDATE_MENU = "org.fe57.atomspectra.ACTION_UPDATE_MENU";
