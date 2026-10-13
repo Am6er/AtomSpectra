@@ -1598,6 +1598,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_START_RECORDING);
         intentFilter.addAction(Constants.ACTION.ACTION_STOP_RECORDING);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);
+        intentFilter.addAction(Constants.ACTION.ACTION_RESET_SPECTRUM);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
         intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
         intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
@@ -1624,6 +1625,7 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_CLEAR_SPECTRUM.equals(action)) {
+                if (refuseWhileRecovering()) return;
                 startStopRecording(false);
                 DeleteSpc();
                 updateMenu();
@@ -1635,9 +1637,15 @@ public class AtomSpectraService extends Service {
                 notifyDataAvailable();
                 return;
             }
+            if (Constants.ACTION.ACTION_RESET_SPECTRUM.equals(action)) {
+                if (refuseWhileRecovering() || connectDecisionPending) return;
+                resetSpectrum();
+                return;
+            }
             if (Constants.ACTION.ACTION_START_RECORDING.equals(action)) {
+                if (refuseWhileRecovering()) return;
                 if (isDeviceConnected() && deviceState() != DeviceState.BUSY
-                        && deviceState() != DeviceState.RECOVERING && !is_recording && !connectDecisionPending
+                        && !is_recording && !connectDecisionPending
                         && settleForeignSpectrumForStart(intent.getIntExtra(Constants.ACTION_PARAMETERS.START_FOREIGN_SPECTRUM,
                         Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_UNDECIDED))) {
                     startStopRecording(true);
@@ -1645,7 +1653,8 @@ public class AtomSpectraService extends Service {
                 return;
             }
             if (Constants.ACTION.ACTION_STOP_RECORDING.equals(action)) {
-                if (deviceState() != DeviceState.BUSY && deviceState() != DeviceState.RECOVERING) {
+                if (refuseWhileRecovering()) return;
+                if (deviceState() != DeviceState.BUSY) {
                     startStopRecording(false);
                 }
                 return;
@@ -1904,6 +1913,39 @@ public class AtomSpectraService extends Service {
         resetServiceSpectrum();
     }
 
+    // zeroes the histogram and search; the spectrogram file is closed and a new one starts with the next frame
+    private void resetSpectrum() {
+        AtomSpectraLog.action(service_context, LogTag.SERVICE, "Reset spectrum");
+        screenFromFile = false;
+        if (activeSource != null && isDeviceConnected()) {
+            activeSource.requestReset();
+        }
+        completeSpectrogramRecording();
+
+        synchronized (SpectrumData.instance.lock) {
+            final Spectrum foreground = SpectrumData.instance.foreground;
+            final String suffix = foreground.getSuffix();
+            final Calibration calibration = foreground.getSpectrumCalibration();
+            foreground.initSpectrumData(foreground.getDataArray().length, calibration)
+                    .setSuffix(suffix)
+                    .setDeviceInfo(inputDeviceInfo)
+                    .updateComments();
+        }
+        resetMeasurementState();
+        updateMenu();
+        notifyDataAvailable();
+    }
+
+    // forgets what was derived from the old counts: rates, found isotopes, change window
+    private void resetMeasurementState() {
+        MeasurementData.instance.resetCp1s();
+        resetDoseRateData();
+        AtomSpectraIsotopes.foundList.clear();
+        AtomSpectraIsotopes.showFoundIsotopes = false;
+        resetSpectrumChangeWindow();
+        skippedIncompleteHistogramCount = 0;
+    }
+
     // clears the service's own spectrum and baselines without touching the source
     private void resetServiceSpectrum() {
         screenFromDevice = false;
@@ -1911,9 +1953,6 @@ public class AtomSpectraService extends Service {
         completeSpectrogramRecording();
         AtomSpectraSpectrogramData.instance.clear();
         notifySpectrogramUpdated();
-
-        MeasurementData.instance.resetCp1s();
-        resetDoseRateData();
 
         // once the device has reported ready its count rules, otherwise the screen keeps its own
         final int channelCount = deviceChannelCount > 0 ? deviceChannelCount : SpectrumData.instance.getChannelCount();
@@ -1928,11 +1967,7 @@ public class AtomSpectraService extends Service {
                 .setDeviceInfo(inputDeviceInfo)
                 .updateComments();
         SpectrumData.instance.background.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
-        AtomSpectraIsotopes.foundList.clear();
-        AtomSpectraIsotopes.showFoundIsotopes = false;
-
-        resetSpectrumChangeWindow();
-        skippedIncompleteHistogramCount = 0;
+        resetMeasurementState();
         updateMenu();
     }
 
@@ -2576,6 +2611,13 @@ public class AtomSpectraService extends Service {
 
     private void toastAndLog(int res_id, AtomSpectraLog.Severity severity) {
         toastAndLog(getStringOrDefaultLocale(res_id), severity);
+    }
+
+    // the source refuses commands while it reconnects, so actions that pair one with a screen change are refused as a whole
+    private boolean refuseWhileRecovering() {
+        if (deviceState() != DeviceState.RECOVERING) return false;
+        toastAndLog(R.string.device_recovering_action_refused, AtomSpectraLog.Severity.WARNING);
+        return true;
     }
 
     private void onRecordingSuspended() {

@@ -100,8 +100,9 @@ The device has five seconds to return during silent recovery. Once a permitted
 reconnect starts, a separate bounded 26.6-second deadline covers the four-command
 handshake and transient retries without resetting the budget. The status stays
 `RECOVERING` through that handshake, and an ordinary handshake stays
-`CONNECTING`; collecting confirmation completes recovery. Stop cancels recovery
-and retains a Stop-on-return request, as does Stop during an ordinary handshake.
+`CONNECTING`; collecting confirmation completes recovery. A source that receives Stop
+during recovery cancels it and retains a Stop-on-return request, as it does for Stop during an ordinary handshake;
+the service currently refuses Stop in that state (see the Recovery Event Contract).
 A failed connect step releases the port, so Retry reconnects.
 
 ### Audio Source
@@ -211,13 +212,17 @@ the device returns.
 | Device unavailable or recovery budget exhausted | Set disconnected and emit `DISCONNECTED` |
 | Returned device is idle | Emit `DISCONNECTED`, then `READY` with idle status |
 | Terminal recovery failure | End recovery, emit `DISCONNECTED`, then `ERROR(OP_CONNECT)` |
-| Stop during recovery | End recovery and emit `DISCONNECTED`; use ordinary readiness if the device is available |
+| Stop during recovery | End recovery and emit `DISCONNECTED`; use ordinary readiness if the device is available. The source supports this, but the service does not forward Stop while `RECOVERING` (see below) |
 
 The service latches recovery independently of `deviceStatus`. It logs recovering
 once per episode and recovered once on the collecting status event, including
 after a busy handshake. Disconnect, readiness and terminal connect errors end
-the latch. Stop clears recovery intent and suppresses a late recovered log.
-There is no persistent recovered status.
+the latch. There is no persistent recovered status.
+
+While the state is `RECOVERING` the service refuses Start, Stop, Clear all and
+Reset counts with a toast; the sources reject commands in that state as well.
+Stop is refused too, so the cancel-by-Stop path above is unreachable from the UI:
+recovery ends by the device returning, expiring or failing, or by the user going offline or switching device (the lock is released).
 
 Transient reconnect/setup failures retry within the source's existing budget
 without terminal errors. Permission loss remains terminal and lets the service
@@ -347,6 +352,19 @@ A start request that needs a decision and carries none is refused, so no path re
 - Idle snapshots from a device never overwrite a loaded file, nor unsaved data the device did not produce.
 - Device data is ignored while a connect decision is pending.
 - Switching device never asks anything by itself: the screen stays as it is, and the question is asked when the new device connects (if it holds its own data) or when recording starts.
+
+### Clear and reset
+
+The clear button offers two actions, with or without a connected device.
+
+| Action | Broadcast | Effect |
+|---|---|---|
+| Clear all (Stop and clear all while recording) | `ACTION_CLEAR_SPECTRUM` | recording stops; spectrum, suffix, background, search data and spectrogram are cleared, calibration returns to the device's |
+| Reset counts | `ACTION_RESET_SPECTRUM` | a connected source is asked to reset (idle or collecting); the service zeroes the histogram and search; the device keeps its mode, and calibration, suffix, background and the shown spectrogram remain as they are |
+
+Without a connected device Reset counts only zeroes the screen. The spectrogram file is closed, because deltas against the old baseline would be negative; the next frame starts a new file.
+
+While the source is `RECOVERING`, Clear all, Reset counts, Start and Stop are refused with a toast: the source rejects commands during recovery, so changing only the screen would put it out of step with the device.
 
 ### Loading a file
 
