@@ -1524,11 +1524,11 @@ public class AtomSpectraSpectrogramView extends View {
                             int minorTick = 100;
                             if (channelBinning == 2) {
                                 majorTick = 500;
-                                minorTick = 250;
+                                minorTick = 100;
                             }
                             if (channelBinning == 4) {
                                 majorTick = 1000;
-                                minorTick = 500;
+                                minorTick = 250;
                             }
                             if (channelBinning > 4) {
                                 majorTick = 1500;
