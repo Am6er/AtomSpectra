@@ -27,8 +27,14 @@ public class DialogHelper {
 
     public static void showActionConfirmationDialog(@NonNull Context context, String message,
                                                     String positiveLabel, String negativeLabel, Runnable action) {
+        showActionConfirmationDialog(context, context.getString(R.string.dialog_confirm_title), message,
+                positiveLabel, negativeLabel, action);
+    }
+
+    public static void showActionConfirmationDialog(@NonNull Context context, String title, String message,
+                                                    String positiveLabel, String negativeLabel, Runnable action) {
         showStackedActions(context,
-                context.getString(R.string.dialog_confirm_title),
+                title,
                 message,
                 true,
                 new StackedAction(positiveLabel, action),

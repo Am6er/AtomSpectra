@@ -157,11 +157,12 @@ public class AtomSpectraSensitivity extends Activity {
             finish();
             return;
         }
-        DialogHelper.showActionConfirmationDialog(this,
+        DialogHelper.showStackedActions(this,
+                getString(R.string.sens_discard_title),
                 getString(R.string.sens_discard_message),
-                getString(R.string.dialog_discard_button),
-                getString(R.string.dialog_keep_editing_button),
-                this::finish);
+                true,
+                new DialogHelper.StackedAction(getString(R.string.dialog_keep_editing_button), null),
+                new DialogHelper.StackedAction(getString(R.string.sens_discard_button), this::finish));
     }
 
     private boolean isDirty() {

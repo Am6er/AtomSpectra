@@ -280,9 +280,8 @@ public class AtomSpectraService extends Service {
 
     // what the user has to decide before recording starts, see startDecision()
     public static final int START_FREE = 0;                 // nothing to ask
-    public static final int START_CONTINUE_OR_NEW = 1;      // a saved spectrum the device can continue
-    public static final int START_CONTINUE_OR_DISCARD = 2;  // an unsaved spectrum the device can continue
-    public static final int START_SAVE_OR_DISCARD = 3;      // an unsaved spectrum the device cannot continue
+    public static final int START_CONTINUE_OR_NEW = 1;      // a spectrum the device can continue
+    public static final int START_DISCARD_UNSAVED = 2;     // an unsaved spectrum the device cannot continue
 
     /**
      * SpectrumSource.TYPE_* of the locked device; stays set while the device is absent, TYPE_NONE when nothing is locked.
@@ -647,11 +646,10 @@ public class AtomSpectraService extends Service {
         if (!isDeviceConnected() || screenFromDevice || SpectrumData.instance.foreground.isEmpty()) {
             return START_FREE;
         }
-        final boolean unsaved = SpectrumData.instance.foreground.isChanged();
         if (canContinueScreenSpectrum()) {
-            return unsaved ? START_CONTINUE_OR_DISCARD : START_CONTINUE_OR_NEW;
+            return START_CONTINUE_OR_NEW;
         }
-        return unsaved ? START_SAVE_OR_DISCARD : START_FREE;
+        return SpectrumData.instance.foreground.isChanged() ? START_DISCARD_UNSAVED : START_FREE;
     }
 
     /**
