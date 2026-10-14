@@ -2868,6 +2868,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 UIViewState.instance.backgroundShow = false;
                 UIViewState.instance.backgroundSubtract = false;
                 UIViewState.instance.onChannelCountChanged(spectrum.getDataArray().length);
+                PrefHelper.setLastCalibrationChannel(this, SpectrumData.instance.lastCalibrationChannel);
                 SpectrumData.instance.background.setSuffix(getString(R.string.background_suffix));
                 SpectrumChangeData.instance.reset();
             } else {

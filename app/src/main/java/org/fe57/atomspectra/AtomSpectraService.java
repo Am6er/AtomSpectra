@@ -1974,6 +1974,7 @@ public class AtomSpectraService extends Service {
         UIViewState.instance.backgroundSubtract = false;
         if (resized) {
             UIViewState.instance.onChannelCountChanged(channelCount);
+            PrefHelper.setLastCalibrationChannel(this, SpectrumData.instance.lastCalibrationChannel);
         }
         SpectrumData.instance.foreground
                 .setSuffix(getStringOrDefaultLocale(R.string.hist_suffix))
