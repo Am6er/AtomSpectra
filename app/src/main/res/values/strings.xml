@@ -30,7 +30,8 @@
     <string name="action_save_options">Save options</string>
     <string name="action_buy_spectrometer">Buy a spectrometer</string>
     <string name="action_exit">Exit completely</string>
-    <string name="action_usb_attached">USB attached</string>
+    <string name="action_spectra_pro_reconnected">Spectra Pro reconnected</string>
+    <string name="spectra_pro_available">Spectra Pro is available to connect in the device list</string>
     <string name="action_usb_detached">USB detached</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
     <string name="device_default_microphone">Default microphone</string>
@@ -451,7 +452,7 @@
     <string name="cal_wrong_device">Wrong calibration from the device</string>
     <string name="cal_none_stored">No calibration is stored for this device</string>
     <string name="device_not_available">Device is not available</string>
-    <string name="cal_wrong_checksum">A bad calibration checksum from a USB device</string>
+    <string name="cal_wrong_checksum">Spectra Pro: bad calibration checksum</string>
     <string name="cal_stored">Calibration stored to the device</string>
     <string name="cal_wrong_store_device">Can\'t store calibration to the device</string>
     <string name="usb_below_minimal_version">Update device firmware to <xliff:g id="version">%1$d</xliff:g> or higher</string>
@@ -488,15 +489,16 @@
     <string name="log_audio_zero_buffers_detected">Zero audio buffer received several times in a row (%1$d), restarting audio</string>
     <string name="log_fetching_data_from_audio">Fetching data from audio source: %1$s, use raw audio: %2$b</string>
     <string name="log_wrong_sens_curve_pref">Unable to load device sensitivity curve from preferences, resetting to default</string>
-    <string name="log_usb_device_version_error">USB device version read error</string>
+    <string name="log_usb_device_version_error">Spectra Pro: firmware version read error</string>
     <string name="log_usb_device_version_unknown">USB device version is unknown</string>
     <string name="log_usb_answer_unexpected_registers">Unexpected \"-cal\" answer: %1$d registers instead of %2$d</string>
     <string name="log_usb_answer_missing">No answer from the USB device</string>
     <string name="log_usb_answer_malformed_calibration">Malformed \"-cal\" answer: registers are not valid hex</string>
-    <string name="log_usb_watchdog_no_data_triggered">USB data watchdog: no data from USB for %1$d seconds. Trying to reconnect and execute -sta command</string>
-    <string name="log_usb_watchdog_unable_open_device">USB data watchdog: unable to open USB device</string>
-    <string name="log_usb_watchdog_device_no_perm">USB data watchdog: no permission for USB device</string>
-    <string name="log_usb_watchdog_device_not_found">USB data watchdog: USB device not found</string>
+    <string name="log_spectra_pro_watchdog_no_data_triggered">Spectra Pro watchdog: no data for %1$d s, reconnecting…</string>
+    <string name="log_spectra_pro_watchdog_unable_open_device">Spectra Pro watchdog: unable to open device</string>
+    <string name="log_spectra_pro_watchdog_device_no_perm">Spectra Pro watchdog: no USB permission</string>
+    <string name="log_spectra_pro_watchdog_device_not_found">Spectra Pro watchdog: device not found</string>
+    <string name="log_spectra_pro_watchdog_reconnect_failed">Spectra Pro watchdog: reconnect failed (%1$s)</string>
     <string name="log_serial_packet_error">Serial packet error %1$s at %2$s, counting errors for the next %3$d min…</string>
     <string name="log_serial_errors_ongoing">Serial errors ongoing, total %1$s since %2$s, counting errors for next %3$d min…</string>
     <string name="log_serial_errors_resolved">No serial errors in the last %1$d min, total %2$s since %3$s</string>
