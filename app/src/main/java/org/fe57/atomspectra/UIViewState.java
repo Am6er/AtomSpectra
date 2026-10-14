@@ -94,13 +94,13 @@ public final class UIViewState {
         sp.edit().putInt(Constants.CONFIG.CONF_SCALE_FACTOR, getxScaleFactor()).commit();
     }
 
-    public int getFirstChannel() {
+    public int getVisibleFirstChannel() {
         synchronized (syncFactor) {
             return firstChannel;
         }
     }
 
-    public void setFirstChannel(int channel) {
+    public void setVisibleFirstChannel(int channel) {
         synchronized (syncFactor) {
             int channelCount = SpectrumData.instance.getChannelCount();
             int scaleMin = Constants.scaleMinFor(channelCount);
@@ -115,9 +115,9 @@ public final class UIViewState {
     }
 
     @SuppressLint("ApplySharedPref")
-    public void setFirstChannel(int channel, SharedPreferences sp) {
-        setFirstChannel(channel);
-        sp.edit().putInt(Constants.CONFIG.CONF_FIRST_CHANNEL, getFirstChannel()).commit();
+    public void setVisibleFirstChannel(int channel, SharedPreferences sp) {
+        setVisibleFirstChannel(channel);
+        sp.edit().putInt(Constants.CONFIG.CONF_FIRST_CHANNEL, getVisibleFirstChannel()).commit();
     }
 
     /**
@@ -181,7 +181,7 @@ public final class UIViewState {
         reducedTo = sp.getInt(Constants.CONFIG.CONF_REDUCED_TO, Constants.VIEW_CHANNELS_DEFAULT);
         displayDose = sp.getString(Constants.CONFIG.CONF_DISPLAY_DOSE, Constants.DISPLAY_DOSE_DEFAULT);
         setxScaleFactor(sp.getInt(Constants.CONFIG.CONF_SCALE_FACTOR, Constants.scaleMinFor(SpectrumData.instance.getChannelCount())));
-        setFirstChannel(sp.getInt(Constants.CONFIG.CONF_FIRST_CHANNEL, 0));
+        setVisibleFirstChannel(sp.getInt(Constants.CONFIG.CONF_FIRST_CHANNEL, 0));
 
         int compress;
         try {
