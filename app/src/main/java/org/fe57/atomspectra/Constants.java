@@ -131,7 +131,7 @@ public class Constants {
         String CONF_SEARCH_ALARM_VOLUME = "Interval Search Alarm Volume";
         String CONF_SEARCH_DETECTION_LEVEL = "Interval Search Detection Level";
         String CONF_COMPRESS_GRAPH = "Compress graph";
-        String CONF_LAST_CHANNEL = "Last calibration channel";
+        String CONF_IGNORED_TOP_CHANNELS = "Ignored top channels";
         String CONF_MAX_POLI_FACTOR = "Polinom factor";
         String CONF_GOLAY_WINDOW = "Golay window";
         String CONF_AUTO_UPDATE_ISOTOPES = "Auto update isotopes";

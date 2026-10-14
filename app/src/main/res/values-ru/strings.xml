@@ -398,8 +398,8 @@
     <string name="ask_noise_text">Введите новое значение:</string>
     <string name="ask_channel_title">Выбрать канал курсора</string>
     <string name="ask_channel_text">Новый канал (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
-    <string name="ask_last_channel_title">Введите номер канала</string>
-    <string name="ask_last_channel_text">Новый канал (<xliff:g id="min_channel">%1$d</xliff:g>-<xliff:g id="last_channel">%2$d</xliff:g>):</string>
+    <string name="ask_last_channel_title">Не учитывать последние каналы</string>
+    <string name="ask_last_channel_text">Сколько каналов в конце спектра не учитывать:</string>
     <string name="ask_delete_calibration_line_title">Удалить линию</string>
     <string name="ask_delete_calibration_line_text">Удалить канал %1$d (%2$.2f кэВ) из списка?</string>
     <string name="ask_select_interval_title">Выбрать интервал для поиска</string>

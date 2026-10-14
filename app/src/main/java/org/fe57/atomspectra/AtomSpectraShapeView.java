@@ -721,7 +721,7 @@ public class AtomSpectraShapeView extends View {
             this.firstChannel = firstChannel;
             this.numValues = 1 << (Constants.SCALE_MAX - scaleFactor - 1);
             this.energyAxis = energyAxis;
-            this.lastChannel = spectrum.lastCalibrationChannel;
+            this.lastChannel = spectrum.getLastCalibrationChannel();
             int endChannel = firstChannel + (Constants.WINDOW_OUTPUT_SIZE << (Constants.SCALE_MAX - scaleFactor));
             if (energyAxis) {
                 Calibration calibration = spectrum.foreground.getSpectrumCalibration();

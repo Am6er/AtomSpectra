@@ -113,13 +113,13 @@ public class PrefHelper {
         return calibration;
     }
 
-    public static int getLastCalibrationChannel(@NonNull Context context, int defaultChannelCount) {
-        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_LAST_CHANNEL, defaultChannelCount);
+    public static int getIgnoredTopChannels(@NonNull Context context) {
+        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_IGNORED_TOP_CHANNELS, 0);
     }
 
-    public static void setLastCalibrationChannel(@NonNull Context context, int channel) {
+    public static void setIgnoredTopChannels(@NonNull Context context, int count) {
         getASSharedPreferences(context).edit()
-                .putInt(Constants.CONFIG.CONF_LAST_CHANNEL, channel)
+                .putInt(Constants.CONFIG.CONF_IGNORED_TOP_CHANNELS, count)
                 .apply();
     }
 

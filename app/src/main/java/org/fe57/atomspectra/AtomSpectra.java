@@ -598,7 +598,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private void updateCountDependentMenu() {
         if (app_menu == null) return;
         final boolean enable_background = !SpectrumData.instance.background.isEmpty();
-        app_menu.findItem(R.id.action_cal_channel).setTitle(getString(R.string.calibration_channel_format, SpectrumData.instance.lastCalibrationChannel));
+        app_menu.findItem(R.id.action_cal_channel).setTitle(getString(R.string.calibration_channel_format, SpectrumData.instance.getLastCalibrationChannel()));
         app_menu.findItem(R.id.action_background_show).setChecked(UIViewState.instance.backgroundShow);
         app_menu.findItem(R.id.action_background_show).setEnabled(enable_background);
         app_menu.findItem(R.id.action_background_suffix).setEnabled(enable_background);
@@ -838,7 +838,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         }
 
         double[] coeffs = SpectrumData.instance.foreground.getSpectrumCalibration().getCoeffArray(5);
-        int lastChannel = SpectrumData.instance.lastCalibrationChannel;
+        int lastChannel = SpectrumData.instance.getLastCalibrationChannel();
         if (lastChannel == shownCalibrationChannel && Arrays.equals(coeffs, shownCalibrationCoeffs)) {
             return;
         }
@@ -1503,7 +1503,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     };
 
     private void showCursorInfo(boolean requestUpdateGraph) {
-        if (UIViewState.instance.cursorX >= 0 && UIViewState.instance.cursorX >= UIViewState.instance.getFirstChannel() / SpectrumData.instance.getChannelCount() * SpectrumData.instance.lastCalibrationChannel && !UIViewState.instance.showCalibrationFunction) {
+        if (UIViewState.instance.cursorX >= 0 && UIViewState.instance.cursorX >= UIViewState.instance.getFirstChannel() && UIViewState.instance.cursorX < SpectrumData.instance.getLastCalibrationChannel() && !UIViewState.instance.showCalibrationFunction) {
             mCursorView.setText(getString(R.string.cursor_format, UIViewState.instance.cursorX, SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy(UIViewState.instance.cursorX), SpectrumData.instance.foreground.getDataArray()[UIViewState.instance.cursorX]));
             mCursorView.setVisibility(TextView.VISIBLE);
             mSuffixLayoutView.setVisibility(LinearLayout.VISIBLE);
@@ -2342,7 +2342,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             final MenuItem menuVal = item;
             final AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle(getString(R.string.ask_last_channel_title));
-            alert.setMessage(getString(R.string.ask_last_channel_text, Constants.MIN_LAST_CALIBRATION_CHANNEL, SpectrumData.instance.getChannelCount()));
+            alert.setMessage(getString(R.string.ask_last_channel_text));
 
             final EditText input = new EditText(this);
             input.setKeyListener(new NumberKeyListener() {
@@ -2358,6 +2358,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 }
             });
             input.setImeOptions(EditorInfo.IME_ACTION_DONE);
+            input.setText(String.valueOf(SpectrumData.instance.ignoredTopChannels));
+            input.selectAll();
             alert.setView(input);
             final Context context = this;
             alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
@@ -2368,8 +2370,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     ToastHelper.showErrorAndLog(context, LogTag.SPECTRA_ACT, getString(R.string.cal_error_number));
                     return;
                 }
-                SpectrumData.instance.applyLastCalibrationChannel(context, iValue);
-                menuVal.setTitle(getString(R.string.calibration_channel_format, SpectrumData.instance.lastCalibrationChannel));
+                SpectrumData.instance.applyIgnoredTopChannels(context, iValue);
+                PrefHelper.setIgnoredTopChannels(context, SpectrumData.instance.ignoredTopChannels);
+                menuVal.setTitle(getString(R.string.calibration_channel_format, SpectrumData.instance.getLastCalibrationChannel()));
             });
             alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
 
@@ -2868,11 +2871,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 UIViewState.instance.backgroundShow = false;
                 UIViewState.instance.backgroundSubtract = false;
                 UIViewState.instance.onChannelCountChanged(spectrum.getDataArray().length);
-                PrefHelper.setLastCalibrationChannel(this, SpectrumData.instance.lastCalibrationChannel);
                 SpectrumData.instance.background.setSuffix(getString(R.string.background_suffix));
                 SpectrumChangeData.instance.reset();
             } else {
-                SpectrumData.instance.applyLastCalibrationChannel(this, SpectrumData.instance.lastCalibrationChannel);
+                SpectrumData.instance.applyIgnoredTopChannels(this, SpectrumData.instance.ignoredTopChannels);
             }
             ((TextView) findViewById(R.id.suffixView)).setText(spectrum.getSuffix());
             updateCountDependentMenu();
