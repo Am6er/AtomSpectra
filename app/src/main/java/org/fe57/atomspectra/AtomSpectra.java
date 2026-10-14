@@ -1212,23 +1212,23 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 Log.d(TAG, "FLING!  ");
                 try {
                     if (detector.isSwipeLeft(e1, e2, velocityX)) {
-                        new_channel = UIViewState.instance.getFirstChannel() + Constants.WINDOW_OUTPUT_SIZE / 4 * (1 << (Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor()));
+                        new_channel = UIViewState.instance.getVisibleFirstChannel() + Constants.WINDOW_OUTPUT_SIZE / 4 * (1 << (Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor()));
 
                         if (new_channel + Constants.WINDOW_OUTPUT_SIZE * (1 << (Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor())) > SpectrumData.instance.getChannelCount()) {
                             new_channel = SpectrumData.instance.getChannelCount() - Constants.WINDOW_OUTPUT_SIZE * (1 << (Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor()));
                         }
 
-                        UIViewState.instance.setFirstChannel(new_channel, sharedPreferences);
+                        UIViewState.instance.setVisibleFirstChannel(new_channel, sharedPreferences);
                         refreshDisplay();
                         findViewById(R.id.shape_area).performClick();
                     } else if (detector.isSwipeRight(e1, e2, velocityX)) {
-                        new_channel = UIViewState.instance.getFirstChannel() - Constants.WINDOW_OUTPUT_SIZE / 4 * (1 << (Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor()));
+                        new_channel = UIViewState.instance.getVisibleFirstChannel() - Constants.WINDOW_OUTPUT_SIZE / 4 * (1 << (Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor()));
 
                         if (new_channel < 0) {
                             new_channel = 0;
                         }
 
-                        UIViewState.instance.setFirstChannel(new_channel, sharedPreferences);
+                        UIViewState.instance.setVisibleFirstChannel(new_channel, sharedPreferences);
                         refreshDisplay();
                         findViewById(R.id.shape_area).performClick();
                     } else if (detector.isSwipeDown(e1, e2, velocityY)) {
@@ -1351,7 +1351,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                     if (!getInside) {
                         dateChannelChanged = System.currentTimeMillis();
                         seekChannel.setVisibility(SeekBar.VISIBLE);
-                        if (UIViewState.instance.showPlusMinusButtons || (UIViewState.instance.cursorX < UIViewState.instance.getFirstChannel())) {
+                        if (UIViewState.instance.showPlusMinusButtons || (UIViewState.instance.cursorX < UIViewState.instance.getVisibleFirstChannel())) {
                             if (UIViewState.instance.energyAxis) {
                                 UIViewState.instance.cursorX = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(mAtomSpectraShapeView.X2scale(e1.getX()));
                             } else {
@@ -1446,14 +1446,14 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                         //showToast("Zoom in X");
                         if (UIViewState.instance.getxScaleFactor() > Constants.scaleMinFor(SpectrumData.instance.getChannelCount())) {
 
-                            if (UIViewState.instance.getFirstChannel() + Constants.WINDOW_OUTPUT_SIZE / 2 * (1 << (1 + Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor())) > SpectrumData.instance.getChannelCount()) {
+                            if (UIViewState.instance.getVisibleFirstChannel() + Constants.WINDOW_OUTPUT_SIZE / 2 * (1 << (1 + Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor())) > SpectrumData.instance.getChannelCount()) {
                                 new_channel = SpectrumData.instance.getChannelCount() - Constants.WINDOW_OUTPUT_SIZE / 2 * (1 << (1 + Constants.SCALE_MAX - UIViewState.instance.getxScaleFactor()));
 
                                 if (new_channel < 0) {
                                     new_channel = 0;
                                 }
 
-                                UIViewState.instance.setFirstChannel(new_channel, sharedPreferences);
+                                UIViewState.instance.setVisibleFirstChannel(new_channel, sharedPreferences);
                             }
 
                             UIViewState.instance.setxScaleFactor(UIViewState.instance.getxScaleFactor() - 1, sharedPreferences);
@@ -1503,7 +1503,8 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     };
 
     private void showCursorInfo(boolean requestUpdateGraph) {
-        if (UIViewState.instance.cursorX >= 0 && UIViewState.instance.cursorX >= UIViewState.instance.getFirstChannel() && UIViewState.instance.cursorX < SpectrumData.instance.getLastCalibrationChannel() && !UIViewState.instance.showCalibrationFunction) {
+        final int cursorLimit = UIViewState.instance.energyAxis ? SpectrumData.instance.getLastCalibrationChannel() : SpectrumData.instance.getChannelCount();
+        if (UIViewState.instance.cursorX >= 0 && UIViewState.instance.cursorX >= UIViewState.instance.getVisibleFirstChannel() && UIViewState.instance.cursorX < cursorLimit && !UIViewState.instance.showCalibrationFunction) {
             mCursorView.setText(getString(R.string.cursor_format, UIViewState.instance.cursorX, SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy(UIViewState.instance.cursorX), SpectrumData.instance.foreground.getDataArray()[UIViewState.instance.cursorX]));
             mCursorView.setVisibility(TextView.VISIBLE);
             mSuffixLayoutView.setVisibility(LinearLayout.VISIBLE);
