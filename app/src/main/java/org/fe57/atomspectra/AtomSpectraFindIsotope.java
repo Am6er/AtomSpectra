@@ -27,13 +27,21 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedListener {
-    private static final int MIN_COMPRESSION = 10;
-    private static final int MAX_COMPRESSION = 13;
+    private static final int POLI_ORDER = 5;
+    private static final double REFERENCE_ENERGY = 662.0;
+    private static final int FALLBACK_WINDOW_DIVIDER = 128;
+    private static final int MIN_WINDOW = 5;
+    private static final int MAX_WINDOW = 200;
+    private static final float MIN_RESOLUTION = 1.0f;
+    private static final float MAX_RESOLUTION = 30.0f;
+    private static final float MIN_THRESHOLD = 1.0f;
+    private static final float MAX_THRESHOLD = 20.0f;
 
-    private int compression = MAX_COMPRESSION;
-    private int poli_order = 5;
+    private static boolean fallbackWarned = false;
+
+    private int[] channelOptions;
+    private int channels = Constants.SEARCH_CHANNELS_DEFAULT;
     private int library = 0;
-    private final static double IRREG_COEFF = 1.5;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -47,45 +55,32 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         super.onCreate(savedInstanceState);
         SharedPreferences sp = PrefHelper.getASSharedPreferences(this);
         setContentView(R.layout.activity_atom_spectra_find_isotope);
-        ((EditText) findViewById(R.id.editWindow)).setText(String.format(Locale.getDefault(), "%d", sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT)));
+        ((EditText) findViewById(R.id.editResolution)).setText(String.format(Locale.getDefault(), "%.1f", sp.getFloat(Constants.SEARCH.PREF_RESOLUTION, Constants.RESOLUTION_DEFAULT)));
         ((EditText) findViewById(R.id.editTolerance)).setText(String.format(Locale.getDefault(), "%.2f", sp.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));
-        ((EditText) findViewById(R.id.editThreshold)).setText(String.format(Locale.getDefault(), "%.2f", sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));
+        ((EditText) findViewById(R.id.editThreshold)).setText(String.format(Locale.getDefault(), "%.1f", sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));
         ((Button) findViewById(R.id.showIsotopes)).setText(AtomSpectraIsotopes.showFoundIsotopes ? getString(R.string.show_no_isotopes) : getString(R.string.show_isotopes));
-        compression = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_COMPRESSION, MAX_COMPRESSION), MIN_COMPRESSION, MAX_COMPRESSION);
-        poli_order = sp.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT);
         library = sp.getInt(Constants.SEARCH.PREF_LIBRARY, 0);
 
         Spinner spinner = findViewById(R.id.selectIsotopeList);
         spinner.setOnItemSelectedListener(this);
         spinner.setSelection(library);
 
-        spinner = findViewById(R.id.selectCompressionList);
-        ArrayAdapter<CharSequence> adapter;
-        //do not touch this case
-        switch (MAX_COMPRESSION) {
-            case 13:
-                adapter = ArrayAdapter.createFromResource(this, R.array.find_isotopes_bits_13, android.R.layout.simple_spinner_item);
-                break;
-            case 14:
-                adapter = ArrayAdapter.createFromResource(this, R.array.find_isotopes_bits_14, android.R.layout.simple_spinner_item);
-                break;
-            case 15:
-                adapter = ArrayAdapter.createFromResource(this, R.array.find_isotopes_bits_15, android.R.layout.simple_spinner_item);
-                break;
-            case 16:
-                adapter = ArrayAdapter.createFromResource(this, R.array.find_isotopes_bits_16, android.R.layout.simple_spinner_item);
-                break;
-            default:
-                adapter = ArrayAdapter.createFromResource(this, R.array.find_isotopes_bits_13, android.R.layout.simple_spinner_item);
+        spinner = findViewById(R.id.selectChannelsList);
+        channelOptions = getChannelOptions(SpectrumData.instance.getChannelCount());
+        String[] channelLabels = new String[channelOptions.length];
+        int selectedChannels = 0;
+        int savedChannels = sp.getInt(Constants.SEARCH.PREF_CHANNELS, Constants.SEARCH_CHANNELS_DEFAULT);
+        for (int i = 0; i < channelOptions.length; i++) {
+            channelLabels[i] = String.format(Locale.getDefault(), "%d", channelOptions[i]);
+            if (StrictMath.abs(channelOptions[i] - savedChannels) < StrictMath.abs(channelOptions[selectedChannels] - savedChannels))
+                selectedChannels = i;
         }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, channelLabels);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
-        spinner.setSelection(compression - MIN_COMPRESSION);
-
-        spinner = findViewById(R.id.selectOrderList);
-        spinner.setOnItemSelectedListener(this);
-        spinner.setSelection(poli_order - 2);
+        spinner.setSelection(selectedChannels);
+        channels = channelOptions[selectedChannels];
 
         updateIsotopeList();
 
@@ -158,76 +153,105 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         return res;
     }
 
+    public static int[] getChannelOptions(int channelCount) {
+        int count = 0;
+        for (int n = channelCount; n >= Constants.SEARCH_MIN_CHANNELS; n >>= 1)
+            count++;
+        if (count == 0)
+            return new int[]{channelCount};
+        int[] options = new int[count];
+        for (int i = 0, n = channelCount; i < count; i++, n >>= 1)
+            options[count - 1 - i] = n;
+        return options;
+    }
+
+    // half-window (in compressed channels) for the peak of the given resolution at the reference energy
+    private static int calcWindow(Context context, Calibration calibration, double resolution, int numScale) {
+        double fwhm = REFERENCE_ENERGY * resolution / 100.0;
+        int lastChannel = SpectrumData.instance.lastCalibrationChannel;
+        double low = calibration.toChannelDouble(REFERENCE_ENERGY - fwhm / 2.0, lastChannel);
+        double high = calibration.toChannelDouble(REFERENCE_ENERGY + fwhm / 2.0, lastChannel);
+        if (low < 0 || high >= SpectrumData.instance.getChannelCount() || high <= low) {
+            //called every second, warn once until the calibration becomes usable again
+            if (!fallbackWarned) {
+                fallbackWarned = true;
+                ToastHelper.showWarningAndLog(context, LogTag.FIND_ISOTOPE_ACT, R.string.find_warning_window);
+            }
+            return Constants.MinMax(SpectrumData.instance.getChannelCount() / numScale / FALLBACK_WINDOW_DIVIDER, MIN_WINDOW, MAX_WINDOW);
+        }
+        fallbackWarned = false;
+        return Constants.MinMax((int) Math.rint((high - low) / numScale / 2.0), MIN_WINDOW, MAX_WINDOW);
+    }
+
     public static void updateFoundIsotopes(Context context) {
         SharedPreferences sp = PrefHelper.getASSharedPreferences(context);
 
-        int window = sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT);
-        window = Constants.MinMax(window, 5, 200);
-
-        float threshold = sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT);
-        threshold = (float) Math.rint(Constants.MinMax(threshold * 100, 0, 1000000)) / 100.0f;
+        float resolution = Constants.MinMax(sp.getFloat(Constants.SEARCH.PREF_RESOLUTION, Constants.RESOLUTION_DEFAULT), MIN_RESOLUTION, MAX_RESOLUTION);
+        float threshold = Constants.MinMax(sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT), MIN_THRESHOLD, MAX_THRESHOLD);
 
         float tolerance = sp.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT);
         tolerance = (float) Math.rint(Constants.MinMax(tolerance * 100, 1, 5000)) / 100.0f;
         tolerance /= 100.0;
 
-        int compression = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_COMPRESSION, MAX_COMPRESSION), MIN_COMPRESSION, MAX_COMPRESSION);
-        int poli_order = sp.getInt(Constants.SEARCH.PREF_ORDER, Constants.ORDER_DEFAULT);
         int library = sp.getInt(Constants.SEARCH.PREF_LIBRARY, 0);
 
-        int num_scale = 1 << (MAX_COMPRESSION - compression);
-        int num_lines = SpectrumData.instance.getChannelCount() / num_scale;
+        int channelCount = SpectrumData.instance.getChannelCount();
+        int channels = Constants.MinMax(sp.getInt(Constants.SEARCH.PREF_CHANNELS, Constants.SEARCH_CHANNELS_DEFAULT), StrictMath.min(Constants.SEARCH_MIN_CHANNELS, channelCount), channelCount);
+        int num_scale = StrictMath.max(1, channelCount / channels);
+        int num_lines = channelCount / num_scale;
         long[] chan_raw = new long[num_lines];
+        double[] variance = new double[num_lines];
+
+        int window = calcWindow(context, SpectrumData.instance.foreground.getSpectrumCalibration(), resolution, num_scale);
 
         if (UIViewState.instance.backgroundSubtract) {
             double backgroundScale = SpectrumData.instance.foreground.getSpectrumTime() / SpectrumData.instance.background.getSpectrumTime();
             long[] data = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(SpectrumData.instance.background.getDataArray(), SpectrumData.instance.background.getSpectrumCalibration(), SpectrumData.instance.lastCalibrationChannel);
             for (int i = 0; i < num_lines; i++) {
-                for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
+                for (int j = i * num_scale; j < (i + 1) * num_scale; j++) {
                     chan_raw[i] += StrictMath.max(0.0, SpectrumData.instance.foreground.getDataArray()[j] - data[j] * backgroundScale);
+                    variance[i] += SpectrumData.instance.foreground.getDataArray()[j] + data[j] * backgroundScale * backgroundScale;
+                }
             }
         } else {
             for (int i = 0; i < num_lines; i++) {
-                for (int j = i * num_scale; j < (i + 1) * num_scale; j++)
+                for (int j = i * num_scale; j < (i + 1) * num_scale; j++) {
                     chan_raw[i] += SpectrumData.instance.foreground.getDataArray()[j];
+                    variance[i] += SpectrumData.instance.foreground.getDataArray()[j];
+                }
             }
         }
-        //filter for high single peaks or drops
-//        for (int i = 0; i < num_lines; i++) {
-//            if (i < 2 || i >= (num_lines - 2)) {
-//                channels[i] = chan_raw[i];
-//            } else {
-//                long mid = (chan_raw[i - 2] + chan_raw[i - 1] + chan_raw[i] + chan_raw[i + 1] + chan_raw[i + 2]) / 5;
-//                long mid_without = (chan_raw[i - 2] + chan_raw[i - 1] + chan_raw[i + 1] + chan_raw[i + 2]) / 4;
-//                if (chan_raw[i] > mid_without * IRREG_COEFF || chan_raw[i] < mid_without / IRREG_COEFF)
-//                    channels[i] = mid_without;
-//                else
-//                    channels[i] = mid;
-//            }
-//        }
-        //search for lines
-        double max_energy = 0;
+        //counts are Poisson distributed, empty channels still carry uncertainty
         for (int i = 0; i < num_lines; i++)
-            max_energy = StrictMath.max(chan_raw[i], max_energy);
-//        Matrix SavitzkyGolay = getSavitzkyGolayMatrix(poli_order, window);
+            variance[i] = StrictMath.max(variance[i], 1.0);
+        //search for lines
         double[] coeffs = new double[2 * window + 1];
+        double[] coeffsSquare = new double[2 * window + 1];
         int shift_window, old_window = 0;
-        int channel_0 = StrictMath.max(100, SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(662.0));
+        int channel_0 = StrictMath.max(1, SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(REFERENCE_ENERGY) / num_scale);
         double[] peak_array = new double[num_lines];
         for (int i = 0; i < num_lines; i++) {
             shift_window = StrictMath.max((int) ((0.3 + 0.7 * StrictMath.sqrt(i / (double) channel_0)) * window), 4);
-            shift_window = StrictMath.min(shift_window, 200);
+            shift_window = StrictMath.min(shift_window, MAX_WINDOW);
             if (old_window != shift_window) {
                 old_window = shift_window;
-                coeffs = calcSavitzkyGolayWeight(1, poli_order, shift_window);
+                coeffs = calcSavitzkyGolayWeight(1, POLI_ORDER, shift_window);
+                coeffsSquare = new double[coeffs.length];
+                for (int j = 0; j < coeffs.length; j++)
+                    coeffsSquare[j] = coeffs[j] * coeffs[j];
             }
             if (i < shift_window)
                 continue;
             if (i >= (num_lines - shift_window))
                 break;
+            double slope = 0.0;
+            double slopeVariance = 0.0;
             for (int j = i - shift_window; j <= i + shift_window; j++) {
-                peak_array[i] += chan_raw[j] * coeffs[j - (i - shift_window)];
+                slope += chan_raw[j] * coeffs[j - (i - shift_window)];
+                slopeVariance += variance[j] * coeffsSquare[j - (i - shift_window)];
             }
+            //slope in units of its standard deviation
+            peak_array[i] = slope / StrictMath.sqrt(slopeVariance);
         }
         double prev_Peak = 0.0;
         double cur_Peak;
@@ -235,7 +259,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         double peak_energy;
         long max_Channel = 0;
         AtomSpectraIsotopes.foundList.clear();
-        for (int i = window; i < num_lines - window; i++) {
+        for (int i = 1; i < num_lines; i++) {
             cur_Peak = peak_array[i];
             if (max_Peak < cur_Peak) {
                 max_Peak = cur_Peak;
@@ -243,12 +267,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
             if (max_Channel < chan_raw[i]) {
                 max_Channel = chan_raw[i];
             }
-//            if ((prev_Peak > 0.0) && (cur_Peak < 0.0) && (channels[i] > 3) && (max_Peak > threshold / Math.cbrt(max_energy / max_Channel) / Math.sqrt((i + 100.0) / 100.0)))
-//            if (prev_Peak > 0.0 && cur_Peak < 0.0 && channels[i] > 3 && max_Peak > threshold / Math.sqrt(max_energy / channels[i] * (i + 100.0) / 100.0))
-//            if (prev_Peak > 0.0 && cur_Peak < 0.0 && channels[i] > 3 && max_Peak > threshold / (Math.sqrt(max_energy / channels[i]) * (i + 100.0) / 100.0))
-//            if (prev_Peak > 0.0 && cur_Peak < 0.0 && channels[i] > 3 && max_Peak > threshold / (max_energy / channels[i] * Math.sqrt((i + 100.0) / 100.0)))
             if (prev_Peak > 0.0 && cur_Peak < 0.0 && max_Channel > 3 && max_Peak > threshold) {
-//            if (prev_Peak > 0.0 && cur_Peak < 0.0 && max_Channel > 5 && (golay_array[i] > threshold * square_golay_array[i]) ) {
                 if (chan_raw[i] > chan_raw[i - 1]) {
                     peak_energy = SpectrumData.instance.foreground.getSpectrumCalibration().toEnergy(i * num_scale);
                 } else {
@@ -286,17 +305,17 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
     @SuppressLint("RtlHardcoded")
     public void onClickFindIsotopes(View view) {
         SharedPreferences sp = PrefHelper.getASSharedPreferences(this);
-        int window = sp.getInt(Constants.SEARCH.PREF_WINDOW_SIZE, Constants.WINDOW_SEARCH_DEFAULT);
+        float resolution = sp.getFloat(Constants.SEARCH.PREF_RESOLUTION, Constants.RESOLUTION_DEFAULT);
         try {
-            Number val = NumberFormat.getIntegerInstance().parse(((EditText) findViewById(R.id.editWindow)).getText().toString());
+            Number val = NumberFormat.getNumberInstance().parse(((EditText) findViewById(R.id.editResolution)).getText().toString());
             if (val != null)
-                window = val.intValue();
+                resolution = val.floatValue();
         } catch (Exception e) {
-            ToastHelper.showErrorAndLog(this, LogTag.FIND_ISOTOPE_ACT, getString(R.string.find_error_window));
+            ToastHelper.showErrorAndLog(this, LogTag.FIND_ISOTOPE_ACT, getString(R.string.find_error_resolution));
             return;
         }
-        window = Constants.MinMax(window, 5, 200);
-        ((EditText) findViewById(R.id.editWindow)).setText(String.format(Locale.getDefault(), "%d", window));
+        resolution = (float) Math.rint(Constants.MinMax(resolution, MIN_RESOLUTION, MAX_RESOLUTION) * 10) / 10.0f;
+        ((EditText) findViewById(R.id.editResolution)).setText(String.format(Locale.getDefault(), "%.1f", resolution));
 
         float threshold = sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT);
         try {
@@ -307,8 +326,8 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
             ToastHelper.showErrorAndLog(this, LogTag.FIND_ISOTOPE_ACT, getString(R.string.find_error_threshold));
             return;
         }
-        threshold = (float) Math.rint(Constants.MinMax(threshold * 100, 0, 1000000)) / 100.0f;
-        ((EditText) findViewById(R.id.editThreshold)).setText(String.format(Locale.getDefault(), "%.2f", threshold));
+        threshold = (float) Math.rint(Constants.MinMax(threshold, MIN_THRESHOLD, MAX_THRESHOLD) * 10) / 10.0f;
+        ((EditText) findViewById(R.id.editThreshold)).setText(String.format(Locale.getDefault(), "%.1f", threshold));
 
         float tolerance = sp.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT);
         try {
@@ -323,10 +342,9 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         ((EditText) findViewById(R.id.editTolerance)).setText(String.format(Locale.getDefault(), "%.2f", tolerance));
 
         SharedPreferences.Editor spEditor = sp.edit();
-        spEditor.putInt(Constants.SEARCH.PREF_COMPRESSION, compression);
-        spEditor.putInt(Constants.SEARCH.PREF_ORDER, poli_order);
+        spEditor.putInt(Constants.SEARCH.PREF_CHANNELS, channels);
         spEditor.putInt(Constants.SEARCH.PREF_LIBRARY, library);
-        spEditor.putInt(Constants.SEARCH.PREF_WINDOW_SIZE, window);
+        spEditor.putFloat(Constants.SEARCH.PREF_RESOLUTION, resolution);
         spEditor.putFloat(Constants.SEARCH.PREF_THRESHOLD, threshold);
         spEditor.putFloat(Constants.SEARCH.PREF_TOLERANCE, tolerance);
         spEditor.commit();
@@ -407,11 +425,8 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         if (parent.getId() == R.id.selectIsotopeList) {
             library = position;
         }
-        if (parent.getId() == R.id.selectCompressionList) {
-            compression = 10 + position;
-        }
-        if (parent.getId() == R.id.selectOrderList) {
-            poli_order = 2 + position;
+        if (parent.getId() == R.id.selectChannelsList) {
+            channels = channelOptions[position];
         }
     }
 
