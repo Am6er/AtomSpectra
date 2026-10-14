@@ -408,8 +408,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (recovering) {
             this.loadAppPreferences(ctx);
             this.deviceId = returned.getProductName().toString();
-            this.recoveryCaptureDeadline = SystemClock.elapsedRealtime() + CAPTURE_START_WINDOW_MS;
-            this.startCapture(true);
+            this.startRecoveryCapture();
         } else {
             this.completeConnect(ctx);
         }
@@ -578,6 +577,21 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         }
     }
 
+    private void restartStalledCapture(String reason) {
+        if (this.isSelectedDeviceGone()) {
+            this.onSelectedDeviceLost();
+            return;
+        }
+        log(this.context, reason + ", restarting capture");
+        this.recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
+        this.startRecoveryCapture();
+    }
+
+    private void startRecoveryCapture() {
+        this.recoveryCaptureDeadline = SystemClock.elapsedRealtime() + CAPTURE_START_WINDOW_MS;
+        this.startCapture(true);
+    }
+
     private boolean isSelectedDeviceGone() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)
@@ -596,13 +610,17 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     private void onAudioRead(long generation, AudioRecord record, byte[] samples, int bytesRead) {
         if (this.context == null || !this.capturing || generation != this.captureGeneration) return;
+        if (bytesRead == AudioRecord.ERROR_DEAD_OBJECT && this.captureConfirmed) {
+            this.restartStalledCapture("Audio recorder died");
+            return;
+        }
         if (bytesRead < 0) {
             this.failReadOrRecover("Audio read returned error " + bytesRead);
             return;
         }
         if (bytesRead == 0) {
             if (++this.audioZeroDataCount >= AUDIO_ZERO_DATA_MAX_COUNT && this.captureConfirmed) {
-                this.failReadOrRecover("Audio input stopped delivering samples");
+                this.restartStalledCapture("Audio input stopped delivering samples");
             }
             return;
         }
