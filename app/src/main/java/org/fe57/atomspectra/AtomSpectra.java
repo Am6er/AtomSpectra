@@ -1734,8 +1734,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                                 text.setText(SpectrumData.instance.foreground.getSuffix());
                                 saveSpectrumAS(SpectrumData.instance.foreground.getSuffix());
                             });
-                            alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> endConnectDecisionSaving());
-                            alert.setOnCancelListener(dialog -> endConnectDecisionSaving());
+                            alert.setNegativeButton(android.R.string.cancel, null);
                             alert.show();
                         } catch (Exception e) {
                             Log.d(TAG, "saving file FAIL");
@@ -1762,8 +1761,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                             text.setText(SpectrumData.instance.foreground.getSuffix());
                             saveSpectrumAS(SpectrumData.instance.foreground.getSuffix());
                         });
-                        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> endConnectDecisionSaving());
-                        alert.setOnCancelListener(dialog -> endConnectDecisionSaving());
+                        alert.setNegativeButton(android.R.string.cancel, null);
                         alert.show();
                     } catch (Exception e) {
                         Log.d(TAG, "saving file FAIL");
@@ -2517,23 +2515,17 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                             text.setText(SpectrumData.instance.foreground.getSuffix());
                             saveSpectrumAS(SpectrumData.instance.foreground.getSuffix());
                         });
-                        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> endConnectDecisionSaving());
-                        alert.setOnCancelListener(dialog -> endConnectDecisionSaving());
+                        alert.setNegativeButton(android.R.string.cancel, null);
                         alert.show();
                     } else {
                         ToastHelper.showErrorAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.perm_no_write_histogram));
-                        endConnectDecisionSaving();
                     }
                 } else {
                     ToastHelper.showErrorAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.perm_no_write_histogram));
-                    endConnectDecisionSaving();
                 }
             } catch (Exception e) {
                 Log.d(TAG, "saving file FAIL");
-                endConnectDecisionSaving();
             }
-        } else if (requestCode == SELECT_SAVE_HIST_DIR_CODE) {
-            endConnectDecisionSaving();
         } else if (requestCode == SELECT_SAVE_BACK_DIR_CODE && resultCode == RESULT_OK && (data != null)) {
             try {
                 final Uri dirUri = data.getData();
@@ -2827,13 +2819,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return;
         }
         DialogHelper.showStackedActions(this,
-                getString(R.string.dialog_confirm_title),
+                getString(R.string.hist_load_title),
                 getString(R.string.hist_load_unsaved_text),
                 true,
-                new DialogHelper.StackedAction(getString(R.string.start_save_button), () -> {
-                    afterSaveAction = proceed;
-                    startSavingSpectrum();
-                }),
                 new DialogHelper.StackedAction(getString(R.string.hist_load_discard_button), proceed),
                 new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
     }
@@ -2940,6 +2928,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
             if (isSpectrumCombineMismatch(current, spectrum)) {
                 DialogHelper.showActionConfirmationDialog(this,
+                        getString(R.string.hist_add_title),
                         getString(R.string.hist_add_mismatch_confirm),
                         getString(R.string.hist_add_mismatch_button),
                         getString(R.string.dialog_cancel_button),
@@ -3111,11 +3100,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     private void saveSpectrumAS(String suffix) {
-        try {
-            saveSpectrumASImpl(suffix);
-        } finally {
-            endConnectDecisionSaving();
-        }
+        saveSpectrumASImpl(suffix);
     }
 
     private void saveSpectrumASImpl(String suffix) {
@@ -3659,22 +3644,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     private AlertDialog connectDecisionDialog = null;
-    // the save started from the decision dialog is under way: the decision dialog stays hidden until it ends
-    private boolean connectDecisionSaving = false;
-    // runs when the save flow ends with the screen spectrum saved
-    private Runnable afterSaveAction = null;
-
-    // the end of every save flow, saved or cancelled
-    private void endConnectDecisionSaving() {
-        final Runnable afterSave = afterSaveAction;
-        afterSaveAction = null;
-        if (afterSave != null && !SpectrumData.instance.foreground.isChanged()) {
-            afterSave.run();
-        }
-        if (!connectDecisionSaving) return;
-        connectDecisionSaving = false;
-        syncConnectDecisionDialog();
-    }
 
     // a connected device waits to show its own spectrum while the screen has unsaved data: the dialog stays until the user decides
     private void syncConnectDecisionDialog() {
@@ -3685,35 +3654,21 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
             return;
         }
-        if (boundService == null || !active || connectDecisionDialog != null || connectDecisionSaving)
+        if (boundService == null || !active || connectDecisionDialog != null)
             return;
 
         connectDecisionDialog = DialogHelper.showStackedActions(this,
                 getString(R.string.device_connect_decision_title),
                 getString(R.string.device_connect_decision_text, userFacingDeviceName()),
                 false,
-                new DialogHelper.StackedAction(getString(R.string.device_decision_discard_switch), () -> {
+                new DialogHelper.StackedAction(getString(R.string.device_decision_replace), () -> {
                     connectDecisionDialog = null;
                     boundService.discardScreenForDevice();
                 }),
-                new DialogHelper.StackedAction(getString(R.string.device_decision_save), () -> {
-                    connectDecisionDialog = null;
-                    connectDecisionSaving = true;
-                    startSavingSpectrum();
-                }),
-                new DialogHelper.StackedAction(getString(R.string.device_decision_go_offline), () -> {
+                new DialogHelper.StackedAction(getString(R.string.device_decision_disconnect), () -> {
                     connectDecisionDialog = null;
                     boundService.stopAndGoOffline();
                 }));
-    }
-
-    // the regular save flow (folder, suffix); the service hears about it when the spectrum is saved
-    private void startSavingSpectrum() {
-        if (app_menu != null) {
-            onOptionsItemSelected(app_menu.findItem(R.id.action_hist_to_file));
-        } else {
-            endConnectDecisionSaving();
-        }
     }
 
     private void startRecording(int foreignSpectrumPolicy) {
@@ -3731,42 +3686,33 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return;
         }
 
-        final DialogHelper.StackedAction cancel =
-                new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null);
-        switch (decision) {
-            case AtomSpectraService.START_CONTINUE_OR_NEW:
-                DialogHelper.showStackedActions(this,
-                        getString(R.string.dialog_confirm_title),
-                        getString(R.string.start_continue_or_new_text),
-                        true,
-                        new DialogHelper.StackedAction(getString(R.string.start_continue_button), () ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE)),
-                        new DialogHelper.StackedAction(getString(R.string.start_new_button), () ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
-                        cancel);
-                break;
-            case AtomSpectraService.START_CONTINUE_OR_DISCARD:
-                DialogHelper.showStackedActions(this,
-                        getString(R.string.dialog_confirm_title),
-                        getString(R.string.start_continue_or_discard_text),
-                        true,
-                        new DialogHelper.StackedAction(getString(R.string.start_continue_button), () ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE)),
-                        new DialogHelper.StackedAction(getString(R.string.start_discard_button), () ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
-                        cancel);
-                break;
-            default:
-                DialogHelper.showStackedActions(this,
-                        getString(R.string.dialog_confirm_title),
-                        getString(R.string.start_save_or_discard_text),
-                        true,
-                        new DialogHelper.StackedAction(getString(R.string.start_save_button), this::startSavingSpectrum),
-                        new DialogHelper.StackedAction(getString(R.string.start_discard_button), () ->
-                                startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
-                        cancel);
-                break;
+        if (decision == AtomSpectraService.START_CONTINUE_OR_NEW) {
+            DialogHelper.showStackedActions(this,
+                    getString(R.string.start_dialog_title),
+                    getString(R.string.start_continue_or_new_text),
+                    true,
+                    new DialogHelper.StackedAction(getString(R.string.start_continue_button), () ->
+                            startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_CONTINUE)),
+                    new DialogHelper.StackedAction(getString(R.string.start_new_button), this::startNewRecording),
+                    new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
+        } else {
+            startNewRecording();
         }
+    }
+
+    // the device starts with its own spectrum: an unsaved screen spectrum is dropped only after the user says so
+    private void startNewRecording() {
+        if (!SpectrumData.instance.foreground.isChanged()) {
+            startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE);
+            return;
+        }
+        DialogHelper.showStackedActions(this,
+                getString(R.string.start_dialog_title),
+                getString(R.string.start_unsaved_text),
+                true,
+                new DialogHelper.StackedAction(getString(R.string.start_discard_button), () ->
+                        startRecording(Constants.ACTION_PARAMETERS.FOREIGN_SPECTRUM_REPLACE)),
+                new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
     }
 
     private void showSpectrogramView() {
