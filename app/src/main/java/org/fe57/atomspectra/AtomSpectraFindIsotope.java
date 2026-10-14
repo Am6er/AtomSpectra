@@ -168,7 +168,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
     // half-window (in compressed channels) for the peak of the given resolution at the reference energy
     private static int calcWindow(Context context, Calibration calibration, double resolution, int numScale) {
         double fwhm = REFERENCE_ENERGY * resolution / 100.0;
-        int lastChannel = SpectrumData.instance.lastCalibrationChannel;
+        int lastChannel = SpectrumData.instance.getLastCalibrationChannel();
         double low = calibration.toChannelDouble(REFERENCE_ENERGY - fwhm / 2.0, lastChannel);
         double high = calibration.toChannelDouble(REFERENCE_ENERGY + fwhm / 2.0, lastChannel);
         if (low < 0 || high >= SpectrumData.instance.getChannelCount() || high <= low) {
@@ -206,7 +206,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
 
         if (UIViewState.instance.backgroundSubtract) {
             double backgroundScale = SpectrumData.instance.foreground.getSpectrumTime() / SpectrumData.instance.background.getSpectrumTime();
-            long[] data = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(SpectrumData.instance.background.getDataArray(), SpectrumData.instance.background.getSpectrumCalibration(), SpectrumData.instance.lastCalibrationChannel);
+            long[] data = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(SpectrumData.instance.background.getDataArray(), SpectrumData.instance.background.getSpectrumCalibration(), SpectrumData.instance.getLastCalibrationChannel());
             for (int i = 0; i < num_lines; i++) {
                 for (int j = i * num_scale; j < (i + 1) * num_scale; j++) {
                     chan_raw[i] += StrictMath.max(0.0, SpectrumData.instance.foreground.getDataArray()[j] - data[j] * backgroundScale);

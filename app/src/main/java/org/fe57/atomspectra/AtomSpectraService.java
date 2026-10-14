@@ -1412,7 +1412,7 @@ public class AtomSpectraService extends Service {
 
         initOutputAudioTrack();
         loadSettings();
-        SpectrumData.instance.lastCalibrationChannel = PrefHelper.getLastCalibrationChannel(this, SpectrumData.instance.getChannelCount());
+        SpectrumData.instance.ignoredTopChannels = PrefHelper.getIgnoredTopChannels(this);
 
         inputThread = new HandlerThread("AtomSpectraInput");
         inputThread.start();
@@ -1974,7 +1974,6 @@ public class AtomSpectraService extends Service {
         UIViewState.instance.backgroundSubtract = false;
         if (resized) {
             UIViewState.instance.onChannelCountChanged(channelCount);
-            PrefHelper.setLastCalibrationChannel(this, SpectrumData.instance.lastCalibrationChannel);
         }
         SpectrumData.instance.foreground
                 .setSuffix(getStringOrDefaultLocale(R.string.hist_suffix))

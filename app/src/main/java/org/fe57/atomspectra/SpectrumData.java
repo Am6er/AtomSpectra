@@ -25,7 +25,8 @@ public final class SpectrumData {
      */
     public volatile Calibration newCalibration = new Calibration(Constants.DEFAULT_CHANNEL_COUNT);
 
-    public volatile int lastCalibrationChannel = Constants.DEFAULT_CHANNEL_COUNT;
+    // channels cut off the top end of the spectrum, the calibration ends below them
+    public volatile int ignoredTopChannels = 0;
 
     private SpectrumData() {
     }
@@ -72,7 +73,6 @@ public final class SpectrumData {
     // the arrays already have the new size (called under lock)
     private void onChannelCountChanged(int channelCount) {
         newCalibration = new Calibration(channelCount);
-        lastCalibrationChannel = channelCount;
     }
 
     // --- calibration ---------------------------------------------------------------------------
@@ -89,12 +89,19 @@ public final class SpectrumData {
     }
 
     /**
-     * Set the last calibrated channel, store it, and let the consumers know.
+     * The channel the calibration ends at: the channel count without the ignored top channels.
      */
-    public void applyLastCalibrationChannel(@NonNull Context context, int channel) {
-        lastCalibrationChannel = Constants.MinMax(channel, Constants.MIN_LAST_CALIBRATION_CHANNEL, getChannelCount());
-        PrefHelper.setLastCalibrationChannel(context, lastCalibrationChannel);
-        AtomSpectraLog.action(context, LogTag.SPECTRUM_DATA, "Last calibration channel set to " + lastCalibrationChannel);
+    public int getLastCalibrationChannel() {
+        final int count = getChannelCount();
+        return Math.min(count, Math.max(Constants.MIN_LAST_CALIBRATION_CHANNEL, count - Math.max(0, ignoredTopChannels)));
+    }
+
+    /**
+     * Set how many top channels are ignored and let the consumers know. In-memory change only.
+     */
+    public void applyIgnoredTopChannels(@NonNull Context context, int count) {
+        ignoredTopChannels = Math.max(0, Math.min(count, getChannelCount() - Constants.MIN_LAST_CALIBRATION_CHANNEL));
+        AtomSpectraLog.action(context, LogTag.SPECTRUM_DATA, "Ignored top channels set to " + ignoredTopChannels);
         notifyDataAvailable(context);
     }
 

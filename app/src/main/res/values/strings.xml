@@ -398,8 +398,8 @@
     <string name="ask_noise_text">Enter new value:</string>
     <string name="ask_channel_title">Set a cursor channel</string>
     <string name="ask_channel_text">New channel (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
-    <string name="ask_last_channel_title">Enter channel number</string>
-    <string name="ask_last_channel_text">New channel (<xliff:g id="min_channel">%1$d</xliff:g>-<xliff:g id="last_channel">%2$d</xliff:g>):</string>
+    <string name="ask_last_channel_title">Ignore last channels</string>
+    <string name="ask_last_channel_text">Number of channels to ignore at the top end:</string>
     <string name="ask_delete_calibration_line_title">Delete a line</string>
     <string name="ask_delete_calibration_line_text">Delete a channel %1$d (%2$.2f keV) from the list?</string>
     <string name="ask_select_interval_title">Select interval to search</string>
