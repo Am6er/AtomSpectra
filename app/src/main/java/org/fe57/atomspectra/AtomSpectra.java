@@ -185,6 +185,12 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             dateChannelChanged = System.currentTimeMillis();
         }
 
+        // long tap opens the spectrogram; returning true consumes it so the click (spectrum change) is not fired
+        findViewById(R.id.displayModeSpectrumChangeButton).setOnLongClickListener(v -> {
+            showSpectrogramView();
+            return true;
+        });
+
         fmsButton = findViewById(R.id.fmsButton);
         statusLine1Text = findViewById(R.id.statusLine1Text);
         statusLine2Text = findViewById(R.id.statusLine2Text);
