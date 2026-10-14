@@ -10,6 +10,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -1078,7 +1080,7 @@ public class AtomSpectraService extends Service {
         AtomSpectraLog.event(service_context, LogTag.SERVICE, "Device ready (restored): " + inputDeviceInfo);
         // the toast repeats the line logged above
         if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
-            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_usb_attached));
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_spectra_pro_reconnected));
         } else if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
             ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_bluetooth_attached));
         }
@@ -1601,6 +1603,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_RESET_SPECTRUM);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
         intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
+        intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         intentFilter.addAction(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY);
         intentFilter.addAction(Constants.ACTION.ACTION_LOAD_CALIBRATION);
         intentFilter.addAction(Constants.ACTION.ACTION_STORE_CALIBRATION);
@@ -1622,6 +1625,16 @@ public class AtomSpectraService extends Service {
                 return;
             if (Constants.ACTION.ACTION_UPDATE_NOTIFICATION.equals(action)) {
                 refreshServiceNotification();
+                return;
+            }
+            if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+                // the selector shows a plugged Spectra Pro itself and a locked Spectra Pro reconnects by itself
+                final UsbDevice device = AtomSpectraProSource.usbDeviceExtra(intent);
+                if (device != null && AtomSpectraProSource.isSpectraPro(device)
+                        && (sessionState == DeviceSessionState.OFFLINE
+                        || (sessionState == DeviceSessionState.LOCKED && lockedSourceType() != SpectrumSource.TYPE_SPECTRA_PRO))) {
+                    ToastHelper.showToastOnly(AtomSpectraService.this, getStringOrDefaultLocale(R.string.spectra_pro_available));
+                }
                 return;
             }
             if (Constants.ACTION.ACTION_CLEAR_SPECTRUM.equals(action)) {

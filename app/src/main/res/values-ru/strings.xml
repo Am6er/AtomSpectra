@@ -30,7 +30,8 @@
     <string name="action_save_options">Сохранить параметры</string>
     <string name="action_buy_spectrometer">Купить спектрометр</string>
     <string name="action_exit">Завершить программу</string>
-    <string name="action_usb_attached">USB подключён</string>
+    <string name="action_spectra_pro_reconnected">Spectra Pro подключён повторно</string>
+    <string name="spectra_pro_available">Spectra Pro доступен для подключения в списке устройств</string>
     <string name="action_usb_detached">USB отключён</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
     <string name="device_default_microphone">Микрофон по умолчанию</string>
@@ -451,7 +452,7 @@
     <string name="cal_wrong_device">Неверная калибровка в устройстве</string>
     <string name="cal_none_stored">Для этого устройства калибровка не сохранена</string>
     <string name="device_not_available">Устройство недоступно</string>
-    <string name="cal_wrong_checksum">Неверная контрольная сумма в устройстве USB</string>
+    <string name="cal_wrong_checksum">Spectra Pro: неверная контрольная сумма калибровки</string>
     <string name="cal_stored">Калибровка сохранена в устройстве</string>
     <string name="cal_wrong_store_device">Не могу сохранить калибровку в устройстве</string>
     <string name="usb_below_minimal_version">Обновите версию прошивки до <xliff:g id="version">%1$d</xliff:g> или выше</string>
@@ -488,15 +489,16 @@
     <string name="log_audio_zero_buffers_detected">Аудио буфер нулевой длины получен несколько раз подряд (%1$d), перезапуск аудио</string>
     <string name="log_fetching_data_from_audio">Получение данных из аудио входа: %1$s, использовать необработанный звук: %2$b</string>
     <string name="log_wrong_sens_curve_pref">Не удалось прочесть кривую чувствительности из настроек, используется кривая по умолчанию</string>
-    <string name="log_usb_device_version_error">Ошибка чтения версии USB устройства</string>
+    <string name="log_usb_device_version_error">Spectra Pro: ошибка чтения версии прошивки</string>
     <string name="log_usb_device_version_unknown">Неизвестная версия USB устройства</string>
     <string name="log_usb_answer_unexpected_registers">Неожиданный ответ \"-cal\": %1$d регистров вместо %2$d</string>
     <string name="log_usb_answer_missing">Нет ответа от USB устройства</string>
     <string name="log_usb_answer_malformed_calibration">Некорректный ответ \"-cal\": регистры не являются допустимым hex</string>
-    <string name="log_usb_watchdog_no_data_triggered">Контроль USB данных: нет данных из USB в течение %1$d секунд. Попытка переподключения и выполнения команды -sta</string>
-    <string name="log_usb_watchdog_unable_open_device">Контроль USB данных: не удалось открыть USB устройство</string>
-    <string name="log_usb_watchdog_device_no_perm">Контроль USB данных: нет доступа к USB устройству</string>
-    <string name="log_usb_watchdog_device_not_found">Контроль USB данных: USB устройство не найдено</string>
+    <string name="log_spectra_pro_watchdog_no_data_triggered">Spectra Pro, контроль данных: нет данных %1$d с, переподключение…</string>
+    <string name="log_spectra_pro_watchdog_unable_open_device">Spectra Pro, контроль данных: не удалось открыть устройство</string>
+    <string name="log_spectra_pro_watchdog_device_no_perm">Spectra Pro, контроль данных: нет доступа к USB</string>
+    <string name="log_spectra_pro_watchdog_device_not_found">Spectra Pro, контроль данных: устройство не найдено</string>
+    <string name="log_spectra_pro_watchdog_reconnect_failed">Spectra Pro, контроль данных: не удалось переподключиться (%1$s)</string>
     <string name="log_serial_packet_error">Ошибка пакета %1$s в %2$s, подсчет ошибок в течение следующих %3$d мин…</string>
     <string name="log_serial_errors_ongoing">Ошибки продолжаются, всего ошибок %1$s с %2$s, подсчет ошибок в течение следующих %3$d мин…</string>
     <string name="log_serial_errors_resolved">Ошибок нет за последние %1$d мин, всего ошибок %2$s с %3$s</string>

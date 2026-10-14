@@ -1024,26 +1024,26 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         this.teardownConnection();
 
-        ToastHelper.showWarningAndLog(ctx, LogTag.SPECTRA_PRO, ctx.getString(R.string.log_usb_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
+        ToastHelper.showWarningAndLog(ctx, LogTag.SPECTRA_PRO, ctx.getString(R.string.log_spectra_pro_watchdog_no_data_triggered, DATA_WATCHDOG_INTERVAL_SECONDS));
         UsbManager manager = (UsbManager) ctx.getSystemService(Context.USB_SERVICE);
         UsbDevice device = findLockedDevice(manager);
         boolean hasPermission = device != null && manager.hasPermission(device);
 
         if (device == null) {
-            ToastHelper.showWarningAndLog(ctx, LogTag.SPECTRA_PRO, R.string.log_usb_watchdog_device_not_found);
+            ToastHelper.showWarningAndLog(ctx, LogTag.SPECTRA_PRO, R.string.log_spectra_pro_watchdog_device_not_found);
             this.emitDisconnected("Device not found");
             return;
         }
 
         if (!hasPermission) {
-            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, R.string.log_usb_watchdog_device_no_perm);
+            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, R.string.log_spectra_pro_watchdog_device_no_perm);
             this.emitDisconnected("No permission for device");
             return;
         }
 
         String openError = this.reopenLocked(device);
         if (openError != null) {
-            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, "Watchdog reconnect failed: " + openError);
+            ToastHelper.showErrorAndLog(ctx, LogTag.SPECTRA_PRO, ctx.getString(R.string.log_spectra_pro_watchdog_reconnect_failed, openError));
             this.emitDisconnected("Watchdog reconnect failed: " + openError);
             return;
         }
@@ -1119,7 +1119,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     @SuppressWarnings("deprecation")
-    private static UsbDevice usbDeviceExtra(Intent intent) {
+    static UsbDevice usbDeviceExtra(Intent intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
         }
