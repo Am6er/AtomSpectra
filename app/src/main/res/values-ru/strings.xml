@@ -522,15 +522,19 @@
     <string name="find_isotopes">Найти</string>
     <string name="show_isotopes">Показать</string>
     <string name="show_no_isotopes">Скрыть</string>
-    <string name="find_threshold">Порог</string>
-    <string name="find_window_size">Размер окна</string>
-    <string name="find_order">Степень</string>
-    <string name="find_tolerance">Неточность определения</string>
-    <string name="find_sign_bits">Значимые биты</string>
-    <string name="find_isotope_library">Библиотека</string>
-    <string name="find_error_window">Ошибка в размере окна</string>
-    <string name="find_error_bits">Ошибка в значащих битах</string>
-    <string name="find_error_tolerance">Ошибка в величине неточности</string>
+    <string name="find_resolution">Разрешение по Cs-137, %</string>
+    <string name="find_resolution_desc">Ширина пика 662 кэВ (на полувысоте) относительно его энергии для вашего детектора. Определяет ожидаемую ширину пиков: при завышенном значении близкие пики сливаются, при заниженном в шуме находятся ложные пики.</string>
+    <string name="find_channels">Сжать до, каналов</string>
+    <string name="find_channels_desc">Перед поиском спектр объединяется до указанного числа каналов. Чем меньше каналов, тем глаже шум и меньше ложных пиков, но близкие пики могут слиться.</string>
+    <string name="find_threshold">Порог, σ</string>
+    <string name="find_threshold_desc">Минимальная значимость пика над статистическим шумом. Чем больше, тем только сильные пики; чем меньше, тем больше слабых пиков, но и ложных.</string>
+    <string name="find_tolerance">Допуск по энергии, %</string>
+    <string name="find_tolerance_desc">Насколько пик может отличаться от линии библиотеки, чтобы получить название. Чем больше, тем больше совпадений, но и ошибочных названий.</string>
+    <string name="find_isotope_library">Список изотопов</string>
+    <string name="find_isotope_library_desc">Какими изотопами могут называться пики. «Все» показывает и пики без совпадения.</string>
+    <string name="find_warning_window">Ширина пика 662 кэВ вне калиброванного диапазона, используется приблизительное окно поиска</string>
+    <string name="find_error_resolution">Ошибка в разрешении</string>
+    <string name="find_error_tolerance">Ошибка в допуске по энергии</string>
     <string name="find_error_threshold">Ошибка в пороге</string>
     <string name="find_isotopes_all">Все</string>
     <string name="find_isotopes_known">Известные</string>
@@ -553,43 +557,6 @@
         <item>Промышленные</item>
         <item>Специальные</item>
         <item>Природные</item>
-    </string-array>
-    <string-array name="find_isotopes_order">
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_13">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_14">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_15">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-        <item>15</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_16">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-        <item>15</item>
-        <item>16</item>
     </string-array>
 
     <string name="log_activity_title">Atom Spectra Журнал</string>

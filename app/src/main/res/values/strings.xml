@@ -523,15 +523,19 @@
     <string name="find_isotopes">Find</string>
     <string name="show_isotopes">Show</string>
     <string name="show_no_isotopes">Hide</string>
-    <string name="find_threshold">Threshold</string>
-    <string name="find_window_size">Window size</string>
-    <string name="find_order">Order</string>
-    <string name="find_tolerance">Inaccuracy</string>
-    <string name="find_sign_bits">Significant bits</string>
-    <string name="find_isotope_library">Library</string>
-    <string name="find_error_window">Error in window size</string>
-    <string name="find_error_bits">Error in number of significant bits</string>
-    <string name="find_error_tolerance">Error in inaccuracy</string>
+    <string name="find_resolution">Cs-137 resolution, %</string>
+    <string name="find_resolution_desc">Width of the 662 keV peak (at half height) relative to its energy for your detector. Sets how wide peaks are expected to be: too high merges close peaks, too low finds false peaks in noise.</string>
+    <string name="find_channels">Compress to, channels</string>
+    <string name="find_channels_desc">The spectrum is merged into this many channels before the search. Fewer channels smooth the noise and reduce false peaks, but close peaks may merge.</string>
+    <string name="find_threshold">Threshold, σ</string>
+    <string name="find_threshold_desc">Minimum peak significance above the statistical noise. Higher finds only strong peaks, lower finds weaker ones but also more false ones.</string>
+    <string name="find_tolerance">Energy tolerance, %</string>
+    <string name="find_tolerance_desc">How far a peak may be from a library line to get its name. Larger gives more matches but more wrong names.</string>
+    <string name="find_isotope_library">Isotope list</string>
+    <string name="find_isotope_library_desc">Which isotopes peaks may be named after. \"All\" also shows peaks with no match.</string>
+    <string name="find_warning_window">Peak width at 662 keV is outside the calibrated range, using an approximate search window</string>
+    <string name="find_error_resolution">Error in resolution</string>
+    <string name="find_error_tolerance">Error in energy tolerance</string>
     <string name="find_error_threshold">Error in threshold</string>
     <string name="find_isotopes_all">All</string>
     <string name="find_isotopes_known">Known</string>
@@ -554,43 +558,6 @@
         <item>Industrial</item>
         <item>Special</item>
         <item>Normal</item>
-    </string-array>
-    <string-array name="find_isotopes_order">
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_13">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_14">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_15">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-        <item>15</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_16">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-        <item>15</item>
-        <item>16</item>
     </string-array>
 
     <string name="log_activity_title">Atom Spectra Log</string>

@@ -41,12 +41,12 @@ public class Constants {
     public static final double DOSE_SCALE = 0.001;                                                                       //scale input data to draw
     public static final double DOSE_OVERHEAD = 1.05;                                                                     //maximum to be shown
     public static final int CURSOR_TIMEOUT = 7000;                                                                       //timeout of buttons in ms
-    public static final int WINDOW_SEARCH_DEFAULT = 60;                                                                  //window search size
+    public static final float RESOLUTION_DEFAULT = 7.0f;                                                                 //Cs-137 resolution default, %
+    public static final int SEARCH_CHANNELS_DEFAULT = 1024;                                                              //channels to compress to for the search
+    public static final int SEARCH_MIN_CHANNELS = 1024;                                                                  //minimum channels to compress to for the search
     public static final long SEARCH_HISTORY_TIME_GAP_THRESHOLD_MS = 10000L;                                               //search history pause/resume gap threshold
     public static final float TOLERANCE_DEFAULT = 5.0f;                                                                  //tolerance default
-    public static final float THRESHOLD_DEFAULT = 0.5f;                                                                  //threshold default
-    public static final int ORDER_DEFAULT = 5;                                                                           //order size
-    public static final int ORDER_MAX = 5;                                                                               //maximum order size
+    public static final float THRESHOLD_DEFAULT = 4.0f;                                                                  //threshold default, sigma
     public static final int COMPRESS_GRAPH_SUM = 0;                                                                      //show sum values
     public static final int COMPRESS_GRAPH_AVERAGE = 1;                                                                  //show average values
     public static final int COMPRESS_GRAPH_MAX = 2;                                                                      //show max values
@@ -171,11 +171,10 @@ public class Constants {
     }
 
     public interface SEARCH {
-        String PREF_COMPRESSION = "Compression:";
-        String PREF_WINDOW_SIZE = "Window size:";
+        String PREF_CHANNELS = "Search channels:";
+        String PREF_RESOLUTION = "Cs-137 resolution:";
         String PREF_TOLERANCE = "Tolerance:";
-        String PREF_THRESHOLD = "Threshold:";
-        String PREF_ORDER = "Order:";
+        String PREF_THRESHOLD = "Threshold sigma:";
         String PREF_LIBRARY = "Library:";
     }
 
