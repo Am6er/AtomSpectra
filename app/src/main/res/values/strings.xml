@@ -573,6 +573,11 @@
     <string name="spectrogram_loading_dialog_stop">Stop and view loaded</string>
     <string name="spectrogram_view">View</string>
     <string name="spectrogram_view_map">View on map</string>
+    <string name="spectrogram_clear">Clear screen</string>
+    <string name="spectrogram_clear_title">Clear screen</string>
+    <string name="spectrogram_clear_text">Spectrogram recording is in progress.</string>
+    <string name="spectrogram_clear_completed_button">Clear completed only</string>
+    <string name="spectrogram_clear_restart_button">Clear all and restart</string>
     <string name="spectrogram_palette">Palette</string>
     <string name="spectrogram_palette_iron">Iron</string>
     <string name="spectrogram_palette_lime">Lime</string>

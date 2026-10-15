@@ -572,6 +572,11 @@
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
     <string name="spectrogram_view_map">Показать на карте</string>
+    <string name="spectrogram_clear">Очистить экран</string>
+    <string name="spectrogram_clear_title">Очистить экран</string>
+    <string name="spectrogram_clear_text">Идёт запись спектрограммы.</string>
+    <string name="spectrogram_clear_completed_button">Очистить только завершенные</string>
+    <string name="spectrogram_clear_restart_button">Очистить все и начать заново</string>
     <string name="spectrogram_palette">Палитра</string>
     <string name="spectrogram_palette_iron">Iron</string>
     <string name="spectrogram_palette_lime">Lime</string>

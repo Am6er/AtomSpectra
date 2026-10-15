@@ -328,6 +328,15 @@ public class AtomSpectraSpectrogramView extends View {
             return new SelectionBound(0, 0);
         }
 
+        // bound after oldest data was removed, see AtomSpectraSpectrogramData.takeSelectionShifts();
+        // a bound inside removed data moves to the start of what is left
+        public SelectionBound shifted(int shift) {
+            if (shift == AtomSpectraSpectrogramData.SHIFT_SEGMENT_DROPPED) {
+                return segmentIndex > 0 ? new SelectionBound(segmentIndex - 1, rowIndex) : zeroIndex();
+            }
+            return segmentIndex == 0 ? new SelectionBound(0, Math.max(0, rowIndex - shift)) : this;
+        }
+
         // lexicographic order: segment first, then row within the segment
         public int compareTo(SelectionBound other) {
             if (segmentIndex != other.segmentIndex) {

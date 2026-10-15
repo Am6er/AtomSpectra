@@ -96,6 +96,8 @@ public class AtomSpectraService extends Service {
     private final Object spgAutosaveSync = new Object();
     private static int spgInterval = 0;
     private static boolean spgMidnightReset = false;
+    // true while the last spectrogram segment is still being appended to
+    private static volatile boolean spgRecordingActive = false;
     private Spectrum spgAutosaveSpectrum = null;
     private Uri spgAutosaveFilePath = null;
     private Date spgAutosaveFileCreated = null;
@@ -1599,6 +1601,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_STOP_RECORDING);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);
         intentFilter.addAction(Constants.ACTION.ACTION_RESET_SPECTRUM);
+        intentFilter.addAction(Constants.ACTION.ACTION_RESTART_SPECTROGRAM);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_GPS);
         intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
         intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
@@ -1651,6 +1654,14 @@ public class AtomSpectraService extends Service {
             if (Constants.ACTION.ACTION_RESET_SPECTRUM.equals(action)) {
                 if (refuseWhileRecovering() || connectDecisionPending) return;
                 resetSpectrum();
+                return;
+            }
+            if (Constants.ACTION.ACTION_RESTART_SPECTROGRAM.equals(action)) {
+                synchronized (spgAutosaveSync) {
+                    completeSpectrogramRecording();
+                    AtomSpectraSpectrogramData.instance.clear();
+                }
+                AtomSpectraSpectrogramData.notifyUpdated(AtomSpectraService.this);
                 return;
             }
             if (Constants.ACTION.ACTION_START_RECORDING.equals(action)) {
@@ -1962,8 +1973,6 @@ public class AtomSpectraService extends Service {
         screenFromDevice = false;
         screenFromFile = false;
         completeSpectrogramRecording();
-        AtomSpectraSpectrogramData.instance.clear();
-        notifySpectrogramUpdated();
 
         // once the device has reported ready its count rules, otherwise the screen keeps its own
         final int channelCount = deviceChannelCount > 0 ? deviceChannelCount : SpectrumData.instance.getChannelCount();
@@ -1998,6 +2007,10 @@ public class AtomSpectraService extends Service {
 
     public static boolean isRecording() {
         return is_recording;
+    }
+
+    public static boolean isSpectrogramRecordingActive() {
+        return spgRecordingActive;
     }
 
     // starts/stops data collecting: updates the recording state and commands the active source
@@ -2418,10 +2431,6 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private void notifySpectrogramUpdated() {
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED).setPackage(Constants.PACKAGE_NAME));
-    }
-
     private void createOrUpdateSpectrogramFile(Spectrum foregroundSpectrumCopy) {
         synchronized (spgAutosaveSync) {
             // reset spectrogram file if midnight has passed
@@ -2450,7 +2459,8 @@ public class AtomSpectraService extends Service {
                             .saveSpectrumAndCloseStream(docStream, this);
 
                     AtomSpectraSpectrogramData.instance.addSegment(spgAutosaveSpectrum, spgAutosaveFilePath);
-                    notifySpectrogramUpdated();
+                    spgRecordingActive = true;
+                    AtomSpectraSpectrogramData.notifyUpdated(this);
                     this.toastAndLog(R.string.log_spg_autosave_start);
                 } catch (Exception e) {
                     AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot start spectrogram autosave", e);
@@ -2492,7 +2502,7 @@ public class AtomSpectraService extends Service {
 
             // Write succeeded: commit to memory and advance the baseline.
             AtomSpectraSpectrogramData.instance.addDelta(deltaSpectrum);
-            notifySpectrogramUpdated();
+            AtomSpectraSpectrogramData.notifyUpdated(this);
             spgAutosaveSpectrum = foregroundSpectrumCopy;
         } catch (Exception e) {
             ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()));
@@ -2503,6 +2513,7 @@ public class AtomSpectraService extends Service {
     private void completeSpectrogramRecording() {
         synchronized (spgAutosaveSync) {
             spgAutosaveSpectrum = null;
+            spgRecordingActive = false;
             if (spgAutosaveFilePath != null) {
                 toastAndLog(R.string.log_spg_autosave_completed);
             }

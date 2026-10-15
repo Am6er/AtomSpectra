@@ -218,6 +218,8 @@ public class Constants {
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
         // zeroes the histogram and search of the connected device
         String ACTION_RESET_SPECTRUM = "org.fe57.atomspectra.ACTION_RESET_SPECTRUM";
+        // ends the running spectrogram segment and drops all spectrogram segments; the next frame starts a new one
+        String ACTION_RESTART_SPECTROGRAM = "org.fe57.atomspectra.ACTION_RESTART_SPECTROGRAM";
 
         // read by AtomSpectra to actualize menu status after capturing status change
         String ACTION_UPDATE_MENU = "org.fe57.atomspectra.ACTION_UPDATE_MENU";

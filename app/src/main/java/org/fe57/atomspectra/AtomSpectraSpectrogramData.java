@@ -1,5 +1,7 @@
 package org.fe57.atomspectra;
 
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 
 import java.security.InvalidParameterException;
@@ -56,7 +58,14 @@ public class AtomSpectraSpectrogramData {
     private final Object spectrogramSync = new Object();
     private final ArrayList<Segment> segments = new ArrayList<>();
 
+    public static final int SHIFT_SEGMENT_DROPPED = -1;
+    private final ArrayList<Integer> selectionShifts = new ArrayList<>();
+
     private String recordingId = java.util.UUID.randomUUID().toString();
+
+    public static void notifyUpdated(Context context) {
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED).setPackage(Constants.PACKAGE_NAME));
+    }
 
     public String getRecordingId() {
         return recordingId;
@@ -104,6 +113,7 @@ public class AtomSpectraSpectrogramData {
             }
 
             segments.clear();
+            selectionShifts.clear();
             segments.addAll(sorted);
         }
     }
@@ -177,8 +187,16 @@ public class AtomSpectraSpectrogramData {
         oldest.mapPoints.remove(0);
         oldest.evictedRowCount++;
 
+        int last = selectionShifts.size() - 1;
+        if (last >= 0 && selectionShifts.get(last) > 0) {
+            selectionShifts.set(last, selectionShifts.get(last) + 1);
+        } else {
+            selectionShifts.add(1);
+        }
+
         if (oldest.rowCount() == 0 && segments.size() > 1) {
             segments.remove(0);
+            selectionShifts.add(SHIFT_SEGMENT_DROPPED);
         }
     }
 
@@ -199,7 +217,27 @@ public class AtomSpectraSpectrogramData {
     public void clear() {
         synchronized (spectrogramSync) {
             segments.clear();
+            selectionShifts.clear();
             this.recordingId = java.util.UUID.randomUUID().toString();
+        }
+    }
+
+    public void leaveOnlyLastSegment() {
+        synchronized (spectrogramSync) {
+            while (segments.size() > 1) {
+                segments.remove(0);
+                selectionShifts.add(SHIFT_SEGMENT_DROPPED);
+            }
+        }
+    }
+
+    // Selection shifts caused by removing the oldest data since the previous call, in order of
+    // occurrence: SHIFT_SEGMENT_DROPPED, or a positive count of rows removed from the first segment.
+    public List<Integer> takeSelectionShifts() {
+        synchronized (spectrogramSync) {
+            List<Integer> result = new ArrayList<>(selectionShifts);
+            selectionShifts.clear();
+            return result;
         }
     }
 
