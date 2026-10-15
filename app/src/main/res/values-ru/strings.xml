@@ -14,8 +14,6 @@
     <string name="settings_usb_processing">Обработка USB</string>
     <string name="settings_spectrum">Спектр</string>
     <string name="settings_spectrum_change">Изменение спектра</string>
-    <string name="settings_spectrogram">Спектрограмма</string>
-    <string name="settings_interval_search">Поиск в интервале</string>
     <string name="settings_atomswift_integration">AtomSwift интеграция</string>
     <string name="settings_search_isotopes">Поиск изотопов</string>
     <string name="settings_files">Файлы</string>
@@ -25,7 +23,6 @@
 
     <string name="isotope_search">Atom Spectra Поиск изотопов</string>
     <string name="action_settings">Параметры</string>
-    <string name="action_select_interval">Выбрать интервал…</string>
     <string name="action_restart">Сброс спектра</string>
     <string name="action_save_options">Сохранить параметры</string>
     <string name="action_buy_spectrometer">Купить спектрометр</string>
@@ -209,7 +206,10 @@
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Устройство</string>
     <string name="calibration_load_device_energy">Загрузить с калибровкой…</string>
-    <string name="calibration_sensivity">Чувствительность…</string>
+    <string name="calibration_sensivity">Настройки МЭД</string>
+    <string name="device_settings">Настройки</string>
+    <string name="menu_search">Поиск</string>
+    <string name="interval_settings">Настройки интервала</string>
     <string name="calibration_channel">Поcледний: 8192</string>
     <string name="calibration_channel_format">Поcледний: <xliff:g id="channel">%1$d</xliff:g></string>
     <string name="calibration_add_nuclid_title">Добавить точку калибровки</string>
@@ -217,7 +217,7 @@
     <string name="calibration_add_nuclid2_text">Введите энергию (в кэВ) для канала %1$d (сейчас %2$s, %3$.2f кэВ):</string>
     <string name="calibration_stop_before_load_device_text">Для чтения калибровки из устройства запись спектра будет остановлена</string>
 
-    <string name="detector_sensitivity">Чувствительность прибора</string>
+    <string name="detector_sensitivity">Настройки МЭД</string>
     <string name="sens_energy_kev">E, кэВ</string>
     <string name="sens_sensitivity">Чувствит.</string>
     <string name="sens_add_row_dialog_title">Добавить строку</string>
@@ -565,6 +565,8 @@
     <string name="spectrogram_loading_dialog_message">Дождитесь окончания загрузки. Строк загружено: %1$d…</string>
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
+    <string name="spectrogram_settings">Настройки</string>
+    <string name="spectrogram_settings_title">Настройки спектрограммы</string>
     <string name="spectrogram_view_map">Показать на карте</string>
     <string name="spectrogram_clear">Очистить экран</string>
     <string name="spectrogram_clear_title">Очистить экран</string>
@@ -706,27 +708,27 @@
     <string name="help_text_part4">
         <big><annotation foreground="caption">4. Режим <annotation foreground="parameter">Поиск</annotation> - расчёт и отображение мощности дозы и скорости счета в интервале энергий:</annotation></big>\n
         Программа выполняет расчёт трех значений - некомпенсированная мощность дозы, компенсированная мощность дозы, скорость счета в заданном диапазоне (интервале) энергий. Некомпенсированная - линейный пересчет общей скорости счета в мощность дозы с использованием коэффициента. Компенсированная - расчет мощности дозы с учетом энергии регистриремых гамма квантов, кривой чувствительности детектора и коэффициента.\n
-        \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Окна поиска (в импульсах) для каждого режима задаются в профиле в <annotation foreground="parameter">Устройство</annotation> - <annotation foreground="parameter">Чувствительность</annotation> отдельно для компенсированной и некомпенсированной мощности дозы. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
+        \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Окна поиска (в импульсах) для каждого режима задаются в профиле в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation> отдельно для компенсированной и некомпенсированной мощности дозы. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
         \t- Для переключения между типами данных, отображаемыми на графике, нажмите на кнопку <annotation foreground="parameter">Д/И</annotation>. <annotation foreground="parameter">Д</annotation> означает «история мощности дозы». <annotation foreground="parameter">И</annotation> означает «история скорости счета в интервале».\n
         \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \n
         Некомпенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, зеленый график):\n
         \t- В данном режиме производится линейный пересчет общей скорости счета по всему спектру в мощность дозы без учета энергии регистрируемых квантов и без учета мертвого времени.\n
-        \t- Некомпенсированная <annotation foreground="parameter">Чувствительность</annotation> задаётся одним абсолютным значением в <annotation foreground="parameter">пЗв/имп</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Мощность дозы равна суммарному числу импульсов в окне усреднения, умноженному на это значение, с пересчётом в мкЗв/ч.\n
+        \t- Некомпенсированная <annotation foreground="parameter">Чувствительность</annotation> задаётся одним абсолютным значением в <annotation foreground="parameter">пЗв/имп</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation>. Мощность дозы равна суммарному числу импульсов в окне усреднения, умноженному на это значение, с пересчётом в мкЗв/ч.\n
         \t- Текстовое поле <annotation foreground="parameter">мд(н)</annotation> отображает некомпенсированное значение мощности дозы.\n
         \n
         Компенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, пурпурный график):\n
         \t- В данном режиме производится расчет мощности дозы исходя из индивидуального вклада отдельных энергетических диапазонов спектра.\n
-        \t- Компенсированная <annotation foreground="parameter">кривая чувствительности</annotation> задаёт каждому энергетическому диапазону абсолютное значение в <annotation foreground="parameter">пЗв/имп</annotation> и настраивается в секции <annotation foreground="parameter">Компенсированная</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Число импульсов в каждом диапазоне умножается на значение этого диапазона, суммируется по всем диапазонам и пересчитывается в мкЗв/ч.\n
+        \t- Компенсированная <annotation foreground="parameter">кривая чувствительности</annotation> задаёт каждому энергетическому диапазону абсолютное значение в <annotation foreground="parameter">пЗв/имп</annotation> и настраивается в секции <annotation foreground="parameter">Компенсированная</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation>. Число импульсов в каждом диапазоне умножается на значение этого диапазона, суммируется по всем диапазонам и пересчитывается в мкЗв/ч.\n
         \t- Существуют профили настроек чувствительности: встроенные <u>nano-3</u>, <u>nano-8</u> и <u>nano-15</u> (только для чтения) и редактируемый профиль <u>Пользовательский</u>. Каждый профиль содержит собственные энергетические диапазоны, компенсированную кривую, некомпенсированное значение и окна Б/С/М. Используйте <annotation foreground="parameter">Сбросить к…</annotation>, чтобы скопировать встроенный профиль в пользовательский, либо <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> для сохранения/загрузки пользовательского профиля в/из файла.\n
         \t- Текстовое поле <annotation foreground="parameter">мд(к)</annotation> отображает компенсированное значение мощности дозы.\n
         \n
         Поиск в интервале (режим <annotation foreground="parameter">И</annotation>):\n
         \t- Данный режим предназначен для определения скорости счета в заданном энергетическом диапазоне (по умолчанию - по всему спектру).\n
         \t- Для установки энергетического диапазона используйте параметр <annotation foreground="parameter">Диапазон энергий</annotation> в <annotation foreground="parameter">Настройках</annotation>.\n
-        \t- Данный режим также позволяет озвучивать события статистически значимого изменения текущего уровня скорости счета относительно опорного уровня. Для включения режима озвучивания установите галочку <annotation foreground="parameter">Включить звуковой сигнал</annotation> в <annotation foreground="parameter">Настройках</annotation>. В <annotation foreground="parameter">Настройках</annotation> также можно установить громкость сигнала и выбрать устройство вывода звука.\n
-        \t- При запуске набора спектра при включенных звуковых оповещениях сперва осуществляется расчет опорного уровня. Расчет опорного уровня производится до достижения погрешности 10% (при 95% доверительном интервале), но не более 30 секунд. После расчета опорного уровня программа определяет два порога срабатывания оповещения: верхий и нижний. При определении порогов учитывается погрешность определения опорного уровня, погрешность текущего значения скрости счета и параметр <annotation foreground="parameter">Уровень обнаружения</annotation>, устанавливаемый в <annotation foreground="parameter">Настройках</annotation>.\n
+        \t- Данный режим также позволяет озвучивать события статистически значимого изменения текущего уровня скорости счета относительно опорного уровня. Для включения режима озвучивания установите галочку <annotation foreground="parameter">Включить звуковой сигнал</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки интервала</annotation>. Там же можно установить громкость сигнала и выбрать устройство вывода звука.\n
+        \t- При запуске набора спектра при включенных звуковых оповещениях сперва осуществляется расчет опорного уровня. Расчет опорного уровня производится до достижения погрешности 10% (при 95% доверительном интервале), но не более 30 секунд. После расчета опорного уровня программа определяет два порога срабатывания оповещения: верхий и нижний. При определении порогов учитывается погрешность определения опорного уровня, погрешность текущего значения скрости счета и параметр <annotation foreground="parameter">Уровень обнаружения</annotation>, устанавливаемый в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки интервала</annotation>.\n
         \t- Текстовое поле <annotation foreground="parameter">инт.</annotation> отображает скорость счета в выбранном энергетическом интервале.\n
         \t- Текстовое поле <annotation foreground="parameter">≈cps</annotation> отображает значение опорного уровня в процессе его расчета.\n
         \t- Текстовое поле <annotation foreground="parameter">♪cps</annotation> отображает текущие значения порогов срабатывания сигнализации.\n
@@ -788,15 +790,15 @@
         \t- Фон сохраняется в файле с именем «<i>Background</i>» и загружается только из него. Для использования другого фона сначала загрузите его как основной, а потом отправьте его в фон. Примечание: сохранить фон можно только при наличии данных фона, в противном случае команда будет отключена.\n
         \t- Обновление спектра может быть остановлено при выборе <annotation foreground="parameter">Пауза</annotation> в основном меню или в разделе иконок. После выбора пункт меняется на <annotation foreground="parameter">Продолжить</annotation>. Все импульсы, полученные из аудио потока во время паузы, будут утеряны.\n
         \t- Любой сохранённый файл может быть отправлен в другую программу, другому человеку или через интернет посредством другой программы при помощи пункта меню <annotation foreground="parameter">Поделиться</annotation>.\n
-        \t- Редактируемый профиль чувствительности <annotation foreground="parameter">Пользовательский</annotation> можно сохранить в файл профиля и загрузить из него кнопками <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Файл профиля содержит один профиль: его кривую чувствительности, некомпенсированный коэффициент и значения Б/С/М.\n
+        \t- Редактируемый профиль чувствительности <annotation foreground="parameter">Пользовательский</annotation> можно сохранить в файл профиля и загрузить из него кнопками <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation>. Файл профиля содержит один профиль: его кривую чувствительности, некомпенсированный коэффициент и значения Б/С/М.\n
         \n
     </string>
     <string name="help_text_part8"><big><annotation foreground="caption">8. Сохранение и отображение спектрограмм:</annotation></big>\n
         \tДельта - разница между двумя последовательными состояниями набираемого спектра. Спектрограмма - список, состоящий из последовательности дельт набираемого спектра. Таким образом, спектрограмма позволяет изучать динамику изменения спектра во времени.\n
-        \t- Для сохранения спектрограммы с заданным интервалом времени (длительностью дельты) необходимо установить интервал записи более нуля в параметре <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation>. Запись новой спектрограммы начинается каждый раз при начале записи спектра. Имя файла спектрограммы имеет шаблон Spectrogram-«описание-спектра»-«дата_время-начала-записи».txt\n
+        \t- Для сохранения спектрограммы с заданным интервалом времени (длительностью дельты) необходимо установить интервал записи более нуля в параметре <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation> в <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Настройки</annotation>. Запись новой спектрограммы начинается каждый раз при начале записи спектра. Имя файла спектрограммы имеет шаблон Spectrogram-«описание-спектра»-«дата_время-начала-записи».txt\n
         \t- Просмотреть записываемую в данный момент спектрограмму можно командой <annotation foreground="parameter">Просмотр</annotation> в подменю <annotation foreground="parameter">Спектрограмма</annotation>. Первая строка спектрограммы отображается по истечении первого интервала записи.\n
         \t- Просмотреть ранее записанную спектрограмму можно командой <annotation foreground="parameter">Загрузить из…</annotation> в подменю <annotation foreground="parameter">Спектрограмма</annotation>.\n
-        \t- Для записи спектрограмм 24/7 предусмотрена опция <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation>, которая позволяет ограничить размер записываемых файлов.\n
+        \t- Для записи спектрограмм 24/7 предусмотрена опция <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation> в <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Настройки</annotation>, которая позволяет ограничить размер записываемых файлов.\n
         \t- При сохранении спектрограмм записываются полные данные о всех 8192 каналах спектра. При отображении данные спектрограммы сжимаются до 1024 каналов.\n
         \tПРИМЕЧАНИЕ: Использование режима записи спектрограмм приводит к увеличенному потреблению оперативной памяти.
         \n
@@ -824,11 +826,11 @@
         \tИзменение спектра:\n
         \t- <annotation foreground="parameter">Дельта-время</annotation> - выбор длительности скользящего окна в режиме изменение спектра.\n
         \n
-        \tСпектрограмма:\n
+        \tСпектрограмма → Настройки:\n
         \t- <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation> - при включенной записи спектрограммы каждый день в полночь будет создаваться новый файл спектрограммы.\n
         \t- <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation> - включает запись спектрограммы во время набора спектра, значение определяет длительность дельты спектра в секундах.\n
         \n
-        \tПоиск в интервале:\n
+        \tПоиск → Настройки интервала:\n
         \t- <annotation foreground="parameter">Включить звуковой сигнал</annotation> - включить озвучивание статистически значимого изменения скорости счета относительно опорного уровня.\n
         \t- <annotation foreground="parameter">Диапазон энергий</annotation> - ограничивает диапазон энергий при определения скорости счета. Нажмите на текст для выбора диапазона.\n
         \t- <annotation foreground="parameter">Звуковое устройство вывода:</annotation> - требуемое устройство для вывода звука. Нажмите на текст для выбора другого устройства.\n

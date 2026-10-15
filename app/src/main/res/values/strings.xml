@@ -14,8 +14,6 @@
     <string name="settings_usb_processing">USB Processing</string>
     <string name="settings_spectrum">Spectrum</string>
     <string name="settings_spectrum_change">Spectrum Change</string>
-    <string name="settings_spectrogram">Spectrogram</string>
-    <string name="settings_interval_search">Interval Search</string>
     <string name="settings_atomswift_integration">AtomSwift Integration</string>
     <string name="settings_search_isotopes">Search Isotopes</string>
     <string name="settings_files">Files</string>
@@ -25,7 +23,6 @@
 
     <string name="isotope_search">Atom Spectra Find Isotopes</string>
     <string name="action_settings">Settings</string>
-    <string name="action_select_interval">Set interval…</string>
     <string name="action_restart">Clear spectrum</string>
     <string name="action_save_options">Save options</string>
     <string name="action_buy_spectrometer">Buy a spectrometer</string>
@@ -209,7 +206,10 @@
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Device</string>
     <string name="calibration_load_device_energy">Load with calibration…</string>
-    <string name="calibration_sensivity">Set sensitivity…</string>
+    <string name="calibration_sensivity">Dose rate settings</string>
+    <string name="device_settings">Settings</string>
+    <string name="menu_search">Search</string>
+    <string name="interval_settings">Interval settings</string>
     <string name="calibration_channel">Last: 8192</string>
     <string name="calibration_channel_format">Last: <xliff:g id="channel">%1$d</xliff:g></string>
     <string name="calibration_add_nuclid_title">Add a calibration point</string>
@@ -217,7 +217,7 @@
     <string name="calibration_add_nuclid2_text">Enter an energy (in keV) for channel %1$d (now %2$s, %3$.2f keV):</string>
     <string name="calibration_stop_before_load_device_text">To read the calibration from the device, the spectrum recording will be stopped</string>
 
-    <string name="detector_sensitivity">Device Sensitivity</string>
+    <string name="detector_sensitivity">Dose rate settings</string>
     <string name="sens_energy_kev">E, keV</string>
     <string name="sens_sensitivity">Sensitivity</string>
     <string name="sens_add_row_dialog_title">Add Row</string>
@@ -566,6 +566,8 @@
     <string name="spectrogram_loading_dialog_message">Wait until loading complete. Rows loaded: %1$d…</string>
     <string name="spectrogram_loading_dialog_stop">Stop and view loaded</string>
     <string name="spectrogram_view">View</string>
+    <string name="spectrogram_settings">Settings</string>
+    <string name="spectrogram_settings_title">Spectrogram settings</string>
     <string name="spectrogram_view_map">View on map</string>
     <string name="spectrogram_clear">Clear screen</string>
     <string name="spectrogram_clear_title">Clear screen</string>
@@ -704,27 +706,27 @@
     </string>
     <string name="help_text_part4"><big><annotation foreground="caption">4. <annotation foreground="parameter">Search</annotation> mode - dose rate/energy range count rate calculation and output:</annotation></big>\n
         The program calculates three values - non-compensated dose rate, compensated dose rate, count rate in a given range (interval) of energies. Non-compensated - linear conversion of the overall count rate into dose rate using a coefficient. Compensated - calculation of dose rate taking into account the energy of the registered photons, the detector sensitivity curve and the coefficient.\n
-        \t- The <annotation foreground="parameter">F/M/S</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count target for each mode is set per profile in <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>, with independent values for the compensated and non-compensated dose rates. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
+        \t- The <annotation foreground="parameter">F/M/S</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count target for each mode is set per profile in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Dose rate settings</annotation>, with independent values for the compensated and non-compensated dose rates. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
         \t- To switch between value types, press the <annotation foreground="parameter">D/I</annotation> button. <annotation foreground="parameter">D</annotation> means \'dose rate history\'. <annotation foreground="parameter">I</annotation> means \'interval count rate history\'.\n
         \t- For all value types, the text field <annotation foreground="parameter">upd</annotation> displays the local time (hours:minutes:seconds) of the last foreground spectrum data update. The value --:--:-- is shown before the first data arrives or after the spectrum is cleared.\n
         \t- For all value types, the text field <annotation foreground="parameter">cps</annotation> displays the number of count during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \n
         Non-compensated dose rate (mode <annotation foreground="parameter">D</annotation>, green plot):\n
         \t- In this mode, the total count rate across the entire spectrum is converted into dose rate. The conversion is linear, without taking into account the energy of the detected photons or dead time.\n
-        \t- You need to set the non-compensated <annotation foreground="parameter">Sensitivity</annotation> as a single absolute value in <annotation foreground="parameter">pSv/count</annotation> in <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. The dose rate equals the total counts multiplied by this value over the averaging window, converted to μSv/h.\n
+        \t- You need to set the non-compensated <annotation foreground="parameter">Sensitivity</annotation> as a single absolute value in <annotation foreground="parameter">pSv/count</annotation> in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Dose rate settings</annotation>. The dose rate equals the total counts multiplied by this value over the averaging window, converted to μSv/h.\n
         \t- The text field <annotation foreground="parameter">dr(n)</annotation> displays the non-compensated dose rate value.\n
         \n
         Compensated dose rate (mode <annotation foreground="parameter">D</annotation>, purple plot):\n
         \t- In this mode, the dose rate is calculated from the individual contribution of separate energy ranges of the spectrum.\n
-        \t- The compensated <annotation foreground="parameter">Sensitivity curve</annotation> assigns an absolute <annotation foreground="parameter">pSv/count</annotation> value to each energy band; it is configured in the <annotation foreground="parameter">Compensated</annotation> section of <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. The counts in each band are multiplied by that band\'s value, summed over all bands and converted to μSv/h.\n
+        \t- The compensated <annotation foreground="parameter">Sensitivity curve</annotation> assigns an absolute <annotation foreground="parameter">pSv/count</annotation> value to each energy band; it is configured in the <annotation foreground="parameter">Compensated</annotation> section of <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Dose rate settings</annotation>. The counts in each band are multiplied by that band\'s value, summed over all bands and converted to μSv/h.\n
         \t- Sensitivity is organized into profiles: the built-in <u>nano-3</u>, <u>nano-8</u> and <u>nano-15</u> (read-only), and an editable <u>Custom</u> profile. Each profile carries its own energy bands, compensated curve, non-compensated value and F/M/S targets. Use <annotation foreground="parameter">Reset to…</annotation> to copy a built-in into Custom, or <annotation foreground="parameter">Load</annotation>/<annotation foreground="parameter">Save</annotation> to exchange the Custom profile with a profile file.\n
         \t- The text field <annotation foreground="parameter">dr(c)</annotation> displays the compensated dose rate value.\n
         \n
         Interval search (mode <annotation foreground="parameter">I</annotation>):\n
         \t- This mode is designed to determine the counting rate within a specified energy range (by default, across the entire spectrum).\n
         \t- To set the energy range, use the <annotation foreground="parameter">Energy range</annotation> parameter in the <annotation foreground="parameter">Settings</annotation>.\n
-        \t- This mode also supports audio alarm of statistically significant changes in the current counting speed relative to the reference level. To enable alarm, check the <annotation foreground="parameter">Enable sound alarm</annotation> checkbox in the <annotation foreground="parameter">Settings</annotation>. In the <annotation foreground="parameter">Settings</annotation>, you can also adjust the alarm volume and select the audio output device.\n
-        \t- When the spectrum recording is started with sound alarm enabled, the reference level is calculated first. The reference level calculation is performed until an error of 10% is reached (at a 95% confidence level), but for no more than 30 seconds. After calculating the reference level, the program determines two alarm thresholds: upper and lower. The calculation of the thresholds takes into account the error in determining the reference level, the error in the current count rate value, and the <annotation foreground="parameter">Detection level</annotation> parameter, which is set in the <annotation foreground="parameter">Settings</annotation>.\n
+        \t- This mode also supports audio alarm of statistically significant changes in the current counting speed relative to the reference level. To enable alarm, check the <annotation foreground="parameter">Enable sound alarm</annotation> checkbox in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Interval settings</annotation>. There you can also adjust the alarm volume and select the audio output device.\n
+        \t- When the spectrum recording is started with sound alarm enabled, the reference level is calculated first. The reference level calculation is performed until an error of 10% is reached (at a 95% confidence level), but for no more than 30 seconds. After calculating the reference level, the program determines two alarm thresholds: upper and lower. The calculation of the thresholds takes into account the error in determining the reference level, the error in the current count rate value, and the <annotation foreground="parameter">Detection level</annotation> parameter, which is set in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Interval settings</annotation>.\n
         \t- The text field <annotation foreground="parameter">int.</annotation> displays the count rate in the selected energy interval.\n
         \t- The text field <annotation foreground="parameter">≈cps</annotation> displays the reference level value during its calculation.\n
         \t- The text field <annotation foreground="parameter">♪cps</annotation> displays the current alarm threshold values.\n
@@ -784,15 +786,15 @@
         \t- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file. Also you may load it to the main spectrum and then move it the background. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
         \t- You can stop spectrum update by selecting <annotation foreground="parameter">Pause recording</annotation> in a main menu or on a shortcut bar. After selecting it changes to <annotation foreground="parameter">Continue recording</annotation>. All impulses received from audio during pause will be lost.\n
         \t- Each saved file can be sent to another program, user or via internet by means of another program with <annotation foreground="parameter">Share a file</annotation> menu item.\n
-        \t- The editable <annotation foreground="parameter">Custom</annotation> sensitivity profile can be stored to and loaded from a profile file with the <annotation foreground="parameter">Save</annotation>/<annotation foreground="parameter">Load</annotation> buttons in <annotation foreground="parameter">Device</annotation> - <annotation foreground="parameter">Sensitivity</annotation>. A profile file holds one profile: its sensitivity curve, non-compensated coefficient and F/M/S values.\n
+        \t- The editable <annotation foreground="parameter">Custom</annotation> sensitivity profile can be stored to and loaded from a profile file with the <annotation foreground="parameter">Save</annotation>/<annotation foreground="parameter">Load</annotation> buttons in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Dose rate settings</annotation>. A profile file holds one profile: its sensitivity curve, non-compensated coefficient and F/M/S values.\n
         \n
     </string>
     <string name="help_text_part8"><big><annotation foreground="caption">8. Storing and viewing spectrogram data:</annotation></big>\n
         \tA delta is the difference between two subsequent states of the collected spectrum. A spectrogram is a list consisting of a sequence of deltas of the collected spectrum. Thus, a spectrogram allows one to study the dynamics of spectrum change over time.\n
-        \t- To save a spectrogram with a specified time interval (delta duration), set the recording interval to a value greater than zero in the <annotation foreground="parameter">Save delta every N sec</annotation> parameter. A new spectrogram is started each time a spectrum recording begins. The spectrogram file name has the template Spectrogram-"spectrum-description"-"date_time-of-recording-start".txt\n
+        \t- To save a spectrogram with a specified time interval (delta duration), set the recording interval to a value greater than zero in the <annotation foreground="parameter">Save delta every N sec</annotation> parameter of <annotation foreground="parameter">Spectrogram</annotation> - <annotation foreground="parameter">Settings</annotation>. A new spectrogram is started each time a spectrum recording begins. The spectrogram file name has the template Spectrogram-"spectrum-description"-"date_time-of-recording-start".txt\n
         \t- You can view the currently recording spectrogram using the <annotation foreground="parameter">View</annotation> command in the <annotation foreground="parameter">Spectrogram</annotation> submenu. The first line of the spectrogram appears once the first recording interval elapses.\n
         \t- You can view a previously recorded spectrogram using the command <annotation foreground="parameter">Load from…</annotation> in the submenu <annotation foreground="parameter">Spectrogram</annotation>.\n
-        \t- To record spectrogram data 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation>, which allows you to limit the size of the recorded files.\n
+        \t- To record spectrogram data 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> in <annotation foreground="parameter">Spectrogram</annotation> - <annotation foreground="parameter">Settings</annotation>, which allows you to limit the size of the recorded files.\n
         \t- When saving spectrogram data, full 8192 spectrum channels are recorded. When displayed, the spectrogram data is compressed to 1024 channels.\n
         \tNOTE: Using the spectrogram recording mode results in increased consumption of RAM.\n
         \n
@@ -820,11 +822,11 @@
         \tSpectrum change:\n
         \t- <annotation foreground="parameter">Diff time</annotation> - select the duration of sliding window in spectrum change mode.\n
         \n
-        \tSpectrogram:\n
+        \tSpectrogram - Settings:\n
         \t- <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> - with the spectrogram recording enabled, a new spectrogram file will be created every day at midnight.\n
         \t- <annotation foreground="parameter">Save delta every N s</annotation> - enables spectrogram recording while collecting spectrum data, value defines spectrum delta duration in seconds.\n
         \n
-        \tInterval search:\n
+        \tSearch - Interval settings:\n
         \t- <annotation foreground="parameter">Enable sound alarm</annotation> - enable audio notification of a statistically significant change in the count rate relative to the reference level.\n
         \t- <annotation foreground="parameter">Energy range</annotation> - limits the energy range when determining the counting rate. Click on the text to select the range.\n
         \t- <annotation foreground="parameter">Output sound device</annotation> - desired sound output. Press on text to select next output.\n

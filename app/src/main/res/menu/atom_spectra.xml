@@ -162,6 +162,10 @@
                 android:icon="@drawable/menu_set_as"
                 android:orderInCategory="403"
                 android:title="@string/spectrogram_view_map" />
+            <item
+                android:id="@+id/action_spectrogram_settings"
+                android:orderInCategory="404"
+                android:title="@string/spectrogram_settings" />
         </menu>
     </item>
     <item
@@ -319,10 +323,26 @@
                 android:orderInCategory="601"
                 android:title="@string/action_switch_device" />
             <item
+                android:id="@+id/action_device_settings"
+                android:enabled="false"
+                android:orderInCategory="602"
+                android:title="@string/device_settings" />
+        </menu>
+    </item>
+    <item
+        android:orderInCategory="106"
+        android:title="@string/menu_search">
+        <menu>
+            <item
                 android:id="@+id/action_edit_sensivity"
                 android:icon="@drawable/menu_edit"
-                android:orderInCategory="603"
+                android:orderInCategory="701"
                 android:title="@string/calibration_sensivity" />
+            <item
+                android:id="@+id/action_interval_settings"
+                android:icon="@drawable/menu_edit"
+                android:orderInCategory="702"
+                android:title="@string/interval_settings" />
         </menu>
     </item>
     <item
