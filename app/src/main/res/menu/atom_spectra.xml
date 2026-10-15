@@ -332,12 +332,6 @@
         android:showAsAction="ifRoom"
         android:title="@string/action_find_isotopes" />
     <item
-        android:id="@+id/action_share_export"
-        android:icon="@drawable/menu_share"
-        android:orderInCategory="108"
-        android:showAsAction="ifRoom"
-        android:title="@string/hist_share_export" />
-    <item
         android:id="@+id/action_settings"
         android:icon="@android:drawable/ic_menu_manage"
         android:orderInCategory="109"

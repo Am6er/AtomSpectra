@@ -111,7 +111,6 @@
     <string name="hist_export_to_N42">Export to N42…</string>
     <string name="hist_export_csv">Экспорт в CSV…</string>
     <string name="hist_export_with_energy">Экспорт (с энергией)…</string>
-    <string name="hist_share_export">Поделиться</string>
     <string name="hist_pause_update">Пауза</string>
     <string name="hist_continue_update">Продолжить</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
@@ -366,8 +365,6 @@
     <string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
     <string name="perm_no_write_export">Нет разрешения на экспорт спектра в СSV</string>
     <string name="perm_no_write_export_energy">Нет разрешения на экспорт спектра с энергией в CSV</string>
-    <string name="perm_no_share">Нет разрешения на чтение файла для отправки</string>
-    <string name="perm_no_outside">Файл вне моего доступа</string>
 
     <string name="error_working_dir_not_set">Рабочая директория не установлена. Установите рабочую директорию в настройках.</string>
     <string name="error_working_dir_not_valid">Рабочая директория \'$1%s\' некорректна. Установите рабочую директорию в настройках.</string>
@@ -383,15 +380,12 @@
     <string name="ask_select_histogram">Выбрать спектр</string>
     <string name="ask_select_spectrogram">Выбрать спектрограмму</string>
     <string name="ask_select_calibration">Выбрать файл калибровки</string>
-    <string name="ask_select_device_file">Выбрать файл устройства</string>
     <string name="ask_spectrum_suffix">Выберите суффикс для спектра</string>
     <string name="ask_export_bqmoni">Суффикс для экспорта в Becquerel Monitor</string>
     <string name="ask_export_spe">Суффикс для экспорта в SPE</string>
     <string name="ask_export_N42">Суффикс для экспорта в N42</string>
     <string name="ask_export_suffix">Суффикс для экспорта в CSV</string>
     <string name="ask_suffix_text">Введите суффикс файла:</string>
-    <string name="ask_share">Отправить файл</string>
-    <string name="ask_share_text">Файл спектра <xliff:g id="file_share">%1$s</xliff:g></string>
     <string name="ask_noise_title">Уровень дискриминатора шума</string>
     <string name="ask_noise_text">Введите новое значение:</string>
     <string name="ask_channel_title">Выбрать канал курсора</string>

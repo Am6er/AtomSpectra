@@ -111,7 +111,6 @@
     <string name="hist_export_to_N42">Export to N42…</string>
     <string name="hist_export_csv">Export to CSV…</string>
     <string name="hist_export_with_energy">Export (with energy)…</string>
-    <string name="hist_share_export">Share</string>
     <string name="hist_pause_update">Pause recording</string>
     <string name="hist_continue_update">Continue recording</string>
     <string name="hist_ask_delete_title">Clear spectrum</string>
@@ -366,8 +365,6 @@
     <string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
     <string name="perm_no_write_export">No permission to export a spectrum to a CSV file</string>
     <string name="perm_no_write_export_energy">No permission to export a spectrum with an energy to a CSV file</string>
-    <string name="perm_no_share">No permission to read a file to share</string>
-    <string name="perm_no_outside">A file is outside of my scope</string>
 
     <string name="error_working_dir_not_set">Working directory is not set. Go to settings and configure working directory.</string>
     <string name="error_working_dir_not_valid">Working directory \'$1%s\' is not valid. Go to settings and configure working directory.</string>
@@ -383,15 +380,12 @@
     <string name="ask_select_histogram">Select a spectrum</string>
     <string name="ask_select_spectrogram">Select a spectrogram</string>
     <string name="ask_select_calibration">Select a calibration file</string>
-    <string name="ask_select_device_file">Select a device file</string>
     <string name="ask_spectrum_suffix">File suffix for a spectrum</string>
     <string name="ask_export_bqmoni">File suffix to export data to Becquerel Monitor</string>
     <string name="ask_export_spe">File suffix to export data to SPE</string>
     <string name="ask_export_N42">File suffix to export data to N42</string>
     <string name="ask_export_suffix">File suffix to export data to CSV</string>
     <string name="ask_suffix_text">Enter file suffix:</string>
-    <string name="ask_share">Share a file</string>
-    <string name="ask_share_text">A spectrum data from <xliff:g id="file_share">%1$s</xliff:g></string>
     <string name="ask_noise_title">Noise discriminator level</string>
     <string name="ask_noise_text">Enter new value:</string>
     <string name="ask_channel_title">Set a cursor channel</string>
