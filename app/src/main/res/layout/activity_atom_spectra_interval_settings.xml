@@ -14,8 +14,10 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:divider="@drawable/divider"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="8dp"
+            android:showDividers="middle">
 
             <TextView
                 android:layout_width="fill_parent"
