@@ -273,6 +273,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private void clearSpectrogram() {
         if (!AtomSpectraService.isSpectrogramRecordingActive()) {
             AtomSpectraSpectrogramData.instance.clear();
+            SpectrogramUIViewState.instance.clearSelection();
             AtomSpectraSpectrogramData.notifyUpdated(this);
             return;
         }
@@ -285,8 +286,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                 AtomSpectraSpectrogramData.notifyUpdated(this);
             }));
         }
-        actions.add(new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_restart_button), () ->
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_RESTART_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME))));
+        actions.add(new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_restart_button), () -> {
+            SpectrogramUIViewState.instance.clearSelection();
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_RESTART_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME));
+        }));
         actions.add(new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
 
         DialogHelper.showStackedActions(this,
