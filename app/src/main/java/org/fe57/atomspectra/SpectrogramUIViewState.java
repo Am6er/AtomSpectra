@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 
+import java.util.List;
+
 /**
  * Spectrogram view state: display prefs (palette, scale, bins, toggles) and session viewport
  * (pan, color bar, selection). Written by the activity and view, read by the view.
@@ -110,6 +112,21 @@ public final class SpectrogramUIViewState {
         autoScroll = true;
         colorBarMinFraction = 0f;
         colorBarMaxFraction = 1f;
+    }
+
+    public void resetVerticalScroll(boolean follow) {
+        verticalOffsetPx = 0;
+        autoScroll = follow;
+    }
+
+    public void applySelectionShifts(List<Integer> shifts) {
+        for (int shift : shifts) {
+            if (bgLeftBound == null || bgRightBound == null || fgLeftBound == null || fgRightBound == null) {
+                return;
+            }
+            setSelection(bgLeftBound.shifted(shift), bgRightBound.shifted(shift),
+                    fgLeftBound.shifted(shift), fgRightBound.shifted(shift));
+        }
     }
 
     public void clearSelection() {

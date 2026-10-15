@@ -38,7 +38,6 @@ import java.util.Objects;
 
 public class AtomSpectraSpectrogram extends Activity implements GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
     private static boolean isActive = false;
-    private static int lastRowCount = 0;
 
     // exporting state
     private static boolean isExportingSpectrum = false;
@@ -221,6 +220,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             AtomSpectraMap.openSpectrogramMap(this);
             return true;
         }
+        if (item.getItemId() == R.id.action_spectrogram_clear) {
+            clearSpectrogram();
+            return true;
+        }
         if (item.getItemId() == R.id.action_spectrogram_show_background) {
             boolean next = !SpectrogramUIViewState.instance.backgroundVisible;
             SpectrogramUIViewState.instance.setBackgroundVisible(next, sharedPreferences);
@@ -264,6 +267,27 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void clearSpectrogram() {
+        if (!AtomSpectraService.isSpectrogramRecordingActive()) {
+            AtomSpectraSpectrogramData.instance.clear();
+            AtomSpectraSpectrogramData.notifyUpdated(this);
+            return;
+        }
+
+        DialogHelper.showStackedActions(this,
+                getString(R.string.spectrogram_clear_title),
+                getString(R.string.spectrogram_clear_text),
+                true,
+                new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_completed_button), () -> {
+                    AtomSpectraSpectrogramData.instance.leaveOnlyLastSegment();
+                    SpectrogramUIViewState.instance.resetVerticalScroll(true);
+                    AtomSpectraSpectrogramData.notifyUpdated(this);
+                }),
+                new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_restart_button), () ->
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_RESTART_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME))),
+                new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
     }
 
     private void applyPalette(String newPalette) {
@@ -412,17 +436,16 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
             SpectrogramUIViewState state = SpectrogramUIViewState.instance;
+            state.applySelectionShifts(AtomSpectraSpectrogramData.instance.takeSelectionShifts());
             int newRowCount = AtomSpectraSpectrogramData.instance.rowCount();
             if (newRowCount == 0) {
                 state.clearSelection();
+                state.resetVerticalScroll(true);
             } else if (state.bgLeftBound == null || state.bgRightBound == null
                     || state.fgLeftBound == null || state.fgRightBound == null) {
                 AtomSpectraSpectrogramView.SelectionBound zero = AtomSpectraSpectrogramView.SelectionBound.zeroIndex();
                 state.setSelection(zero, zero, zero, zero);
-            } else if (lastRowCount > 0 && newRowCount < lastRowCount) {
-                // TODO: is it really a case?
             }
-            lastRowCount = newRowCount;
 
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
