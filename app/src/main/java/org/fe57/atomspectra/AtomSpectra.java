@@ -98,7 +98,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private Menu app_menu = null;
     private final int LOAD_HIST_CODE = 301;
     private final int LOAD_CALIBRATION_CODE = 302;
-    private final int SHARE_FILE_CODE = 303;
     private final int LOAD_BACK_CODE = 304;
     private final int SELECT_SAVE_HIST_DIR_CODE = 305;
     private final int SELECT_SAVE_BACK_DIR_CODE = 306;
@@ -2155,29 +2154,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             }
 
             return true;
-        } else if (item.getItemId() == R.id.action_share_export) {
-            Log.d(TAG, "sharing file");
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                withStorage(() -> {
-                    try {
-                        //do not delete, may be good
-                        Intent loadIntent = new Intent()
-                                .setType("*/*")
-                                .setAction(Intent.ACTION_GET_CONTENT);
-                        startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_share)), SHARE_FILE_CODE);
-                    } catch (Exception e) {
-                        Log.d(TAG, "Sharing a file FAIL");
-                    }
-                }, getString(R.string.perm_no_share));
-            } else {
-                Intent loadIntent = new Intent()
-                        .setType("*/*")
-                        .setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(loadIntent, getString(R.string.ask_select_device_file)), SHARE_FILE_CODE);
-            }
-
-
-            return true;
         } else if (item.getItemId() == R.id.action_find_isotopes) {
             Intent intent_find_isotopes = new Intent(this, AtomSpectraFindIsotope.class);
             startActivity(intent_find_isotopes);
@@ -2448,10 +2424,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             selectedFile = data.getData(); //The uri with the location of the file
             if (selectedFile != null)
                 loadCalibrationFromSpectrum(selectedFile);
-        } else if (requestCode == SHARE_FILE_CODE && resultCode == RESULT_OK) {
-            selectedFile = data.getData();
-            if (selectedFile != null)
-                shareFile(selectedFile);
         } else if (requestCode == LOAD_SPG_CODE && resultCode == RESULT_OK) {
             List<Uri> selectedFiles = new ArrayList<>();
             if (data.getClipData() != null) {
@@ -3347,55 +3319,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         } catch (Exception e) {
             AtomSpectraLog.error(this, LogTag.SPECTRA_ACT, "Cannot export N42 spectrum", e);
             ToastHelper.showToastOnly(this, getString(R.string.export_save_error, suffix));
-        }
-    }
-
-    public void shareFile(Uri file) {
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US);
-        final String filename = file.getPath();
-        String onlyName, onlyLoName;
-        if (filename == null) {
-            ToastHelper.showErrorAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.strange_file_name));
-            return;
-        }
-        if (filename.lastIndexOf('/') != -1) {
-            onlyName = filename.substring(filename.lastIndexOf('/') + 1);
-        } else {
-            onlyName = filename;
-        }
-        Log.d(TAG, filename);
-        Intent shareIntent = new Intent();
-        shareIntent.setAction(Intent.ACTION_SEND);
-        shareIntent.putExtra(Intent.EXTRA_SUBJECT, onlyName);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.ask_share_text, onlyName));
-        try {
-            shareIntent.putExtra(Intent.EXTRA_STREAM, file);
-        } catch (Exception e) {
-            ToastHelper.showErrorAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.perm_no_outside));
-            return;
-        }
-        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        onlyLoName = onlyName.toLowerCase(Locale.ROOT);
-
-        if (!onlyLoName.equals(".csv") && onlyLoName.endsWith(".csv")) {
-            shareIntent.setType("text/csv");
-        } else if (!onlyLoName.equals(".txt") && onlyLoName.endsWith(".txt")) {
-            shareIntent.setType("text/plain");
-        } else if (!onlyLoName.equals(".n42") && onlyLoName.endsWith(".n42")) {
-            shareIntent.setType("text/plain");
-        } else if (!onlyLoName.equals(".spe") && onlyLoName.endsWith(".spe")) {
-            shareIntent.setType("text/plain");
-        } else if (onlyName.equals("Background")) {
-            shareIntent.setType("text/plain");
-        } else
-            shareIntent.setType("*/*");
-
-        try {
-            if (shareIntent.resolveActivity(getPackageManager()) != null)
-                startActivity(Intent.createChooser(shareIntent, null));
-        } catch (Exception e) {
-            ToastHelper.showErrorAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.something_wrong));
         }
     }
 
