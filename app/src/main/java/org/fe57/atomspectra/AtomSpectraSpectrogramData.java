@@ -222,6 +222,12 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
+    public boolean hasCompletedSegments() {
+        synchronized (spectrogramSync) {
+            return segments.size() > 1;
+        }
+    }
+
     public void leaveOnlyLastSegment() {
         synchronized (spectrogramSync) {
             while (segments.size() > 1) {

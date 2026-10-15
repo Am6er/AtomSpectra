@@ -33,6 +33,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -276,18 +277,23 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             return;
         }
 
+        List<DialogHelper.StackedAction> actions = new ArrayList<>();
+        if (AtomSpectraSpectrogramData.instance.hasCompletedSegments()) {
+            actions.add(new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_completed_button), () -> {
+                AtomSpectraSpectrogramData.instance.leaveOnlyLastSegment();
+                SpectrogramUIViewState.instance.resetVerticalScroll(true);
+                AtomSpectraSpectrogramData.notifyUpdated(this);
+            }));
+        }
+        actions.add(new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_restart_button), () ->
+                sendBroadcast(new Intent(Constants.ACTION.ACTION_RESTART_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME))));
+        actions.add(new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
+
         DialogHelper.showStackedActions(this,
                 getString(R.string.spectrogram_clear_title),
                 getString(R.string.spectrogram_clear_text),
                 true,
-                new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_completed_button), () -> {
-                    AtomSpectraSpectrogramData.instance.leaveOnlyLastSegment();
-                    SpectrogramUIViewState.instance.resetVerticalScroll(true);
-                    AtomSpectraSpectrogramData.notifyUpdated(this);
-                }),
-                new DialogHelper.StackedAction(getString(R.string.spectrogram_clear_restart_button), () ->
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_RESTART_SPECTROGRAM).setPackage(Constants.PACKAGE_NAME))),
-                new DialogHelper.StackedAction(getString(R.string.dialog_cancel_button), null));
+                actions.toArray(new DialogHelper.StackedAction[0]));
     }
 
     private void applyPalette(String newPalette) {
