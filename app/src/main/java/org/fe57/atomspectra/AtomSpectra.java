@@ -3,6 +3,7 @@ package org.fe57.atomspectra;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ComponentName;
@@ -2358,9 +2359,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             startActivity(intent);
             return true;
         } else if (item.getItemId() == R.id.action_buy) {
-            Intent buyIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://kbradar.org"));
-            if (buyIntent.resolveActivity(getApplicationContext().getPackageManager()) != null)
-                startActivity(buyIntent);
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://kbradar.org")));
+            } catch (ActivityNotFoundException e) {
+                ToastHelper.showErrorAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.something_wrong));
+            }
             return true;
         } else if (item.getItemId() == R.id.action_exit) {
             if (AtomSpectraService.isRecording()) {
