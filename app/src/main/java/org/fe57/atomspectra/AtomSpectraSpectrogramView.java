@@ -845,6 +845,11 @@ public class AtomSpectraSpectrogramView extends View {
                 break;
             }
         }
+        // TODO: cap handles?
+        this.bgLeftHandleRow = bgLeftBound; // Math.min(bgLeftBound, maxRow);
+        this.bgRightHandleRow = bgRightBound; // Math.min(bgRightBound, maxRow);
+        this.fgLeftHandleRow = fgLeftBound; // Math.min(fgLeftBound, maxRow);
+        this.fgRightHandleRow = fgRightBound; // Math.min(fgRightBound, maxRow);
         if (!hasRows) {
             this.segmentsBinData = new ArrayList<>();
             this.gapsMeta = new ArrayList<>();
@@ -870,11 +875,6 @@ public class AtomSpectraSpectrogramView extends View {
         this.scale = scale;
         this.palette = palette;
 
-        // TODO: cap handles?
-        this.bgLeftHandleRow = bgLeftBound; // Math.min(bgLeftBound, maxRow);
-        this.bgRightHandleRow = bgRightBound; // Math.min(bgRightBound, maxRow);
-        this.fgLeftHandleRow = fgLeftBound; // Math.min(fgLeftBound, maxRow);
-        this.fgRightHandleRow = fgRightBound; // Math.min(fgRightBound, maxRow);
         ensureHandlesIncludeWholeBins();
         syncSelectionToViewState();
 
