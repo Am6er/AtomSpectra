@@ -1676,7 +1676,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                         ((newPacket[9] & 0xFF) << 16) |
                         ((newPacket[10] & 0xFF) << 24);
 
-                if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
+                if (LOG_BULK_PACKETS && AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
                     AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Packet DATA code=0x04 time=" + total_time + " cps=" + cps);
                 }
 
