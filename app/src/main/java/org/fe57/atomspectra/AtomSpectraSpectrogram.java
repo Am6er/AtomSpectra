@@ -406,7 +406,13 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         super.onStart();
         isActive = true;
 
-        syncRecording();
+        SpectrogramUIViewState state = SpectrogramUIViewState.instance;
+        String currentRecordingId = AtomSpectraSpectrogramData.instance.getRecordingId();
+        if (!Objects.equals(state.recordingId, currentRecordingId)) {
+            state.onNewRecording(currentRecordingId);
+            state.setSbin(1, sharedPreferences);
+        }
+
         updateControlPanel();
         // scroll to bottom at first render if recording is in progress
         boolean scrollToBottom = AtomSpectraService.isRecording();
@@ -433,20 +439,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         dismissSpectrumExportingDialog();
     }
 
-    // a new recording id means the data was cleared: selection and binning start over
-    private void syncRecording() {
-        SpectrogramUIViewState state = SpectrogramUIViewState.instance;
-        String currentRecordingId = AtomSpectraSpectrogramData.instance.getRecordingId();
-        if (!Objects.equals(state.recordingId, currentRecordingId)) {
-            state.onNewRecording(currentRecordingId);
-            state.setSbin(1, sharedPreferences);
-        }
-    }
-
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
             SpectrogramUIViewState state = SpectrogramUIViewState.instance;
-            syncRecording();
             state.applySelectionShifts(AtomSpectraSpectrogramData.instance.takeSelectionShifts());
             int newRowCount = AtomSpectraSpectrogramData.instance.rowCount();
             if (newRowCount == 0) {
