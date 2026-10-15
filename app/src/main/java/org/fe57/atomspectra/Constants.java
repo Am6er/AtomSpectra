@@ -232,6 +232,7 @@ public class Constants {
         String ACTION_CHECK_GPS_AVAILABILITY = "org.fe57.atomspectra.ACTION_CHECK_GPS";
         String ACTION_UPDATE_SETTINGS = "org.fe57.atomspectra.ACTION_UPDATE_SETTINGS";
         String ACTION_CLOSE_SENSITIVITY = "org.fe57.atomspectra.ACTION_CLOSE_SENSITIVITY";
+        String ACTION_CLOSE_INTERVAL_SETTINGS = "org.fe57.atomspectra.ACTION_CLOSE_INTERVAL_SETTINGS";
         String ACTION_UPDATE_ISOTOPE_LIST = "org.fe57.atomspectra.ACTION_UPDATE_ISOTOPE_LIST";
         String ACTION_UPDATE_GPS = "org.fe57.atomspectra.SEND_GPS_COMMAND";
         /**

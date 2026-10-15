@@ -221,6 +221,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             AtomSpectraMap.openSpectrogramMap(this);
             return true;
         }
+        if (item.getItemId() == R.id.action_spectrogram_settings) {
+            startActivity(new Intent(this, AtomSpectraSpectrogramSettings.class));
+            return true;
+        }
         if (item.getItemId() == R.id.action_spectrogram_clear) {
             clearSpectrogram();
             return true;

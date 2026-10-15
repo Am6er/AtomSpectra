@@ -1703,6 +1703,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         } else if (item.getItemId() == R.id.action_spectrogram_view) {
             showSpectrogramView();
             return true;
+        } else if (item.getItemId() == R.id.action_spectrogram_settings) {
+            startActivity(new Intent(this, AtomSpectraSpectrogramSettings.class));
+            return true;
         } else if (item.getItemId() == R.id.action_hist_view_map) {
             AtomSpectraMap.openSpectrumMap(this);
             return true;
@@ -2162,6 +2165,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         } else if (item.getItemId() == R.id.action_edit_sensivity) {
             Intent intent_sensitivity = new Intent(this, AtomSpectraSensitivity.class);
             startActivity(intent_sensitivity);
+            return true;
+        } else if (item.getItemId() == R.id.action_interval_settings) {
+            startActivity(new Intent(this, AtomSpectraIntervalSettings.class));
             return true;
         } else if (item.getItemId() == R.id.action_cal_add_point) {
             onAddCalibrationPoint(findViewById(R.id.addCalibrationPointButton));

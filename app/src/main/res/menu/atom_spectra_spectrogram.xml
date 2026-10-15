@@ -73,4 +73,10 @@
         android:showAsAction="never"
         android:title="@string/spectrogram_view_map" />
 
+    <item
+        android:id="@+id/action_spectrogram_settings"
+        android:orderInCategory="101"
+        android:showAsAction="never"
+        android:title="@string/spectrogram_settings" />
+
 </menu>

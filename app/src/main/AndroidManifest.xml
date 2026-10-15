@@ -82,6 +82,17 @@
             android:name=".AtomSpectraSensitivity"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
+        <activity
+            android:name=".AtomSpectraIntervalSettings"
+            android:label="@string/interval_settings"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            tools:ignore="LockedOrientationActivity" />
+        <activity
+            android:name=".AtomSpectraSpectrogramSettings"
+            android:label="@string/spectrogram_settings_title"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
 
         <activity
             android:name=".AtomSpectraSelect"

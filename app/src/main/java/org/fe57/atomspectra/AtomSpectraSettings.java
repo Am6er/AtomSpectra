@@ -13,7 +13,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
-import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -22,7 +21,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.text.InputType;
-import android.text.method.NumberKeyListener;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -61,9 +59,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     };
     private TextView doseRateFreqLabel;
     private TextView workingDirText;
-    private TextView outputDeviceText;
-    private int outputDeviceID = -1;
-    private String outputDeviceName = "(none)";
     private final int SELECT_DIR_CODE_SETTINGS = 100;
     private boolean showPulseShape = false;
 
@@ -115,19 +110,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         // --- spectrum change
         updateDiffTimeText();
         // --- end spectrum change
-
-        // --- spectrogram
-        setupSpgMidnightResetCheckbox();
-        updateSpgDeltaDurationText();
-        // --- end spectrogram
-
-        // --- interval search section
-        setupEnableSearchAlarmCheckbox();
-        setupSearchAlarmOutputDeviceText();
-        updateSearchEnergyRangeText();
-        updateSearchAlarmVolumeText();
-        updateSearchAlarmDetectionLevelText();
-        // --- end interval search section
 
         // --- AtomSwift integration section
         setupAtomSwiftIntegrationCheckbox();
@@ -556,56 +538,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
     // --- end spectrum change section
 
-    // --- spectrogram section
-    // midnight reset
-    private void setupSpgMidnightResetCheckbox() {
-        CheckBox checkSpgMidnightReset = findViewById(R.id.spgMidnightReset);
-        checkSpgMidnightReset.setChecked(sp.getBoolean(Constants.CONFIG.CONF_SPG_MIDNIGHT_RESET, Constants.SPG_MIDNIGHT_RESET_DEFAULT));
-        checkSpgMidnightReset.setOnClickListener(v -> {
-            saveBooleanPref(checkSpgMidnightReset.isChecked(), Constants.CONFIG.CONF_SPG_MIDNIGHT_RESET);
-        });
-    }
-
-    // save delta every n sec
-    private void updateSpgDeltaDurationText() {
-        TextView spgDeltaDurationText = findViewById(R.id.spgDeltaDurationText);
-        int value = sp.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
-        if (value > 0) {
-            spgDeltaDurationText.setText(getString(R.string.settings_spg_delta_duration, value));
-        } else {
-            spgDeltaDurationText.setText(getString(R.string.settings_spg_save_delta_off));
-        }
-    }
-
-    public void onClick_spgDeltaDuration_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int val = settings.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
-        if (val > Constants.SPG_DELTA_DURATION_MIN) {
-            val -= Constants.SPG_DELTA_DURATION_MIN;
-        } else {
-            val = 0;
-        }
-
-        saveSpgDeltaDuration(val);
-    }
-
-    public void onClick_spgDeltaDuration_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int val = settings.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
-        if (val <= (Constants.SPG_DELTA_DURATION_MAX - Constants.SPG_DELTA_DURATION_MIN)) {
-            val += Constants.SPG_DELTA_DURATION_MIN;
-        } else {
-            val = Constants.SPG_DELTA_DURATION_MAX;
-        }
-
-        saveSpgDeltaDuration(val);
-    }
-
-    private void saveSpgDeltaDuration(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_SPG_DELTA_DURATION);
-        updateSpgDeltaDurationText();
-    }
-    // --- end spectrogram section
 
     // --- dose update frequency (audio processing) ---
     private void setupDoseUpdateFrequency() {
@@ -654,220 +586,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
     // --- end dose rate section
 
-    // --- interval search section
-    // alarm enable
-    private void setupEnableSearchAlarmCheckbox() {
-        CheckBox alarmEnabledCheckBox = findViewById(R.id.intervalSearchSoundEnabled);
-        alarmEnabledCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
-        alarmEnabledCheckBox.setEnabled(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
-        alarmEnabledCheckBox.setOnClickListener(v -> {
-            saveBooleanPref(alarmEnabledCheckBox.isChecked(), Constants.CONFIG.CONF_OUTPUT_SOUND);
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-        });
-    }
-
-    // alarm output device
-    private void setupSearchAlarmOutputDeviceText() {
-        outputDeviceID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
-        outputDeviceName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
-        outputDeviceText = findViewById(R.id.intervalSearchSoundOutputDevice);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioDeviceInfo deviceOut;
-            if (outputDeviceID == -1) {
-                deviceOut = AtomSpectraService.getDeviceOutput(getApplicationContext(), -1, null, false);
-            } else {
-                deviceOut = AtomSpectraService.getDeviceOutput(getApplicationContext(), outputDeviceID, outputDeviceName, true);
-            }
-            int outputDeviceType;
-            if (deviceOut == null) {
-                outputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
-            } else {
-                outputDeviceType = deviceOut.getType();
-            }
-            outputDeviceText.setText(String.format(Locale.US, "%s: %s", AtomSpectraService.audioDeviceNames[Constants.MinMax(outputDeviceType, 0, AtomSpectraService.audioDeviceNames.length - 1)], outputDeviceName));
-        } else {
-            outputDeviceText.setEnabled(false);
-        }
-    }
-
-    public void onSelectSearchAlarmOutputDevice(View v) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioDeviceInfo deviceOut = AtomSpectraService.getDeviceOutput(this, outputDeviceID, outputDeviceName, false);
-            int outputDeviceType;
-            if (deviceOut != null) {
-                outputDeviceID = deviceOut.getId();
-                outputDeviceName = deviceOut.getProductName().toString();
-                outputDeviceType = deviceOut.getType();
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, outputDeviceID);
-                editor.putString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, outputDeviceName);
-                editor.apply();
-            } else {
-                outputDeviceID = -1;
-                outputDeviceName = "(none)";
-                outputDeviceType = 0;
-            }
-            outputDeviceText.setText(String.format(Locale.US, "%s: %s", AtomSpectraService.audioDeviceNames[Constants.MinMax(outputDeviceType, 0, AtomSpectraService.audioDeviceNames.length - 1)], outputDeviceName));
-        } else {
-            outputDeviceText.setEnabled(false);
-        }
-    }
-
-    // energy range
-    private void updateSearchEnergyRangeText() {
-        TextView energyRangeText = findViewById(R.id.intervalSearchEnergyRange);
-        EnergyIntervalData.Snapshot interval = EnergyIntervalData.instance.get();
-        if (!interval.full) {
-            Calibration calibration = SpectrumData.instance.foreground.getSpectrumCalibration();
-            energyRangeText.setText(getString(R.string.interval_search_energy_range_format, calibration.toEnergy(interval.leftChannel), calibration.toEnergy(interval.rightChannel)));
-        } else
-            energyRangeText.setText(getString(R.string.interval_search_energy_range_full));
-    }
-
-    public void onSelectIntervalClick(View energyRangeText) {
-        final AlertDialog.Builder alert = new AlertDialog.Builder(this);
-
-        alert.setTitle(getString(R.string.ask_select_interval_title));
-        alert.setMessage(getString(R.string.ask_select_interval_text));
-
-        final EditText input = new EditText(this);
-        input.setKeyListener(new NumberKeyListener() {
-            @NonNull
-            @Override
-            protected char[] getAcceptedChars() {
-                return new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.'};
-            }
-
-            @Override
-            public int getInputType() {
-                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_VARIATION_NORMAL;
-            }
-        });
-        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        alert.setView(input);
-
-        alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-            String value = input.getText().toString();
-            if ("-1".equals(value)) {
-                EnergyIntervalData.instance.reset();
-                AtomSpectraService.getIntervalSearchAlarmBaseline().reset();
-                updateSearchEnergyRangeText();
-            } else {
-                if (value.contains("-")) {
-                    String num1 = value.substring(0, value.indexOf("-"));
-                    String num2 = value.substring(value.indexOf("-") + 1);
-                    try {
-                        double val1 = Double.parseDouble(num1);
-                        int number1 = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(val1);
-                        double val2 = Double.parseDouble(num2);
-                        int number2 = SpectrumData.instance.foreground.getSpectrumCalibration().toChannel(val2);
-                        if (number1 < 0 || number1 >= number2 || number2 >= SpectrumData.instance.getChannelCount() - 1)
-                            return;
-                        EnergyIntervalData.instance.setEnergy(val1, val2);
-                        AtomSpectraService.getIntervalSearchAlarmBaseline().reset();
-                        updateSearchEnergyRangeText();
-                    } catch (Exception ignored) {
-
-                    }
-                }
-            }
-        });
-        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-        });
-        closeKeyboardOnAlertDismiss(alert);
-        alert.show();
-    }
-
-    // sound volume
-    private void updateSearchAlarmVolumeText() {
-        TextView alarmVolumeText = findViewById(R.id.intervalSearchAlarmVolumeText);
-        alarmVolumeText.setText(getString(R.string.interval_search_sound_volume, sp.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT)));
-    }
-
-    public void onClick_intervalAlarmVolume_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
-
-        if (r < 10) {
-            r = 10;
-        }
-        if (r > 100) {
-            r = 100;
-        }
-        if (r > 10) {
-            r -= 10;
-        }
-
-        saveSearchAlarmVolume(r);
-    }
-
-    public void onClick_intervalAlarmVolume_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
-
-        if (r < 10) {
-            r = 10;
-        }
-        if (r > 100) {
-            r = 100;
-        }
-        if (r < 100) {
-            r += 10;
-        }
-
-        saveSearchAlarmVolume(r);
-    }
-
-    private void saveSearchAlarmVolume(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME);
-        updateSearchAlarmVolumeText();
-    }
-
-    // detection level
-    private void updateSearchAlarmDetectionLevelText() {
-        TextView detectionLevelText = findViewById(R.id.intervalSearchDetectionLevelText);
-        detectionLevelText.setText(getString(R.string.interval_search_detection_level, sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT)));
-    }
-
-    public void onClick_intervalDetectionLevel_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
-
-        if (r < 3) {
-            r = 3;
-        }
-        if (r > 9) {
-            r = 9;
-        }
-        if (r > 3) {
-            r -= 1;
-        }
-
-        saveSearchDetectionLevelVolume(r);
-    }
-
-    public void onClick_intervalDetectionLevel_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
-
-        if (r < 3) {
-            r = 3;
-        }
-        if (r > 9) {
-            r = 9;
-        }
-        if (r < 9) {
-            r += 1;
-        }
-
-        saveSearchDetectionLevelVolume(r);
-    }
-
-    private void saveSearchDetectionLevelVolume(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL);
-        updateSearchAlarmDetectionLevelText();
-    }
-    // --- end interval search section
 
     // --- AtomSwift integration section
     // send data
