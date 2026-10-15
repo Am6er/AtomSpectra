@@ -18,6 +18,7 @@ import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
@@ -45,10 +46,12 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     private static final int AUDIO_ZERO_DATA_MAX_COUNT = 5;
 
-    private static final int REPORT_PERIOD_MS = 100;
-    private static final int REPORT_PERIOD_SAMPLES = SAMPLE_RATE * REPORT_PERIOD_MS / 1000;
+    // count rate is a sliding one-second window of CPS_BIN_MS bins
+    private static final int CPS_BIN_MS = 100;
+    private static final int CPS_BIN_SAMPLES = SAMPLE_RATE * CPS_BIN_MS / 1000;
     // raw audio snapshots are independent of the report interval: fast enough for a scope view
     private static final int SCOPE_SNAPSHOT_PERIOD_MS = 200;
+    private static final int SCOPE_SNAPSHOT_PERIOD_SAMPLES = SAMPLE_RATE * SCOPE_SNAPSHOT_PERIOD_MS / 1000;
     private static final long DEVICE_RECOVERY_WINDOW_MS = 5000;
     private static final long CAPTURE_START_WINDOW_MS = 5000;
     private static final long RECOVERY_WAKE_LOCK_MS = DEVICE_RECOVERY_WINDOW_MS + CAPTURE_START_WINDOW_MS + 10000;
@@ -91,7 +94,6 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private final Runnable recoveryTimeout = this::onDeviceRecoveryTimeout;
     private final Runnable recoveryCaptureRetry = this::retryRecoveryCapture;
     private final Runnable captureStartTimeout = this::onCaptureStartTimeout;
-    private final Runnable reportRunnable = this::reportTask;
     private final RecoveryWakeLock recoveryWakeLock;
 
     // pulse-detection tuning, read in requestConnect() and on every application preferences change
@@ -119,19 +121,34 @@ public class AtomSpectraAudioSource implements SpectrumSource {
 
     private final long[] histogram;
     private long totalSamplesProcessed = 0;
-    private final int[] cp1sArray = new int[1000 / REPORT_PERIOD_MS];
+    private final int[] cp1sArray = new int[1000 / CPS_BIN_MS];
     private int cp1sPos = 0;
-    private int countsThisReportPeriod = 0;
+    private int countsThisBin = 0;
     // sum of the 256 samples around the peak of every pulse counted into the histogram (128 before, 127 after); only the shape matters, so it is never normalised
     // grows while collecting; cleared by requestReset() and when a setting that changes which pulses are accepted or how they look changes
     private final long[] referencePulse = new long[REFERENCE_PULSE_POINTS];
     private double[] lastCapturedSamples = new double[0];
 
     private long captureTaskIntervalMs = 0;
+    // all boundaries are positions on the captureElapsedSamples axis: audio time, not wall-clock time
     private long captureElapsedSamples = 0;
-    private long captureBinStartSamples = 0;
-    private int elapsedSinceReportMs = 0;
-    private int elapsedSinceScopeSnapshotMs = 0;
+    private long nextReportSamples = 0;
+    private long nextCpsSamples = 0;
+    private long nextBoundarySamples = 0;
+    private long nextScopeSnapshotSamples = 0;
+    private final ArrayList<DataSnapshot> pendingSnapshots = new ArrayList<>();
+
+    private static final class DataSnapshot {
+        final long[] histogram;
+        final int cp1s;
+        final double recordingTime;
+
+        DataSnapshot(long[] histogram, int cp1s, double recordingTime) {
+            this.histogram = histogram;
+            this.cp1s = cp1s;
+            this.recordingTime = recordingTime;
+        }
+    }
 
     public AtomSpectraAudioSource(Context context, AudioDeviceInfo device) {
         this(context, device, DeviceIdentity.audio(device));
@@ -187,9 +204,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             System.arraycopy(initialHistogram, 0, this.histogram, 0, Math.min(initialHistogram.length, HIST_POINTS));
         }
         this.totalSamplesProcessed = Math.round(Math.max(0, recordingTimeSec) * SAMPLE_RATE);
-        Arrays.fill(this.cp1sArray, 0);
-        this.cp1sPos = 0;
-        this.countsThisReportPeriod = 0;
+        this.clearCountRate();
     }
 
     @Override
@@ -268,7 +283,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         this.histogramMinChannel = sp.getInt(Constants.CONFIG.CONF_NOISE, NOISE_DISCRIMINATOR_DEFAULT);
         this.inversion = sp.getBoolean(Constants.CONFIG.CONF_INVERSION, INVERSE_DEFAULT);
         this.pileup = sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, PILE_UP_DEFAULT);
-        this.reportIntervalMs = 1000 / sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT);
+        // at most 1000 reports per second keeps the report interval at least 1 ms
+        this.reportIntervalMs = 1000 / Math.max(1, Math.min(1000, sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
     }
 
     // raw (unprocessed) capture is used only when requested in preferences and supported by the device
@@ -300,7 +316,15 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         final int oldNoise = this.histogramMinChannel;
         final boolean oldInversion = this.inversion;
         final boolean oldPileup = this.pileup;
+        final int oldReportIntervalSamples = this.reportIntervalSamples();
         this.loadAppPreferences(ctx);
+        if (this.capturing) {
+            // keep the last report as the origin of the new interval, but never schedule behind the processed audio
+            this.nextReportSamples = Math.max(
+                    this.nextReportSamples - oldReportIntervalSamples + this.reportIntervalSamples(),
+                    this.captureElapsedSamples);
+            this.updateNextBoundary();
+        }
 
         // the pulse sums only pulses accepted under the current settings, so pulses accepted under the previous ones must go
         boolean pulseSelectionChanged = oldFrontMin != this.frontCountsMin || oldFrontMax != this.frontCountsMax
@@ -461,9 +485,9 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             this.audioZeroDataCount = 0;
             this.captureTaskIntervalMs = Math.max(1, 1000L * this.bufferSize / 2 / SAMPLE_RATE);
             this.captureElapsedSamples = 0;
-            this.captureBinStartSamples = 0;
-            this.elapsedSinceReportMs = 0;
-            this.elapsedSinceScopeSnapshotMs = 0;
+            this.clearCountRate();
+            this.resetBoundaries();
+            this.nextScopeSnapshotSamples = SCOPE_SNAPSHOT_PERIOD_SAMPLES;
             this.audioRecord = new AudioRecord(this.audioSourceMode, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, recorderBufferSize);
             if (this.audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 throw new IllegalStateException("Audio recorder could not initialize");
@@ -640,7 +664,6 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             this.recoveryWakeLock.release();
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
             AtomSpectraLog.detail(this.context, LogTag.AUDIO, "Audio capture started, device=" + this.deviceId);
-            this.sourceHandler.postDelayed(this.reportRunnable, REPORT_PERIOD_MS);
         }
         this.audioBytes = samples;
         this.audioBytesRead = samples.length;
@@ -674,9 +697,8 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         if (this.rejectIfDisconnected(SpectrumSource.OP_RESET)) return;
         Arrays.fill(this.histogram, 0);
         this.totalSamplesProcessed = 0;
-        Arrays.fill(this.cp1sArray, 0);
-        this.cp1sPos = 0;
-        this.countsThisReportPeriod = 0;
+        this.clearCountRate();
+        this.resetBoundaries();
         Arrays.fill(this.referencePulse, 0);
         AudioScopeData.instance.reset();
     }
@@ -789,7 +811,6 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         this.capturing = false;
         this.captureConfirmed = false;
         this.recoveryCapture = false;
-        this.sourceHandler.removeCallbacks(this.reportRunnable);
         this.sourceHandler.removeCallbacks(this.captureStartTimeout);
         this.sourceHandler.removeCallbacks(this.recoveryCaptureRetry);
         if (this.audioRecord != null) {
@@ -849,12 +870,17 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         for (int i = 0; i < sampleCount; i++) {
             this.lastCapturedSamples[i] = this.audioData[i];
         }
-        this.totalSamplesProcessed += sampleCount;
+
+        final long chunkStartSamples = this.captureElapsedSamples;
 
         //-----------------DPP started--------------------------------------------------
         int initialAmp = 0, initialTime = 0;
         float corrector;
         for (int i = 1; i < this.audioBytesRead / 2 - 2; i++) {
+            // pulses are counted at their peak, so the state at a boundary holds exactly the peaks before it
+            if (chunkStartSamples + i >= this.nextBoundarySamples) {
+                this.closeBoundaries(chunkStartSamples + i);
+            }
             if (((this.audioData[i] - this.audioData[i - 1]) <= 0) && ((this.audioData[i + 1] - this.audioData[i]) > 0)) {
                 initialAmp = this.audioData[i];
                 initialTime = i;
@@ -869,7 +895,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
                     if ((channel >= this.histogramMinChannel) && (channel < HIST_POINTS)) {
                         //-----------------DPP finished-------------------------------------------------
                         this.histogram[channel]++;
-                        this.countsThisReportPeriod++;
+                        this.countsThisBin++;
 
                         if ((i >= 128) && (i + 127 < sampleCount))
                             for (int j = -128; j < 128; j++)
@@ -879,45 +905,76 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             }
         }
 
-        // count-rate bins follow the audio time actually processed, one bin per REPORT_PERIOD_MS of samples
+        this.closeBoundaries(chunkStartSamples + sampleCount);
         this.captureElapsedSamples += sampleCount;
-        while (this.captureBinStartSamples + REPORT_PERIOD_SAMPLES <= this.captureElapsedSamples) {
-            this.captureBinStartSamples += REPORT_PERIOD_SAMPLES;
-            this.cp1sPos = this.cp1sPos < (this.cp1sArray.length - 1) ? (this.cp1sPos + 1) : 0;
-            this.cp1sArray[this.cp1sPos] = this.countsThisReportPeriod;
-            this.countsThisReportPeriod = 0;
+        this.totalSamplesProcessed += sampleCount;
+
+        for (DataSnapshot snapshot : this.pendingSnapshots) {
+            this.sendData(snapshot.histogram, snapshot.cp1s, snapshot.recordingTime);
+        }
+        this.pendingSnapshots.clear();
+
+        if (this.captureElapsedSamples >= this.nextScopeSnapshotSamples) {
+            while (this.nextScopeSnapshotSamples <= this.captureElapsedSamples) {
+                this.nextScopeSnapshotSamples += SCOPE_SNAPSHOT_PERIOD_SAMPLES;
+            }
+            this.publishScopeSnapshot();
         }
     }
 
-    // called every REPORT_PERIOD_MS (100ms); broadcasts the cumulative snapshot every reportIntervalMs
-    private void reportTask() {
-        if (this.context == null || !this.capturing || !this.captureConfirmed) return;
+    private int reportIntervalSamples() {
+        return (int) ((long) this.reportIntervalMs * SAMPLE_RATE / 1000);
+    }
 
-        this.elapsedSinceScopeSnapshotMs += REPORT_PERIOD_MS;
-        if (this.elapsedSinceScopeSnapshotMs >= SCOPE_SNAPSHOT_PERIOD_MS) {
-            this.elapsedSinceScopeSnapshotMs = 0;
-            this.publishScopeSnapshot();
-        }
+    private void resetBoundaries() {
+        this.nextReportSamples = this.captureElapsedSamples + this.reportIntervalSamples();
+        this.nextCpsSamples = this.captureElapsedSamples + CPS_BIN_SAMPLES;
+        this.updateNextBoundary();
+    }
 
-        this.elapsedSinceReportMs += REPORT_PERIOD_MS;
-        if (this.elapsedSinceReportMs >= this.reportIntervalMs) {
-            this.elapsedSinceReportMs = 0;
-            this.broadcastData();
+    private void clearCountRate() {
+        Arrays.fill(this.cp1sArray, 0);
+        this.cp1sPos = 0;
+        this.countsThisBin = 0;
+    }
+
+    private int countRate() {
+        int sum = 0;
+        for (int value : this.cp1sArray) sum += value;
+        return sum;
+    }
+
+    private void updateNextBoundary() {
+        this.nextBoundarySamples = Math.min(this.nextReportSamples, this.nextCpsSamples);
+    }
+
+    // closes the count-rate second and snapshots the report for every boundary up to the processed audio position;
+    // the snapshot is queued and sent once the chunk is processed, but timestamped at the boundary itself
+    private void closeBoundaries(long processedSamples) {
+        while (this.nextBoundarySamples <= processedSamples) {
+            if (this.nextCpsSamples <= this.nextReportSamples) {
+                this.cp1sPos = this.cp1sPos < (this.cp1sArray.length - 1) ? (this.cp1sPos + 1) : 0;
+                this.cp1sArray[this.cp1sPos] = this.countsThisBin;
+                this.countsThisBin = 0;
+                this.nextCpsSamples += CPS_BIN_SAMPLES;
+            } else {
+                long recordedSamples = this.totalSamplesProcessed + this.nextReportSamples - this.captureElapsedSamples;
+                this.pendingSnapshots.add(new DataSnapshot(Arrays.copyOf(this.histogram, this.histogram.length),
+                        this.countRate(), (double) recordedSamples / SAMPLE_RATE));
+                this.nextReportSamples += this.reportIntervalSamples();
+            }
+            this.updateNextBoundary();
         }
-        this.sourceHandler.postDelayed(this.reportRunnable, REPORT_PERIOD_MS);
     }
 
     private void broadcastData() {
+        this.sendData(Arrays.copyOf(this.histogram, this.histogram.length), this.countRate(),
+                (double) this.totalSamplesProcessed / SAMPLE_RATE);
+    }
+
+    private void sendData(long[] histogramCopy, int cp1s, double recordingTime) {
         final Context ctx = this.context;
         if (ctx == null) return;
-
-        long[] histogramCopy;
-        int cp1s;
-        double recordingTime;
-        histogramCopy = Arrays.copyOf(this.histogram, this.histogram.length);
-        cp1s = 0;
-        for (int value : this.cp1sArray) cp1s += value;
-        recordingTime = (double) this.totalSamplesProcessed / SAMPLE_RATE;
 
         Intent intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA).setPackage(Constants.PACKAGE_NAME);
         intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM, histogramCopy);

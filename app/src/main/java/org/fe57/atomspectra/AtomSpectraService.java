@@ -2277,6 +2277,9 @@ public class AtomSpectraService extends Service {
     // spectrum change mode
     // shows spectrum for the last n seconds (sliding window)
     // window size ~ delta_time
+    // frame durations are sums of doubles, so a window that is exactly full may come out a hair short; far below the shortest frame
+    private static final double SPECTRUM_CHANGE_TIME_EPSILON = 1e-3;
+
     private final void calcSpectrumChangeData(double frameDuration) {
         long[] currentState = Arrays.copyOf(SpectrumData.instance.foreground.getDataArray(), SpectrumData.instance.foreground.getDataArray().length);
         long[] previousState = currentState;
@@ -2297,7 +2300,7 @@ public class AtomSpectraService extends Service {
                 for (int i = 2; i < histogram_all_durations.size(); i++) {
                     secondSampleAge += histogram_all_durations.get(i);
                 }
-                if (secondSampleAge <= backgroundWindow) {
+                if (secondSampleAge <= backgroundWindow + SPECTRUM_CHANGE_TIME_EPSILON) {
                     break;
                 }
                 histogram_all_queue.remove();
@@ -2309,7 +2312,7 @@ public class AtomSpectraService extends Service {
                 elapsed += histogram_all_durations.get(i + 1);
                 previousState = histogram_all_queue.get(i);
                 foregroundTime = elapsed;
-                if (elapsed >= delta_time) {
+                if (elapsed >= delta_time - SPECTRUM_CHANGE_TIME_EPSILON) {
                     break;
                 }
             }
@@ -2319,7 +2322,7 @@ public class AtomSpectraService extends Service {
                 elapsed += histogram_all_durations.get(i + 1);
                 backState = histogram_all_queue.get(i);
                 backgroundTime = elapsed;
-                if (elapsed >= backgroundWindow) {
+                if (elapsed >= backgroundWindow - SPECTRUM_CHANGE_TIME_EPSILON) {
                     break;
                 }
             }
