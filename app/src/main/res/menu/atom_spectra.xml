@@ -83,7 +83,7 @@
             <item
                 android:id="@+id/action_hist_view_map"
                 android:enabled="false"
-                android:icon="@drawable/menu_set_as"
+                android:icon="@android:drawable/ic_menu_mapmode"
                 android:orderInCategory="208"
                 android:title="@string/hist_view_map" />
         </menu>
@@ -159,12 +159,12 @@
             <item
                 android:id="@+id/action_spectrogram_view_map"
                 android:enabled="false"
-                android:icon="@drawable/menu_set_as"
+                android:icon="@android:drawable/ic_menu_mapmode"
                 android:orderInCategory="403"
                 android:title="@string/spectrogram_view_map" />
             <item
                 android:id="@+id/action_spectrogram_settings"
-                android:icon="@android:drawable/ic_menu_manage"
+                android:icon="@drawable/menu_edit"
                 android:orderInCategory="404"
                 android:title="@string/spectrogram_settings" />
         </menu>

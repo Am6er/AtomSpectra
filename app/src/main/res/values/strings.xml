@@ -58,7 +58,7 @@
     <string name="device_waiting_description">%1$s - waiting for the device</string>
     <string name="action_switch_device">Switch device</string>
     <string name="device_select_title">Select a device</string>
-    <string name="device_select_offline">Work offline (files only)</string>
+    <string name="device_select_offline">Work with files</string>
     <string name="device_select_remember">Remember my choice</string>
     <string name="device_select_connecting">Connecting…</string>
     <string name="device_select_connecting_timed">Connecting… <xliff:g id="seconds">%1$d</xliff:g>s</string>
