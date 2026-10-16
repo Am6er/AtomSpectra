@@ -38,7 +38,6 @@
     <string name="device_type_spectra_pro">Spectra Pro</string>
     <string name="device_type_bluz">BluZ</string>
     <string name="action_bluetooth_attached">BluZ reconnected</string>
-    <string name="cal_store_bluetooth_unsupported">Writing BluZ calibration is not supported</string>
     <string name="log_source_operation_failed">Device operation failed (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="log_source_operation_timeout">Device operation timed out (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="bluetooth_off">Bluetooth is off</string>
@@ -521,7 +520,7 @@
     <string name="find_resolution">Cs-137 resolution, %</string>
     <string name="find_resolution_desc">Width of the 662 keV peak (at half height) relative to its energy for your detector. Sets how wide peaks are expected to be: too high merges close peaks, too low finds false peaks in noise.</string>
     <string name="find_channels">Compress to, channels</string>
-    <string name="find_channels_desc">The spectrum is merged into this many channels before the search. Fewer channels smooth the noise and reduce false peaks, but close peaks may merge.</string>
+    <string name="find_channels_desc">The spectrum is merged into this many channels before the search. Fewer channels reduce the influence of noise and false peaks, but close peaks may merge.</string>
     <string name="find_threshold">Threshold, σ</string>
     <string name="find_threshold_desc">Minimum peak significance above the statistical noise. Higher finds only strong peaks, lower finds weaker ones but also more false ones.</string>
     <string name="find_tolerance">Energy tolerance, %</string>
@@ -627,20 +626,25 @@
     <string name="help_menu">Help</string>
     <string name="help">Atom Spectra Quick Help</string>
     <string name="help_text_overview"><big><annotation foreground="caption">Overview.</annotation></big>\n
-        This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), or from an USB spectrometer <u>AtomSpectra Pro</u>. If none of them is connected to a phone the program works in a demo mode reading an internal microphone and creating a spectrum.\n
+        This program reads a signal from a spectrometer connected to a phone using a microphone input (like <u>AtomSpectra 3, 4</u> or similar), from an USB-audio spectrometer (like <u>AtomSpectra Nano</u> or similar), from an USB spectrometer <u>AtomSpectra Pro</u>, or over Bluetooth from a <u>BluZ</u> spectrometer.\n
+        \n
+        On start the program asks which device to work with. Enable <annotation foreground="parameter">Remember my choice</annotation> to connect to it automatically next time. The choice can be changed at any moment with <annotation foreground="parameter">Device</annotation> → <annotation foreground="parameter">Switch device</annotation> or by tapping the device icon. <annotation foreground="parameter">Work with files</annotation> lets you work with saved spectra without a connected device.\n
+        Short connection losses (cable, Bluetooth) do not stop the recording: once the connection is restored the program resumes the acquisition.\n
         \n
         NOTE: Please add the program to the power exclusion list for proper operation in the background or when the screen is switched off.\n
         To fully stop the program please use <annotation foreground="parameter">Exit completely</annotation> menu item.\n
         Permissions required for the app to operate:\n
-        \t- Microphone: capture the signal from audio-interface spectrometers. Without it only Atom Spectra Pro USB serial spectrometers work.\n
+        \t- Microphone: capture the signal from audio-interface spectrometers. Without it only USB and Bluetooth spectrometers work.\n
+        \t- Bluetooth: find and connect Bluetooth spectrometers.\n
         \t- Files: save and open spectra, spectrograms and configuration.\n
-        \t- Location: add GPS coordinates to saved files.\n
+        \t- Location: add GPS coordinates to saved files. On Android 6–11 it is also required to discover Bluetooth devices.\n
         \t- Notifications: show the background recording notification.\n
         \n
     </string>
     <string name="help_text_part1"><big><annotation foreground="caption">1. Operating:</annotation></big>\n
         \tSpectrum, spectrum change and search modes:\n
         \t- Use navigation <annotation foreground="parameter">Spectrum/Change/Search</annotation> to switch between spectrum display, spectrum change and search mode.\n
+        \t- Use the device icon to open the device selection.\n
         \t- Use a horizontal pinch to scale channels/energies. Take the fingers off the screen to apply a pinch.\n
         \t- Use a vertical pinch to scale counts.  Take the fingers off the screen to apply a pinch.\n
         \t- Use a diagonal pinch to scale channels/energies and counts simultaneously. Take the fingers off the screen to apply a pinch.\n
@@ -652,15 +656,14 @@
         \t- Use <annotation foreground="parameter">kev/ch.</annotation> button to switch between channel and keV modes in spectrum view.\n
         \t- Use <annotation foreground="parameter">D/I</annotation> button to switch between kinds of search plot (dose rate or count rate within interval).\n
         \t- Use <annotation foreground="parameter">F/M/S</annotation> button to switch between search constant (fast, medium, slow).\n
-        \t- Use <annotation foreground="parameter">Spectrum/Search</annotation> button to switch between spectrum and search modes.\n
         \n
-        \tSpectrogram display mode:\n
+        \tSpectrogram display mode (opens with a long tap on the <annotation foreground="parameter">Change</annotation> button or with <annotation foreground="parameter">Spectrogram</annotation> → <annotation foreground="parameter">View</annotation>):\n
         \t- Use a horizontal pinch to scale the spectrogram horizontally (channel/energy). Take the fingers off the screen to apply a pinch.\n
         \t- Use a vertical pinch to scale the spectrogram vertically (time). Take the fingers off the screen to apply a pinch.\n
         \t- Use a left/right swipe along the energy/channel axis of the spectrogram to shift the spectrogram left/right.\n
         \t- Use an up/down swipe along the time axis of the spectrogram to shift the spectrogram up/down.\n
-        \t- Use a double tap to select linear, quadratic or logarithmic mode for displaying the value (color) scale of the spectrogram.\n
-        \t- Use a long tap to switch color palette of the spectrogram.\n
+        \t- Use a double tap to select linear, quadratic or logarithmic mode for displaying the value (color) scale of the spectrogram (also in the <annotation foreground="parameter">Scale</annotation> menu).\n
+        \t- Use a long tap to switch color palette of the spectrogram (also in the <annotation foreground="parameter">Palette</annotation> menu).\n
         \n
     </string>
     <string name="help_text_part2"><big><annotation foreground="caption">2. Spectra output:</annotation></big>\n
@@ -671,14 +674,12 @@
         \t- You can clear background data in the program.\n
         \t- You may smooth spectra or revert it by using <annotation foreground="parameter">Smooth</annotation> in a <annotation foreground="parameter">Spectrum</annotation> submenu.\n
         \t- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use <annotation foreground="parameter">Set description</annotation> in a <annotation foreground="parameter">Spectrum</annotation> or <annotation foreground="parameter">Background</annotation> submenu.\n
-        \t- The text field <annotation foreground="parameter">upd</annotation> displays the local time (hours:minutes:seconds) of the last foreground spectrum data update. The value --:--:-- is shown before the first data arrives or after the spectrum is cleared.\n
         \t- The text field <annotation foreground="parameter">cps</annotation> displays the number of counts during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \t- The text field <annotation foreground="parameter">~cps</annotation> displays the average count rate across the entire energy range for the entire acquisition time.\n
         \t- The text field <annotation foreground="parameter">time</annotation> displays the total time of spectrum acquisition as hh:mm:ss, with days added when the duration is 24 hours or longer (for example, 2d 03:45:12).\n
         \n
         \tSpectrum <annotation foreground="parameter">Change</annotation> mode:\n
         \t- This mode displays the change in the spectrum state in a sliding time window. The sliding window size can be selected in the range from 1 to 300 s in the <annotation foreground="parameter">Diff Time</annotation> parameter in the <annotation foreground="parameter">Settings</annotation>. In this mode, two spectra with different sliding window durations are displayed: n seconds and 4n seconds (e.g. 30/120). The color of the short window spectrum (n seconds) in this mode is purple, and the long one (4n seconds) is green. The lines displaying the total acquisition time and count rate of the main spectrum are replaced by a display of the window sizes and count rates within these windows (short/long).\n
-        \t- The text field <annotation foreground="parameter">upd</annotation> displays the local time (hours:minutes:seconds) of the last foreground spectrum data update. The value --:--:-- is shown before the first data arrives or after the spectrum is cleared.\n
         \t- The text field <annotation foreground="parameter">cps</annotation> displays the number of counts during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \t- The text field <annotation foreground="parameter">~cps</annotation> displays the average count rate over the entire energy range for each window.\n
         \t- The text field <annotation foreground="parameter">time</annotation> displays the current size of the sliding windows in seconds.\n
@@ -689,7 +690,7 @@
         \t- NOTE: It is better to switch to channel output before making a calibration.\n
         \t- To calibrate the spectrum point the cursor to the first calibration point, then press a <annotation foreground="parameter">1</annotation> button above the spectrum and enter a value. The button changes from <annotation foreground="parameter">1</annotation> to <annotation foreground="parameter">2</annotation> to show for the second point waiting.\n
         \t- Do the same for the next calibration points. The button will change to <annotation foreground="parameter">-</annotation> if there is no more acceptable points.\n
-        \t- Press <annotation foreground="parameter">\u221a</annotation> button to calculate a calibration. Use <annotation foreground="parameter">Store</annotation> to save the calibration data for the next program start. The program retrieves the calibration data when it deletes a current spectrum. Use <annotation foreground="parameter">Retrieve</annotation> to apply calibration data to a spectrum from memory. <annotation foreground="highlight">NOTE</annotation>: if <u>AtomSpectra Pro</u>> is attached, the program will use calibration from the device or store calibration to the device. Internal program calibration does not change and will be restored after unplugging the device or may be changed using appropriate menu commands.\n
+        \t- Press <annotation foreground="parameter">\u221a</annotation> button to calculate a calibration. Use <annotation foreground="parameter">Store to the device</annotation> to save the calibration: in the device itself (BluZ, <u>AtomSpectra Pro</u>) or in the program memory separately for each audio input (audio-interface spectrometers). The saved calibration is applied automatically when the device is connected. Use <annotation foreground="parameter">Use device calibration</annotation> to apply it manually.\n
         \t- Tap on a nuclide flag on a graph from a <u>nuclide list</u> to set a new calibration point with the nuclide energy.\n
         \t- Tap on a nuclide flag on a graph from <u>found peaks list</u> and enter an energy value to set a new calibration point.\n
         \t- Press on polinom values in <annotation foreground="parameter">Calibration</annotation> submenu to edit it.\n
@@ -699,7 +700,7 @@
         \t- You can see a calibration function using <annotation foreground="parameter">Show a function</annotation> item in <annotation foreground="parameter">Calibration</annotation> submenu.\n
         \t- Press on <annotation foreground="parameter">Draw new</annotation> in <annotation foreground="parameter">Calibration</annotation> submenu to see a new calibration function and calibration points on a graph. New calibration points are shown in green.\n
         \t- You can load a calibration data from another spectrum.\n
-        \t- You can select the last channel number to show on energy scale. Channel scale always shows the full spectrum.\n
+        \t- The <annotation foreground="parameter">Last</annotation> item in the <annotation foreground="parameter">Calibration</annotation> submenu sets how many channels at the end of the spectrum are not shown in spectrum mode when the X axis shows energies. These channels are still used in calculations. Channel scale always shows the full spectrum.\n
         \t- You can see and edit calibration data for a current spectrum in a <annotation foreground="parameter">Calibration</annotation> submenu above the horizontal line.\n
         \t- You can see new calibration data in a <annotation foreground="parameter">Calibration</annotation> submenu below the horizontal line.\n
         \n
@@ -708,7 +709,6 @@
         The program calculates three values - non-compensated dose rate, compensated dose rate, count rate in a given range (interval) of energies. Non-compensated - linear conversion of the overall count rate into dose rate using a coefficient. Compensated - calculation of dose rate taking into account the energy of the registered photons, the detector sensitivity curve and the coefficient.\n
         \t- The <annotation foreground="parameter">F/M/S</annotation> button selects the dose rate averaging. <annotation foreground="parameter">F</annotation> means \'fast\', <annotation foreground="parameter">M</annotation> means \'medium\', <annotation foreground="parameter">S</annotation> means \'slow\'. The count target for each mode is set per profile in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Dose rate settings</annotation>, with independent values for the compensated and non-compensated dose rates. Averaging is performed using a sliding window based on the number of counts within the averaging window (not based on time).\n
         \t- To switch between value types, press the <annotation foreground="parameter">D/I</annotation> button. <annotation foreground="parameter">D</annotation> means \'dose rate history\'. <annotation foreground="parameter">I</annotation> means \'interval count rate history\'.\n
-        \t- For all value types, the text field <annotation foreground="parameter">upd</annotation> displays the local time (hours:minutes:seconds) of the last foreground spectrum data update. The value --:--:-- is shown before the first data arrives or after the spectrum is cleared.\n
         \t- For all value types, the text field <annotation foreground="parameter">cps</annotation> displays the number of count during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \n
         Non-compensated dose rate (mode <annotation foreground="parameter">D</annotation>, green plot):\n
@@ -724,8 +724,13 @@
         \n
         Interval search (mode <annotation foreground="parameter">I</annotation>):\n
         \t- This mode is designed to determine the counting rate within a specified energy range (by default, across the entire spectrum).\n
-        \t- To set the energy range, use the <annotation foreground="parameter">Energy range</annotation> parameter in the <annotation foreground="parameter">Settings</annotation>.\n
-        \t- This mode also supports audio alarm of statistically significant changes in the current counting speed relative to the reference level. To enable alarm, check the <annotation foreground="parameter">Enable sound alarm</annotation> checkbox in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Interval settings</annotation>. There you can also adjust the alarm volume and select the audio output device.\n
+        \t- The mode is configured in <annotation foreground="parameter">Search</annotation> → <annotation foreground="parameter">Interval settings</annotation>:\n
+        \t\t● <annotation foreground="parameter">Energy range</annotation> - limits the energy range when determining the counting rate. Click on the text to select the range.\n
+        \t\t● <annotation foreground="parameter">Enable sound alarm</annotation> - enable audio notification of a statistically significant change in the count rate relative to the reference level.\n
+        \t\t● <annotation foreground="parameter">Output sound device</annotation> - desired sound output. Press on text to select next output.\n
+        \t\t● <annotation foreground="parameter">Sound volume</annotation> - sound volume for interval search alarm.\n
+        \t\t● <annotation foreground="parameter">Detection level</annotation> - determines the level of statistically significant change in the counting rate relative to the reference level.\n
+        \t- This mode also supports audio alarm of statistically significant changes in the current counting speed relative to the reference level (enabled by <annotation foreground="parameter">Enable sound alarm</annotation>).\n
         \t- When the spectrum recording is started with sound alarm enabled, the reference level is calculated first. The reference level calculation is performed until an error of 10% is reached (at a 95% confidence level), but for no more than 30 seconds. After calculating the reference level, the program determines two alarm thresholds: upper and lower. The calculation of the thresholds takes into account the error in determining the reference level, the error in the current count rate value, and the <annotation foreground="parameter">Detection level</annotation> parameter, which is set in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Interval settings</annotation>.\n
         \t- The text field <annotation foreground="parameter">int.</annotation> displays the count rate in the selected energy interval.\n
         \t- The text field <annotation foreground="parameter">≈cps</annotation> displays the reference level value during its calculation.\n
@@ -758,19 +763,19 @@
         \t- An individual isotope line selection doesn\'t change decay chain or isotope selection.\n
         \t- Isotope lines from the list are shown on a graph with their colors.\n
         \t- Each individual isotope line in a list shows the isotope name, its energy line and a photon output per 100 decays.\n
+        \t- The <annotation foreground="parameter">Clear selection</annotation> button clears the whole current selection of chains, isotopes and lines.\n
         \n
     </string>
     <string name="help_text_part6"><big><annotation foreground="caption">6. Isotope detection:</annotation></big>\n
-        \t- You can find isotopes with the program. The algorithm is sensitive to input parameters, so try to change them to get better results. Created list can be shown on the graph or be hidden. You can change the visibility using <annotation foreground="parameter">Show</annotation> button (the button will change to <annotation foreground="parameter">Hide</annotation>). All lines are shown light-purple. The energies of these lines are shown calculated, they are not taken from the internal database. Isotope name is determined using <annotation foreground="parameter">Inaccuracy</annotation> parameter.\n
+        \t- You can find isotopes with the program. The algorithm is sensitive to input parameters, so try to change them to get better results. Created list can be shown on the graph or be hidden. You can change the visibility using <annotation foreground="parameter">Show</annotation> button (the button will change to <annotation foreground="parameter">Hide</annotation>). All lines are shown light-purple. The energies of these lines are shown calculated, they are not taken from the internal database. Isotope name is determined using the <annotation foreground="parameter">Energy tolerance</annotation> parameter.\n
         \t- The isotope list is hidden on graph when the spectrum is loaded or you make a new isotope search.\n
-        \t- To activate auto isotope search function during a spectrum reading you first need to activate it in <annotation foreground="parameter">Settings</annotation>. Then open <annotation foreground="parameter">Find isotopes</annotation> and press <annotation foreground="parameter">Show</annotation>. An auto update function does not work during a pause or when found isotopes are selected to be hidden. List updates every second.\n
-        \t- Input parameters are:\n
-        \t\t\u25cf \'Threshold\' - a trigger level to add a found isotope to the list (0.00-10,000.00).\n
-        \t\t\u25cf \'Window size\' - a number of channels to be used for estimation (1-200).\n
-        \t\t\u25cf \'Order\' - polynomial order (1-5).\n
-        \t\t\u25cf \'Inaccuracy\' - how coarse will be isotope name definition, in percent of energy (1.00-50.00).\n
-        \t\t\u25cf \'Significant bits\' - number of bits in channel number to be used. 13 means leave as-is. 12 means combine two channels into one, 11 means combine 4 channels into one, and so on.\n
-        \t\t\u25cf \'Library\' - library of isotopes to be used. \'<i>All</i>\' means \'show even not defined\', \'<i>Known</i>\' means \'show only defined\', others mean corresponding isotope type used by IAEA.\n
+        \t- To activate auto isotope search function during a spectrum reading you first need to activate <annotation foreground="parameter">Auto search isotopes</annotation> in <annotation foreground="parameter">Settings</annotation> → <annotation foreground="parameter">Search Isotopes</annotation>. Then open <annotation foreground="parameter">Find isotopes</annotation> and press <annotation foreground="parameter">Show</annotation>. An auto update function does not work during a pause or when found isotopes are selected to be hidden. List updates every second.\n
+        \t- Input parameters (hints are shown on the search screen):\n
+        \t\t● \'Threshold, σ\' - the minimum significance of a peak over the statistical noise (1.0-20.0).\n
+        \t\t● \'Cs-137 resolution, %\' - width of the 662 keV peak (FWHM) relative to its energy for your detector, sets the expected peak width (1.0-30.0).\n
+        \t\t● \'Compress to, channels\' - before the search the spectrum is combined down to the given number of channels (not less than 1024). Fewer channels reduce the influence of noise, but close peaks may merge.\n
+        \t\t● \'Energy tolerance, %\' - how far a peak may differ from a library line to get a name, in percent of energy (0.01-50.00).\n
+        \t\t● \'Isotope list\' - which isotopes the peaks may be named after. \'<i>All</i>\' means \'show even not defined\', \'<i>Known</i>\' means \'show only defined\', others mean corresponding isotope type used by IAEA.\n
         \n
     </string>
     <string name="help_text_part7"><big><annotation foreground="caption">7. Data storage:</annotation></big>\n
@@ -783,10 +788,13 @@
         \t- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields without energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
         \t- The main spectrum can be exported in a \'<i>.csv</i>\' format with a \';\' division between fields with energy column compatible with \'<i>Microsoft Excel</i>\'. The files are named as \'<i>Export-date.csv</i>\' where \'date\' is the current date. You can add a suffix after date as a note.\n
         \t- Output file names can be modified by <annotation foreground="parameter">Name</annotation> in <annotation foreground="parameter">Settings</annotation>. Prefix, date and time can be removed independently.\n
-        \t- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file. Also you may load it to the main spectrum and then move it the background. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
-        \t- You can stop spectrum update by selecting <annotation foreground="parameter">Pause recording</annotation> in a main menu or on a shortcut bar. After selecting it changes to <annotation foreground="parameter">Continue recording</annotation>. All impulses received from audio during pause will be lost.\n
-        \t- Each saved file can be sent to another program, user or via internet by means of another program with <annotation foreground="parameter">Share a file</annotation> menu item.\n
+        \t- If GPS coordinates are recorded in the spectrum (<annotation foreground="parameter">Settings</annotation> → <annotation foreground="parameter">Add GPS coordinates to files</annotation>), it can be shown on a map with <annotation foreground="parameter">View on map</annotation> in the <annotation foreground="parameter">Spectrum</annotation> submenu.\n
+        \t- The background is stored in a single file named \'<i>Background</i>\' and is loaded from it or from any other file (<annotation foreground="parameter">Load from…</annotation> in the <annotation foreground="parameter">Background</annotation> submenu). You can also copy the main spectrum to the background with <annotation foreground="parameter">Spectrum as background</annotation>. Note: you can store background only if you have background data otherwise the menu command will be disabled.\n
+        \t- You can stop spectrum update by selecting <annotation foreground="parameter">Pause recording</annotation> in a main menu or on a shortcut bar. After selecting it changes to <annotation foreground="parameter">Continue recording</annotation>. All impulses received from the detector during pause will be lost.\n
+        \t- The <annotation foreground="parameter">Clear spectrum</annotation> command offers <annotation foreground="parameter">Reset counts</annotation> (sets the histogram and search back to zero without stopping the acquisition, the spectrum name and calibration are kept) or <annotation foreground="parameter">Clear all</annotation> (full reset; while recording - <annotation foreground="parameter">Stop and clear all</annotation>).\n
+        \t- If the spectrum on screen is not saved, the program asks for confirmation before it is replaced (loading from a file, clearing) and when the program exits.\n
         \t- The editable <annotation foreground="parameter">Custom</annotation> sensitivity profile can be stored to and loaded from a profile file with the <annotation foreground="parameter">Save</annotation>/<annotation foreground="parameter">Load</annotation> buttons in <annotation foreground="parameter">Search</annotation> - <annotation foreground="parameter">Dose rate settings</annotation>. A profile file holds one profile: its sensitivity curve, non-compensated coefficient and F/M/S values.\n
+        \t- The program log opens by tapping the version line in the main menu and can be saved to a file with <annotation foreground="parameter">Save log</annotation>.\n
         \n
     </string>
     <string name="help_text_part8"><big><annotation foreground="caption">8. Storing and viewing spectrogram data:</annotation></big>\n
@@ -794,19 +802,24 @@
         \t- To save a spectrogram with a specified time interval (delta duration), set the recording interval to a value greater than zero in the <annotation foreground="parameter">Save delta every N sec</annotation> parameter of <annotation foreground="parameter">Spectrogram</annotation> - <annotation foreground="parameter">Settings</annotation>. A new spectrogram is started each time a spectrum recording begins. The spectrogram file name has the template Spectrogram-"spectrum-description"-"date_time-of-recording-start".txt\n
         \t- You can view the currently recording spectrogram using the <annotation foreground="parameter">View</annotation> command in the <annotation foreground="parameter">Spectrogram</annotation> submenu. The first line of the spectrogram appears once the first recording interval elapses.\n
         \t- You can view a previously recorded spectrogram using the command <annotation foreground="parameter">Load from…</annotation> in the submenu <annotation foreground="parameter">Spectrogram</annotation>.\n
+        \t- In the spectrogram window the menu lets you choose the color palette, the value (color) scale and whether to show the background spectrum. These settings are kept after the program restarts.\n
+        \t- The <annotation foreground="parameter">Clear screen</annotation> command clears the spectrogram. While recording you can clear completed segments only (<annotation foreground="parameter">Clear completed only</annotation>) or everything and restart the recording (<annotation foreground="parameter">Clear all and restart</annotation>).\n
+        \t- If GPS coordinates are recorded in the spectrogram, it can be shown on a map with <annotation foreground="parameter">View on map</annotation>.\n
         \t- To record spectrogram data 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> in <annotation foreground="parameter">Spectrogram</annotation> - <annotation foreground="parameter">Settings</annotation>, which allows you to limit the size of the recorded files.\n
-        \t- When saving spectrogram data, full 8192 spectrum channels are recorded. When displayed, the spectrogram data is compressed to 1024 channels.\n
+        \t- When saving spectrogram data, all spectrum channels are recorded without compression. In memory and when viewing, the spectrogram data is compressed to 1024 channels.\n
         \tNOTE: Using the spectrogram recording mode results in increased consumption of RAM.\n
         \n
     </string>
     <string name="help_text_part9"><big><annotation foreground="caption">9. Settings:</annotation></big>\n
+        \tSearch in interval, isotope search and spectrogram settings are described in sections 4, 6 and 8.\n
+        \n
         \tAudio processing:\n
         \t- Graph shows \'as-is\' or \'pulse shape\' input signal. Select them by swipe left/right. Swipe up/down to scale the graph.\n
         \t- <annotation foreground="parameter">Enable pile-up correction</annotation> - select to detect impulse pile-up. This parameter tries to compensate the impulse form if the impulse is too close to the previous one.\n
         \t- <annotation foreground="parameter">Use raw audio source</annotation> - try to use unprocessed audio available on Android 7 and higher. This checkbox is disabled on Android before Android 7 of if the system does not allow to use unprocessed audio.\n
         \t- <annotation foreground="parameter">Invert input</annotation> - choose if pulse shape is negative.\n
-        \t- <annotation foreground="parameter">Source:</annotation> - choose desired audio input (does not used with direct USB spectrometers like \'<u>AtomSpectra Nano Pro</u>\'). Press on text to change audio source.\n
         \t- <annotation foreground="parameter">Min front points</annotation> and <annotation foreground="parameter">Max front points</annotation> - minimum and maximum length in counts of the impulse front to detect. Yellow dots on graph show minimum required length on the impulse front, green dots show acceptable length of the impulse front between minimum and maximum number of counts. Default parameters are optimal for all <u>AtomSpectra</u> devices.\n
+        \t- <annotation foreground="parameter">Noise discriminator</annotation> - do not register channels below this number to exclude noisy channels.\n
         \t- <annotation foreground="parameter">Graph update frequency, s⁻¹</annotation> - how often the program updates the dose rate and spectrum data per second.\n
         \n
         \tUSB processing:\n
@@ -814,7 +827,6 @@
         \n
         \tSpectrum:\n
         \t- <annotation foreground="parameter">Show as</annotation> - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n
-        \t- <annotation foreground="parameter">Noise discriminator</annotation> - do not register channels below this number to exclude noisy channels.\n
         \t- <annotation foreground="parameter">Maximum factor</annotation> - a maximum polynomial factor for the calibration function\n
         \t- <annotation foreground="parameter">Smoothness</annotation> - select a realtime smoothness window.\n
         \t- <annotation foreground="parameter">Spectrum</annotation> - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
@@ -822,23 +834,9 @@
         \tSpectrum change:\n
         \t- <annotation foreground="parameter">Diff time</annotation> - select the duration of sliding window in spectrum change mode.\n
         \n
-        \tSpectrogram - Settings:\n
-        \t- <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> - with the spectrogram recording enabled, a new spectrogram file will be created every day at midnight.\n
-        \t- <annotation foreground="parameter">Save delta every N s</annotation> - enables spectrogram recording while collecting spectrum data, value defines spectrum delta duration in seconds.\n
-        \n
-        \tSearch - Interval settings:\n
-        \t- <annotation foreground="parameter">Enable sound alarm</annotation> - enable audio notification of a statistically significant change in the count rate relative to the reference level.\n
-        \t- <annotation foreground="parameter">Energy range</annotation> - limits the energy range when determining the counting rate. Click on the text to select the range.\n
-        \t- <annotation foreground="parameter">Output sound device</annotation> - desired sound output. Press on text to select next output.\n
-        \t- <annotation foreground="parameter">Sound volume</annotation> - sound volume for interval search alarm.\n
-        \t- <annotation foreground="parameter">Detection level</annotation> - determines the level of statistically significant change in the counting rate relative to the reference level.\n
-        \n
         \tAtomSwift integration:\n
         \t- <annotation foreground="parameter">Send data to AtomSwift application</annotation> - send dose/count rate data to AtomSwift application (which allows you to create maps using your spectrometer). Usage: connect spectrometer, press start button, enable option, run AtomSwift application, select AtomSpectraApp in device list. Minimum supported version of AtomSwift is 1.4.250.\n
         \t- <annotation foreground="parameter">AtomSwift DR</annotation> - select which dose rate value is sent to AtomSwift application. Non-compensated is recommended for search/maps unless you explicitly need compensated and you know how to configure sensitivity curve.\n
-        \n
-        \tSearch isotopes:\n
-        \t- <annotation foreground="parameter">Auto search isotopes</annotation> - auto find and show isotopes on a spectrum.\n
         \n
         \tFiles:\n
         \t- <annotation foreground="parameter">Working directory</annotation> - choose the destination directory for all files. If it shows <u>...</u> for Android 8 and higher you will be asked for a destination directory. Or you may press on <u>...</u> (or the name shown) to manually select the desired location. On Android before 8 this parameter can\'t be changed. If it still shows <u>...</u> please create directory <u>AtomSpectra</u> in the root of the first storage (usually the phone storage) yourself and restart the program.\n
