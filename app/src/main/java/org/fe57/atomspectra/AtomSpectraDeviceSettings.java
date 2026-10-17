@@ -8,6 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Canvas;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.text.Editable;
@@ -27,7 +30,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -99,9 +101,7 @@ public class AtomSpectraDeviceSettings extends Activity {
         RecyclerView list = findViewById(R.id.settingsList);
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
-        DividerItemDecoration divider = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
-        divider.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider));
-        list.addItemDecoration(divider);
+        list.addItemDecoration(new GroupDividerDecoration(ContextCompat.getDrawable(this, R.drawable.divider)));
 
         saveButton = findViewById(R.id.saveSettings);
         saveButton.setOnClickListener(view -> save(null));
@@ -323,6 +323,38 @@ public class AtomSpectraDeviceSettings extends Activity {
         if (value == -Double.MAX_VALUE) return "-∞";
         if (value == Double.MAX_VALUE) return "∞";
         return descriptor.type == SettingDescriptor.Type.INT ? String.valueOf((long) value) : descriptor.format(value);
+    }
+
+    // divider below every group header
+    private final class GroupDividerDecoration extends RecyclerView.ItemDecoration {
+        private final Drawable divider;
+
+        GroupDividerDecoration(Drawable divider) {
+            this.divider = divider;
+        }
+
+        private boolean hasDivider(int position) {
+            return position >= 0 && position < rows.size() && rows.get(position).descriptor == null;
+        }
+
+        @Override
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            if (hasDivider(parent.getChildAdapterPosition(view))) {
+                outRect.bottom = divider.getIntrinsicHeight();
+            }
+        }
+
+        @Override
+        public void onDraw(@NonNull Canvas canvas, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            for (int i = 0; i < parent.getChildCount(); i++) {
+                View child = parent.getChildAt(i);
+                if (!hasDivider(parent.getChildAdapterPosition(child))) continue;
+                int top = child.getBottom();
+                divider.setBounds(parent.getPaddingLeft(), top,
+                        parent.getWidth() - parent.getPaddingRight(), top + divider.getIntrinsicHeight());
+                divider.draw(canvas);
+            }
+        }
     }
 
     private final class SettingsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
