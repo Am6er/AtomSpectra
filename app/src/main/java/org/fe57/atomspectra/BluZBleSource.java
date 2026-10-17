@@ -170,6 +170,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean writing;
     private long retryDelay = MIN_RETRY_MS;
     private boolean userInitiated;
+    private boolean isFirstScan = true;
     private boolean recoveryActive;
     private String recoveryReason;
     private long recoveryStartedAt;
@@ -308,7 +309,7 @@ final class BluZBleSource implements SpectrumSource {
             debug("Scan started");
             adapter.getBluetoothLeScanner().startScan(
                     Collections.singletonList(new ScanFilter.Builder().setDeviceAddress(address).build()),
-                    new ScanSettings.Builder().setScanMode(recoveryActive || userInitiated
+                    new ScanSettings.Builder().setScanMode(recoveryActive || userInitiated || isFirstScan
                             ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
             handler.postDelayed(scanRestart, SCAN_RESTART_MS);
         } catch (SecurityException error) {
@@ -339,6 +340,7 @@ final class BluZBleSource implements SpectrumSource {
     };
 
     private void stopScan() {
+        isFirstScan = false;
         handler.removeCallbacks(scanRestart);
         ScanCallback callback = scanCallback;
         scanCallback = null;
