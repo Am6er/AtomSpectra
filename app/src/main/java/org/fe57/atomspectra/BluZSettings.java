@@ -37,9 +37,9 @@ final class BluZSettings {
                     calibration(3, R.string.device_setting_cal3),
                     calibration(4, R.string.device_setting_cal4))
             .category(R.string.bluz_settings_indication,
-                    SettingDescriptor.bool(PULSE_LED, R.string.bluz_setting_pulse_led),
                     SettingDescriptor.bool(PULSE_SOUND, R.string.bluz_setting_pulse_sound),
                     SettingDescriptor.bool(SOUND_DIV10, R.string.bluz_setting_sound_div10),
+                    SettingDescriptor.bool(PULSE_LED, R.string.bluz_setting_pulse_led),
                     SettingDescriptor.bool(LED_DIV10, R.string.bluz_setting_led_div10))
             .category(R.string.bluz_settings_spectrometer,
                     SettingDescriptor.bool(AUTOSTART, R.string.bluz_setting_autostart),
