@@ -878,10 +878,10 @@
     <string name="device_setting_cal3">Коэффициент 3 (x³)</string>
     <string name="device_setting_cal4">Коэффициент 4 (x⁴)</string>
     <string name="device_setting_cal_help">Энергия в кэВ как полином номера канала x, 4096 каналов.</string>
-    <string name="bluz_setting_pulse_led">Вспышка светодиода на импульс</string>
-    <string name="bluz_setting_pulse_sound">Щелчок на импульс</string>
-    <string name="bluz_setting_sound_div10">Щелчок только на каждый 10-й импульс</string>
-    <string name="bluz_setting_led_div10">Вспышка только на каждый 10-й импульс</string>
+    <string name="bluz_setting_pulse_led">Вспышка на импульс вкл</string>
+    <string name="bluz_setting_led_div10">Режим вспышек 1/10</string>
+    <string name="bluz_setting_pulse_sound">Щелчок на импульс вкл</string>
+    <string name="bluz_setting_sound_div10">Режим щелчков 1/10</string>
     <string name="bluz_setting_autostart">Начинать набор спектра при включении</string>
     <string name="bluz_setting_adc_sample">Время выборки АЦП</string>
     <string name="bluz_setting_adc_sample_help">Код 0–7. Изменение стирает спектр и время набора на устройстве.</string>
