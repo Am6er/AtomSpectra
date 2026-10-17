@@ -160,9 +160,10 @@ public final class SettingDescriptor {
         if (value == null) return "";
         if (type == Type.DECIMAL && value instanceof Double) {
             double number = (Double) value;
-            if (digits <= 0 || !Double.isFinite(number)) return Double.toString(number);
-            BigDecimal rounded = new BigDecimal(number).round(new MathContext(digits)).stripTrailingZeros();
-            return rounded.compareTo(BigDecimal.ZERO) == 0 ? "0" : rounded.toString();
+            if (!Double.isFinite(number)) return Double.toString(number);
+            // plain notation: the number keyboard of the edit field has no exponent key
+            BigDecimal exact = digits <= 0 ? new BigDecimal(Double.toString(number)) : new BigDecimal(number).round(new MathContext(digits));
+            return exact.compareTo(BigDecimal.ZERO) == 0 ? "0" : exact.stripTrailingZeros().toPlainString();
         }
         return String.valueOf(value);
     }
