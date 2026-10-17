@@ -612,7 +612,6 @@ public class AtomSpectraService extends Service {
      */
     public void saveDeviceSettings(Map<String, Object> changes) {
         final Map<String, Object> requested = new HashMap<>(changes);
-        toastAndLog(R.string.device_settings_store_wait);
         postToInputThread(() -> {
             if (!isDeviceAvailable())
                 return;
@@ -1233,6 +1232,10 @@ public class AtomSpectraService extends Service {
             // the service is optimistic about start/stop, so a failure has to put recording back
             is_recording = false;
             updateMenu();
+        }
+
+        if (op == SpectrumSource.OP_SETTINGS_SAVE) {
+            sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_SETTINGS_FAILED).setPackage(Constants.PACKAGE_NAME));
         }
 
         if (op == SpectrumSource.OP_CALIBRATION_SAVE

@@ -202,7 +202,7 @@
     <string name="calibration_calculate">Рассчитать</string>
     <string name="calibration_load_from_file">Загрузить из…</string>
     <string name="calibration_store_device">Запомнить в устройство</string>
-    <string name="calibration_revert_device">Использовать калибровку устройства</string>
+    <string name="calibration_revert_device">Взять из устройства</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Устройство</string>
     <string name="calibration_load_device_energy">Загрузить с калибровкой…</string>
@@ -693,7 +693,7 @@
         \t- ПРИМЕЧАНИЕ: Лучше включить режим отображения каналов перед выполнением калибровки.\n
         \t- Для калибровки спектра сначала расположите курсор в первой точке калибровки, нажмите кнопку <annotation foreground="parameter">1</annotation> над графиком и введите значение. Значение на кнопке изменится с <annotation foreground="parameter">1</annotation> на <annotation foreground="parameter">2</annotation>, показывая на ожидание второй точки калибровки.\n
         \t- Повторите те же шаги для следующих точек калибровки. Кнопка сменится на <annotation foreground="parameter">-</annotation> при отсутствии дополнительных точек.\n
-        \t- Нажмите на кнопку <annotation foreground="parameter">\u221a</annotation> для расчёта калибровки. Используйте <annotation foreground="parameter">Запомнить в устройство</annotation>, чтобы сохранить калибровку: в самом устройстве (BluZ, <u>AtomSpectra Pro</u>) или в памяти программы отдельно для каждого аудиовхода (спектрометры с аудиоинтерфейсом). Сохранённая калибровка применяется автоматически при подключении устройства. Используйте <annotation foreground="parameter">Использовать калибровку устройства</annotation>, чтобы применить её вручную.\n
+        \t- Нажмите на кнопку <annotation foreground="parameter">\u221a</annotation> для расчёта калибровки. Используйте <annotation foreground="parameter">Запомнить в устройство</annotation>, чтобы сохранить калибровку: в самом устройстве (BluZ, <u>AtomSpectra Pro</u>) или в памяти программы отдельно для каждого аудиовхода (спектрометры с аудиоинтерфейсом). Сохранённая калибровка применяется автоматически при подключении устройства. Используйте <annotation foreground="parameter">Взять из устройства</annotation>, чтобы применить её вручную.\n
         \t- Нажмите на флаг с изотопом на графике из <u>списка изотопов</u>, чтобы задать точку калибровки с энергией изотопа.\n
         \t- Нажмите на флаг с изотопом на графике из <u>списка найденных пиков</u> и введите значение энергии, чтобы задать точку калибровки.\n
         \t- Нажмите на коэффициенты полинома в подменю <annotation foreground="parameter">Калибровка</annotation> для их редактирования.\n
@@ -861,7 +861,7 @@
     <string name="log_capture_enabled">Запись диагностики включена</string>
     <string name="log_capture_disabled">Запись диагностики выключена</string>
     <string name="device_settings_saved">Настройки устройства сохранены</string>
-    <string name="device_settings_store_wait">Сохранение настроек в устройство…</string>
+    <string name="device_settings_saving">Сохранение…</string>
     <string name="device_settings_save">Сохранить</string>
     <string name="device_settings_dont_save">Не сохранять</string>
     <string name="device_settings_unsaved_title">Есть несохранённые изменения</string>
