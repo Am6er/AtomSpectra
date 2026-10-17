@@ -863,15 +863,15 @@
     <string name="device_settings_destructive_title">Warning</string>
     <string name="device_settings_destructive_text">Saving these settings will erase the data collected by the device:\n%1$s</string>
     <string name="device_settings_expert">Expert</string>
-    <string name="bluz_settings_calibration">Calibration</string>
+    <string name="device_settings_calibration">Calibration</string>
     <string name="bluz_settings_indication">Indication</string>
     <string name="bluz_settings_spectrometer">Spectrometer</string>
-    <string name="bluz_setting_cal0">Coefficient 0 (offset)</string>
-    <string name="bluz_setting_cal1">Coefficient 1 (x)</string>
-    <string name="bluz_setting_cal2">Coefficient 2 (x²)</string>
-    <string name="bluz_setting_cal3">Coefficient 3 (x³)</string>
-    <string name="bluz_setting_cal4">Coefficient 4 (x⁴)</string>
-    <string name="bluz_setting_cal_help">Energy in keV as a polynomial of the channel number x, 4096 channels.</string>
+    <string name="device_setting_cal0">Coefficient 0 (offset)</string>
+    <string name="device_setting_cal1">Coefficient 1 (x)</string>
+    <string name="device_setting_cal2">Coefficient 2 (x²)</string>
+    <string name="device_setting_cal3">Coefficient 3 (x³)</string>
+    <string name="device_setting_cal4">Coefficient 4 (x⁴)</string>
+    <string name="device_setting_cal_help">Energy in keV as a polynomial of the channel number x, 4096 channels.</string>
     <string name="bluz_setting_pulse_led">LED flash on pulse</string>
     <string name="bluz_setting_pulse_sound">Click on pulse</string>
     <string name="bluz_setting_sound_div10">Click on every 10th pulse only</string>
@@ -883,6 +883,9 @@
     <string name="bluz_setting_hv_help">Raw 10-bit value, 0–1023.</string>
     <string name="bluz_setting_comparator">Comparator threshold</string>
     <string name="bluz_setting_comparator_help">Raw 10-bit value, 0–1023.</string>
+    <string name="spectra_pro_settings_device">Device</string>
+    <string name="spectra_pro_setting_noise">Noise threshold (NOS)</string>
+    <string name="spectra_pro_setting_noise_help">Raw value 0–4095.</string>
     <string name="device_settings_number">Enter a number</string>
     <string name="device_settings_range">Enter a value from %1$s to %2$s</string>
 </resources>

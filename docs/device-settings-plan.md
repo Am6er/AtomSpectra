@@ -92,7 +92,9 @@ Implementation:
 | Device | NOS | int 0–4095 | expert | `NOISE` key in the `-inf` answer, written with `-nos <n>` |
 
 - NOS is parsed from the `-inf` answer at handshake, next to `VERSION` in `checkDeviceVersion`. The answer is space-separated `KEY value` pairs, for example `... NOISE 12 ...`. `getParameter(answer, "NOISE")` is used, after checking how it tokenizes next to the bracketed array values (it returns null on a stray `]`).
+- Every firmware reports NOS, so the schema is fixed. If the `-inf` answer has no valid `NOISE`, the source logs a warning and `settings()` stays null, so the settings screen is unavailable.
 - A save sends the changed groups as one `executeCommandBatch` (the `-cal` words with a fresh CRC and/or `-nos <n>`) and expects `-ok` for each. On success the source updates its stored values from what was sent, emits `ACTION_SOURCE_SETTINGS_SAVED` and requests a status resync, as the calibration save does.
+- A failed batch can leave the device partly written (the calibration accepted, `-nos` not). The source keeps its old values in that case and does not read them back.
 - If the calibration CRC is invalid, the screen still shows the coefficients as read (the current code keeps them and only shows a toast). Saving the calibration writes a new CRC, which repairs the device.
 - Other `-inf` parameters (`RISE`, `FALL`, `HYST`, `STEP`, `POT`, ...) can become settings later by adding descriptors.
 
