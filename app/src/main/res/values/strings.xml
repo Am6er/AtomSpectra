@@ -441,7 +441,7 @@
     <string name="export_save_error"><xliff:g id="file_save">%1$s</xliff:g> export failed!</string>
     <string name="something_wrong">Something goes wrong!</string>
     <string name="unknown_code">Got unknown code from the device: <xliff:g id="code">%1$d</xliff:g></string>
-    <string name="cal_store_wait">Wait for calibration to store into the device</string>
+    <string name="cal_store_wait">Saving calibration to the device…</string>
     <string name="cal_apply_device">Calibration applied from the device</string>
     <string name="cal_wrong_device">Wrong calibration from the device</string>
     <string name="cal_none_stored">No calibration is stored for this device</string>
@@ -856,6 +856,7 @@
     <string name="log_capture_enabled">Diagnostic capture enabled</string>
     <string name="log_capture_disabled">Diagnostic capture disabled</string>
     <string name="device_settings_saved">Device settings saved</string>
+    <string name="device_settings_store_wait">Saving settings to the device…</string>
     <string name="device_settings_save">Save</string>
     <string name="device_settings_dont_save">Don\'t save</string>
     <string name="device_settings_unsaved_title">Unsaved changes</string>

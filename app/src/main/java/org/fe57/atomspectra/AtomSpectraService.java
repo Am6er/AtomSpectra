@@ -612,6 +612,7 @@ public class AtomSpectraService extends Service {
      */
     public void saveDeviceSettings(Map<String, Object> changes) {
         final Map<String, Object> requested = new HashMap<>(changes);
+        toastAndLog(R.string.device_settings_store_wait);
         postToInputThread(() -> {
             if (!isDeviceAvailable())
                 return;

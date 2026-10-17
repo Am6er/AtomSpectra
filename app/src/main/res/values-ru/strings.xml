@@ -441,7 +441,7 @@
     <string name="export_save_error">Экспортирование <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
     <string name="something_wrong">Что-то пошло не так!</string>
     <string name="unknown_code">Получен неизвестный код от устройства: <xliff:g id="code">%1$d</xliff:g></string>
-    <string name="cal_store_wait">Подождите для сохранения калибровки в устройстве</string>
+    <string name="cal_store_wait">Сохранение калибровки в устройство…</string>
     <string name="cal_apply_device">Калибровка принята из устройства</string>
     <string name="cal_wrong_device">Неверная калибровка в устройстве</string>
     <string name="cal_none_stored">Для этого устройства калибровка не сохранена</string>
@@ -861,6 +861,7 @@
     <string name="log_capture_enabled">Запись диагностики включена</string>
     <string name="log_capture_disabled">Запись диагностики выключена</string>
     <string name="device_settings_saved">Настройки устройства сохранены</string>
+    <string name="device_settings_store_wait">Сохранение настроек в устройство…</string>
     <string name="device_settings_save">Сохранить</string>
     <string name="device_settings_dont_save">Не сохранять</string>
     <string name="device_settings_unsaved_title">Есть несохранённые изменения</string>
