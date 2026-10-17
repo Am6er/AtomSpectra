@@ -38,6 +38,19 @@
         android:textColor="#FFA629"
         android:textSize="16dp"
         android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/activityProgress"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/activityProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:max="1000"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/bottomControls"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

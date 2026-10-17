@@ -47,6 +47,7 @@
     <string name="bluetooth_location_off">Геолокация выключена; поиск устройств Bluetooth недоступен</string>
     <string name="bluetooth_location_enable">Включить геолокацию</string>
     <string name="bluetooth_scan_failed">Не удалось найти устройства Bluetooth</string>
+    <string name="bluetooth_scanning">Поиск Bluetooth…</string>
     <string name="device_waiting_notification">Ожидание выбранного устройства</string>
     <string name="device_none_selected_notification">Устройство не выбрано</string>
     <string name="device_name_audio">Аудио</string>

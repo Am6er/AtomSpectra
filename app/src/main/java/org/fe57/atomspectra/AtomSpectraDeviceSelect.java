@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.bluetooth.BluetoothAdapter;
 import android.hardware.usb.UsbDevice;
+import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -21,6 +22,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
@@ -55,6 +57,8 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private AppPermissions permissions;
     private final Handler statusHandler = new Handler(Looper.getMainLooper());
     private long statusStartedAt;
+    private ValueAnimator activityProgress;
+    private boolean activityProgressConnecting;
     private final Runnable statusTicker = new Runnable() {
         @Override
         public void run() {
@@ -181,6 +185,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         super.onStop();
         stopStatusTicker();
         scanner.stop();
+        hideActivityProgress();
         if (receiverRegistered) {
             unregisterReceiver(resultReceiver);
             receiverRegistered = false;
@@ -253,25 +258,37 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     private void showConnecting(boolean show) {
         findViewById(R.id.cancelConnect).setVisibility(show ? View.VISIBLE : View.GONE);
         boolean suspended = AtomSpectraService.isRecordingSuspended;
-        boolean visible = show || suspended;
-        TextView status = findViewById(R.id.statusText);
-        status.setVisibility(visible ? View.VISIBLE : View.GONE);
-        if (!visible) {
-            stopStatusTicker();
-            statusStartedAt = 0;
-            return;
-        }
-        AtomSpectraService.DeviceState deviceState = AtomSpectraService.deviceState();
-        boolean timed = !(suspended && deviceState == AtomSpectraService.DeviceState.ERROR);
-        if (timed) {
-            if (statusStartedAt == 0) statusStartedAt = SystemClock.elapsedRealtime();
-            updateStatusText();
-            statusHandler.removeCallbacks(statusTicker);
-            statusHandler.postDelayed(statusTicker, 1000);
+        if (show || suspended) {
+            AtomSpectraService.DeviceState deviceState = AtomSpectraService.deviceState();
+            boolean timed = !(suspended && deviceState == AtomSpectraService.DeviceState.ERROR);
+            if (timed) {
+                if (statusStartedAt == 0) statusStartedAt = SystemClock.elapsedRealtime();
+                statusHandler.removeCallbacks(statusTicker);
+                statusHandler.postDelayed(statusTicker, 1000);
+            } else {
+                stopStatusTicker();
+            }
         } else {
             stopStatusTicker();
-            status.setText(R.string.device_error_notification);
+            statusStartedAt = 0;
         }
+        updateActivityIndicator();
+    }
+
+    // one label and bar for the running process: connecting, waiting for the device, or scanning Bluetooth
+    private void updateActivityIndicator() {
+        TextView status = findViewById(R.id.statusText);
+        boolean suspended = AtomSpectraService.isRecordingSuspended;
+        boolean busy = connecting || suspended;
+        boolean scanning = scanner.isBluetoothScanning();
+        boolean error = suspended
+                && AtomSpectraService.deviceState() == AtomSpectraService.DeviceState.ERROR;
+        status.setVisibility(busy || scanning ? View.VISIBLE : View.GONE);
+        if (error) status.setText(R.string.device_error_notification);
+        else if (busy) updateStatusText();
+        else if (scanning) status.setText(R.string.bluetooth_scanning);
+        if (error || !(busy || scanning)) hideActivityProgress();
+        else showActivityProgress(busy);
     }
 
     private void updateStatusText() {
@@ -300,12 +317,36 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         selectedIdentity = selected == null ? null : selected.identity;
         selectedName = selected == null ? null : selected.name;
         connecting = AtomSpectraService.isSelectionPending();
-        showConnecting(connecting);
-        if (connecting && selectedType == SpectrumSource.TYPE_BLUZ) scanner.pauseBluetoothScan();
+        if (connecting) scanner.pauseBluetoothScan();
         else scanner.resumeBluetoothScan();
+        showConnecting(connecting);
+    }
+
+    // neither process has a known end, so the bar keeps slowing down as it nears the right edge
+    private void showActivityProgress(boolean connectingNow) {
+        if (activityProgress != null && activityProgressConnecting == connectingNow) return;
+        hideActivityProgress();
+        ProgressBar bar = findViewById(R.id.activityProgress);
+        bar.setProgress(0);
+        bar.setVisibility(View.VISIBLE);
+        activityProgressConnecting = connectingNow;
+        activityProgress = ValueAnimator.ofInt(0, bar.getMax());
+        activityProgress.setDuration(60000);
+        activityProgress.setInterpolator(t -> 1f - (float) Math.exp(-4 * t));
+        activityProgress.addUpdateListener(animation -> bar.setProgress((int) animation.getAnimatedValue()));
+        activityProgress.start();
+    }
+
+    private void hideActivityProgress() {
+        if (activityProgress != null) {
+            activityProgress.cancel();
+            activityProgress = null;
+        }
+        findViewById(R.id.activityProgress).setVisibility(View.GONE);
     }
 
     private void renderDevices() {
+        updateActivityIndicator();
         LinearLayout list = findViewById(R.id.deviceList);
         List<DeviceDescriptor> visibleDevices = new ArrayList<>(devices);
         if (selectedIdentity != null) {
@@ -325,6 +366,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             }
         }
         list.removeAllViews();
+        list.addView(createOfflineRow());
         if (visibleDevices.isEmpty()) {
             TextView empty = new TextView(this);
             empty.setText(R.string.device_select_none);
@@ -341,7 +383,6 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 list.addView(row);
             }
         }
-        list.addView(createOfflineRow());
     }
 
     private View createRow() {
@@ -504,6 +545,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
             } else if (state == DeviceScanner.BluetoothState.LOCATION_DISABLED) {
                 bluetoothEnable.launch(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
             } else {
+                hideActivityProgress();
                 scanner.restartBluetoothScan();
             }
         }, () -> scanner.refresh());
@@ -519,9 +561,9 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
         selectedName = device.displayName;
         connecting = !sameDevice || AtomSpectraService.isSelectionPending();
         if (!sameDevice) statusStartedAt = 0;
-        showConnecting(connecting);
-        if (connecting && device.type == SpectrumSource.TYPE_BLUZ) scanner.pauseBluetoothScan();
+        if (connecting) scanner.pauseBluetoothScan();
         else scanner.resumeBluetoothScan();
+        showConnecting(connecting);
         renderDevices();
         if (PrefHelper.shouldRememberDeviceChoice(this)) {
             PrefHelper.setDeviceChoice(this, DeviceChoice.device(device.type, device.identity, device.displayName));
