@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.zip.CRC32;
 
@@ -59,6 +60,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private final static String OP_ID_INITIAL_SHOW_HISTOGRAM = "Initial load histogram just after connect (-sho)";
     private final static String OP_ID_SHOW_HISTOGRAM = "Load histogram (-sho)";
     private final static String OP_ID_SAVE_CALIBRATION = "Save calibration (-cal)";
+    private final static String OP_ID_SAVE_SETTINGS = "Save settings (-cal, -nos)";
     private final static String OP_ID_RESYNC_STATUS = "Resync status (-stt)";
     private final static String OP_ID_WATCHDOG_RESTART_COLLECTING = "Restart collecting after watchdog reconnect (-sta)";
 
@@ -69,6 +71,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private int firmwareVersion = 0;
     private volatile String deviceId = null;
     private volatile double[] calibrationCoeffs = new double[CALIBRATION_COEFFICIENTS];
+    // NOISE from the "-inf" answer, -1 until it is read
+    private volatile int noise = -1;
 
     // keyed by batchId, which is also reused as the id on each CommandCode in the batch
     private final HashMap<String, CommandBatch> pendingBatches = new HashMap<>();
@@ -362,6 +366,74 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             } else {
                 this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
                 this.emitError(SpectrumSource.OP_CALIBRATION_SAVE, failureReason, "Save calibration (-cal)");
+            }
+        });
+    }
+
+    @Override
+    public SettingsSchema settingsSchema() {
+        return SpectraProSettings.SCHEMA;
+    }
+
+    @Override
+    public Map<String, Object> settings() {
+        int currentNoise = this.noise;
+        if (this.deviceId == null || currentNoise < 0) return null;
+        return SpectraProSettings.snapshot(this.calibrationCoeffs, currentNoise);
+    }
+
+    @Override
+    public void requestSaveSettings(Map<String, Object> changes) {
+        final Map<String, Object> requested = new HashMap<>(changes);
+        if (this.deferToSourceThread(() -> this.requestSaveSettings(requested))) return;
+        if (this.rejectIfDisconnected(SpectrumSource.OP_SETTINGS_SAVE)) return;
+        if (this.pendingBatches.containsKey(OP_ID_SAVE_SETTINGS)) {
+            this.emitError(SpectrumSource.OP_SETTINGS_SAVE, SpectrumSource.REASON_ERROR, "Settings write is already pending");
+            return;
+        }
+
+        final double[] newCalibration = this.calibrationCoeffs.clone();
+        boolean calibrationChanged = false;
+        int newNoise = -1;
+        try {
+            for (Map.Entry<String, Object> change : requested.entrySet()) {
+                int index = SpectraProSettings.calibrationIndex(change.getKey());
+                if (index >= 0) {
+                    double value = ((Number) change.getValue()).doubleValue();
+                    if (!Double.isFinite(value)) throw new IllegalArgumentException("Invalid calibration coefficient");
+                    newCalibration[index] = value;
+                    calibrationChanged = true;
+                } else if (SpectraProSettings.NOISE.equals(change.getKey())) {
+                    newNoise = ((Number) change.getValue()).intValue();
+                    if (newNoise < 0 || newNoise > SpectraProSettings.NOISE_MAX)
+                        throw new IllegalArgumentException("NOS is out of range");
+                } else {
+                    throw new IllegalArgumentException("Unknown setting " + change.getKey());
+                }
+            }
+        } catch (IllegalArgumentException | ClassCastException invalid) {
+            this.emitError(SpectrumSource.OP_SETTINGS_SAVE, SpectrumSource.REASON_ERROR, "Invalid settings: " + invalid.getMessage());
+            return;
+        }
+
+        ArrayList<String> commands = new ArrayList<>();
+        if (calibrationChanged) commands.addAll(Arrays.asList(buildCalibrationCommands(newCalibration)));
+        if (newNoise >= 0) commands.add("-nos " + newNoise);
+        if (commands.isEmpty()) return;
+
+        final boolean savedCalibration = calibrationChanged;
+        final int savedNoise = newNoise;
+        // the batch may pause spectrum updates; the watchdog is re-armed once the status is resynced
+        this.cancelDataWatchdog();
+        this.executeCommandBatch(commands.toArray(new String[0]), OP_ID_SAVE_SETTINGS, SpectrumSource.OP_SETTINGS_SAVE, (success, failureReason) -> {
+            if (success) {
+                if (savedCalibration) this.calibrationCoeffs = newCalibration;
+                if (savedNoise >= 0) this.noise = savedNoise;
+                this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_SETTINGS_SAVED));
+                this.requestStatusResync(SpectrumSource.OP_SETTINGS_SAVE);
+            } else {
+                this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
+                this.emitError(SpectrumSource.OP_SETTINGS_SAVE, failureReason, OP_ID_SAVE_SETTINGS);
             }
         });
     }
@@ -933,9 +1005,13 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (ctx == null) {
             return;
         }
+        this.noise = answer == null ? -1 : parseNoise(answer);
         if (answer == null) {
             this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, ctx.getString(R.string.log_usb_device_version_unknown));
             return;
+        }
+        if (this.noise < 0) {
+            AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "No valid NOISE in the -inf answer, device settings are unavailable");
         }
 
         String version = getParameter(answer, "VERSION");
@@ -1879,6 +1955,18 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.commands.add(new CommandCode(command, id, op));
 
         return this.sendPacket();
+    }
+
+    // NOISE from the "-inf" answer, -1 when it is absent or not a valid value
+    private static int parseNoise(@NonNull String answer) {
+        String value = getParameter(answer, "NOISE");
+        if (value == null) return -1;
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed >= 0 && parsed <= SpectraProSettings.NOISE_MAX ? parsed : -1;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     //get parameter value from info line or null if none
