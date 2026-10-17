@@ -47,6 +47,7 @@
     <string name="bluetooth_location_off">Location services are off; Bluetooth discovery is unavailable</string>
     <string name="bluetooth_location_enable">Enable location services</string>
     <string name="bluetooth_scan_failed">Bluetooth discovery failed</string>
+    <string name="bluetooth_scanning">Scanning Bluetooth…</string>
     <string name="device_waiting_notification">Waiting for the selected device</string>
     <string name="device_none_selected_notification">No device selected</string>
     <string name="device_name_audio">Audio</string>

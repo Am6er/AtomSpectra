@@ -331,6 +331,10 @@ final class DeviceScanner {
         }
     }
 
+    boolean isBluetoothScanning() {
+        return bluetoothScan != null;
+    }
+
     // the radio is left to a connection in progress; the list keeps what was found
     void pauseBluetoothScan() {
         if (bluetoothScanPaused) return;
