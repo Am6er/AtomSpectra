@@ -30,17 +30,17 @@ final class BluZSettings {
     private static final int ADC_FLAGS = 97;
 
     static final SettingsSchema SCHEMA = SettingsSchema.builder()
+            .category(R.string.bluz_settings_indication,
+                    SettingDescriptor.bool(PULSE_SOUND, R.string.bluz_setting_pulse_sound),
+                    SettingDescriptor.bool(SOUND_DIV10, R.string.bluz_setting_sound_div10),
+                    SettingDescriptor.bool(PULSE_LED, R.string.bluz_setting_pulse_led),
+                    SettingDescriptor.bool(LED_DIV10, R.string.bluz_setting_led_div10))
             .category(R.string.device_settings_calibration,
                     calibration(0, R.string.device_setting_cal0).help(R.string.device_setting_cal_help),
                     calibration(1, R.string.device_setting_cal1),
                     calibration(2, R.string.device_setting_cal2),
                     calibration(3, R.string.device_setting_cal3),
                     calibration(4, R.string.device_setting_cal4))
-            .category(R.string.bluz_settings_indication,
-                    SettingDescriptor.bool(PULSE_SOUND, R.string.bluz_setting_pulse_sound),
-                    SettingDescriptor.bool(SOUND_DIV10, R.string.bluz_setting_sound_div10),
-                    SettingDescriptor.bool(PULSE_LED, R.string.bluz_setting_pulse_led),
-                    SettingDescriptor.bool(LED_DIV10, R.string.bluz_setting_led_div10))
             .category(R.string.bluz_settings_spectrometer,
                     SettingDescriptor.bool(AUTOSTART, R.string.bluz_setting_autostart),
                     SettingDescriptor.integer(ADC_SAMPLE, R.string.bluz_setting_adc_sample, 0, 7)

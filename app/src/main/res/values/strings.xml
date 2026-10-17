@@ -873,10 +873,10 @@
     <string name="device_setting_cal3">Coefficient 3 (x³)</string>
     <string name="device_setting_cal4">Coefficient 4 (x⁴)</string>
     <string name="device_setting_cal_help">Energy in keV as a polynomial of the channel number x, 4096 channels.</string>
-    <string name="bluz_setting_pulse_led">LED flash on pulse</string>
+    <string name="bluz_setting_pulse_led">Flash on pulse</string>
+    <string name="bluz_setting_led_div10">Flash mode 1/10</string>
     <string name="bluz_setting_pulse_sound">Click on pulse</string>
-    <string name="bluz_setting_sound_div10">Click on every 10th pulse only</string>
-    <string name="bluz_setting_led_div10">LED flash on every 10th pulse only</string>
+    <string name="bluz_setting_sound_div10">Click mode 1/10</string>
     <string name="bluz_setting_autostart">Start spectrum collection at power-up</string>
     <string name="bluz_setting_adc_sample">ADC sample time</string>
     <string name="bluz_setting_adc_sample_help">Raw value 0–7. Changing it clears the spectrum and time on the device.</string>
