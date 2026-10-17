@@ -1,5 +1,7 @@
 package org.fe57.atomspectra;
 
+import java.util.Map;
+
 final class BluZCommandCodec {
     static final int PACKET_LENGTH = 255;
     static final int WRITE_CHUNK_LENGTH = 248;
@@ -46,24 +48,83 @@ final class BluZCommandCodec {
         return packet;
     }
 
-    static byte[] calibration4096(byte[] snapshot, double[] coefficients) {
-        if (coefficients == null || coefficients.length != 5) {
-            throw new IllegalArgumentException("BluZ calibration requires five coefficients");
-        }
+    /**
+     * Command 0 that keeps every setting of the snapshot except the changed ones, at 4096 channels.
+     * The changes are keyed as in {@link BluZSettings}.
+     */
+    static byte[] settings4096(byte[] snapshot, Map<String, Object> changes) {
         byte[] packet = resolution4096(snapshot);
-        int[] writeOffsets = {47, 43, 59, 55, 51};
-        for (int index = 0; index < coefficients.length; index++) {
-            float value = (float) coefficients[index];
-            if (!Double.isFinite(coefficients[index]) || !Float.isFinite(value)) {
-                throw new IllegalArgumentException("Invalid BluZ calibration coefficient");
+        int[] calibrationOffsets = {47, 43, 59, 55, 51};
+        for (Map.Entry<String, Object> change : changes.entrySet()) {
+            String key = change.getKey();
+            Object value = change.getValue();
+            int calibration = BluZSettings.calibrationIndex(key);
+            if (calibration >= 0) {
+                double requested = BluZSettings.number(value);
+                float stored = (float) requested;
+                if (!Double.isFinite(requested) || !Float.isFinite(stored)) {
+                    throw new IllegalArgumentException("Invalid BluZ calibration coefficient");
+                }
+                int bits = Float.floatToIntBits(stored);
+                for (int byteIndex = 0; byteIndex < 4; byteIndex++) {
+                    packet[calibrationOffsets[calibration] + byteIndex] = (byte) (bits >>> (24 - byteIndex * 8));
+                }
+                continue;
             }
-            int bits = Float.floatToIntBits(value);
-            for (int byteIndex = 0; byteIndex < 4; byteIndex++) {
-                packet[writeOffsets[index] + byteIndex] = (byte) (bits >>> (24 - byteIndex * 8));
+            switch (key) {
+                case BluZSettings.PULSE_LED:
+                    setBit(packet, 20, 0, flag(value));
+                    break;
+                case BluZSettings.PULSE_SOUND:
+                    setBit(packet, 20, 1, flag(value));
+                    break;
+                case BluZSettings.AUTOSTART:
+                    setBit(packet, 38, 0, flag(value));
+                    break;
+                case BluZSettings.SOUND_DIV10:
+                    setBit(packet, 38, 4, flag(value));
+                    break;
+                case BluZSettings.LED_DIV10:
+                    setBit(packet, 38, 5, flag(value));
+                    break;
+                case BluZSettings.ADC_SAMPLE:
+                    int sample = integer(value, 7);
+                    packet[38] = (byte) ((packet[38] & ~0x0E) | (sample << 1));
+                    break;
+                case BluZSettings.HV:
+                    putUint16(packet, 33, integer(value, 1023));
+                    break;
+                case BluZSettings.COMPARATOR:
+                    putUint16(packet, 35, integer(value, 1023));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown BluZ setting " + key);
             }
         }
         checksum(packet);
         return packet;
+    }
+
+    private static boolean flag(Object value) {
+        if (!(value instanceof Boolean)) throw new IllegalArgumentException("BluZ setting is not a flag");
+        return (Boolean) value;
+    }
+
+    private static int integer(Object value, int max) {
+        double number = BluZSettings.number(value);
+        if (number != Math.rint(number) || number < 0 || number > max) {
+            throw new IllegalArgumentException("BluZ setting is out of range");
+        }
+        return (int) number;
+    }
+
+    private static void setBit(byte[] packet, int index, int bit, boolean on) {
+        packet[index] = (byte) (on ? packet[index] | (1 << bit) : packet[index] & ~(1 << bit));
+    }
+
+    private static void putUint16(byte[] packet, int offset, int value) {
+        packet[offset] = (byte) value;
+        packet[offset + 1] = (byte) (value >> 8);
     }
 
     private static void reverseFloat(byte[] snapshot, int readOffset, byte[] packet, int writeOffset) {
