@@ -868,6 +868,26 @@
     <string name="device_settings_destructive_title">Внимание</string>
     <string name="device_settings_destructive_text">Сохранение этих настроек сотрёт данные, набранные устройством:\n%1$s</string>
     <string name="device_settings_expert">Для экспертов</string>
+    <string name="bluz_settings_calibration">Калибровка</string>
+    <string name="bluz_settings_indication">Индикация</string>
+    <string name="bluz_settings_spectrometer">Спектрометр</string>
+    <string name="bluz_setting_cal0">Коэффициент 0 (смещение)</string>
+    <string name="bluz_setting_cal1">Коэффициент 1 (x)</string>
+    <string name="bluz_setting_cal2">Коэффициент 2 (x²)</string>
+    <string name="bluz_setting_cal3">Коэффициент 3 (x³)</string>
+    <string name="bluz_setting_cal4">Коэффициент 4 (x⁴)</string>
+    <string name="bluz_setting_cal_help">Энергия в кэВ как полином номера канала x, 4096 каналов.</string>
+    <string name="bluz_setting_pulse_led">Вспышка светодиода на импульс</string>
+    <string name="bluz_setting_pulse_sound">Щелчок на импульс</string>
+    <string name="bluz_setting_sound_div10">Щелчок только на каждый 10-й импульс</string>
+    <string name="bluz_setting_led_div10">Вспышка только на каждый 10-й импульс</string>
+    <string name="bluz_setting_autostart">Начинать набор спектра при включении</string>
+    <string name="bluz_setting_adc_sample">Время выборки АЦП</string>
+    <string name="bluz_setting_adc_sample_help">Код 0–7. Изменение стирает спектр и время набора на устройстве.</string>
+    <string name="bluz_setting_hv">Высокое напряжение</string>
+    <string name="bluz_setting_hv_help">Код 10 бит, 0–1023.</string>
+    <string name="bluz_setting_comparator">Порог компаратора</string>
+    <string name="bluz_setting_comparator_help">Код 10 бит, 0–1023.</string>
     <string name="device_settings_number">Введите число</string>
     <string name="device_settings_range">Введите значение от %1$s до %2$s</string>
 </resources>

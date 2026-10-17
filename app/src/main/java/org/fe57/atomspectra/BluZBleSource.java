@@ -28,6 +28,8 @@ import androidx.core.content.ContextCompat;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @SuppressLint("MissingPermission")
@@ -190,6 +192,12 @@ final class BluZBleSource implements SpectrumSource {
     private boolean resolutionAttempted;
     private boolean resolutionPending;
     private boolean resolutionSent;
+    private volatile Map<String, Object> settingsSnapshot;
+    private Map<String, Object> pendingSettings;
+    private boolean settingsPending;
+    private boolean settingsSent;
+    // a failed user settings save is cleared by the next frame, which shows the link still works
+    private boolean settingsFailed;
 
     BluZBleSource(Context context, String identity, Handler inputHandler) {
         this.context = context.getApplicationContext();
@@ -591,6 +599,7 @@ final class BluZBleSource implements SpectrumSource {
             if (frame == null) return;
             handler.removeCallbacks(assemblyDeadline);
             latestSettings = frame.settings.clone();
+            settingsSnapshot = BluZSettings.parse(latestSettings);
             if (!frame.isNormal()) return;
             latest = frame;
             updateTelemetry(frame);
@@ -657,6 +666,19 @@ final class BluZBleSource implements SpectrumSource {
                 recover();
                 reply(new Intent(ACTION_SOURCE_CALIBRATION_SAVED));
             }
+            if (settingsPending && settingsSent && BluZSettings.matches(pendingSettings, latestSettings)) {
+                handler.removeCallbacks(settingsDeadline);
+                settingsPending = false;
+                settingsSent = false;
+                pendingSettings = null;
+                coefficients = frame.calibration();
+                recover();
+                reply(new Intent(ACTION_SOURCE_SETTINGS_SAVED));
+            }
+            if (settingsFailed && !settingsPending && lastError != null && lastError.op == OP_SETTINGS_SAVE) {
+                settingsFailed = false;
+                recover();
+            }
             if (frame.channels == 4096 && !resolutionPending
                     && (lastError == null || lastError.op != OP_SETTINGS_SAVE)) {
                 resolutionAttempted = false;
@@ -666,7 +688,7 @@ final class BluZBleSource implements SpectrumSource {
             if (lastError == null) updateObservedStatus();
             if (frame.isCollecting() && !resetPending) broadcastData(frame);
             if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted
-                    && !calibrationPending) {
+                    && !calibrationPending && !settingsPending) {
                 resolutionAttempted = true;
                 resolutionPending = true;
                 enqueue(BluZCommandCodec.resolution4096(latestSettings), OP_SETTINGS_SAVE, () -> {
@@ -697,13 +719,13 @@ final class BluZBleSource implements SpectrumSource {
 
     private void updateObservedStatus() {
         if (latest == null) return;
-        setStatus(toggleOp != 0 || resetPending || calibrationPending ? STATUS_CONNECTED_EXECUTING_COMMAND
+        setStatus(toggleOp != 0 || resetPending || calibrationPending || settingsPending ? STATUS_CONNECTED_EXECUTING_COMMAND
                 : latest.isCollecting() ? STATUS_CONNECTED_COLLECTING : STATUS_CONNECTED_IDLE);
     }
 
     private void recover() {
         if (lastError == null) return;
-        if ((lastError.op == OP_SETTINGS_SAVE && resolutionPending)
+        if ((lastError.op == OP_SETTINGS_SAVE && (resolutionPending || settingsPending))
                 || ((lastError.op == OP_START || lastError.op == OP_STOP) && toggleOp != 0)
                 || (lastError.op == OP_RESET && resetPending)
                 || (lastError.op == OP_CALIBRATION_SAVE && calibrationPending)) return;
@@ -837,6 +859,19 @@ final class BluZBleSource implements SpectrumSource {
         error(OP_CALIBRATION_SAVE, REASON_TIMEOUT, "BluZ calibration change was not confirmed");
     };
 
+    private final Runnable settingsDeadline = () -> {
+        if (!settingsPending || !settingsSent) return;
+        settingsPending = false;
+        settingsSent = false;
+        pendingSettings = null;
+        settingsError(REASON_TIMEOUT, "BluZ settings change was not confirmed");
+    };
+
+    private void settingsError(int reason, String text) {
+        settingsFailed = true;
+        error(OP_SETTINGS_SAVE, reason, text);
+    }
+
     private boolean usable(int op) {
         if (closed) return false;
         if (ready && gatt != null && latest != null) return true;
@@ -901,10 +936,12 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(resetDeadline);
         handler.removeCallbacks(resolutionDeadline);
         handler.removeCallbacks(calibrationDeadline);
+        handler.removeCallbacks(settingsDeadline);
         int pendingToggle = toggleOp;
         boolean pendingReset = resetPending;
         boolean pendingResolution = resolutionPending;
         boolean pendingCalibration = calibrationPending;
+        boolean pendingUserSettings = settingsPending;
         toggleOp = 0;
         toggleSent = false;
         resetPending = false;
@@ -914,12 +951,18 @@ final class BluZBleSource implements SpectrumSource {
         calibrationPending = false;
         calibrationSent = false;
         this.pendingCalibration = null;
+        settingsPending = false;
+        settingsSent = false;
+        pendingSettings = null;
         if (pendingToggle != 0 && pendingToggle != op) error(pendingToggle, REASON_ERROR, text);
         if (pendingReset && op != OP_RESET) error(OP_RESET, REASON_ERROR, text);
         if (pendingResolution && op != OP_SETTINGS_SAVE)
             error(OP_SETTINGS_SAVE, REASON_ERROR, text);
         if (pendingCalibration && op != OP_CALIBRATION_SAVE)
             error(OP_CALIBRATION_SAVE, REASON_ERROR, text);
+        if (pendingUserSettings && op != OP_SETTINGS_SAVE)
+            settingsError(REASON_ERROR, text);
+        if (op == OP_SETTINGS_SAVE && pendingUserSettings) settingsFailed = true;
         error(op, REASON_ERROR, text);
     }
 
@@ -930,10 +973,10 @@ final class BluZBleSource implements SpectrumSource {
             connectionLostNow(reason);
             return;
         }
-        if (toggleOp != 0 || resetPending || resolutionPending || calibrationPending) {
+        if (toggleOp != 0 || resetPending || resolutionPending || calibrationPending || settingsPending) {
             int op = toggleOp != 0 ? toggleOp
                     : resetPending ? OP_RESET
-                      : resolutionPending ? OP_SETTINGS_SAVE
+                      : resolutionPending || settingsPending ? OP_SETTINGS_SAVE
                         : OP_CALIBRATION_SAVE;
             writeFailed(op, reason);
             connectionLostNow(reason);
@@ -1034,6 +1077,7 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(resetDeadline);
         handler.removeCallbacks(resolutionDeadline);
         handler.removeCallbacks(calibrationDeadline);
+        handler.removeCallbacks(settingsDeadline);
         BluetoothGatt previous = gatt;
         gatt = null;
         ready = false;
@@ -1042,6 +1086,7 @@ final class BluZBleSource implements SpectrumSource {
         writing = false;
         latest = null;
         latestSettings = null;
+        settingsSnapshot = null;
         telemetry = DeviceTelemetry.EMPTY;
         rssi = null;
         rssiReading = false;
@@ -1054,6 +1099,9 @@ final class BluZBleSource implements SpectrumSource {
         calibrationPending = false;
         calibrationSent = false;
         pendingCalibration = null;
+        settingsPending = false;
+        settingsSent = false;
+        pendingSettings = null;
         resolutionAttempted = false;
         resolutionSent = false;
         writes.clear();
@@ -1119,12 +1167,12 @@ final class BluZBleSource implements SpectrumSource {
         double[] requested = coeffs == null ? null : coeffs.clone();
         dispatch(() -> {
             if (!usable(OP_CALIBRATION_SAVE)) return;
-            if (resolutionPending || calibrationPending) {
+            if (resolutionPending || calibrationPending || settingsPending) {
                 error(OP_CALIBRATION_SAVE, REASON_ERROR, "BluZ settings write is already pending");
                 return;
             }
             try {
-                byte[] command = BluZCommandCodec.calibration4096(latestSettings, requested);
+                byte[] command = BluZCommandCodec.settings4096(latestSettings, BluZSettings.calibrationChanges(requested));
                 pendingCalibration = new double[requested.length];
                 for (int index = 0; index < requested.length; index++) {
                     pendingCalibration[index] = (float) requested[index];
@@ -1138,6 +1186,42 @@ final class BluZBleSource implements SpectrumSource {
                 });
             } catch (IllegalArgumentException invalid) {
                 error(OP_CALIBRATION_SAVE, REASON_ERROR, invalid.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public SettingsSchema settingsSchema() {
+        return BluZSettings.SCHEMA;
+    }
+
+    @Override
+    public Map<String, Object> settings() {
+        return settingsSnapshot;
+    }
+
+    @Override
+    public void requestSaveSettings(Map<String, Object> changes) {
+        final Map<String, Object> requested = new HashMap<>(changes);
+        dispatch(() -> {
+            if (!usable(OP_SETTINGS_SAVE)) return;
+            if (resolutionPending || calibrationPending || settingsPending) {
+                settingsError(REASON_ERROR, "BluZ settings write is already pending");
+                return;
+            }
+            try {
+                byte[] command = BluZCommandCodec.settings4096(latestSettings, requested);
+                pendingSettings = BluZSettings.normalize(requested);
+                settingsPending = true;
+                settingsSent = false;
+                setStatus(STATUS_CONNECTED_EXECUTING_COMMAND);
+                // no retry: every command 0 rewrites the device flash
+                enqueue(command, OP_SETTINGS_SAVE, () -> {
+                    settingsSent = true;
+                    handler.postDelayed(settingsDeadline, COMMAND_MS);
+                });
+            } catch (IllegalArgumentException invalid) {
+                settingsError(REASON_ERROR, invalid.getMessage());
             }
         });
     }
