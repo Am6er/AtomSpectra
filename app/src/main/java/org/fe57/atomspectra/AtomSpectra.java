@@ -2144,6 +2144,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         } else if (item.getItemId() == R.id.action_switch_device) {
             openDeviceSelection(false);
             return true;
+        } else if (item.getItemId() == R.id.action_device_settings) {
+            startActivity(new Intent(this, AtomSpectraDeviceSettings.class));
+            return true;
         } else if (item.getItemId() == R.id.action_record_toggle) {
             if (!AtomSpectraService.isRecording()
                     && AtomSpectraService.sessionState != AtomSpectraService.DeviceSessionState.LOCKED) {
@@ -3682,6 +3685,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         if (app_menu != null) {
             // without a usable device the record action opens the selection screen instead of being hidden
             app_menu.findItem(R.id.action_switch_device).setVisible(canSwitchDevice());
+            app_menu.findItem(R.id.action_device_settings).setEnabled(boundService != null && boundService.hasDeviceSettings());
             boolean recordingPaused = !AtomSpectraService.isRecording();
             if (recordingPaused) {
                 app_menu.findItem(R.id.action_record_toggle).setIcon(R.drawable.record);

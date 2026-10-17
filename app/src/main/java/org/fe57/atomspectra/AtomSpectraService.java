@@ -45,8 +45,10 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -313,7 +315,8 @@ public class AtomSpectraService extends Service {
     private SharedPreferences sp;
 
     // The one source the service holds; non-null exactly while a device is locked.
-    private SpectrumSource activeSource = null;
+    // volatile: the settings screen reads the source from the UI thread
+    private volatile SpectrumSource activeSource = null;
 
     private GPSLocator Locator = null;
 
@@ -570,6 +573,56 @@ public class AtomSpectraService extends Service {
             return true;
         toastAndLog(R.string.device_not_available, AtomSpectraLog.Severity.WARNING);
         return false;
+    }
+
+    // --- device settings -----------------------------------------------------------------------
+    // Called by the settings screen from the UI thread; the source's snapshot is safe to read there.
+
+    /**
+     * The connected device has settings and has provided their values.
+     */
+    public boolean hasDeviceSettings() {
+        return isDeviceConnected() && !deviceSettingsSchema().isEmpty() && deviceSettings() != null;
+    }
+
+    public SettingsSchema deviceSettingsSchema() {
+        SpectrumSource source = activeSource;
+        return source == null ? SettingsSchema.EMPTY : source.settingsSchema();
+    }
+
+    /**
+     * The device settings by schema key, null while they are unknown.
+     */
+    public Map<String, Object> deviceSettings() {
+        SpectrumSource source = activeSource;
+        return source == null ? null : source.settings();
+    }
+
+    /**
+     * Identification of the device the settings belong to, null when none is connected.
+     */
+    public String deviceSettingsDeviceId() {
+        SpectrumSource source = activeSource;
+        return source == null ? null : source.deviceId();
+    }
+
+    /**
+     * Write the changed settings to the device. The result arrives asynchronously as
+     * ACTION_DEVICE_SETTINGS_SAVED or as a source error.
+     */
+    public void saveDeviceSettings(Map<String, Object> changes) {
+        final Map<String, Object> requested = new HashMap<>(changes);
+        postToInputThread(() -> {
+            if (!isDeviceAvailable())
+                return;
+            AtomSpectraLog.action(service_context, LogTag.SERVICE, "Save device settings: " + requested.keySet());
+            activeSource.requestSaveSettings(requested);
+        });
+    }
+
+    private void onDeviceSettingsSaved() {
+        ToastHelper.showActionAndLog(this, LogTag.SERVICE, getStringOrDefaultLocale(R.string.device_settings_saved));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_SETTINGS_SAVED).setPackage(Constants.PACKAGE_NAME));
     }
 
     // --- device selection and lock -------------------------------------------------------------
@@ -1034,6 +1087,9 @@ public class AtomSpectraService extends Service {
                 break;
             case SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED:
                 ToastHelper.showActionAndLog(this, LogTag.SERVICE, getStringOrDefaultLocale(R.string.cal_stored));
+                break;
+            case SpectrumSource.ACTION_SOURCE_SETTINGS_SAVED:
+                onDeviceSettingsSaved();
                 break;
         }
     }
@@ -1597,6 +1653,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA_SKIPPED);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_TELEMETRY);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_SETTINGS_SAVED);
         intentFilter.addAction(Constants.ACTION.ACTION_START_RECORDING);
         intentFilter.addAction(Constants.ACTION.ACTION_STOP_RECORDING);
         intentFilter.addAction(Constants.ACTION.ACTION_CLEAR_SPECTRUM);

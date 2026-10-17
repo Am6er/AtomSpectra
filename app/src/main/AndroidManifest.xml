@@ -105,6 +105,13 @@
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
         <activity
+            android:name=".AtomSpectraDeviceSettings"
+            android:label="@string/device_settings"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateAlwaysHidden"
+            tools:ignore="LockedOrientationActivity" />
+        <activity
             android:name=".AtomSpectraHelp"
             android:label="@string/help" />
         <activity

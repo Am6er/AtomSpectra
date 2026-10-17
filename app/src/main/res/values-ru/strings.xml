@@ -860,4 +860,14 @@
     <string name="log_save">Сохранить журнал</string>
     <string name="log_capture_enabled">Запись диагностики включена</string>
     <string name="log_capture_disabled">Запись диагностики выключена</string>
+    <string name="device_settings_saved">Настройки устройства сохранены</string>
+    <string name="device_settings_save">Сохранить</string>
+    <string name="device_settings_dont_save">Не сохранять</string>
+    <string name="device_settings_unsaved_title">Есть несохранённые изменения</string>
+    <string name="device_settings_unsaved_text">Сохранить изменения настроек устройства?</string>
+    <string name="device_settings_destructive_title">Внимание</string>
+    <string name="device_settings_destructive_text">Сохранение этих настроек сотрёт данные, набранные устройством:\n%1$s</string>
+    <string name="device_settings_expert">Для экспертов</string>
+    <string name="device_settings_number">Введите число</string>
+    <string name="device_settings_range">Введите значение от %1$s до %2$s</string>
 </resources>

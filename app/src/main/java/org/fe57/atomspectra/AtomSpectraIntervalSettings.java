@@ -30,6 +30,8 @@ import java.util.Locale;
 /**
  * Interval search configuration screen: the energy range to watch and the sound alarm
  * (enable, output device, volume, detection level).
+ * <p>
+ * TODO: describe these preferences with a SettingsSchema (SOFTWARE scope) and render them with the rows of AtomSpectraDeviceSettings
  */
 public class AtomSpectraIntervalSettings extends Activity {
 

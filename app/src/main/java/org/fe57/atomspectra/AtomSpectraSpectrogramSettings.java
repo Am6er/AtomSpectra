@@ -16,6 +16,8 @@ import android.widget.TextView;
 
 /**
  * Spectrogram recording configuration screen: daily file rollover and the delta duration.
+ * <p>
+ * TODO: describe these preferences with a SettingsSchema (SOFTWARE scope) and render them with the rows of AtomSpectraDeviceSettings
  */
 public class AtomSpectraSpectrogramSettings extends Activity {
 

@@ -855,4 +855,14 @@
     <string name="log_save">Save log</string>
     <string name="log_capture_enabled">Diagnostic capture enabled</string>
     <string name="log_capture_disabled">Diagnostic capture disabled</string>
+    <string name="device_settings_saved">Device settings saved</string>
+    <string name="device_settings_save">Save</string>
+    <string name="device_settings_dont_save">Don\'t save</string>
+    <string name="device_settings_unsaved_title">Unsaved changes</string>
+    <string name="device_settings_unsaved_text">Save the changes to the device settings?</string>
+    <string name="device_settings_destructive_title">Warning</string>
+    <string name="device_settings_destructive_text">Saving these settings will erase the data collected by the device:\n%1$s</string>
+    <string name="device_settings_expert">Expert</string>
+    <string name="device_settings_number">Enter a number</string>
+    <string name="device_settings_range">Enter a value from %1$s to %2$s</string>
 </resources>
