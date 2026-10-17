@@ -77,6 +77,7 @@ public class AtomSpectraDeviceSettings extends Activity {
 
     private SettingsAdapter adapter;
     private Button saveButton;
+    private boolean saving = false;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -106,6 +107,7 @@ public class AtomSpectraDeviceSettings extends Activity {
         saveButton.setOnClickListener(view -> save(null));
 
         IntentFilter filter = new IntentFilter(Constants.ACTION.ACTION_DEVICE_SETTINGS_SAVED);
+        filter.addAction(Constants.ACTION.ACTION_DEVICE_SETTINGS_FAILED);
         filter.addAction(Constants.ACTION.ACTION_DEVICE_STATE_CHANGED);
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         receiverRegistered = true;
@@ -164,6 +166,9 @@ public class AtomSpectraDeviceSettings extends Activity {
         public void onReceive(Context context, Intent intent) {
             if (Constants.ACTION.ACTION_DEVICE_SETTINGS_SAVED.equals(intent.getAction())) {
                 onSaved();
+            } else if (Constants.ACTION.ACTION_DEVICE_SETTINGS_FAILED.equals(intent.getAction())) {
+                saving = false;
+                updateSaveButton();
             } else if (isDeviceGone()) {
                 finish();
             }
@@ -221,7 +226,8 @@ public class AtomSpectraDeviceSettings extends Activity {
     }
 
     private void updateSaveButton() {
-        saveButton.setEnabled(invalid.isEmpty() && !changes().isEmpty());
+        saveButton.setEnabled(!saving && invalid.isEmpty() && !changes().isEmpty());
+        saveButton.setText(saving ? R.string.device_settings_saving : R.string.device_settings_save);
     }
 
     /**
@@ -231,7 +237,7 @@ public class AtomSpectraDeviceSettings extends Activity {
      */
     private void save(Runnable afterSubmit) {
         final Map<String, Object> changes = changes();
-        if (changes.isEmpty() || !invalid.isEmpty()) return;
+        if (saving || changes.isEmpty() || !invalid.isEmpty()) return;
 
         StringBuilder destructive = new StringBuilder();
         for (SettingDescriptor descriptor : schema.all()) {
@@ -256,6 +262,7 @@ public class AtomSpectraDeviceSettings extends Activity {
         AtomSpectraLog.action(this, LogTag.DEVICE_SETTINGS_ACT, "Save settings: " + changes);
         submitted.clear();
         submitted.putAll(changes);
+        saving = true;
         boolean pending = false;
         for (Map.Entry<SettingDescriptor.Scope, SettingsStore> entry : stores.entrySet()) {
             Map<String, Object> part = new HashMap<>();
@@ -265,7 +272,8 @@ public class AtomSpectraDeviceSettings extends Activity {
             }
             if (!part.isEmpty() && !entry.getValue().write(part)) pending = true;
         }
-        if (!pending) onSaved();
+        if (pending) updateSaveButton();
+        else onSaved();
         if (afterSubmit != null) afterSubmit.run();
     }
 
@@ -281,6 +289,7 @@ public class AtomSpectraDeviceSettings extends Activity {
             invalid.remove(key);
         }
         submitted.clear();
+        saving = false;
         loaded = fresh;
         adapter.notifyDataSetChanged();
         updateSaveButton();

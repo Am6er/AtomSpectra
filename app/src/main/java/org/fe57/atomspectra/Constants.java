@@ -219,6 +219,8 @@ public class Constants {
         String ACTION_DEVICE_STATE_CHANGED = "org.fe57.atomspectra.ACTION_DEVICE_STATE_CHANGED";
         // sent by the service when the device confirmed a settings save
         String ACTION_DEVICE_SETTINGS_SAVED = "org.fe57.atomspectra.ACTION_DEVICE_SETTINGS_SAVED";
+        // sent by the service when the device did not accept a settings save
+        String ACTION_DEVICE_SETTINGS_FAILED = "org.fe57.atomspectra.ACTION_DEVICE_SETTINGS_FAILED";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
         // zeroes the histogram and search of the connected device
         String ACTION_RESET_SPECTRUM = "org.fe57.atomspectra.ACTION_RESET_SPECTRUM";

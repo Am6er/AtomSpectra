@@ -202,7 +202,7 @@
     <string name="calibration_calculate">Calculate</string>
     <string name="calibration_load_from_file">Load from…</string>
     <string name="calibration_store_device">Store to the device</string>
-    <string name="calibration_revert_device">Use device calibration</string>
+    <string name="calibration_revert_device">Load from device</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Device</string>
     <string name="calibration_load_device_energy">Load with calibration…</string>
@@ -691,7 +691,7 @@
         \t- NOTE: It is better to switch to channel output before making a calibration.\n
         \t- To calibrate the spectrum point the cursor to the first calibration point, then press a <annotation foreground="parameter">1</annotation> button above the spectrum and enter a value. The button changes from <annotation foreground="parameter">1</annotation> to <annotation foreground="parameter">2</annotation> to show for the second point waiting.\n
         \t- Do the same for the next calibration points. The button will change to <annotation foreground="parameter">-</annotation> if there is no more acceptable points.\n
-        \t- Press <annotation foreground="parameter">\u221a</annotation> button to calculate a calibration. Use <annotation foreground="parameter">Store to the device</annotation> to save the calibration: in the device itself (BluZ, <u>AtomSpectra Pro</u>) or in the program memory separately for each audio input (audio-interface spectrometers). The saved calibration is applied automatically when the device is connected. Use <annotation foreground="parameter">Use device calibration</annotation> to apply it manually.\n
+        \t- Press <annotation foreground="parameter">\u221a</annotation> button to calculate a calibration. Use <annotation foreground="parameter">Store to the device</annotation> to save the calibration: in the device itself (BluZ, <u>AtomSpectra Pro</u>) or in the program memory separately for each audio input (audio-interface spectrometers). The saved calibration is applied automatically when the device is connected. Use <annotation foreground="parameter">Load from device</annotation> to apply it manually.\n
         \t- Tap on a nuclide flag on a graph from a <u>nuclide list</u> to set a new calibration point with the nuclide energy.\n
         \t- Tap on a nuclide flag on a graph from <u>found peaks list</u> and enter an energy value to set a new calibration point.\n
         \t- Press on polinom values in <annotation foreground="parameter">Calibration</annotation> submenu to edit it.\n
@@ -856,7 +856,7 @@
     <string name="log_capture_enabled">Diagnostic capture enabled</string>
     <string name="log_capture_disabled">Diagnostic capture disabled</string>
     <string name="device_settings_saved">Device settings saved</string>
-    <string name="device_settings_store_wait">Saving settings to the device…</string>
+    <string name="device_settings_saving">Saving…</string>
     <string name="device_settings_save">Save</string>
     <string name="device_settings_dont_save">Don\'t save</string>
     <string name="device_settings_unsaved_title">Unsaved changes</string>
