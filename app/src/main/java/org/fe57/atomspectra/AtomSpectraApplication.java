@@ -26,6 +26,7 @@ public class AtomSpectraApplication extends Application implements Application.A
     @Override
     public void onCreate() {
         super.onCreate();
+        AtomSpectraLog.clear(this);
         registerActivityLifecycleCallbacks(this);
         AtomSpectraLog.event(this, LogTag.APP, "App started: " + BuildConfig.VERSION_NAME
                 + "." + BuildConfig.VERSION_CODE + Constants.TEST_DISPLAY_SUFFIX);
