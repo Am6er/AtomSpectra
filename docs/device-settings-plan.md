@@ -23,33 +23,37 @@ All settings are edited on one screen with a single Save button. There is no per
 `SettingsStore`: `values()` and `write(Map changes)`.
 
 - Hardware store: goes through the active source.
-- Software store: `SharedPreferences`, keyed per device id, in the same style as `CONF_CAL_DEVICE`. Unused in phase 1.
+- Software store: `SharedPreferences`, keyed per device id, in the same style as `CONF_CAL_DEVICE` (`PrefHelper`). Unused in phase 1.
 
 The screen merges stores by descriptor scope.
 
 ## 2. Source API (`SpectrumSource`)
 
-This replaces the TODO at the end of the interface. There is no read request: BluZ and Pro already learn their settings during the handshake and during operation, like calibration.
+This replaces the TODO at the end of the interface. All additions are default methods, so `AtomSpectraAudioSource` needs no change.
 
-- `settingsSchema()`: null or empty for Audio.
-- `settings()`: snapshot `Map<String,Object>`, null until the handshake or first frame has provided it.
-- `requestSaveSettings(Map changes)`: async, only the changed keys.
-- `ACTION_SOURCE_SETTINGS`: values changed. Fired on handshake, when a BluZ frame header differs from the last one, and after a save.
+There is no read request: BluZ and Pro already learn their settings during the handshake and during operation, like calibration. There is no change notification either. The source always holds the latest snapshot and nothing outside the app changes the device settings. This is a simplification, not strictly true (the device buttons or another app could change them), and it is accepted.
+
+- `settingsSchema()`: empty by default, so also for Audio.
+- `settings()`: snapshot `Map<String,Object>`, null until the handshake or first frame has provided it. Called from the UI thread while the source updates on its own thread, so it returns an immutable copy published through a `volatile` field (same pattern as `calibrationCoeffs` in Pro).
+- `requestSaveSettings(Map changes)`: async, only the changed keys. The default is a no-op: a source with an empty schema is never asked.
 - `ACTION_SOURCE_SETTINGS_SAVED`: a save was confirmed.
-- Errors use the existing `OP_SETTINGS_SAVE`.
+- Errors use the existing `OP_SETTINGS_SAVE`. It covers both user saves and the BluZ automatic switch to 4096 resolution, which is also a settings write. The two stay separate states inside `BluZBleSource` (see section 4).
 
-`AtomSpectraService` forwards the save request the same way it does `requestSaveCalibration`.
+The activity does not use `requestSaveCalibration`'s broadcast path: that one carries no payload. The screen binds to `AtomSpectraService` like `AtomSpectraDeviceSelect` (`LocalBinder.getService()`), and the service gets `settingsSchema()`, `settingsSnapshot()` and `saveDeviceSettings(Map)`. They post to the input thread and call the active source.
+
+The service forwards `ACTION_SOURCE_SETTINGS_SAVED` to the UI as `Constants.ACTION.ACTION_DEVICE_SETTINGS_SAVED`. The action is added to `makeAtomSpectraServiceIntentFilter()` and the `onSourceReply` switch. A failed save arrives as the existing error reply and goes through `onInputError` (generic toast and log).
 
 ## 3. Screen and menu
 
-- New `AtomSpectraDeviceSettings` activity. Plain Views/XML like the other activities, with a RecyclerView of generated rows: category header, int, decimal, bool, select.
-- Opened from a new `action_device_settings` item in the Device submenu (`atom_spectra.xml`). Visible when connected and the schema is non-empty, disabled while `settings()` is null. Visibility goes in `updateRecordStatusMenu()`.
+- New `AtomSpectraDeviceSettings` activity, registered in `AndroidManifest.xml` like the other settings screens (portrait lock, `stateAlwaysHidden`). Plain Views/XML, with a RecyclerView of generated rows: category header, int, decimal, bool, select.
+- Looks like the other settings screens (`AtomSpectraIntervalSettings`): `Activity` with `LocaleContextWrapper` in `attachBaseContext`, action bar with up button, black background, cyan title, white text, `@drawable/divider` between rows, `RECEIVER_NOT_EXPORTED` receivers, `AtomSpectraLog.action` for logged changes. Text sizes and margins are in `dp`, not `sp`.
+- The menu item `action_device_settings` already exists (the `calibration_device` submenu in `atom_spectra.xml`, disabled, string `device_settings`). It is enabled when connected, the schema is non-empty and `settings()` is not null, otherwise it stays disabled. Audio has no settings, so it stays disabled for Audio. The state is set in `updateRecordStatusMenu()` next to `action_switch_device`, and the click is handled where `action_switch_device` is.
 - Expert settings are always shown, visually marked as expert, with no warning dialog or hiding switch. Each has a one-line help text.
 - One Save button, enabled only when something changed. Inline per-field validation blocks Save while any field is invalid.
 - Back with unsaved changes asks "Save / Не сохранять". This is the only guard besides the destructive one.
 - If a changed setting is `destructive`, Save first shows a confirmation listing those settings.
-- The screen listens to `ACTION_SOURCE_SETTINGS`. Rows the user has edited are not overwritten by an incoming update. Untouched rows refresh.
-- The screen closes on disconnect or device switch.
+- Values are loaded from `settings()` when the screen opens and again after a confirmed save, which also clears the changed state. A failed save keeps the user's edits.
+- The screen listens to `ACTION_DEVICE_STATE_CHANGED` and closes on disconnect or device switch.
 - New strings go in both `values/strings.xml` and `values-ru/strings.xml`.
 
 ## 4. BluZ
@@ -72,11 +76,13 @@ Not exposed: resolution (the app is fixed at 4096 and sets it itself), bits per 
 
 Implementation:
 
-- A settings model parses the retained header into named fields. A builder applies the changes and emits the command-0 packet. It replaces `resolution4096` and `calibration4096` in `BluZCommandCodec`, keeping byte 37 at 4096.
-- `settings()` is rebuilt from the header of each valid frame.
-- A save is confirmed when a later frame header shows the new values. Calibration is compared as the float32 round-trip of what the user typed. A timeout reports the save as failed.
+- A settings model parses the retained header into named fields. A builder applies the changes and emits the command-0 packet. It replaces `calibration4096` in `BluZCommandCodec` (its only caller, `requestSaveCalibration`, moves to the builder) and keeps byte 37 at 4096. `resolution4096` stays as it is for the automatic resolution fix.
+- `latestSettings` is already kept from every valid frame, history frames included. `settings()` is built from it. Only settings bytes are parsed; live fields (pulses, temperature, battery, times) are ignored. There is no change detection.
+- A save is confirmed when a later normal frame (type 0–3) shows the new values. Calibration is compared as the float32 round-trip of what the user typed; ADC sample time is read from byte 97 bits 0–2. A timeout reports the save as failed with `OP_SETTINGS_SAVE`.
+- The confirmation follows the existing calibration one (`calibrationPending`, `calibrationSent`, `calibrationDeadline`), generalised into a `settingsPending` state holding the expected values. It excludes `resolutionPending` and `calibrationPending` (same "already pending" error). `updateObservedStatus()`, `recover()` and the error cleanup treat `OP_SETTINGS_SAVE` as pending while either `resolutionPending` or `settingsPending` is set.
 - No automatic retry: every command 0 rewrites flash.
 - Saving the ADC sample time clears the live spectrum, hence the `destructive` flag.
+- Any save sets the resolution to 4096 (byte 37), also while idle. The user cannot see this and it is not a setting.
 
 ## 5. Spectra Pro
 
@@ -85,18 +91,18 @@ Implementation:
 | Calibration | cal0…cal4 | decimal (double) | basic | read with `-cal` at connect, written with the existing `buildCalibrationCommands` |
 | Device | NOS | int 0–4095 | expert | `NOISE` key in the `-inf` answer, written with `-nos <n>` |
 
-- NOS is parsed from the `-inf` answer at handshake. The answer is space-separated `KEY value` pairs, for example `... NOISE 12 ...`. `getParameter(answer, "NOISE")` is used, after checking how it tokenizes next to the bracketed array values.
-- A save sends the commands and expects `-ok`. On success the source updates its stored values from what was sent.
-- If the calibration CRC is invalid, the device has no valid calibration and the cal fields start empty.
+- NOS is parsed from the `-inf` answer at handshake, next to `VERSION` in `checkDeviceVersion`. The answer is space-separated `KEY value` pairs, for example `... NOISE 12 ...`. `getParameter(answer, "NOISE")` is used, after checking how it tokenizes next to the bracketed array values (it returns null on a stray `]`).
+- A save sends the changed groups as one `executeCommandBatch` (the `-cal` words with a fresh CRC and/or `-nos <n>`) and expects `-ok` for each. On success the source updates its stored values from what was sent, emits `ACTION_SOURCE_SETTINGS_SAVED` and requests a status resync, as the calibration save does.
+- If the calibration CRC is invalid, the screen still shows the coefficients as read (the current code keeps them and only shows a toast). Saving the calibration writes a new CRC, which repairs the device.
 - Other `-inf` parameters (`RISE`, `FALL`, `HYST`, `STEP`, `POT`, ...) can become settings later by adding descriptors.
 
 ## 6. Calibration is separate
 
-The settings screen edits the device's own calibration only. Saving `cal0…cal4` from settings does not touch the app's saved calibration for the device (`CONF_CAL_DEVICE`) or the active calibration, and it is not applied to the current spectrum. The Calibration menu's store and retrieve items keep working as they do now. Only the low-level wire encoders are shared.
+The settings screen edits the device's own calibration only. Saving `cal0…cal4` from settings does not touch the app's saved calibration for the device (`CONF_CAL_DEVICE`) or the active calibration, and it is not applied to the current spectrum. The Calibration menu's store and retrieve items keep working as they do now. Only the low-level wire encoders are shared. A calibration stored through the Calibration menu updates the same source field `settings()` reads, so the settings screen shows it the next time it opens.
 
 ## 7. Order of work
 
-1. Framework: model, `SpectrumSource` API, service forwarding, activity, menu, with a stub schema to check the UI.
+1. Framework: model, `SpectrumSource` API, service methods and broadcast, activity, menu enablement. There is no stub schema: the UI is first exercised with the BluZ settings in step 2.
 2. BluZ settings model, codec builder, source integration.
 3. Pro: NOS parsing and write, calibration through settings.
 4. Software settings later, with no framework changes.

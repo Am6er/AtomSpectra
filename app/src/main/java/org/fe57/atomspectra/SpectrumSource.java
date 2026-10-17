@@ -1,5 +1,7 @@
 package org.fe57.atomspectra;
 
+import java.util.Map;
+
 /**
  * An asynchronous spectrum source: microphone, USB spectrometer or wireless device.
  * Abstraction used to unify device communication protocol related to spectrum data flow:
@@ -102,6 +104,9 @@ public interface SpectrumSource {
 
     // +++ ACTION_SOURCE_CALIBRATION_SAVED +++
     String ACTION_SOURCE_CALIBRATION_SAVED = "org.fe57.atomspectra.ACTION_SOURCE_CALIBRATION_SAVED";
+
+    // +++ ACTION_SOURCE_SETTINGS_SAVED +++
+    String ACTION_SOURCE_SETTINGS_SAVED = "org.fe57.atomspectra.ACTION_SOURCE_SETTINGS_SAVED";
 
     /**
      * Connect and hand-shake. Load necessary device metadata like calibration, device id etc. Success is opened intent.
@@ -207,7 +212,27 @@ public interface SpectrumSource {
         return DeviceTelemetry.EMPTY;
     }
 
-    // TODO: add specific device stored settings abstraction, calibration is separate as it is required for a spectrum, other settings are optional
-    // we might have both software and hardware settings and have to distinguish them
-    // for instance, all audio processing settings will be bound to a specific audio device, partial histogram allowed for pro, last calibration channel etc.
+    /**
+     * The settings the user can edit on this device; empty when there are none. Calibration as a spectrum
+     * requirement is separate, the device's own calibration may still be listed here.
+     */
+    default SettingsSchema settingsSchema() {
+        return SettingsSchema.EMPTY;
+    }
+
+    /**
+     * The latest device settings by schema key, an immutable snapshot readable from any thread.
+     * Null until the hand-shake or the first frame has provided them. There is no change notification:
+     * nothing outside the app changes the settings, so the snapshot is always current.
+     */
+    default Map<String, Object> settings() {
+        return null;
+    }
+
+    /**
+     * Write the changed settings to the device (only the changed keys). Success is {@link #ACTION_SOURCE_SETTINGS_SAVED},
+     * failure is an error reply with {@link #OP_SETTINGS_SAVE}. Default is no-op: a source with an empty schema is never asked.
+     */
+    default void requestSaveSettings(Map<String, Object> changes) {
+    }
 }

@@ -96,6 +96,8 @@ public class Constants {
         String CONF_CAL_ENERGY = "CalE";
         // followed by the device id; semicolon-separated polynomial coefficients
         String CONF_CAL_DEVICE = "DeviceCal:";
+        // followed by the device id, a colon and the setting key
+        String CONF_DEVICE_SETTINGS = "DeviceSettings:";
         String CONF_FIRST_CHANNEL = "FirstChannel:";
         String CONF_CHECK_POWER = "CheckPower:";
         String CONF_CHECK_AUDIO = "Check audio:";
@@ -215,6 +217,8 @@ public class Constants {
         // sent by the service when a connected device waits for the user to decide what happens to the unsaved screen spectrum
         String ACTION_DEVICE_CONNECT_DECISION = "org.fe57.atomspectra.ACTION_DEVICE_CONNECT_DECISION";
         String ACTION_DEVICE_STATE_CHANGED = "org.fe57.atomspectra.ACTION_DEVICE_STATE_CHANGED";
+        // sent by the service when the device confirmed a settings save
+        String ACTION_DEVICE_SETTINGS_SAVED = "org.fe57.atomspectra.ACTION_DEVICE_SETTINGS_SAVED";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
         // zeroes the histogram and search of the connected device
         String ACTION_RESET_SPECTRUM = "org.fe57.atomspectra.ACTION_RESET_SPECTRUM";

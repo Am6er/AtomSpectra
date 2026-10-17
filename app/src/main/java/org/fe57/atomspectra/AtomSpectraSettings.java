@@ -39,6 +39,7 @@ import androidx.annotation.NonNull;
 import java.io.File;
 import java.util.Locale;
 
+// TODO: describe these preferences with a SettingsSchema (SOFTWARE scope) and render them with the rows of AtomSpectraDeviceSettings
 public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     private final static String TAG = AtomSpectraSettings.class.getSimpleName();

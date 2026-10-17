@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/settingLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FFFFFF"
+            android:textSize="16dp" />
+
+        <TextView
+            android:id="@+id/settingExpert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/device_settings_expert"
+            android:textColor="#FF9800"
+            android:textSize="12dp" />
+
+        <CheckBox
+            android:id="@+id/settingBool"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/settingValueRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/settingEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:importantForAutofill="no"
+            android:maxLines="1"
+            android:selectAllOnFocus="true"
+            android:textColor="#FFFFFF"
+            android:textSize="16dp"
+            tools:ignore="LabelFor" />
+
+        <TextView
+            android:id="@+id/settingUnit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="#B0B0B0"
+            android:textSize="14dp" />
+    </LinearLayout>
+
+    <Spinner
+        android:id="@+id/settingSelect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/settingHelp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#B0B0B0"
+        android:textSize="14dp" />
+</LinearLayout>
