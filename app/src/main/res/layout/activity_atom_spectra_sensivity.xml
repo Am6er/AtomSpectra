@@ -427,7 +427,6 @@
 
             <Button
                 android:id="@+id/buttonSensCancel"
-                style="@android:style/ButtonBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -436,7 +435,6 @@
 
             <Button
                 android:id="@+id/buttonSensOk"
-                style="@android:style/ButtonBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

@@ -543,7 +543,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     // --- dose update frequency (audio processing) ---
     private void setupDoseUpdateFrequency() {
         doseRateFreqLabel = findViewById(R.id.updateFreqLabel);
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
+        doseRateFreqLabel.setText(getString(R.string.doserateUpdatePeriod, sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
     }
 
     public void onClick_increaseFreq(View v) {

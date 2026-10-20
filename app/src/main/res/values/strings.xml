@@ -19,7 +19,7 @@
     <string name="settings_files">Files</string>
     <string name="settings_maps">Maps</string>
     <string name="settings_miscellaneous">Miscellaneous</string>
-    <string name="settings_spg_midnight_reset">Create a new spectrogram file at midnight</string>
+    <string name="settings_spg_midnight_reset">New spectrogram file at midnight</string>
 
     <string name="isotope_search">Atom Spectra Find Isotopes</string>
     <string name="action_settings">Settings</string>
@@ -187,7 +187,7 @@
     <string name="mode_search_button">Search</string>
     <string name="mode_axis_kev_button">keV</string>
     <string name="mode_axis_ch_button">ch.</string>
-    <string name="doserateUpdatePeriod">Graph update frequency, s⁻¹:</string>
+    <string name="doserateUpdatePeriod">Graph update frequency, s⁻¹: %1$d</string>
     <string name="max_factor">Maximum factor: 1</string>
     <string name="smoothness">Smoothness: 1</string>
     <string name="delta_spectrum">Diff time: 1 s</string>
@@ -806,7 +806,7 @@
         \t- In the spectrogram window the menu lets you choose the color palette, the value (color) scale and whether to show the background spectrum. These settings are kept after the program restarts.\n
         \t- The <annotation foreground="parameter">Clear screen</annotation> command clears the spectrogram. While recording you can clear completed segments only (<annotation foreground="parameter">Clear completed only</annotation>) or everything and restart the recording (<annotation foreground="parameter">Clear all and restart</annotation>).\n
         \t- If GPS coordinates are recorded in the spectrogram, it can be shown on a map with <annotation foreground="parameter">View on map</annotation>.\n
-        \t- To record spectrogram data 24/7, there is an option <annotation foreground="parameter">Create a new spectrogram file at midnight</annotation> in <annotation foreground="parameter">Spectrogram</annotation> - <annotation foreground="parameter">Settings</annotation>, which allows you to limit the size of the recorded files.\n
+        \t- To record spectrogram data 24/7, there is an option <annotation foreground="parameter">New spectrogram file at midnight</annotation> in <annotation foreground="parameter">Spectrogram</annotation> - <annotation foreground="parameter">Settings</annotation>, which allows you to limit the size of the recorded files.\n
         \t- When saving spectrogram data, all spectrum channels are recorded without compression. In memory and when viewing, the spectrogram data is compressed to 1024 channels.\n
         \tNOTE: Using the spectrogram recording mode results in increased consumption of RAM.\n
         \n
