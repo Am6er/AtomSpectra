@@ -19,7 +19,7 @@
     <string name="settings_files">Файлы</string>
     <string name="settings_maps">Карты</string>
     <string name="settings_miscellaneous">Прочее</string>
-    <string name="settings_spg_midnight_reset">Создавать новый файл спектрограммы в полночь</string>
+    <string name="settings_spg_midnight_reset">Новый файл спектрограммы в полночь</string>
 
     <string name="isotope_search">Atom Spectra Поиск изотопов</string>
     <string name="action_settings">Параметры</string>
@@ -187,7 +187,7 @@
     <string name="mode_search_button">Поиск</string>
     <string name="mode_axis_kev_button">кэВ</string>
     <string name="mode_axis_ch_button">к.</string>
-    <string name="doserateUpdatePeriod">Частота обновл. графика, с⁻¹:</string>
+    <string name="doserateUpdatePeriod">Частота обновл. графика, с⁻¹: %1$d</string>
     <string name="max_factor">Макс. степень: 1</string>
     <string name="smoothness">Сглаживание: 1</string>
     <string name="delta_spectrum">Дельта-время: 1 с</string>
@@ -811,7 +811,7 @@
         \t- В окне спектрограммы в меню можно выбрать цветовую палитру, шкалу значений (цвета) и показ фонового спектра. Эти настройки сохраняются при перезапуске программы.\n
         \t- Команда <annotation foreground="parameter">Очистить экран</annotation> очищает спектрограмму. Во время записи можно очистить только завершённые сегменты (<annotation foreground="parameter">Очистить только завершённые</annotation>) или всё и начать запись заново (<annotation foreground="parameter">Очистить все и начать заново</annotation>).\n
         \t- Если в спектрограмму записаны координаты GPS, её можно показать на карте командой <annotation foreground="parameter">Показать на карте</annotation>.\n
-        \t- Для записи спектрограмм 24/7 предусмотрена опция <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation> в <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Настройки</annotation>, которая позволяет ограничить размер записываемых файлов.\n
+        \t- Для записи спектрограмм 24/7 предусмотрена опция <annotation foreground="parameter">Новый файл спектрограммы в полночь</annotation> в <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Настройки</annotation>, которая позволяет ограничить размер записываемых файлов.\n
         \t- При сохранении спектрограмм записываются все каналы спектра без сжатия. В памяти и при просмотре данные спектрограммы сжимаются до 1024 каналов.\n
         \tПРИМЕЧАНИЕ: Использование режима записи спектрограмм приводит к увеличенному потреблению оперативной памяти.
         \n
