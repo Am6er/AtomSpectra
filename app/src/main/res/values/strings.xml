@@ -206,8 +206,9 @@
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Device</string>
     <string name="calibration_load_device_energy">Load with calibration…</string>
-    <string name="calibration_sensivity">Dose rate settings</string>
-    <string name="device_settings">Settings</string>
+    <string name="dose_rate_settings_menu">Dose rate settings</string>
+    <string name="device_settings_menu">Settings</string>
+    <string name="device_settings_title">Device Settings</string>
     <string name="menu_search">Search</string>
     <string name="interval_settings">Interval settings</string>
     <string name="calibration_channel">Last: 8192</string>
@@ -217,7 +218,7 @@
     <string name="calibration_add_nuclid2_text">Enter an energy (in keV) for channel %1$d (now %2$s, %3$.2f keV):</string>
     <string name="calibration_stop_before_load_device_text">To read the calibration from the device, the spectrum recording will be stopped</string>
 
-    <string name="detector_sensitivity">Dose rate settings</string>
+    <string name="dose_rate_settings">Dose rate settings</string>
     <string name="sens_energy_kev">E, keV</string>
     <string name="sens_sensitivity">Sensitivity</string>
     <string name="sens_add_row_dialog_title">Add Row</string>
