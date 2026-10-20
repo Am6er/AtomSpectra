@@ -206,8 +206,9 @@
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Устройство</string>
     <string name="calibration_load_device_energy">Загрузить с калибровкой…</string>
-    <string name="calibration_sensivity">Настройки МЭД</string>
-    <string name="device_settings">Настройки</string>
+    <string name="dose_rate_settings_menu">Настройки МЭД</string>
+    <string name="device_settings_menu">Настройки</string>
+    <string name="device_settings_title">Настройки устройства</string>
     <string name="menu_search">Поиск</string>
     <string name="interval_settings">Настройки интервала</string>
     <string name="calibration_channel">Поcледний: 8192</string>
@@ -217,7 +218,7 @@
     <string name="calibration_add_nuclid2_text">Введите энергию (в кэВ) для канала %1$d (сейчас %2$s, %3$.2f кэВ):</string>
     <string name="calibration_stop_before_load_device_text">Для чтения калибровки из устройства запись спектра будет остановлена</string>
 
-    <string name="detector_sensitivity">Настройки МЭД</string>
+    <string name="dose_rate_settings">Настройки МЭД</string>
     <string name="sens_energy_kev">E, кэВ</string>
     <string name="sens_sensitivity">Чувствит.</string>
     <string name="sens_add_row_dialog_title">Добавить строку</string>

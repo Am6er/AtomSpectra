@@ -334,7 +334,7 @@
                 android:icon="@drawable/ic_menu_settings"
                 android:enabled="false"
                 android:orderInCategory="602"
-                android:title="@string/device_settings" />
+                android:title="@string/device_settings_menu" />
         </menu>
     </item>
     <item
@@ -346,7 +346,7 @@
                 android:id="@+id/action_edit_sensivity"
                 android:icon="@drawable/ic_menu_tune"
                 android:orderInCategory="701"
-                android:title="@string/calibration_sensivity" />
+                android:title="@string/dose_rate_settings_menu" />
             <item
                 android:id="@+id/action_interval_settings"
                 android:icon="@drawable/ic_menu_bell"
