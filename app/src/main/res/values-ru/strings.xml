@@ -367,12 +367,12 @@
     <string name="perm_no_write_export_energy">Нет разрешения на экспорт спектра с энергией в CSV</string>
 
     <string name="error_working_dir_not_set">Рабочая директория не установлена. Установите рабочую директорию в настройках.</string>
-    <string name="error_working_dir_not_valid">Рабочая директория \'$1%s\' некорректна. Установите рабочую директорию в настройках.</string>
-    <string name="error_unable_to_delete_existing_file">Не удалось удалить существующий файл \'$1%s\'.</string>
-    <string name="error_unable_to_create_file">Не удалось создать файл \'$1%s\'.</string>
-    <string name="error_unable_to_create_file_ex">Не удалось создать файл \'$1%s\'. $2%s</string>
-    <string name="error_unable_to_save_spectrum">Не удалось сохранить спектр. $1%s</string>
-    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить дельта-спектр. $1%s</string>
+    <string name="error_working_dir_not_valid">Рабочая директория \'%1$s\' некорректна. Установите рабочую директорию в настройках.</string>
+    <string name="error_unable_to_delete_existing_file">Не удалось удалить существующий файл \'%1$s\'.</string>
+    <string name="error_unable_to_create_file">Не удалось создать файл \'%1$s\'.</string>
+    <string name="error_unable_to_create_file_ex">Не удалось создать файл \'%1$s\'. %2$s</string>
+    <string name="error_unable_to_save_spectrum">Не удалось сохранить спектр. %1$s</string>
+    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить дельта-спектр. %1$s</string>
 
     <string name="file_atomspectra_spectrum_prefix">Spectrum</string>
     <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
@@ -506,7 +506,7 @@
     <string name="log_spg_midnight_restart">Перезапуск спектрограммы в полночь</string>
     <string name="log_spg_autosave_start">Запись спектрограммы включена</string>
     <string name="log_spg_autosave_completed">Запись спектрограммы завершена</string>
-    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы. $1%s</string>
+    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы. %1$s</string>
     <string name="log_warning_raw_audio_support_not_available">Внимание: поддержка необработанного звука не доступна</string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>

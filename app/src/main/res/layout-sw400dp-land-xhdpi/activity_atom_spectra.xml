@@ -134,7 +134,7 @@
             android:foregroundGravity="center"
             android:onClick="onClickDeleteSpc"
             android:scaleType="fitCenter"
-            android:src="@drawable/menu_clear_spectrum" />
+            android:src="@drawable/ic_menu_delete" />
 
         <LinearLayout
             android:layout_width="wrap_content"

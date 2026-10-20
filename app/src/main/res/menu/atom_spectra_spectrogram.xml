@@ -3,6 +3,7 @@
 
     <item
         android:id="@+id/action_spectrogram_palette"
+        android:icon="@drawable/ic_menu_palette"
         android:orderInCategory="90"
         android:showAsAction="never"
         android:title="@string/spectrogram_palette">
@@ -31,6 +32,7 @@
 
     <item
         android:id="@+id/action_spectrogram_scale"
+        android:icon="@drawable/ic_menu_scale"
         android:orderInCategory="91"
         android:showAsAction="never"
         android:title="@string/spectrogram_scale">
@@ -53,6 +55,7 @@
 
     <item
         android:id="@+id/action_spectrogram_show_background"
+        android:icon="@drawable/ic_menu_background"
         android:checkable="true"
         android:checked="true"
         android:orderInCategory="95"
@@ -61,20 +64,22 @@
 
     <item
         android:id="@+id/action_spectrogram_clear"
+        android:icon="@drawable/ic_menu_delete"
         android:orderInCategory="99"
         android:showAsAction="never"
         android:title="@string/spectrogram_clear" />
 
     <item
         android:id="@+id/action_spectrogram_view_map"
+        android:icon="@drawable/ic_menu_map"
         android:enabled="false"
-        android:icon="@drawable/menu_set_as"
         android:orderInCategory="100"
         android:showAsAction="never"
         android:title="@string/spectrogram_view_map" />
 
     <item
         android:id="@+id/action_spectrogram_settings"
+        android:icon="@drawable/ic_menu_tune"
         android:orderInCategory="101"
         android:showAsAction="never"
         android:title="@string/spectrogram_settings" />
