@@ -16,8 +16,6 @@ import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,7 +48,6 @@ import android.window.OnBackInvokedDispatcher;
 
 import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
 import androidx.documentfile.provider.DocumentFile;
 
@@ -3432,47 +3429,31 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         startActivityForResult(intent, dir_code);
     }
 
-    private static final int INPUT_WAITING_ALPHA = 110;
+    // indexed by AtomSpectraService.DeviceState ordinal
+    private static final int[] INPUT_USB_ICONS = {R.drawable.input_usb, R.drawable.input_usb_waiting, R.drawable.input_usb_idle,
+            R.drawable.input_usb_recording, R.drawable.input_usb_busy, R.drawable.input_usb_recovering, R.drawable.input_usb_error};
+    private static final int[] INPUT_MIC_ICONS = {R.drawable.input_mic, R.drawable.input_mic_waiting, R.drawable.input_mic_idle,
+            R.drawable.input_mic_recording, R.drawable.input_mic_busy, R.drawable.input_mic_recovering, R.drawable.input_mic_error};
+    private static final int[] INPUT_BT_ICONS = {R.drawable.input_bt, R.drawable.input_bt_waiting, R.drawable.input_bt_idle,
+            R.drawable.input_bt_recording, R.drawable.input_bt_busy, R.drawable.input_bt_recovering, R.drawable.input_bt_error};
+
+    private static int inputIconRes(int sourceType, AtomSpectraService.DeviceState state) {
+        switch (sourceType) {
+            case SpectrumSource.TYPE_SPECTRA_PRO:
+                return INPUT_USB_ICONS[state.ordinal()];
+            case SpectrumSource.TYPE_AUDIO:
+                return INPUT_MIC_ICONS[state.ordinal()];
+            case SpectrumSource.TYPE_BLUZ:
+                return INPUT_BT_ICONS[state.ordinal()];
+            default:
+                return R.drawable.input_none;
+        }
+    }
 
     private void updateSelectedInputIndicator() {
         ImageButton inputType = findViewById(R.id.inputTypeButton);
         final AtomSpectraService.DeviceState state = AtomSpectraService.deviceState();
-
-        int baseRes;
-        switch (AtomSpectraService.lockedSourceType()) {
-            case SpectrumSource.TYPE_SPECTRA_PRO:
-                baseRes = R.drawable.input_usb;
-                break;
-            case SpectrumSource.TYPE_AUDIO:
-                baseRes = R.drawable.input_mic;
-                break;
-            case SpectrumSource.TYPE_BLUZ:
-                baseRes = R.drawable.input_bt;
-                break;
-            default:
-                baseRes = R.drawable.input_none;
-                break;
-        }
-        Drawable icon = ContextCompat.getDrawable(this, baseRes);
-        if (icon != null) {
-            icon = icon.mutate();
-            icon.setAlpha(state == AtomSpectraService.DeviceState.WAITING ? INPUT_WAITING_ALPHA : 255);
-            Drawable badge = inputStateBadge(state);
-            if (badge != null) {
-                float density = getResources().getDisplayMetrics().density;
-                int inputLeftMargin = Math.round(4 * density);
-                int badgeRightMargin = Math.round(8 * density);
-                int gap = Math.round(4 * density); // adjusts the status badge's horizontal spacing
-                int badgeTop = (icon.getIntrinsicHeight() - badge.getIntrinsicHeight()) / 2;
-                LayerDrawable indicator = new LayerDrawable(new Drawable[]{icon, badge});
-                indicator.setLayerInset(0, inputLeftMargin, 0, inputType.getWidth() / 2 - inputLeftMargin, 0);
-                indicator.setLayerInset(1, inputType.getWidth() / 2 + gap, badgeTop,
-                        badgeRightMargin,
-                        icon.getIntrinsicHeight() - badge.getIntrinsicHeight() - badgeTop);
-                icon = indicator;
-            }
-            inputType.setImageDrawable(icon);
-        }
+        inputType.setImageResource(inputIconRes(AtomSpectraService.lockedSourceType(), state));
 
         final String info = userFacingDeviceName();
         switch (state) {
@@ -3503,25 +3484,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         inputType.setEnabled(canSwitch);
         inputType.setClickable(canSwitch);
         inputType.setOnClickListener(canSwitch ? v -> onClickInputType() : null);
-    }
-
-    private Drawable inputStateBadge(AtomSpectraService.DeviceState state) {
-        switch (state) {
-            case WAITING:
-                return ContextCompat.getDrawable(this, R.drawable.badge_waiting);
-            case IDLE:
-                return ContextCompat.getDrawable(this, R.drawable.badge_idle);
-            case RECORDING:
-                return ContextCompat.getDrawable(this, R.drawable.badge_recording);
-            case BUSY:
-                return ContextCompat.getDrawable(this, R.drawable.badge_busy);
-            case RECOVERING:
-                return ContextCompat.getDrawable(this, R.drawable.badge_recovering);
-            case ERROR:
-                return ContextCompat.getDrawable(this, R.drawable.badge_error);
-            default:
-                return null;
-        }
     }
 
     // an error or a pending decision has something to offer besides switching the device
