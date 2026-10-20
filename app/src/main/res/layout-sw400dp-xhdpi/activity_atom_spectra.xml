@@ -68,7 +68,7 @@
         android:foregroundGravity="center"
         android:onClick="onClickDeleteSpc"
         android:scaleType="fitCenter"
-        android:src="@drawable/menu_clear_spectrum" />
+        android:src="@drawable/ic_menu_delete" />
 
     <ImageButton
         android:id="@+id/inputTypeButton"
@@ -221,7 +221,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="50dp"
         android:layout_gravity="bottom"
         android:background="#333333"
         android:orientation="horizontal">
@@ -263,17 +263,17 @@
             android:textColor="#FFFFFFFF"
             android:textSize="18dp" />
 
-<!--        <TextView-->
-<!--            android:id="@+id/displayModeSpectrogramButton"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="1"-->
-<!--            android:clickable="true"-->
-<!--            android:gravity="center"-->
-<!--            android:onClick="onClick_renderModeSpectrogram"-->
-<!--            android:text="@string/nav_bar_spectrogram"-->
-<!--            android:textColor="#FFFFFFFF"-->
-<!--            android:textSize="16dp" />-->
+        <!--        <TextView-->
+        <!--            android:id="@+id/displayModeSpectrogramButton"-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="match_parent"-->
+        <!--            android:layout_weight="1"-->
+        <!--            android:clickable="true"-->
+        <!--            android:gravity="center"-->
+        <!--            android:onClick="onClick_renderModeSpectrogram"-->
+        <!--            android:text="@string/nav_bar_spectrogram"-->
+        <!--            android:textColor="#FFFFFFFF"-->
+        <!--            android:textSize="16dp" />-->
     </LinearLayout>
 
     <LinearLayout

@@ -3650,10 +3650,10 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             app_menu.findItem(R.id.action_device_settings).setEnabled(boundService != null && boundService.hasDeviceSettings());
             boolean recordingPaused = !AtomSpectraService.isRecording();
             if (recordingPaused) {
-                app_menu.findItem(R.id.action_record_toggle).setIcon(R.drawable.record);
+                app_menu.findItem(R.id.action_record_toggle).setIcon(R.drawable.ic_menu_play);
                 app_menu.findItem(R.id.action_record_toggle).setTitle(R.string.hist_continue_update);
             } else {
-                app_menu.findItem(R.id.action_record_toggle).setIcon(R.drawable.menu_block);
+                app_menu.findItem(R.id.action_record_toggle).setIcon(R.drawable.ic_menu_pause);
                 app_menu.findItem(R.id.action_record_toggle).setTitle(R.string.hist_pause_update);
             }
             app_menu.findItem(R.id.action_record_toggle)

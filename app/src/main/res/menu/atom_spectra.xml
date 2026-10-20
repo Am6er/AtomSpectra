@@ -3,215 +3,219 @@
 
     <item
         android:id="@+id/action_record_toggle"
-        android:icon="@drawable/menu_block"
+        android:icon="@drawable/ic_menu_pause"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
         android:title="@string/hist_pause_update" />
     <item
         android:id="@+id/action_isotopes"
-        android:icon="@drawable/menu_agenda"
+        android:icon="@drawable/ic_menu_flag_list"
         android:orderInCategory="101"
         android:showAsAction="ifRoom"
         android:title="@string/isotopes_get" />
     <item
+        android:icon="@drawable/ic_menu_histogram"
         android:orderInCategory="102"
         android:title="@string/histogram_menu">
         <menu>
             <item
                 android:id="@+id/action_hist_to_file"
-                android:icon="@drawable/menu_save"
+                android:icon="@drawable/ic_menu_save"
                 android:orderInCategory="201"
                 android:title="@string/hist_save_file" />
             <item
                 android:id="@+id/action_hist_from_file"
-                android:icon="@drawable/menu_archive"
+                android:icon="@drawable/ic_menu_open"
                 android:orderInCategory="202"
                 android:title="@string/hist_load_file" />
             <item
                 android:id="@+id/action_hist_add_from_file"
-                android:icon="@drawable/menu_add_file"
+                android:icon="@drawable/ic_menu_add_file"
                 android:orderInCategory="203"
                 android:title="@string/hist_add_file" />
             <item
                 android:id="@+id/action_export_spectrum"
-                android:icon="@drawable/menu_set_as"
+                android:icon="@drawable/ic_menu_export"
                 android:orderInCategory="204"
                 android:title="@string/hist_export">
                 <menu>
                     <item
                         android:id="@+id/action_export_to_BqMoni"
-                        android:icon="@drawable/menu_set_as_bq"
+                        android:icon="@drawable/ic_menu_export_xml"
                         android:orderInCategory="209"
                         android:title="@string/hist_export_to_bqmoni" />
                     <item
                         android:id="@+id/action_export_to_SPE"
-                        android:icon="@drawable/menu_set_as_spe"
+                        android:icon="@drawable/ic_menu_export_spe"
                         android:orderInCategory="210"
                         android:title="@string/hist_export_to_spe" />
                     <item
                         android:id="@+id/action_export_to_N42"
-                        android:icon="@drawable/menu_set_as_n42"
+                        android:icon="@drawable/ic_menu_export_n42"
                         android:orderInCategory="211"
                         android:title="@string/hist_export_to_N42" />
                     <item
                         android:id="@+id/action_export"
-                        android:icon="@drawable/menu_set_as_csv"
+                        android:icon="@drawable/ic_menu_export_csv"
                         android:orderInCategory="212"
                         android:title="@string/hist_export_csv" />
                     <item
                         android:id="@+id/action_export_with_energy"
-                        android:icon="@drawable/menu_set_as_e"
+                        android:icon="@drawable/ic_menu_export_energy"
                         android:orderInCategory="213"
                         android:title="@string/hist_export_with_energy" />
                 </menu>
             </item>
             <item
                 android:id="@+id/action_hist_suffix"
-                android:icon="@drawable/menu_edit"
+                android:icon="@drawable/ic_menu_edit"
                 android:orderInCategory="205"
                 android:title="@string/hist_set_suffix" />
             <item
                 android:id="@+id/action_clear_spectrum"
-                android:icon="@drawable/menu_clear_spectrum"
+                android:icon="@drawable/ic_menu_delete"
                 android:orderInCategory="206"
                 android:title="@string/action_restart" />
             <item
                 android:id="@+id/action_hist_smooth"
-                android:icon="@drawable/menu_smooth"
+                android:icon="@drawable/ic_menu_smooth"
                 android:orderInCategory="207"
                 android:title="@string/hist_smooth" />
             <item
                 android:id="@+id/action_hist_view_map"
+                android:icon="@drawable/ic_menu_map"
                 android:enabled="false"
-                android:icon="@android:drawable/ic_menu_mapmode"
                 android:orderInCategory="208"
                 android:title="@string/hist_view_map" />
         </menu>
     </item>
     <item
+        android:icon="@drawable/ic_menu_background"
         android:orderInCategory="103"
         android:title="@string/background">
         <menu>
             <item
                 android:id="@+id/action_background_save"
-                android:icon="@drawable/menu_save"
+                android:icon="@drawable/ic_menu_save"
                 android:orderInCategory="301"
                 android:title="@string/background_save" />
             <item
                 android:id="@+id/action_background_load"
-                android:icon="@drawable/menu_archive"
+                android:icon="@drawable/ic_menu_open"
                 android:orderInCategory="302"
                 android:title="@string/background_load" />
             <item
                 android:id="@+id/action_background_load_from"
-                android:icon="@drawable/menu_archive"
+                android:icon="@drawable/ic_menu_open"
                 android:orderInCategory="303"
                 android:title="@string/background_load_from" />
             <item
                 android:id="@+id/action_background_copy"
-                android:icon="@drawable/menu_forward"
+                android:icon="@drawable/ic_menu_arrow_forward"
                 android:orderInCategory="304"
                 android:title="@string/background_copy" />
             <item
                 android:id="@+id/action_background_suffix"
+                android:icon="@drawable/ic_menu_edit"
                 android:enabled="false"
-                android:icon="@drawable/menu_edit"
                 android:orderInCategory="305"
                 android:title="@string/background_set_suffix" />
             <item
                 android:id="@+id/action_background_clear"
+                android:icon="@drawable/ic_menu_delete"
                 android:enabled="false"
-                android:icon="@drawable/menu_erase"
                 android:orderInCategory="306"
                 android:title="@string/background_clear" />
             <item
                 android:id="@+id/action_background_show"
+                android:icon="@drawable/ic_menu_visibility"
                 android:checkable="true"
                 android:checked="false"
                 android:enabled="false"
-                android:icon="@drawable/record"
                 android:orderInCategory="307"
                 android:title="@string/background_show" />
             <item
                 android:id="@+id/action_background_subtract"
+                android:icon="@drawable/ic_menu_calc"
                 android:checkable="true"
                 android:checked="false"
                 android:enabled="false"
-                android:icon="@drawable/menu_calc"
                 android:orderInCategory="308"
                 android:title="@string/background_subtract" />
         </menu>
     </item>
     <item
+        android:icon="@drawable/ic_menu_spectrogram"
         android:orderInCategory="104"
         android:title="@string/spectrogram_menu">
         <menu>
             <item
                 android:id="@+id/action_spectrogram_load"
-                android:icon="@drawable/menu_archive"
+                android:icon="@drawable/ic_menu_open"
                 android:orderInCategory="401"
                 android:title="@string/spectrogram_load" />
             <item
                 android:id="@+id/action_spectrogram_view"
-                android:icon="@drawable/record"
+                android:icon="@drawable/ic_menu_visibility"
                 android:orderInCategory="402"
                 android:title="@string/spectrogram_view" />
             <item
                 android:id="@+id/action_spectrogram_view_map"
+                android:icon="@drawable/ic_menu_map"
                 android:enabled="false"
-                android:icon="@android:drawable/ic_menu_mapmode"
                 android:orderInCategory="403"
                 android:title="@string/spectrogram_view_map" />
             <item
                 android:id="@+id/action_spectrogram_settings"
-                android:icon="@drawable/menu_edit"
+                android:icon="@drawable/ic_menu_tune"
                 android:orderInCategory="404"
                 android:title="@string/spectrogram_settings" />
         </menu>
     </item>
     <item
+        android:icon="@drawable/ic_menu_calibration"
         android:orderInCategory="105"
         android:title="@string/calibration_menu">
         <menu>
             <item
                 android:id="@+id/action_cal_load"
-                android:icon="@drawable/menu_edit"
+                android:icon="@drawable/ic_menu_load_from"
                 android:orderInCategory="501"
                 android:title="@string/calibration_load_from_file" />
             <item
                 android:id="@+id/action_cal_store_device"
-                android:icon="@drawable/menu_agenda"
+                android:icon="@drawable/ic_menu_download"
                 android:orderInCategory="502"
                 android:title="@string/calibration_store_device" />
             <item
                 android:id="@+id/action_cal_retrieve_device"
-                android:icon="@drawable/menu_set_as"
+                android:icon="@drawable/ic_menu_upload"
                 android:orderInCategory="504"
                 android:title="@string/calibration_revert_device" />
             <item
                 android:id="@+id/action_cal_add_point"
-                android:icon="@drawable/menu_add_point"
+                android:icon="@drawable/ic_menu_add_point"
                 android:orderInCategory="506"
                 android:title="@string/calibration_add_point" />
             <item
                 android:id="@+id/action_cal_clear_point"
-                android:icon="@drawable/menu_erase"
+                android:icon="@drawable/ic_menu_delete"
                 android:orderInCategory="507"
                 android:title="@string/calibration_clear_points" />
             <item
                 android:id="@+id/action_cal_calc"
+                android:icon="@drawable/ic_menu_calc"
                 android:enabled="false"
-                android:icon="@drawable/menu_calc"
                 android:orderInCategory="508"
                 android:title="@string/calibration_calculate" />
             <item
                 android:id="@+id/action_cal_function"
-                android:icon="@drawable/menu_forward"
+                android:icon="@drawable/ic_menu_function"
                 android:orderInCategory="509"
                 android:title="@string/cal_show_function" />
             <item
                 android:id="@+id/action_cal_channel"
-                android:icon="@drawable/menu_back"
+                android:icon="@drawable/ic_menu_channel"
                 android:orderInCategory="510"
                 android:title="@string/calibration_channel" />
             <item
@@ -250,7 +254,7 @@
             <item
                 android:id="@+id/action_cal_draw_function"
                 android:checkable="true"
-                android:icon="@drawable/ic_isotope_search"
+                android:icon="@drawable/ic_menu_cal_curve"
                 android:orderInCategory="517"
                 android:title="@string/cal_draw_function" />
             <item
@@ -316,67 +320,74 @@
         </menu>
     </item>
     <item
+        android:icon="@drawable/ic_menu_device"
         android:orderInCategory="106"
         android:title="@string/calibration_device">
         <menu>
             <item
                 android:id="@+id/action_switch_device"
+                android:icon="@drawable/ic_menu_device"
                 android:orderInCategory="601"
                 android:title="@string/action_switch_device" />
             <item
                 android:id="@+id/action_device_settings"
+                android:icon="@drawable/ic_menu_settings"
                 android:enabled="false"
                 android:orderInCategory="602"
                 android:title="@string/device_settings" />
         </menu>
     </item>
     <item
+        android:icon="@drawable/ic_menu_pulse"
         android:orderInCategory="106"
         android:title="@string/menu_search">
         <menu>
             <item
                 android:id="@+id/action_edit_sensivity"
+                android:icon="@drawable/ic_menu_tune"
                 android:orderInCategory="701"
                 android:title="@string/calibration_sensivity" />
             <item
                 android:id="@+id/action_interval_settings"
+                android:icon="@drawable/ic_menu_bell"
                 android:orderInCategory="702"
                 android:title="@string/interval_settings" />
         </menu>
     </item>
     <item
         android:id="@+id/action_find_isotopes"
-        android:icon="@drawable/ic_isotope_search"
+        android:icon="@drawable/ic_menu_flag"
         android:orderInCategory="107"
         android:showAsAction="ifRoom"
         android:title="@string/action_find_isotopes" />
     <item
         android:id="@+id/action_settings"
-        android:icon="@android:drawable/ic_menu_manage"
+        android:icon="@drawable/ic_menu_settings"
         android:orderInCategory="109"
         android:showAsAction="ifRoom"
         android:title="@string/action_settings" />
     <item
         android:id="@+id/action_help"
-        android:icon="@drawable/menu_help"
+        android:icon="@drawable/ic_menu_help"
         android:orderInCategory="110"
         android:title="@string/help_menu" />
         <item
         android:id="@+id/action_buy"
+        android:icon="@drawable/ic_menu_buy"
         android:orderInCategory="111"
         android:title="@string/action_buy_spectrometer" />
     <item
         android:id="@+id/action_exit"
-        android:icon="@android:drawable/btn_dialog"
+        android:icon="@drawable/ic_menu_exit"
         android:orderInCategory="112"
         android:showAsAction="ifRoom"
         android:title="@string/action_exit" />
     <item
         android:id="@+id/action_app_version"
+        android:icon="@drawable/ic_menu_info"
         android:checkable="false"
         android:checked="false"
         android:enabled="true"
-        android:icon="@android:drawable/btn_dialog"
         android:orderInCategory="113"
         android:showAsAction="ifRoom" />
 

@@ -98,7 +98,7 @@ public class AtomSpectraSelect extends Activity implements OnClickListener {
                 v.setOnClickListener(this);
                 v.setPadding(0, 10, 0, 10);
                 v.setId(Constants.GROUPS.FILE_SELECTION_GROUP + filesNum);
-                v.setCompoundDrawablesRelativeWithIntrinsicBounds(ResourcesCompat.getDrawable(getResources(), R.drawable.menu_open, null), null, null, null);
+                v.setCompoundDrawablesRelativeWithIntrinsicBounds(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_menu_open, null), null, null, null);
                 v.setGravity(Gravity.CENTER_VERTICAL);
                 filesNum++;
                 v.setTextColor(0xFFFFFFFF);
