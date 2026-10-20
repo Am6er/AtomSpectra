@@ -56,6 +56,7 @@ import org.fe57.atomspectra.AppPermissions.Capability;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -575,6 +576,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.atom_spectra, menu);
         app_menu = menu;
+        showOverflowIcons(menu);
         updateCountDependentMenu();
         menu.findItem(R.id.action_cal_draw_function).setChecked(UIViewState.instance.showCalibrationFunction);
         menu.findItem(R.id.action_cal_draw_function).setEnabled(SpectrumData.instance.newCalibration != null && SpectrumData.instance.newCalibration.getPointsCount() > 1);
@@ -590,6 +592,17 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         return true;
     }
 
+
+    // the platform overflow list hides icons of top-level items; the hidden setter turns them on and is silently skipped if blocked
+    private static void showOverflowIcons(Menu menu) {
+        if (!"MenuBuilder".equals(menu.getClass().getSimpleName())) return;
+        try {
+            Method setter = menu.getClass().getDeclaredMethod("setOptionalIconsVisible", boolean.class);
+            setter.setAccessible(true);
+            setter.invoke(menu, true);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+        }
+    }
 
     // the menu state that follows the background and the channel count: "Last: N" title, background items and suffix
     private void updateCountDependentMenu() {
