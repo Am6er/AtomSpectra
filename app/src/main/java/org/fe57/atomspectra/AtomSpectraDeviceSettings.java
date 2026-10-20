@@ -101,7 +101,7 @@ public class AtomSpectraDeviceSettings extends Activity {
         RecyclerView list = findViewById(R.id.settingsList);
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
-        list.addItemDecoration(new GroupDividerDecoration(ContextCompat.getDrawable(this, R.drawable.divider)));
+        list.addItemDecoration(new GroupDividerDecoration(ContextCompat.getDrawable(this, R.drawable.divider_thin)));
 
         saveButton = findViewById(R.id.saveSettings);
         saveButton.setOnClickListener(view -> save(null));

@@ -565,7 +565,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 break;
         }
         saveIntPref(freq, Constants.CONFIG.CONF_DOSE_UPDATE);
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", freq));
+        doseRateFreqLabel.setText(getString(R.string.doserateUpdatePeriod, freq));
     }
 
     public void onClick_decreaseFreq(View v) {
@@ -583,7 +583,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 break;
         }
         saveIntPref(freq, Constants.CONFIG.CONF_DOSE_UPDATE);
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", freq));
+        doseRateFreqLabel.setText(getString(R.string.doserateUpdatePeriod, freq));
     }
     // --- end dose rate section
 
