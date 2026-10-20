@@ -270,6 +270,7 @@ public class AtomSpectraLog extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.atom_spectra_log, menu);
+        MenuHelper.showOverflowIcons(menu);
         return true;
     }
 

@@ -196,6 +196,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.atom_spectra_spectrogram, menu);
+        MenuHelper.showOverflowIcons(menu);
         optionsMenu = menu;
         updateMapMenu();
         updateScalePaletteMenu();
