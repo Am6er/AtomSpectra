@@ -104,7 +104,7 @@
     <string name="device_recording_description">%1$s - идёт запись</string>
     <string name="device_busy_description">%1$s - выполняется команда</string>
     <string name="device_recovering_description">%1$s - восстановление соединения</string>
-    <string name="device_recovering_action_refused">Идёт восстановление соединения, повторите позже</string>
+    <string name="device_recovering_action_refused">Идёт восстановление соединения, действие недоступно. Подождите или смените устройство.</string>
     <string name="device_error_description">%1$s - ошибка</string>
 
     <string name="nav_bar_spectrum">Спектр</string>
