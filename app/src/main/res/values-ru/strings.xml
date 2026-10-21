@@ -487,10 +487,10 @@
     <string name="dialog_continue_button">Продолжить</string>
     <string name="dialog_cancel_button">Отмена</string>
     <string name="dialog_exit_anyway_button">Всё равно выйти</string>
-    <string name="sens_discard_button">Не применять и выйти</string>
+    <string name="sens_discard_button">Не применять</string>
     <string name="dialog_keep_editing_button">Продолжить редактирование</string>
     <string name="sens_discard_title">Изменения не применены</string>
-    <string name="sens_discard_message">Изменения чувствительности не применены. При выходе они будут потеряны.</string>
+    <string name="sens_discard_message">Изменения чувствительности не применены.</string>
 
     <string name="dialog_confirm_exit_while_recording_message">Запись спектра в процессе, завершение программы может привести к потере данных.</string>
     <string name="dialog_confirm_exit_unsaved_message">Текущий спектр не сохранён. Завершение программы приведёт к его потере.</string>

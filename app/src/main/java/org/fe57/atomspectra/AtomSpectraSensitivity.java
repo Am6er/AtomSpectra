@@ -161,6 +161,7 @@ public class AtomSpectraSensitivity extends Activity {
                 getString(R.string.sens_discard_title),
                 getString(R.string.sens_discard_message),
                 true,
+                new DialogHelper.StackedAction(getString(R.string.sensitivity_apply), () -> onOkButton(null)),
                 new DialogHelper.StackedAction(getString(R.string.dialog_keep_editing_button), null),
                 new DialogHelper.StackedAction(getString(R.string.sens_discard_button), this::finish));
     }
