@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.zip.CRC32;
 
@@ -50,6 +51,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     // ids of the commands this source issues on its own behalf; answers to them are routed into the
     private final static String OP_ID_CHECK_FIRMWARE = "Check firmware version (-inf)";
+    private final static String OP_ID_READ_TELEMETRY = "Read telemetry (-inf)";
     private final static String OP_ID_LOAD_CALIBRATION_AND_ID = "Load calibration and serial number (-cal)";
     private final static String OP_ID_ENABLE_SPECTROMETER_MODE = "Enable spectrometer mode (-mode 0)";
     private final static String OP_ID_INITIAL_START_COLLECTING = "Initial start collecting just after connect (-sta)";
@@ -73,6 +75,12 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private volatile double[] calibrationCoeffs = new double[CALIBRATION_COEFFICIENTS];
     // NOISE from the "-inf" answer, -1 until it is read
     private volatile int noise = -1;
+    private volatile DeviceTelemetry telemetry = DeviceTelemetry.EMPTY;
+
+    // the temperature changes slowly, so it is requested rarely
+    private static final int TELEMETRY_INTERVAL_SECONDS = 15;
+    private final Runnable telemetryTick = this::telemetryTask;
+    private boolean telemetryDue = false;
 
     // keyed by batchId, which is also reused as the id on each CommandCode in the batch
     private final HashMap<String, CommandBatch> pendingBatches = new HashMap<>();
@@ -740,6 +748,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private void emitReady() {
         this.lastError = null;
+        this.startTelemetryPolling();
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_READY)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_CALIBRATION_COEFFS, this.calibrationCoeffs)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, this.channelCount())
@@ -775,6 +784,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
         if (COMMAND_RESULT_ERR.equals(answer)) {
             AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") failed: " + answer.trim());
+            if (cmd.silent) {
+                this.onSilentCommandFailed(cmd);
+                return;
+            }
             if (this.recoveryConnectPending && op == SpectrumSource.OP_CONNECT) {
                 this.retryRecovery("USB recovery command failed: " + command.trim());
                 return;
@@ -786,6 +799,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
         if (COMMAND_RESULT_TIMEOUT.equals(answer)) {
             AtomSpectraLog.warning(ctx, LogTag.SPECTRA_PRO, "Command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ") timed out");
+            if (cmd.silent) {
+                this.onSilentCommandFailed(cmd);
+                return;
+            }
             if (this.recoveryConnectPending && op == SpectrumSource.OP_CONNECT) {
                 this.retryRecovery("USB recovery command timed out: " + command.trim());
                 return;
@@ -801,6 +818,9 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         }
 
         switch (cmd.id) {
+            case OP_ID_READ_TELEMETRY:
+                this.applyTelemetry(answer, true);
+                break;
             case OP_ID_CHECK_FIRMWARE:
                 this.checkDeviceVersion(answer);
                 break;
@@ -1006,6 +1026,10 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             return;
         }
         this.noise = answer == null ? -1 : parseNoise(answer);
+        if (answer != null) {
+            // published by startTelemetryPolling once the service accepts readings
+            this.applyTelemetry(answer, false);
+        }
         if (answer == null) {
             this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, ctx.getString(R.string.log_usb_device_version_unknown));
             return;
@@ -1151,6 +1175,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.recoveryWakeLock.release();
         this.status = SpectrumSource.STATUS_DISCONNECTED;
         this.cancelDataWatchdog();
+        this.stopTelemetryPolling();
         this.cancelPendingCommands();
         this.closePortAndConnection();
         this.stopUsbManager();
@@ -1324,6 +1349,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.resetHistogramCompleteness();
         this.flushErrorSuppressionLog();
         this.restartDataWatchdog();
+        this.startTelemetryPolling();
     }
 
     private void finishRecoveryWithDisconnect(String reason) {
@@ -1821,6 +1847,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 this.resetHistogramCompleteness();
                 this.context.sendBroadcast(intent);
                 this.restartDataWatchdog();
+                this.requestTelemetryIfDue();
                 break;
             default:
                 //Toast.makeText(context, context.getString(R.string.unknown_code, code & 0xFF), Toast.LENGTH_SHORT).show();
@@ -1833,6 +1860,8 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         public final byte[] command;
         public final String id;
         public final int op;
+        // a background request: it changes neither the device status nor reports errors
+        public final boolean silent;
         public final byte code;
         //        public final long time;  //for timeout
         public final long Number;
@@ -1840,9 +1869,14 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         private static final Object sync = new Object();
 
         CommandCode(String cmd, String id, int op) {
+            this(cmd, id, op, false);
+        }
+
+        CommandCode(String cmd, String id, int op, boolean silent) {
             command = cmd.getBytes(Charset.defaultCharset());
             this.id = id;
             this.op = op;
+            this.silent = silent;
             code = CODE_TEXT; //shows command as text
 //            time = (new Date()).getTime() + DROP_TIMEOUT;  //time to drop as not delivered
             synchronized (sync) {
@@ -1857,6 +1891,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             command = cmd;
             this.id = id;
             this.op = op;
+            this.silent = false;
             this.code = code; //shows command as array of bytes
 //            time = (new Date()).getTime() + DROP_TIMEOUT;  //time to drop as not delivered
             synchronized (sync) {
@@ -1947,14 +1982,94 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     private boolean enqueueTextCommand(@NonNull String command, @NonNull String id, int op) {
+        return this.enqueueTextCommand(command, id, op, false);
+    }
+
+    private boolean enqueueTextCommand(@NonNull String command, @NonNull String id, int op, boolean silent) {
         if (AtomSpectraLog.isDiagnosticsEnabled(this.context)) {
             AtomSpectraLog.detail(this.context, LogTag.SPECTRA_PRO, "Enqueuing command \"" + command.trim() + "\" (" + SpectrumSource.opName(op) + ")");
         }
-        if (!this.handshakePending)
+        if (!this.handshakePending && !silent)
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND);
-        this.commands.add(new CommandCode(command, id, op));
+        this.commands.add(new CommandCode(command, id, op, silent));
 
         return this.sendPacket();
+    }
+
+    // +++ telemetry +++
+
+    @Override
+    public DeviceTelemetry telemetry() {
+        return this.telemetry;
+    }
+
+    // the detector temperature is the only reading the device reports
+    private void applyTelemetry(String answer, boolean notify) {
+        Integer temperature = answer == null ? null : parseTemperature(answer);
+        if (Objects.equals(this.telemetry.temperatureC, temperature)) return;
+        this.telemetry = temperature == null ? DeviceTelemetry.EMPTY : new DeviceTelemetry(null, temperature, null, null);
+        if (notify) {
+            this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_TELEMETRY));
+        }
+    }
+
+    // T1 from the "-inf" answer, null when the sensor is off or the value is not valid
+    private static Integer parseTemperature(String answer) {
+        String value = getParameter(answer, "T1");
+        if (value == null) return null;
+        try {
+            float parsed = Float.parseFloat(value);
+            return Float.isFinite(parsed) ? Math.round(parsed) : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // a silent command reports nothing to the user; only its own state has to be reset
+    private void onSilentCommandFailed(CommandCode cmd) {
+        if (OP_ID_READ_TELEMETRY.equals(cmd.id)) {
+            this.applyTelemetry(null, true);
+        }
+    }
+
+    // the connect answer is already in; publishes it now that the service accepts readings and starts the polling
+    private void startTelemetryPolling() {
+        this.telemetryDue = false;
+        this.asyncTasksHandler.removeCallbacks(this.telemetryTick);
+        this.asyncTasksHandler.postDelayed(this.telemetryTick, TELEMETRY_INTERVAL_SECONDS * 1000L);
+        if (this.telemetry != DeviceTelemetry.EMPTY) {
+            this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_TELEMETRY));
+        }
+    }
+
+    private void stopTelemetryPolling() {
+        this.telemetryDue = false;
+        this.asyncTasksHandler.removeCallbacks(this.telemetryTick);
+        this.telemetry = DeviceTelemetry.EMPTY;
+    }
+
+    private void telemetryTask() {
+        if (this.context == null) return;
+        this.asyncTasksHandler.postDelayed(this.telemetryTick, TELEMETRY_INTERVAL_SECONDS * 1000L);
+        if (this.status == SpectrumSource.STATUS_CONNECTED_IDLE) {
+            this.requestTelemetry();
+        } else if (this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            // asked right after the next DATA packet, when the device has finished sending the spectrum
+            this.telemetryDue = true;
+        }
+    }
+
+    private void requestTelemetryIfDue() {
+        if (this.telemetryDue && this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            this.requestTelemetry();
+        }
+    }
+
+    // stays due while the command queue is busy, so the request is retried after the next DATA packet
+    private void requestTelemetry() {
+        if (!this.commands.isEmpty() || !this.isOpened()) return;
+        this.telemetryDue = false;
+        this.enqueueTextCommand("-inf", OP_ID_READ_TELEMETRY, SpectrumSource.OP_SHOW, true);
     }
 
     // NOISE from the "-inf" answer, -1 when it is absent or not a valid value
