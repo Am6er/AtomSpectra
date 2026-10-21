@@ -1142,6 +1142,8 @@ public class AtomSpectraService extends Service {
             ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_bluetooth_attached));
         }
 
+        restoreDeviceCalibration();
+
         final boolean collecting = deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING;
         if (is_recording) {
             if (!collecting) {
