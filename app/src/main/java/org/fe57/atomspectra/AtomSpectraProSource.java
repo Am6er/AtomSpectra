@@ -748,12 +748,12 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private void emitReady() {
         this.lastError = null;
-        this.startTelemetryPolling();
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_READY)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_CALIBRATION_COEFFS, this.calibrationCoeffs)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, this.channelCount())
                 .putExtra(SpectrumSource.EXTRA_SOURCE_STATUS, this.status)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_DEVICE_ID, this.deviceId));
+        this.startTelemetryPolling();
     }
 
     private void handleDeviceAnswer(@NonNull CommandCode cmd, String answer) {
@@ -2069,7 +2069,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     private void requestTelemetry() {
         if (!this.commands.isEmpty() || !this.isOpened()) return;
         this.telemetryDue = false;
-        this.enqueueTextCommand("-inf", OP_ID_READ_TELEMETRY, SpectrumSource.OP_SHOW, true);
+        this.enqueueTextCommand("-inf", OP_ID_READ_TELEMETRY, SpectrumSource.OP_TELEMETRY, true);
     }
 
     // NOISE from the "-inf" answer, -1 when it is absent or not a valid value

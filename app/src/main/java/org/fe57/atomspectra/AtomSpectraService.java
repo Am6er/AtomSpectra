@@ -862,6 +862,7 @@ public class AtomSpectraService extends Service {
 
         connectDecisionPending = false;
         adoptDeviceSpectrum(source, connectDecisionFirstConnect);
+        onSourceTelemetry(source);
         updateMenu();
         refreshServiceNotification();
         notifyDataAvailable();
