@@ -27,9 +27,7 @@
     <string name="action_save_options">Сохранить параметры</string>
     <string name="action_buy_spectrometer">Купить спектрометр</string>
     <string name="action_exit">Завершить программу</string>
-    <string name="action_spectra_pro_reconnected">Spectra Pro подключён повторно</string>
     <string name="spectra_pro_available">Spectra Pro доступен для подключения в списке устройств</string>
-    <string name="action_usb_detached">USB отключён</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
     <string name="device_default_microphone">Микрофон по умолчанию</string>
     <string name="device_spectra_pro">Spectra Pro</string>
@@ -37,9 +35,17 @@
     <string name="device_type_audio">Аудиоустройство</string>
     <string name="device_type_spectra_pro">Spectra Pro</string>
     <string name="device_type_bluz">BluZ</string>
-    <string name="action_bluetooth_attached">BluZ подключён повторно</string>
     <string name="log_source_operation_failed">Не удалось выполнить операцию устройства (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="log_source_operation_timeout">Время ожидания операции устройства истекло (<xliff:g id="details">%1$s</xliff:g>)</string>
+    <string name="device_op_connect">подключение</string>
+    <string name="device_op_start">запуск записи</string>
+    <string name="device_op_stop">остановка записи</string>
+    <string name="device_op_show">чтение спектра</string>
+    <string name="device_op_reset">сброс счёта</string>
+    <string name="device_op_calibration_save">сохранение калибровки</string>
+    <string name="device_op_settings_save">сохранение настроек</string>
+    <string name="device_op_telemetry">чтение телеметрии</string>
+    <string name="device_op_unknown">неизвестная операция</string>
     <string name="bluetooth_off">Bluetooth выключен</string>
     <string name="bluetooth_allow">Разрешить доступ к Bluetooth</string>
     <string name="bluetooth_enable">Включить Bluetooth</string>
@@ -81,7 +87,15 @@
     <string name="start_discard_button">Не сохранять и начать</string>
     <string name="device_error_notification">Ошибка устройства</string>
     <string name="device_permission_lost">Нет разрешения на выбранное устройство. Выберите устройство.</string>
-    <string name="device_spectrum_adopted">Устройство подключено, показан спектр устройства</string>
+    <string name="toast_device_spectra_pro">Устройство Spectra Pro</string>
+    <string name="toast_device_bluz">Устройство BluZ</string>
+    <string name="toast_device_audio">Аудиоустройство</string>
+    <string name="device_connected">%1$s подключено, показано состояние устройства</string>
+    <string name="device_connected_replaced">%1$s подключено, спектр на экране заменён</string>
+    <string name="device_disconnected">%1$s отключено</string>
+    <string name="device_reconnected">%1$s подключено повторно</string>
+    <string name="device_connection_lost">%1$s: соединение потеряно, идёт восстановление</string>
+    <string name="device_connection_recovered">%1$s: соединение восстановлено</string>
     <string name="start_screen_replaced">Спектр на экране заменён спектром устройства</string>
     <string name="device_status_title">Состояние устройства</string>
     <string name="device_status_select_other">Выбрать устройство</string>
@@ -112,6 +126,8 @@
     <string name="hist_continue_update">Продолжить</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
     <string name="hist_ask_reset_text">Сброс счёта обнуляет гистограмму и поиск. Очистить всё — полный сброс.</string>
+    <string name="hist_ask_reset_device">Спектр устройства будет сброшен.</string>
+    <string name="hist_ask_unsaved">Спектр на экране не сохранён.</string>
     <string name="hist_clear_button">Очистить всё</string>
     <string name="hist_stop_clear_all_button">Остановить и очистить всё</string>
     <string name="hist_reset_button">Сбросить счёт</string>
@@ -373,7 +389,7 @@
     <string name="error_unable_to_create_file">Не удалось создать файл \'%1$s\'.</string>
     <string name="error_unable_to_create_file_ex">Не удалось создать файл \'%1$s\'. %2$s</string>
     <string name="error_unable_to_save_spectrum">Не удалось сохранить спектр. %1$s</string>
-    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить дельта-спектр. %1$s</string>
+    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить данные спектрограммы</string>
 
     <string name="file_atomspectra_spectrum_prefix">Spectrum</string>
     <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
@@ -428,6 +444,7 @@
     <string name="storage_required">Требуется носитель</string>
     <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно сохранён</string>
     <string name="hist_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
+    <string name="hist_autosave_error">Не удалось сохранить спектр</string>
     <string name="background_load_success">Фон успешно загружен</string>
     <string name="background_load_error">Загрузка фона НЕУДАЧНА!</string>
     <string name="background_channel_mismatch">Нельзя загрузить фон с другим числом каналов, чем в спектре</string>
@@ -444,7 +461,7 @@
     <string name="unknown_code">Получен неизвестный код от устройства: <xliff:g id="code">%1$d</xliff:g></string>
     <string name="cal_store_wait">Сохранение калибровки в устройство…</string>
     <string name="cal_apply_device">Калибровка принята из устройства</string>
-    <string name="cal_wrong_device">Неверная калибровка в устройстве</string>
+    <string name="cal_wrong_device">Калибровка устройства неверна, применена калибровка по умолчанию</string>
     <string name="cal_none_stored">Для этого устройства калибровка не сохранена</string>
     <string name="device_not_available">Устройство недоступно</string>
     <string name="cal_wrong_checksum">Spectra Pro: неверная контрольная сумма калибровки</string>
@@ -455,7 +472,9 @@
     <string name="usb_version_unknown">Неизвестная версия прошивки</string>
 
     <string name="recording_suspended_dialog_title">Чтение данных приостановлено!</string>
-    <string name="recording_suspended_dialog_message">Устройство отключено во время записи. После восстановления соединения запись возобновится.</string>
+    <string name="recording_suspended_dialog_message">Устройство отключено во время записи. После восстановления соединения запись возобновится, а спектр на экране будет заменён спектром устройства.</string>
+    <string name="recording_suspended_dialog_message_continue">Устройство отключено во время записи. После восстановления соединения запись возобновится и продолжит спектр на экране.</string>
+    <string name="recording_suspended_dialog_saved">Текущий спектр сохранён в файл.</string>
     <string name="recording_suspended_dialog_dismiss">Остановить и работать без устройства</string>
     <string name="recording_suspended_dialog_wait">Ожидать подключение</string>
     <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
@@ -507,7 +526,7 @@
     <string name="log_spg_midnight_restart">Перезапуск спектрограммы в полночь</string>
     <string name="log_spg_autosave_start">Запись спектрограммы включена</string>
     <string name="log_spg_autosave_completed">Запись спектрограммы завершена</string>
-    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы. %1$s</string>
+    <string name="log_spg_autosave_start_error">Не удалось включить запись спектрограммы</string>
     <string name="log_warning_raw_audio_support_not_available">Внимание: поддержка необработанного звука не доступна</string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>

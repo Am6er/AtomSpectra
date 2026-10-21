@@ -8,6 +8,10 @@ Diagrams are Mermaid; they render on GitHub and in most IDE markdown previews.
 > SDK. Recovery behaviour has not been verified on physical hardware; no ADB
 > device/emulator was attached.
 
+> Updated 2026-10-21: section 5 now states one rule for every device (see "The
+> invariant" below). Sections 1, 5, 6 and 9 describe that target behaviour; the
+> service code is being aligned to it.
+
 ## 1. The idea in one picture
 
 The UI never shows "a state"; it shows a **pair**:
@@ -47,6 +51,17 @@ flowchart LR
     SVC -- "ACTION_DEVICE_SELECTED / SELECTION_REQUIRED / CONNECT_DECISION" --> UI
     SVC <--> pref
 ```
+
+### The invariant
+
+**Whenever a device is connected, the screen shows the device state: its spectrum and its calibration.** This holds for every device type. The microphone follows it too; the state it shows is an empty spectrum plus the calibration stored for that input.
+
+The only exceptions:
+
+1. **Unsaved data on screen.** The user decides first (save, discard, or go offline); the device does not replace it silently.
+2. **Calibration editing.** While connected the user can change the calibration and save it to the device. Connecting never does this for them.
+3. **A file the user loaded after connecting.** It was asked for, so it stays until Clear or Start.
+4. **Silent recovery** (`RECOVERING`, within its window): the device is expected to be in the same state; the screen is not touched.
 
 Responsibilities:
 
@@ -271,6 +286,22 @@ Badges are `res/drawable/badge_*.xml`, drawn in the lower-right of a shared 24×
 
 The foreground notification text follows the same pair: suspended recording, error, waiting, no device, recording, paused.
 
+### Toasts
+
+The device is named Spectra Pro, BluZ or Audio device.
+
+| Event | Toast |
+|---|---|
+| Connect, screen adopted | "<device> connected, showing the device state"; when user content was replaced: "<device> connected, the spectrum on the screen is replaced". One toast, no separate calibration toast |
+| Idle disconnect | "<device> disconnected" |
+| Disconnect while recording | none: the suspended dialog, notification and sound cover it |
+| Recovery starts / succeeds | "<device> connection lost, recovering" / "<device> connection recovered", once per episode |
+| Return after a reported disconnect | "<device> reconnected"; replaced by the connect toast when the returned device is collecting and there is no recording intent (that return is a connect) |
+| Load calibration from the device (explicit) | "Calibration applied from the device" |
+| Device calibration unusable | warning, default calibration applied; shown on every path |
+
+When recording is suspended the screen spectrum is saved to a file (suffix `recording_suspended`) and the suspended dialog says so. The save is a safety copy: the screen is not marked as saved.
+
 ## 5. The screen spectrum and the device
 
 The service owns the spectrum on the screen. Two facts decide what a device may do to it.
@@ -283,35 +314,39 @@ The service owns the spectrum on the screen. Two facts decide what a device may 
 
 **Two kinds of device.**
 
-| Kind | Example | Has data of its own | Can continue a spectrum it is given |
+| Kind | Example | Device state it shows | Can continue a spectrum it is given |
 |---|---|---|---|
-| Holds its own data | Spectra Pro | yes, a histogram in hardware | no |
-| Follows the screen | microphone | no | yes, if the channel count matches |
+| Owns the spectrum | Spectra Pro, BluZ | its histogram (held in hardware) + its calibration | no |
+| Append only | microphone | an empty spectrum + the calibration stored for the input (preferences, per device name) | yes, if the channel count matches |
 
-Rule: **a spectrum the device did not produce is never replaced without the user knowing, and unsaved data is never lost without being asked.** There are three moments where a device could overwrite the screen; each has the same answer.
+A device whose channel count differs from the screen's is treated as one that owns the spectrum.
+
+**Calibration travels with the spectrum.** A fresh spectrum (adopted at connect, started new, or recorded on an empty screen) takes the device calibration. A non-empty spectrum that is continued keeps its own calibration; appending never changes it.
+
+Rule: **unsaved data is never lost without being asked.** Replacing a clean screen (empty, saved, or loaded file) is allowed and announced with a toast when it held user content. There are three moments where a device could overwrite the screen; each has the same answer.
 
 ### Connect and return
 
 ```mermaid
 flowchart TD
-    R(["device READY"]) --> LF{"loaded file on screen<br/>and device not collecting?"}
-    LF -- yes --> KF["screen untouched;<br/>the device waits for Clear or Start"]
-    LF -- no --> K{"device holds<br/>its own data?"}
-    K -- "no (microphone)" --> M["screen untouched;<br/>empty screen on first connect gets<br/>the device calibration"]
-    K -- "yes (Pro)" --> F{first connect<br/>of this lock?}
+    R(["device READY"]) --> F{first connect<br/>of this lock?}
+    F -- yes --> D
     F -- "no (return)" --> RC{recording<br/>intent?}
-    RC -- "yes (suspended)" --> RES["resume: hand the screen spectrum<br/>to the source, requestStart"]
+    RC -- "yes (suspended,<br/>'Wait for connection')" --> RES{append only?}
+    RES -- yes --> RA["hand the screen spectrum to the source,<br/>requestStart; the calibration of a<br/>non-empty screen is kept"]
+    RES -- no --> RO["the device overwrites the screen with its spectrum<br/>and calibration, requestStart; no question"]
     RC -- no --> CL{device<br/>collecting?}
     CL -- no --> KEEP["nothing changes"]
-    CL -- yes --> D
-    F -- yes --> D{"screen has<br/>unsaved data?"}
-    D -- no --> AD["ADOPT: clear screen, take device calibration,<br/>show device spectrum (or join a collecting device);<br/>toast if a loaded spectrum was replaced"]
+    CL -- yes --> D{"screen has<br/>unsaved data?"}
+    D -- no --> AD["ADOPT: clear screen, take device calibration,<br/>show device state (or join a collecting device);<br/>toast if user content was replaced"]
     D -- yes --> P["PENDING DECISION"]
 ```
 
+A file loaded while the device is connected stays on screen until Clear or Start (exception 3); an idle return does not replace it. A device that returns collecting with no recording intent is treated as a connect and adopts, because the file would otherwise hide a measurement in progress.
+
 ### Connect decision
 
-A device that holds its own data cannot show it without replacing the screen. When the screen has unsaved data, the service waits for the user. While it waits the device data is ignored and recording cannot start.
+Every device shows its state by replacing the screen. When the screen has unsaved data, the service waits for the user. While it waits the device data is ignored and recording cannot start.
 
 ```mermaid
 stateDiagram-v2
@@ -351,7 +386,7 @@ A start request that needs a decision and carries none is refused, so no path re
 
 - Idle snapshots from a device never overwrite a loaded file, nor unsaved data the device did not produce.
 - Device data is ignored while a connect decision is pending.
-- Switching device never asks anything by itself: the screen stays as it is, and the question is asked when the new device connects (if it holds its own data) or when recording starts.
+- Switching device never asks anything by itself: the screen stays as it is, and the question is asked when the new device connects (any device, if the screen has unsaved data) or when recording starts with a file that was loaded after connecting.
 
 ### Clear and reset
 
@@ -361,6 +396,8 @@ The clear button offers two actions, with or without a connected device.
 |---|---|---|
 | Clear all (Stop and clear all while recording) | `ACTION_CLEAR_SPECTRUM` | recording stops; spectrum, suffix, background, search data and spectrogram are cleared, calibration returns to the device's |
 | Reset counts | `ACTION_RESET_SPECTRUM` | a connected source is asked to reset (idle or collecting); the service zeroes the histogram and search; the device keeps its mode, and calibration, suffix, background and the shown spectrogram remain as they are |
+
+Both actions reset the connected device as well, so the confirmation says what will be lost: with a device connected it states "The device spectrum will be reset.", and when the screen has unsaved data it states "The spectrum on the screen is not saved." The dialog is only informative; it adds no save step.
 
 Without a connected device Reset counts only zeroes the screen. The spectrogram file is closed, because deltas against the old baseline would be negative; the next frame starts a new file.
 
@@ -398,8 +435,8 @@ sequenceDiagram
         S->>S: deviceReady = false → WAITING<br/>recording intent kept → recording suspended
     end
     opt source has reported DISCONNECTED
-        S->>U: suspended dialog "Wait for device" / "Stop and work offline"
-        opt user chooses "Wait for device"
+        S->>U: suspended dialog "Wait for connection" / "Stop and work offline"
+        opt user chooses "Wait for connection"
             U->>S: acknowledge current suspension episode
             U->>U: dismiss dialog; indicator and notification remain suspended
         end
@@ -423,6 +460,8 @@ sequenceDiagram
 ```
 
 While suspended there is no way to load a file (loading is blocked while the recording intent is set), so a resume always lands on the spectrum that was being recorded.
+
+**"Wait for connection"** is the user's explicit consent to resume: once the device is back, recording continues until the user stops it. A device that owns the spectrum overwrites whatever is on the screen with its own spectrum and calibration, with no question; the suspended dialog message says so, and for an append-only device it says the recording continues the screen spectrum. An append-only device continues the screen spectrum instead, and a screen cleared while the device was away starts fresh with the device calibration.
 
 Acknowledgement is held by the service for one suspension episode and survives
 activity recreation. It does not stop recording, release the device or request a
@@ -500,6 +539,7 @@ The screen cannot be left (Cancel hidden, back disabled) while the session is `U
 | 5 | Device lost while recording: warn, wait or stop and go offline, preference unchanged | suspension episode acknowledgement or `stopAndGoOffline()` |
 | 6 | Device back, no action: recording resumes | `onDeviceReturned` |
 | 7 | UI always shows the pair, states A–E | `deviceState()` + badges, section 4 |
+| 8 | A connected device is always shown on screen (spectrum + calibration), apart from the listed exceptions | the invariant, section 1; section 5 |
 
 ## 10. Known limits
 

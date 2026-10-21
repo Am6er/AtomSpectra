@@ -1019,9 +1019,16 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     public void onClickDeleteSpc(View v) {
+        StringBuilder message = new StringBuilder(getString(R.string.hist_ask_reset_text));
+        if (AtomSpectraService.isDeviceConnected()) {
+            message.append("\n\n").append(getString(R.string.hist_ask_reset_device));
+        }
+        if (SpectrumData.instance.foreground.isChanged()) {
+            message.append(AtomSpectraService.isDeviceConnected() ? "\n" : "\n\n").append(getString(R.string.hist_ask_unsaved));
+        }
         DialogHelper.showStackedActions(this,
             getString(R.string.hist_ask_delete_title),
-            getString(R.string.hist_ask_reset_text),
+            message.toString(),
             true,
             new DialogHelper.StackedAction(getString(R.string.hist_reset_button), () -> {
                 AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Reset spectrum counts");
@@ -3695,7 +3702,13 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     private long recordingSuspendedDialogEpisode = 0;
 
     private void showRecordingSuspendedDialog(long episode) {
-        String message = getString(R.string.recording_suspended_dialog_message);
+        final boolean continues = boundService != null && boundService.continuesScreenSpectrum();
+        String message = getString(continues
+                ? R.string.recording_suspended_dialog_message_continue
+                : R.string.recording_suspended_dialog_message);
+        if (AtomSpectraService.recordingSuspendedSaved) {
+            message += " " + getString(R.string.recording_suspended_dialog_saved);
+        }
         message += "\n" + AtomSpectraService.formatLocalTimeAsISOLikeString(AtomSpectraService.recordingSuspendedAt);
         recordingSuspendedDialogEpisode = episode;
         recordingSuspendedAlert = DialogHelper.showStackedActions(this,

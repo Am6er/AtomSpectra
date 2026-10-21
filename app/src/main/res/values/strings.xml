@@ -27,9 +27,7 @@
     <string name="action_save_options">Save options</string>
     <string name="action_buy_spectrometer">Buy a spectrometer</string>
     <string name="action_exit">Exit completely</string>
-    <string name="action_spectra_pro_reconnected">Spectra Pro reconnected</string>
     <string name="spectra_pro_available">Spectra Pro is available to connect in the device list</string>
-    <string name="action_usb_detached">USB detached</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
     <string name="device_default_microphone">Default microphone</string>
     <string name="device_spectra_pro">Spectra Pro</string>
@@ -37,9 +35,17 @@
     <string name="device_type_audio">Audio device</string>
     <string name="device_type_spectra_pro">Spectra Pro</string>
     <string name="device_type_bluz">BluZ</string>
-    <string name="action_bluetooth_attached">BluZ reconnected</string>
     <string name="log_source_operation_failed">Device operation failed (<xliff:g id="details">%1$s</xliff:g>)</string>
     <string name="log_source_operation_timeout">Device operation timed out (<xliff:g id="details">%1$s</xliff:g>)</string>
+    <string name="device_op_connect">connecting</string>
+    <string name="device_op_start">starting recording</string>
+    <string name="device_op_stop">stopping recording</string>
+    <string name="device_op_show">reading the spectrum</string>
+    <string name="device_op_reset">resetting counts</string>
+    <string name="device_op_calibration_save">saving calibration</string>
+    <string name="device_op_settings_save">saving settings</string>
+    <string name="device_op_telemetry">reading telemetry</string>
+    <string name="device_op_unknown">unknown operation</string>
     <string name="bluetooth_off">Bluetooth is off</string>
     <string name="bluetooth_allow">Allow Bluetooth access</string>
     <string name="bluetooth_enable">Enable Bluetooth</string>
@@ -81,7 +87,15 @@
     <string name="start_discard_button">Discard and start</string>
     <string name="device_error_notification">Device error</string>
     <string name="device_permission_lost">Permission for the selected device is missing. Please select a device.</string>
-    <string name="device_spectrum_adopted">Device connected, showing the device spectrum</string>
+    <string name="toast_device_spectra_pro">Spectra Pro</string>
+    <string name="toast_device_bluz">BluZ</string>
+    <string name="toast_device_audio">Audio device</string>
+    <string name="device_connected">%1$s connected, showing the device state</string>
+    <string name="device_connected_replaced">%1$s connected, the spectrum on the screen is replaced</string>
+    <string name="device_disconnected">%1$s disconnected</string>
+    <string name="device_reconnected">%1$s reconnected</string>
+    <string name="device_connection_lost">%1$s connection lost, recovering</string>
+    <string name="device_connection_recovered">%1$s connection recovered</string>
     <string name="start_screen_replaced">The spectrum on the screen is replaced by the device spectrum</string>
     <string name="device_status_title">Device status</string>
     <string name="device_status_select_other">Select device</string>
@@ -112,6 +126,8 @@
     <string name="hist_continue_update">Continue recording</string>
     <string name="hist_ask_delete_title">Clear spectrum</string>
     <string name="hist_ask_reset_text">Reset counts sets the histogram and search back to zero. Clear all is a full reset.</string>
+    <string name="hist_ask_reset_device">The device spectrum will be reset.</string>
+    <string name="hist_ask_unsaved">The spectrum on the screen is not saved.</string>
     <string name="hist_clear_button">Clear all</string>
     <string name="hist_stop_clear_all_button">Stop and clear all</string>
     <string name="hist_reset_button">Reset counts</string>
@@ -373,7 +389,7 @@
     <string name="error_unable_to_create_file">Unable to create file \'%1$s\'.</string>
     <string name="error_unable_to_create_file_ex">Unable to create file \'%1$s\'. %2$s</string>
     <string name="error_unable_to_save_spectrum">Unable to save spectrum. %1$s</string>
-    <string name="error_unable_to_save_delta_spectrum">Unable to save delta spectrum. %1$s</string>
+    <string name="error_unable_to_save_delta_spectrum">Unable to save spectrogram data</string>
 
     <string name="file_atomspectra_spectrum_prefix">Spectrum</string>
     <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
@@ -428,6 +444,7 @@
     <string name="storage_required">Storage is required</string>
     <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> saved successfully</string>
     <string name="hist_save_error"><xliff:g id="file_save">%1$s</xliff:g> saving failed!</string>
+    <string name="hist_autosave_error">Could not save the spectrum</string>
     <string name="background_load_success">Background loaded successfully</string>
     <string name="background_load_error">Background loading failed!</string>
     <string name="background_channel_mismatch">Background has a different number of channels than the spectrum</string>
@@ -444,7 +461,7 @@
     <string name="unknown_code">Got unknown code from the device: <xliff:g id="code">%1$d</xliff:g></string>
     <string name="cal_store_wait">Saving calibration to the device…</string>
     <string name="cal_apply_device">Calibration applied from the device</string>
-    <string name="cal_wrong_device">Wrong calibration from the device</string>
+    <string name="cal_wrong_device">The device calibration is invalid, the default one is applied</string>
     <string name="cal_none_stored">No calibration is stored for this device</string>
     <string name="device_not_available">Device is not available</string>
     <string name="cal_wrong_checksum">Spectra Pro: bad calibration checksum</string>
@@ -455,9 +472,11 @@
     <string name="usb_version_unknown">Device firmware version is unknown</string>
 
     <string name="recording_suspended_dialog_title">Data reading suspended!</string>
-    <string name="recording_suspended_dialog_message">Device disconnected during recording. Once the connection is restored, recording will resume.</string>
+    <string name="recording_suspended_dialog_message">Device disconnected during recording. Once the connection is restored, recording will resume and the spectrum on the screen will be replaced by the device\'s spectrum.</string>
+    <string name="recording_suspended_dialog_message_continue">Device disconnected during recording. Once the connection is restored, recording will resume and continue the spectrum on the screen.</string>
+    <string name="recording_suspended_dialog_saved">The current spectrum has been saved to a file.</string>
     <string name="recording_suspended_dialog_dismiss">Stop and work offline</string>
-    <string name="recording_suspended_dialog_wait">Wait for device</string>
+    <string name="recording_suspended_dialog_wait">Wait for connection</string>
     <string name="recording_suspended_notification">Data reading suspended!</string>
     <string name="recording_suspended_notification_suspended_at">Recording suspended: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Recording resumed: <xliff:g id="time">%1$s</xliff:g></string>
@@ -508,7 +527,7 @@
     <string name="log_spg_midnight_restart">Restarting spectrogram at midnight</string>
     <string name="log_spg_autosave_start">Spectrogram recording started</string>
     <string name="log_spg_autosave_completed">Spectrogram recording completed</string>
-    <string name="log_spg_autosave_start_error">ERROR: Unable to start spectrogram recording. %1$s</string>
+    <string name="log_spg_autosave_start_error">Unable to start spectrogram recording</string>
     <string name="log_warning_raw_audio_support_not_available">WARNING: Raw audio support not available</string>
 
     <string name="searching_isotopes">Searching isotopes…</string>

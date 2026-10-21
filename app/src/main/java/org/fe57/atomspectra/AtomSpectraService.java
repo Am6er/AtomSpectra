@@ -137,6 +137,8 @@ public class AtomSpectraService extends Service {
 
     private static final Object recordingSuspendedSync = new Object();
     public static Date recordingSuspendedAt = null;
+    // whether the spectrum was saved to a file when the current suspension began
+    public static volatile boolean recordingSuspendedSaved = false;
     public static Date recordingResumedAt = null;
     public static int recordingSuspendSourceType = SpectrumSource.TYPE_NONE;
     public static final int RECORDING_SUSPEND_REASON_NONE = 0;
@@ -221,8 +223,6 @@ public class AtomSpectraService extends Service {
     // a connected device that holds data of its own waits for the user to decide about the unsaved screen spectrum;
     // its data is ignored and recording cannot start until then
     private static volatile boolean connectDecisionPending = false;
-    // whether the pending decision belongs to the first connect (device calibration applies) or to a return
-    private static volatile boolean connectDecisionFirstConnect = false;
     private static volatile LockedDevice lockedDevice = null;
     // the channel count the locked source reported with its first ready, 0 until then
     private static volatile int deviceChannelCount = 0;
@@ -539,7 +539,7 @@ public class AtomSpectraService extends Service {
             toastAndLog(R.string.cal_none_stored);
             return;
         }
-        SpectrumData.instance.applyDeviceCalibration(this, coeffs);
+        SpectrumData.instance.applyDeviceCalibration(this, coeffs, true);
     }
 
     /**
@@ -733,6 +733,13 @@ public class AtomSpectraService extends Service {
         screenFromFile = true;
     }
 
+    /**
+     * Whether the locked device goes on with the screen spectrum, instead of replacing it with its own.
+     */
+    public boolean continuesScreenSpectrum() {
+        return canContinueScreenSpectrum();
+    }
+
     // the connected device can take over the screen spectrum and go on with it
     private boolean canContinueScreenSpectrum() {
         final SpectrumSource source = activeSource;
@@ -861,7 +868,7 @@ public class AtomSpectraService extends Service {
         if (!connectDecisionPending || source == null || !isDeviceConnected()) return;
 
         connectDecisionPending = false;
-        adoptDeviceSpectrum(source, connectDecisionFirstConnect);
+        adoptDeviceSpectrum(source);
         onSourceTelemetry(source);
         updateMenu();
         refreshServiceNotification();
@@ -960,57 +967,40 @@ public class AtomSpectraService extends Service {
     }
 
     // the screen follows the device: cleared, calibrated by the device and filled with what the device holds
-    private void adoptDeviceSpectrum(SpectrumSource source, boolean firstConnect) {
+    private void adoptDeviceSpectrum(SpectrumSource source) {
         final boolean replacesData = !SpectrumData.instance.foreground.isEmpty();
         resetServiceSpectrum();
         screenFromDevice = true;
-        if (firstConnect) {
-            double[] coeffs = source.calibration();
-            if (coeffs != null) {
-                SpectrumData.instance.applyDeviceCalibration(this, coeffs);
-            }
-        } else {
-            restoreDeviceCalibration();
+        double[] coeffs = source.calibration();
+        if (coeffs != null) {
+            SpectrumData.instance.applyDeviceCalibration(this, coeffs, false);
         }
         SpectrumData.instance.foreground.setDeviceInfo(inputDeviceInfo).updateComments();
         requestDeviceSpectrum(source);
-        if (replacesData) {
-            toastAndLog(R.string.device_spectrum_adopted);
+        toastAndLog(getStringOrDefaultLocale(
+                replacesData ? R.string.device_connected_replaced : R.string.device_connected, deviceToastName()));
+    }
+
+    // how the toasts call the locked device
+    private String deviceToastName() {
+        switch (lockedSourceType()) {
+            case SpectrumSource.TYPE_SPECTRA_PRO:
+                return getStringOrDefaultLocale(R.string.toast_device_spectra_pro);
+            case SpectrumSource.TYPE_BLUZ:
+                return getStringOrDefaultLocale(R.string.toast_device_bluz);
+            default:
+                return getStringOrDefaultLocale(R.string.toast_device_audio);
         }
     }
 
-    // A device that holds data of its own (one that cannot start from a supplied histogram) takes a clean screen over
-    // at once and asks before replacing unsaved data. A device without data of its own leaves the screen alone:
-    // what happens to that spectrum is settled when recording starts.
-    // A device with a different channel count than the screen always takes the screen over, whatever it can hold.
-    private void reconcileScreenWithDevice(SpectrumSource source, boolean firstConnect) {
-        if (screenFromFile && deviceStatus != SpectrumSource.STATUS_CONNECTED_COLLECTING) {
-            return;
-        }
-        if (deviceChannelCount != SpectrumData.instance.getChannelCount()) {
-            adoptOrAskAboutScreen(source, firstConnect);
-            return;
-        }
-        if (source.supportsInitialHistogram()) {
-            if (firstConnect && SpectrumData.instance.foreground.isEmpty()) {
-                double[] coeffs = source.calibration();
-                if (coeffs != null) {
-                    SpectrumData.instance.applyDeviceCalibration(this, coeffs);
-                }
-                SpectrumData.instance.foreground.setDeviceInfo(inputDeviceInfo).updateComments();
-            }
-            return;
-        }
-        adoptOrAskAboutScreen(source, firstConnect);
-    }
-
-    private void adoptOrAskAboutScreen(SpectrumSource source, boolean firstConnect) {
+    // Every device shows its own state on connect: the screen takes the device spectrum and calibration over,
+    // and unsaved data is asked about first.
+    private void adoptOrAskAboutScreen(SpectrumSource source) {
         if (SpectrumData.instance.foreground.isChanged()) {
-            connectDecisionFirstConnect = firstConnect;
             connectDecisionPending = true;
             sendBroadcast(new Intent(Constants.ACTION.ACTION_DEVICE_CONNECT_DECISION).setPackage(Constants.PACKAGE_NAME));
         } else {
-            adoptDeviceSpectrum(source, firstConnect);
+            adoptDeviceSpectrum(source);
         }
     }
 
@@ -1060,13 +1050,16 @@ public class AtomSpectraService extends Service {
                         recoveryStartedAt = SystemClock.elapsedRealtime();
                         AtomSpectraLog.warning(service_context, LogTag.SERVICE,
                                 getStringOrDefaultLocale(R.string.log_device_recovering, active.deviceId()));
+                        ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.device_connection_lost, deviceToastName()));
                     }
                     recoveryPending = true;
                 } else if (nextStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
-                    if (recoveryPending && !recoveryCancelledByStop)
+                    if (recoveryPending && !recoveryCancelledByStop) {
                         AtomSpectraLog.event(service_context, LogTag.SERVICE,
                                 getStringOrDefaultLocale(R.string.log_device_recovered, active.deviceId())
                                         + " after " + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s");
+                        ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.device_connection_recovered, deviceToastName()));
+                    }
                     recoveryPending = false;
                 } else if (nextStatus == SpectrumSource.STATUS_DISCONNECTED
                         || nextStatus == SpectrumSource.STATUS_CLOSED) {
@@ -1119,7 +1112,7 @@ public class AtomSpectraService extends Service {
         deviceReady = true;
         updateInputDeviceInfo(source);
 
-        reconcileScreenWithDevice(source, true);
+        adoptOrAskAboutScreen(source);
         AtomSpectraLog.event(service_context, LogTag.SERVICE, "Device ready (first): " + inputDeviceInfo + ", channels: " + deviceChannelCount);
 
         if (byUser) {
@@ -1130,19 +1123,21 @@ public class AtomSpectraService extends Service {
         notifyDataAvailable();
     }
 
-    // the locked device is back: a suspended recording follows the device, otherwise only a collecting device matters
+    // the locked device is back: a suspended recording follows the device (one that owns the spectrum
+    // overwrites the screen with its own), otherwise only a collecting device matters
     private void onDeviceReturned() {
         final SpectrumSource source = activeSource;
         deviceReady = true;
         AtomSpectraLog.event(service_context, LogTag.SERVICE, "Device ready (restored): " + inputDeviceInfo);
-        // the toast repeats the line logged above
-        if (lockedSourceType() == SpectrumSource.TYPE_SPECTRA_PRO) {
-            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_spectra_pro_reconnected));
-        } else if (lockedSourceType() == SpectrumSource.TYPE_BLUZ) {
-            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.action_bluetooth_attached));
+        // a collecting device found without a recording intent is announced by the connect toast instead
+        if (is_recording || deviceStatus != SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.device_reconnected, deviceToastName()));
         }
 
-        restoreDeviceCalibration();
+        // a fresh or overwritten spectrum takes the device calibration, a continued one keeps its own
+        if (SpectrumData.instance.foreground.isEmpty() || (is_recording && !canContinueScreenSpectrum())) {
+            restoreDeviceCalibration();
+        }
 
         final boolean collecting = deviceStatus == SpectrumSource.STATUS_CONNECTED_COLLECTING;
         if (is_recording) {
@@ -1152,7 +1147,7 @@ public class AtomSpectraService extends Service {
                 source.requestStart();
             }
         } else if (collecting) {
-            reconcileScreenWithDevice(source, false);
+            adoptOrAskAboutScreen(source);
         }
 
         if (isRecordingSuspended) {
@@ -1182,6 +1177,10 @@ public class AtomSpectraService extends Service {
         deviceReady = false;
         connectDecisionPending = false;
         AtomSpectraLog.warning(service_context, LogTag.SERVICE, "Device disconnected: " + inputDeviceInfo + ": " + reason);
+        // while recording the suspended dialog, notification and sound tell the user
+        if (!is_recording) {
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.device_disconnected, deviceToastName()));
+        }
 
         if (is_recording) {
             synchronized (recordingSuspendedSync) {
@@ -1252,8 +1251,33 @@ public class AtomSpectraService extends Service {
                     reason == SpectrumSource.REASON_TIMEOUT
                             ? R.string.log_source_operation_timeout
                             : R.string.log_source_operation_failed,
-                label);
-            toastAndLog(message, AtomSpectraLog.Severity.ERROR);
+                deviceOperationName(op));
+            // the user gets the localized operation, the log keeps the source's own detail
+            AtomSpectraLog.error(service_context, LogTag.SERVICE, message + ": " + label);
+            ToastHelper.showToastOnly(this, message);
+        }
+    }
+
+    private String deviceOperationName(int op) {
+        switch (op) {
+            case SpectrumSource.OP_CONNECT:
+                return getStringOrDefaultLocale(R.string.device_op_connect);
+            case SpectrumSource.OP_START:
+                return getStringOrDefaultLocale(R.string.device_op_start);
+            case SpectrumSource.OP_STOP:
+                return getStringOrDefaultLocale(R.string.device_op_stop);
+            case SpectrumSource.OP_SHOW:
+                return getStringOrDefaultLocale(R.string.device_op_show);
+            case SpectrumSource.OP_RESET:
+                return getStringOrDefaultLocale(R.string.device_op_reset);
+            case SpectrumSource.OP_CALIBRATION_SAVE:
+                return getStringOrDefaultLocale(R.string.device_op_calibration_save);
+            case SpectrumSource.OP_SETTINGS_SAVE:
+                return getStringOrDefaultLocale(R.string.device_op_settings_save);
+            case SpectrumSource.OP_TELEMETRY:
+                return getStringOrDefaultLocale(R.string.device_op_telemetry);
+            default:
+                return getStringOrDefaultLocale(R.string.device_op_unknown);
         }
     }
 
@@ -1262,9 +1286,8 @@ public class AtomSpectraService extends Service {
     private void startIntervalSearchAlarmTimer() {
         synchronized (intervalSearchAlarmSync) {
             if (intervalSearchAlarmTimer != null) {
-                // TODO: localize
-                String message = "ERROR: trying to start interval search alarm timer while timer is already in progress";
-                toastAndLog(message, AtomSpectraLog.Severity.ERROR);
+                AtomSpectraLog.error(service_context, LogTag.SERVICE,
+                        "Interval search alarm timer is already in progress");
                 return;
             }
             intervalSearchAlarmTimer = new Timer();
@@ -2459,7 +2482,7 @@ public class AtomSpectraService extends Service {
         return super.onUnbind(intent);
     }
 
-    private void saveCurrentSpectrum(String suffix) {
+    private boolean saveCurrentSpectrum(String suffix) {
         try {
             Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, getStringOrDefaultLocale(R.string.file_atomspectra_spectrum_prefix), SpectrumData.instance.foreground.getSpectrumDate(), suffix, ".txt", "text/plain", false);
             OutputStreamWriter docStream = streamInfo.first;
@@ -2473,9 +2496,11 @@ public class AtomSpectraService extends Service {
                     .setChannelCompression(1)
                     .saveSpectrumAndCloseStream(docStream, this);
             AtomSpectraLog.action(service_context, LogTag.SERVICE, "Saved spectrum (" + suffix + "): " + AtomSpectraLog.fileName(this, streamInfo.second));
+            return true;
         } catch (Exception e) {
             AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot save spectrum (" + suffix + ")", e);
-            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.hist_save_error, suffix));
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.hist_autosave_error));
+            return false;
         }
     }
 
@@ -2532,7 +2557,7 @@ public class AtomSpectraService extends Service {
                     this.toastAndLog(R.string.log_spg_autosave_start);
                 } catch (Exception e) {
                     AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot start spectrogram autosave", e);
-                    ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.log_spg_autosave_start_error, e.getMessage()));
+                    ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.log_spg_autosave_start_error));
                 }
 
                 return;
@@ -2573,7 +2598,7 @@ public class AtomSpectraService extends Service {
             AtomSpectraSpectrogramData.notifyUpdated(this);
             spgAutosaveSpectrum = foregroundSpectrumCopy;
         } catch (Exception e) {
-            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum, e.getMessage()));
+            ToastHelper.showToastOnly(this, getStringOrDefaultLocale(R.string.error_unable_to_save_delta_spectrum));
             AtomSpectraLog.error(service_context, LogTag.SERVICE, "Cannot append spectrogram", e);
         }
     }
@@ -2718,7 +2743,8 @@ public class AtomSpectraService extends Service {
         recordingSuspendedAt = new Date();
         AtomSpectraLog.warning(service_context, LogTag.SERVICE, getStringOrDefaultLocale(R.string.log_recording_suspended));
 
-        saveCurrentSpectrum("recording_suspended");
+        recordingSuspendedSaved = false;
+        recordingSuspendedSaved = saveCurrentSpectrum("recording_suspended");
         completeSpectrogramRecording();
         // the source arms its own unreliable-data window when it is started again
         resetSkippedHistogramCount();
@@ -2767,6 +2793,7 @@ public class AtomSpectraService extends Service {
             recordingSuspensionAcknowledged = false;
             recordingSuspendReason = RECORDING_SUSPEND_REASON_NONE;
             recordingSuspendSourceType = SpectrumSource.TYPE_NONE;
+            recordingSuspendedSaved = false;
 
             if (withDates) {
                 recordingSuspendedAt = null;

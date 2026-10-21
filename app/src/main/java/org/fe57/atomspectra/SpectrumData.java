@@ -106,18 +106,20 @@ public final class SpectrumData {
     }
 
     /**
-     * Apply coefficients that came from a device, reporting whether they were usable.
+     * Apply coefficients that came from a device. The success toast is for an explicit user action only;
+     * unusable coefficients are always reported.
      */
-    public void applyDeviceCalibration(@NonNull Context context, double[] coeffs) {
+    public void applyDeviceCalibration(@NonNull Context context, double[] coeffs, boolean announce) {
         Calibration calibration = new Calibration(getChannelCount());
         calibration.Calculate(coeffs);
         if (calibration.isCorrect()) {
             applyCalibration(context, calibration);
-            ToastHelper.showActionAndLog(context, LogTag.SPECTRUM_DATA, context.getString(R.string.cal_apply_device));
+            if (announce) {
+                ToastHelper.showActionAndLog(context, LogTag.SPECTRUM_DATA, context.getString(R.string.cal_apply_device));
+            }
         } else {
             calibration.Calculate(defaultLinearCalibrationCoeffs(getChannelCount()));
             applyCalibration(context, calibration);
-            // TODO: rename string resource so it tells "Incorrect calibration from device, default applied"
             ToastHelper.showWarningAndLog(context, LogTag.SPECTRUM_DATA, R.string.cal_wrong_device);
         }
     }
