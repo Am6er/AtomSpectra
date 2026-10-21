@@ -35,6 +35,7 @@ public interface SpectrumSource {
     int OP_RESET = 5;
     int OP_CALIBRATION_SAVE = 6;
     int OP_SETTINGS_SAVE = 7;
+    int OP_TELEMETRY = 8;
 
     /**
      * Human-readable name for an OP_* code, for logging.
@@ -55,6 +56,8 @@ public interface SpectrumSource {
                 return "OP_CALIBRATION_SAVE";
             case OP_SETTINGS_SAVE:
                 return "OP_SETTINGS_SAVE";
+            case OP_TELEMETRY:
+                return "OP_TELEMETRY";
             default:
                 return "op=" + op;
         }
