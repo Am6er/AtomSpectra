@@ -1237,7 +1237,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     @Override
-    public boolean supportsInitialHistogram() {
+    public boolean isAppendSource() {
         return false;
     }
 

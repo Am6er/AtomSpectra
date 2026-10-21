@@ -743,7 +743,7 @@ public class AtomSpectraService extends Service {
     // the connected device can take over the screen spectrum and go on with it
     private boolean canContinueScreenSpectrum() {
         final SpectrumSource source = activeSource;
-        return source != null && source.supportsInitialHistogram()
+        return source != null && source.isAppendSource()
                 && source.channelCount() == SpectrumData.instance.getChannelCount();
     }
 
@@ -1007,7 +1007,7 @@ public class AtomSpectraService extends Service {
     // the service holds the spectrum, so a source that can start from one is given it before every start
     private void pushSpectrumToSource() {
         SpectrumSource source = activeSource;
-        if (source == null || !source.supportsInitialHistogram()) return;
+        if (source == null || !source.isAppendSource()) return;
 
         long[] histogram;
         double recordingTime;

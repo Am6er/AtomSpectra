@@ -182,7 +182,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     }
 
     @Override
-    public boolean supportsInitialHistogram() {
+    public boolean isAppendSource() {
         return true;
     }
 
