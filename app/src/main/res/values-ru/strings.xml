@@ -27,7 +27,7 @@
     <string name="action_save_options">Сохранить параметры</string>
     <string name="action_buy_spectrometer">Купить спектрометр</string>
     <string name="action_exit">Завершить программу</string>
-    <string name="spectra_pro_available">Spectra Pro доступен для подключения в списке устройств</string>
+    <string name="spectra_pro_available">Устройство Spectra Pro доступно к подключению</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
     <string name="device_default_microphone">Микрофон по умолчанию</string>
     <string name="device_spectra_pro">Spectra Pro</string>
