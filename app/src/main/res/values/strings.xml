@@ -27,7 +27,7 @@
     <string name="action_save_options">Save options</string>
     <string name="action_buy_spectrometer">Buy a spectrometer</string>
     <string name="action_exit">Exit completely</string>
-    <string name="spectra_pro_available">Spectra Pro is available to connect in the device list</string>
+    <string name="spectra_pro_available">Spectra Pro is ready to connect</string>
     <string name="action_usb_no_access">Can\'t open USB device</string>
     <string name="device_default_microphone">Default microphone</string>
     <string name="device_spectra_pro">Spectra Pro</string>
