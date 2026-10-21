@@ -487,10 +487,10 @@
     <string name="dialog_continue_button">Continue</string>
     <string name="dialog_cancel_button">Cancel</string>
     <string name="dialog_exit_anyway_button">Exit anyway</string>
-    <string name="sens_discard_button">Discard and exit</string>
+    <string name="sens_discard_button">Discard changes</string>
     <string name="dialog_keep_editing_button">Keep editing</string>
     <string name="sens_discard_title">Unapplied changes</string>
-    <string name="sens_discard_message">The sensitivity changes have not been applied. Leaving will discard them.</string>
+    <string name="sens_discard_message">The sensitivity changes have not been applied.</string>
 
     <string name="dialog_confirm_exit_while_recording_message">Spectrum recording is in progress, exiting the program may result in data loss.</string>
     <string name="dialog_confirm_exit_unsaved_message">The current spectrum is not saved. Exiting the program will discard it.</string>
