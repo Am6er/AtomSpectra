@@ -479,7 +479,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     }
 
     @Override
-    public boolean supportsInitialHistogram() {
+    public boolean isAppendSource() {
         return false;
     }
 

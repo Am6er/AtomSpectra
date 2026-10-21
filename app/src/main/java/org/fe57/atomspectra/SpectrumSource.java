@@ -161,9 +161,10 @@ public interface SpectrumSource {
     void close();
 
     /**
-     * Whether the source can start from a histogram supplied by {@link #setInitialHistogram}.
+     * Whether the source only appends to a histogram the app supplies via {@link #setInitialHistogram} (audio).
+     * False for sources that own their spectrum on the device (Pro, BluZ).
      */
-    boolean supportsInitialHistogram();
+    boolean isAppendSource();
 
     /**
      * Replace the source's histogram and recording time; the next acquisition continues from them.
