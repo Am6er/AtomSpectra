@@ -104,7 +104,7 @@
     <string name="device_recording_description">%1$s - recording</string>
     <string name="device_busy_description">%1$s - executing a command</string>
     <string name="device_recovering_description">%1$s - reconnecting</string>
-    <string name="device_recovering_action_refused">Reconnecting to the device, try again when it is back</string>
+    <string name="device_recovering_action_refused">Restoring connection, action unavailable. Wait or switch device.</string>
     <string name="device_error_description">%1$s - error</string>
 
     <string name="nav_bar_spectrum">Spectrum</string>

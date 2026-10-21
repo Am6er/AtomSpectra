@@ -1018,7 +1018,19 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     public void onClickShape(View v) {
     }
 
+    // the service refuses these actions while the connection is restored, say so before asking for a confirmation
+    private boolean refuseWhileRecovering() {
+        if (AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.RECOVERING) {
+            return false;
+        }
+        ToastHelper.showWarningAndLog(this, LogTag.SPECTRA_ACT, getString(R.string.device_recovering_action_refused));
+        return true;
+    }
+
     public void onClickDeleteSpc(View v) {
+        if (refuseWhileRecovering()) {
+            return;
+        }
         StringBuilder message = new StringBuilder(getString(R.string.hist_ask_reset_text));
         if (AtomSpectraService.isDeviceConnected()) {
             message.append("\n\n").append(getString(R.string.hist_ask_reset_device));
@@ -2153,6 +2165,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             startActivity(new Intent(this, AtomSpectraDeviceSettings.class));
             return true;
         } else if (item.getItemId() == R.id.action_record_toggle) {
+            if (refuseWhileRecovering()) {
+                return true;
+            }
             if (!AtomSpectraService.isRecording()
                     && AtomSpectraService.sessionState != AtomSpectraService.DeviceSessionState.LOCKED) {
                 // no device chosen: pick one first, recording starts after it is connected
@@ -3665,8 +3680,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
                 app_menu.findItem(R.id.action_record_toggle).setTitle(R.string.hist_pause_update);
             }
             app_menu.findItem(R.id.action_record_toggle)
-                    .setEnabled(AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.BUSY
-                        && AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.RECOVERING);
+                    .setEnabled(AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.BUSY);
             app_menu.findItem(R.id.action_hist_from_file).setEnabled(recordingPaused);
             app_menu.findItem(R.id.action_hist_add_from_file).setEnabled(recordingPaused);
         }

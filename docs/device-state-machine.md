@@ -277,7 +277,7 @@ flowchart TD
 | `IDLE` | base icon + pause badge | selection screen | 7B |
 | `RECORDING` | base icon + red dot | selection screen | 7C |
 | `BUSY` | base icon + hourglass | selection screen | 7D |
-| `RECOVERING` | base icon + recovering badge | selection screen; record toggle unavailable | |
+| `RECOVERING` | base icon + recovering badge | selection screen; record toggle, Reset and Clear refused with a toast | |
 | `ERROR` | base icon + amber triangle "!" | error text, **Retry** (failed connect only), **Select device** | 7E |
 
 While a connect decision is pending (section 5), a tap on the icon reopens that decision dialog instead.
@@ -401,7 +401,7 @@ Both actions reset the connected device as well, so the confirmation says what w
 
 Without a connected device Reset counts only zeroes the screen. The spectrogram file is closed, because deltas against the old baseline would be negative; the next frame starts a new file.
 
-While the source is `RECOVERING`, Clear all, Reset counts, Start and Stop are refused with a toast: the source rejects commands during recovery, so changing only the screen would put it out of step with the device.
+While the source is `RECOVERING`, Clear all, Reset counts, Start and Stop are refused with a toast ("Restoring connection, action unavailable. Wait or switch device."): the source rejects commands during recovery, so changing only the screen would put it out of step with the device. The record button stays enabled and the Reset/Clear dialog does not open, so the toast is shown at the tap instead of after a confirmation.
 
 ### Loading a file
 
