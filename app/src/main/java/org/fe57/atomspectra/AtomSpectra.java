@@ -188,6 +188,15 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return true;
         });
 
+        // long tap smooths the spectrum while it is shown; otherwise the tap is left to the click
+        findViewById(R.id.displayModeSpectrumButton).setOnLongClickListener(v -> {
+            if (UIViewState.instance.displayMode != Constants.DISPLAY_MODE_SPECTRUM) {
+                return false;
+            }
+            toggleSmooth();
+            return true;
+        });
+
         fmsButton = findViewById(R.id.fmsButton);
         statusLine1Text = findViewById(R.id.statusLine1Text);
         statusLine2Text = findViewById(R.id.statusLine2Text);
@@ -1079,6 +1088,14 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         app_menu.findItem(R.id.action_background_show).setChecked(UIViewState.instance.backgroundShow);
         app_menu.findItem(R.id.action_background_subtract).setEnabled(UIViewState.instance.backgroundShow);
         app_menu.findItem(R.id.action_background_subtract).setChecked(UIViewState.instance.backgroundSubtract);
+    }
+
+    private void toggleSmooth() {
+        UIViewState.instance.smooth = !UIViewState.instance.smooth;
+        if (app_menu != null) {
+            app_menu.findItem(R.id.action_hist_smooth).setTitle(UIViewState.instance.smooth ? getString(R.string.hist_unsmooth) : getString(R.string.hist_smooth));
+        }
+        refreshDisplay();
     }
 
     public void onClick_renderModeSpectrumChange(View v) {
@@ -2158,9 +2175,7 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             onClickDeleteSpc(findViewById(R.id.clearSpectrumButton));
             return true;
         } else if (item.getItemId() == R.id.action_hist_smooth) {
-            UIViewState.instance.smooth = !UIViewState.instance.smooth;
-            item.setTitle(UIViewState.instance.smooth ? getString(R.string.hist_unsmooth) : getString(R.string.hist_smooth));
-            refreshDisplay();
+            toggleSmooth();
             return true;
         } else if (item.getItemId() == R.id.action_switch_device) {
             openDeviceSelection(false);
