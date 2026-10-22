@@ -597,11 +597,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         if (app_menu == null) return;
         final boolean enable_background = !SpectrumData.instance.background.isEmpty();
         app_menu.findItem(R.id.action_cal_channel).setTitle(getString(R.string.calibration_channel_format, SpectrumData.instance.getLastCalibrationChannel()));
-        app_menu.findItem(R.id.action_background_show).setChecked(UIViewState.instance.backgroundShow);
+        syncBackgroundViewMenu();
         app_menu.findItem(R.id.action_background_show).setEnabled(enable_background);
         app_menu.findItem(R.id.action_background_suffix).setEnabled(enable_background);
-        app_menu.findItem(R.id.action_background_subtract).setEnabled(UIViewState.instance.backgroundShow);
-        app_menu.findItem(R.id.action_background_subtract).setChecked(UIViewState.instance.backgroundSubtract);
         app_menu.findItem(R.id.action_background_clear).setEnabled(enable_background);
         app_menu.findItem(R.id.action_background_save).setEnabled(enable_background);
         TextView view = findViewById(R.id.backgroundSuffixView);
@@ -951,12 +949,6 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             boundService = null;
         }
         UIViewState.instance.backgroundSubtract = false;
-        if (app_menu != null) {
-            app_menu.findItem(R.id.action_background_show).setChecked(false);
-            app_menu.findItem(R.id.action_background_subtract).setChecked(false);
-            app_menu.findItem(R.id.action_background_save).setEnabled(false);
-            app_menu.findItem(R.id.action_background_suffix).setEnabled(false);
-        }
         UIViewState.instance.cursorX = -1;
         mCursorView.setVisibility(View.INVISIBLE);
         mSuffixLayoutView.setVisibility(LinearLayout.INVISIBLE);
@@ -1055,7 +1047,38 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     public void onClick_renderModeSpectrum(View v) {
+        if (UIViewState.instance.displayMode == Constants.DISPLAY_MODE_SPECTRUM && !SpectrumData.instance.background.isEmpty()) {
+            cycleBackgroundMode();
+            return;
+        }
         setDisplayMode(Constants.DISPLAY_MODE_SPECTRUM);
+    }
+
+    // spectrum only -> with background -> background subtracted
+    private void cycleBackgroundMode() {
+        UIViewState state = UIViewState.instance;
+        if (!state.backgroundShow) {
+            setBackgroundView(true, false);
+        } else if (!state.backgroundSubtract) {
+            setBackgroundView(true, true);
+        } else {
+            setBackgroundView(false, false);
+        }
+    }
+
+    private void setBackgroundView(boolean show, boolean subtract) {
+        UIViewState.instance.backgroundShow = show;
+        UIViewState.instance.backgroundSubtract = subtract;
+        syncBackgroundViewMenu();
+        AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Background visibility: " + show + "; subtraction: " + subtract);
+        refreshDisplay();
+    }
+
+    private void syncBackgroundViewMenu() {
+        if (app_menu == null) return;
+        app_menu.findItem(R.id.action_background_show).setChecked(UIViewState.instance.backgroundShow);
+        app_menu.findItem(R.id.action_background_subtract).setEnabled(UIViewState.instance.backgroundShow);
+        app_menu.findItem(R.id.action_background_subtract).setChecked(UIViewState.instance.backgroundSubtract);
     }
 
     public void onClick_renderModeSpectrumChange(View v) {
@@ -1656,36 +1679,17 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
             return true;
         } else if (item.getItemId() == R.id.action_background_subtract) {
             if (item.isChecked()) {
-                item.setChecked(false);
-                UIViewState.instance.backgroundSubtract = false;
-            } else {
-                if (!SpectrumData.instance.background.isEmpty()) {
-                    UIViewState.instance.backgroundSubtract = true;
-                    item.setChecked(true);
-                }
+                setBackgroundView(UIViewState.instance.backgroundShow, false);
+            } else if (!SpectrumData.instance.background.isEmpty()) {
+                setBackgroundView(UIViewState.instance.backgroundShow, true);
             }
-
-            AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Background subtraction: " + UIViewState.instance.backgroundSubtract);
-            refreshDisplay();
             return true;
         } else if (item.getItemId() == R.id.action_background_show) {
             if (item.isChecked()) {
-                item.setChecked(false);
-                UIViewState.instance.backgroundShow = false;
-                UIViewState.instance.backgroundSubtract = false;
-                app_menu.findItem(R.id.action_background_subtract).setChecked(false);
-                app_menu.findItem(R.id.action_background_subtract).setEnabled(false);
-            } else {
-                if (!SpectrumData.instance.background.isEmpty()) {
-                    UIViewState.instance.backgroundShow = true;
-                    item.setChecked(true);
-                    app_menu.findItem(R.id.action_background_subtract).setEnabled(true);
-                }
+                setBackgroundView(false, false);
+            } else if (!SpectrumData.instance.background.isEmpty()) {
+                setBackgroundView(true, false);
             }
-
-            AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Background visibility: " + UIViewState.instance.backgroundShow
-                    + "; subtraction: " + UIViewState.instance.backgroundSubtract);
-            refreshDisplay();
             return true;
         } else if (item.getItemId() == R.id.action_isotopes) {
             Intent intent_isotopes = new Intent(this, AtomSpectraIsotopes.class);
@@ -3135,17 +3139,9 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
 
     private void moveToBackground() {
         SpectrumData.instance.background.ReinitializeFrom(SpectrumData.instance.foreground);
-        boolean show_back = !SpectrumData.instance.background.isEmpty();
-        UIViewState.instance.backgroundShow = show_back;
-        app_menu.findItem(R.id.action_background_show).setChecked(show_back);
-        app_menu.findItem(R.id.action_background_save).setEnabled(show_back);
-        app_menu.findItem(R.id.action_background_show).setEnabled(show_back);
-        app_menu.findItem(R.id.action_background_subtract).setEnabled(show_back);
-        app_menu.findItem(R.id.action_background_clear).setEnabled(show_back);
-        app_menu.findItem(R.id.action_background_suffix).setEnabled(show_back);
-        TextView view = findViewById(R.id.backgroundSuffixView);
-        view.setVisibility(show_back ? TextView.VISIBLE : TextView.INVISIBLE);
-        view.setText(SpectrumData.instance.background.getSuffix());
+        UIViewState.instance.backgroundShow = !SpectrumData.instance.background.isEmpty();
+        UIViewState.instance.backgroundSubtract = false;
+        updateCountDependentMenu();
         AtomSpectraLog.action(this, LogTag.SPECTRA_ACT, "Copied foreground spectrum to background");
     }
 
