@@ -2,6 +2,8 @@ package org.fe57.atomspectra;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -71,7 +73,22 @@ public class AtomSpectraApplication extends Application implements Application.A
         externalUi.remove(activity);
     }
 
-    @Override public void onActivityCreated(Activity activity, Bundle state) { }
+    @Override
+    public void onActivityCreated(Activity activity, Bundle state) {
+        applyLocalizedTitle(activity);
+    }
+
+    private static void applyLocalizedTitle(Activity activity) {
+        try {
+            ActivityInfo info = activity.getPackageManager().getActivityInfo(activity.getComponentName(), 0);
+            int labelRes = info.labelRes != 0 ? info.labelRes : info.applicationInfo.labelRes;
+            if (labelRes != 0) {
+                activity.setTitle(activity.getString(labelRes));
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+    }
+
     @Override public void onActivityResumed(Activity activity) { }
     @Override public void onActivityPaused(Activity activity) { }
     @Override public void onActivitySaveInstanceState(Activity activity, Bundle state) { }
