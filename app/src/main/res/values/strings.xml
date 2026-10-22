@@ -674,6 +674,8 @@
         \t- Use a single tap to point a green cursor. Use a slider to smoothly shift the cursor. Tap to the left of spectrum to switch off a cursor. Tap on cursor text to set the cursor channel directly.\n
         \t- Use a double tap to select linear or log10 scale.\n
         \t- Use a long tap to switch between bar and line view modes.\n
+        \t- Tap the <annotation foreground="parameter">Spectrum</annotation> button in spectrum mode, when a background is loaded, to cycle the background view: spectrum only, spectrum with background, background subtracted.\n
+        \t- Use a long tap on the <annotation foreground="parameter">Spectrum</annotation> button in spectrum mode to turn smoothing on and off.\n
         \t- Use <annotation foreground="parameter">kev/ch.</annotation> button to switch between channel and keV modes in spectrum view.\n
         \t- Use <annotation foreground="parameter">D/I</annotation> button to switch between kinds of search plot (dose rate or count rate within interval).\n
         \t- Use <annotation foreground="parameter">F/M/S</annotation> button to switch between search constant (fast, medium, slow).\n
