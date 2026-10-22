@@ -353,7 +353,7 @@ of 5 becomes `[3, 2]`. This preserves decoded totals, not physical fine-bin deta
 The client retains lower-resolution live frames and changes resolution only
 after a live type 1/2 frame proves a mismatch. Type 0 alone causes no settings
 write. An idle show request cannot retrieve accumulated live data; AtomSpectra
-returns an empty 4096 histogram with time 0 rather than briefly starting the
-device. History frames are never published as live data. Switching from expanded
+returns an empty histogram with the retained acquisition time from the latest
+frame (0 before any frame) rather than briefly starting the device. History frames are never published as live data. Switching from expanded
 to native 4096 bins may redistribute accumulated counts and distort per-channel
 differences; the service's existing diffing calculation is unchanged.
