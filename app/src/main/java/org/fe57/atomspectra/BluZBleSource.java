@@ -757,7 +757,7 @@ final class BluZBleSource implements SpectrumSource {
             if (latest != null && latest.isCollecting()) broadcastData(latest);
             else reply(new Intent(ACTION_SOURCE_DATA)
                     .putExtra(EXTRA_SOURCE_DATA_HISTOGRAM, new long[channelCount()])
-                    .putExtra(EXTRA_SOURCE_DATA_RECORDING_TIME, 0.0)
+                    .putExtra(EXTRA_SOURCE_DATA_RECORDING_TIME, latest != null ? latest.time : 0.0)
                     .putExtra(EXTRA_SOURCE_DATA_CP1S, 0));
         });
     }
