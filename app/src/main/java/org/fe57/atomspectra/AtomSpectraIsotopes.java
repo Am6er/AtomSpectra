@@ -41,7 +41,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
     public static final String ISOTOPE_LINE_STATE = "Isotope energy ";   //save isotope state
 
     private static final IsotopeList fullIsotopeList = new IsotopeList().
-            add(new Isotope("Pu-239", Isotope.Years(24410)).
+            add(new Isotope("Pu-239", Isotope.Years(24110)).
                     addEnergy(12.98, 0.0341).
                     addEnergy(38.66, 0.0104).
                     addEnergy(51.62, 0.0272)).
@@ -78,7 +78,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(30.97, 25.00).
                     addEnergy(81.00, 37.00)).
             add(new Isotope("Sb-125", Isotope.Years(2.759)).
-                    addEnergy(35.49, 5.79).
+                    addEnergy(35.49, 4.375).
                     addEnergy(176.31, 6.82).
                     addEnergy(427.87, 29.55).
                     addEnergy(463.37, 10.48).
@@ -92,7 +92,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(727.33, 6.65).
                     addEnergy(785.35, 1.10).
                     addEnergy(893.41, 0.378).
-                    addEnergy(959.12, 0.17).
+                    addEnergy(952.12, 0.17).
                     addEnergy(1078.62, 0.564).
                     addEnergy(1512.70, 0.29).
                     addEnergy(1620.74, 1.51)).
@@ -124,7 +124,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(113.50, 0.0102)).
             add(new Isotope("Te-132", Isotope.Days(3.204)).
                     addEnergy(49.72, 15.10).
-                    addEnergy(228.33, 88.12)).
+                    addEnergy(228.16, 88.12)).
             add(new Isotope("Fr-223", Isotope.Minutes(22)).
                     addEnergy(50.10, 33.00).
                     addEnergy(79.65, 9.00)).
@@ -133,7 +133,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(235.96, 12.9).
                     addEnergy(256.23, 7.00)).
             add(new Isotope("U-234", Isotope.Years(2.455e5)).
-                    addEnergy(52.20, 0.123).
+                    addEnergy(53.20, 0.123).
                     addEnergy(120.90, 0.0342)).
             add(new Isotope("Pb-214", Isotope.Minutes(27.06)).
                     addEnergy(53.23, 1.075).
@@ -202,12 +202,14 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(722.91, 1.79)).
             add(new Isotope("Ho-166", Isotope.Hours(26.824)).
                     addEnergy(80.57, 6.55)).
-            add(new Isotope("Ho-166m", Isotope.Years(1133)).
+            add(new Isotope("Ho-166m", Isotope.Years(1200)).
                     addEnergy(80.57, 12.66).
                     addEnergy(184.41, 72.50).
                     addEnergy(280.46, 29.54).
+                    addEnergy(410.95, 11.20).
                     addEnergy(529.83, 9.40).
                     addEnergy(571.00, 5.43).
+                    addEnergy(670.52, 5.39).
                     addEnergy(711.70, 54.90).
                     addEnergy(752.28, 12.20).
                     addEnergy(810.29, 57.30).
@@ -246,7 +248,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(103.18, 21.10)).
             add(new Isotope("Au-195", Isotope.Days(186.01)).
                     addEnergy(98.88, 11.21)).
-            add(new Isotope("Np-236", Isotope.Years(153e3)).
+            add(new Isotope("Np-236", Isotope.Years(155e3)).
                     addEnergy(102.82, 0.91).
                     addEnergy(104.23, 7.32).
                     addEnergy(158.35, 4.20).
@@ -345,10 +347,10 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
             add(new Isotope("Ra-224", Isotope.Days(3.63)).
                     addEnergy(240.97, 4.12)).
             add(new Isotope("Sb-127", Isotope.Days(3.85)).
-                    addEnergy(252.64, 8.28).
-                    addEnergy(473.26, 24.80).
-                    addEnergy(685.09, 35.40).
-                    addEnergy(782.60, 14.70)).
+                    addEnergy(252.40, 8.28).
+                    addEnergy(473.00, 24.80).
+                    addEnergy(685.70, 35.40).
+                    addEnergy(783.70, 14.70)).
             add(new Isotope("Rn-219", Isotope.Seconds(3.96)).
                     addEnergy(271.23, 11.07).
                     addEnergy(401.81, 6.75)).
@@ -361,7 +363,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
             add(new Isotope("Hg-203", Isotope.Days(46.594)).
                     addEnergy(279.20, 81.48)).
             add(new Isotope("Bi-215", Isotope.Minutes(7.6)).
-                    addEnergy(293.56, 23.80)).
+                    addEnergy(293.56, 48.93)).
             add(new Isotope("Tl-210", Isotope.Minutes(1.3)).
                     addEnergy(296.00, 79.00).
                     addEnergy(799.60, 99.97).
@@ -369,7 +371,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(1070.00, 11.90).
                     addEnergy(1110.00, 6.90).
                     addEnergy(1210.00, 16.80).
-                    addEnergy(1310.00, 20.80).
+                    addEnergy(1316.00, 20.80).
                     addEnergy(2010.00, 6.90).
                     addEnergy(2360.00, 7.90).
                     addEnergy(2430.00, 8.90)).
@@ -394,7 +396,7 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
                     addEnergy(1274.58, 99.94)).
             add(new Isotope("Al-26", Isotope.Years(7.17e5)).
                     addEnergy(511.00, 163.50)).
-            add(new Isotope("Co-56", Isotope.Days(271.74)).
+            add(new Isotope("Co-56", Isotope.Days(77.236)).
                     addEnergy(511.00, 39.21).
                     addEnergy(846.76, 99.94).
                     addEnergy(1037.84, 14.03).
@@ -579,7 +581,6 @@ public class AtomSpectraIsotopes extends Activity implements AdapterView.OnItemS
             //Normal
             new Isotope("K-40", Isotope.ChainSign).
                     addToChain("La-138").
-                    addToChain("Ra-226").
                     addToChain("Th-232").
                     addToChain("Ra-228").
                     addToChain("Ac-228").
