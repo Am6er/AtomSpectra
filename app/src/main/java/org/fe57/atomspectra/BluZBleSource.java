@@ -147,6 +147,8 @@ final class BluZBleSource implements SpectrumSource {
     private final String address;
     private final int instanceId = SourceInstanceId.next();
     private final BluZFrameDecoder decoder = new BluZFrameDecoder();
+    private final DnlCorrector dnlCorrector = new DnlCorrector();
+    private boolean dnlCorrection;
     private final ArrayDeque<PendingWrite> writes = new ArrayDeque<>();
     private volatile int status = STATUS_DISCONNECTED;
     private volatile SourceError lastError;
@@ -207,11 +209,22 @@ final class BluZBleSource implements SpectrumSource {
         BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         adapter = manager == null ? null : manager.getAdapter();
         recoveryWakeLock = new RecoveryWakeLock(this.context, "BluZRecovery");
+        loadAppPreferences();
     }
 
     private void dispatch(Runnable action) {
         if (Looper.myLooper() == handler.getLooper()) action.run();
         else handler.post(action);
+    }
+
+    private void loadAppPreferences() {
+        dnlCorrection = PrefHelper.getASSharedPreferences(context)
+                .getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT);
+    }
+
+    @Override
+    public void onAppPreferencesChanged() {
+        dispatch(this::loadAppPreferences);
     }
 
     @Override
@@ -744,8 +757,15 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void broadcastData(BluZFrameDecoder.Frame frame) {
+        long[] histogram;
+        if (dnlCorrection && frame.channels == DnlCorrector.CHANNEL_COUNT) {
+            histogram = dnlCorrector.apply(frame.histogram);
+        } else {
+            dnlCorrector.reset();
+            histogram = frame.histogram.clone();
+        }
         reply(new Intent(ACTION_SOURCE_DATA)
-                .putExtra(EXTRA_SOURCE_DATA_HISTOGRAM, frame.histogram.clone())
+                .putExtra(EXTRA_SOURCE_DATA_HISTOGRAM, histogram)
                 .putExtra(EXTRA_SOURCE_DATA_RECORDING_TIME, frame.time)
                 .putExtra(EXTRA_SOURCE_DATA_CP1S, frame.cps));
     }

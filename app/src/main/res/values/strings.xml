@@ -11,7 +11,8 @@
 
     <string name="settings">Atom Spectra Settings</string>
     <string name="settings_audio_processing">Audio Processing</string>
-    <string name="settings_usb_processing">USB Processing</string>
+    <string name="settings_spectra_pro">Spectra Pro</string>
+    <string name="settings_bluz">BluZ</string>
     <string name="settings_spectrum">Spectrum</string>
     <string name="settings_spectrum_change">Spectrum Change</string>
     <string name="settings_atomswift_integration">AtomSwift Integration</string>
@@ -153,6 +154,7 @@
 
     <string name="enable_pileup">Enable pile-up correction</string>
     <string name="allow_partial_histogram_data">Allow spectrum processing with partial data</string>
+    <string name="bluz_dnl_correction">Correct uneven ADC channel widths (DNL)</string>
     <string name="invert">Invert input</string>
     <string name="add_gps">Add GPS coordinates to files</string>
     <string name="update_isotopes">Auto search isotopes</string>
@@ -845,8 +847,12 @@
         \t- <annotation foreground="parameter">Noise discriminator</annotation> - do not register channels below this number to exclude noisy channels.\n
         \t- <annotation foreground="parameter">Graph update frequency, s⁻¹</annotation> - how often the program updates the dose rate and spectrum data per second.\n
         \n
-        \tUSB processing:\n
+        \tSpectra Pro:\n
         \t- <annotation foreground="parameter">Allow spectrum processing with partial data</annotation> - enable processing of spectra from the PRO device with partial packet loss. Use if you experience data transfer issues. Technical information: while collecting a spectrum, the USB PRO spectrometer continuously transmits data via the serial port. The data is transmitted in packets and includes a spectrum divided into a large number of fragments (for N channels each) and information about the acquisition time, count rate, etc. During prolonged operation, depending on the Android device load and other factors, some packets may be lost. This results in a spectrum being displayed at some point in time t, some of whose fragments were not received from the spectrometer. Typically, at time t+1, the lost portion of the spectrum is received from the device and displayed correctly. In most cases, minor fragment loss is unnoticeable to the user. This option enables processing of spectra with lost fragments. If this option is disabled, spectra with lost fragments are ignored (with a message indicating the number of ignored spectra) until the entire spectrum is transferred without loss in the next data transfer session.\n
+        \n
+        \tBluZ:\n
+        \t- <annotation foreground="parameter">Correct uneven ADC channel widths (DNL)</annotation> - correct the uneven widths of the BluZ ADC channels, seen as a regular comb in the spectrum. The correction starts once enough counts are collected and also applies to saved files.\n
+
         \n
         \tSpectrum:\n
         \t- <annotation foreground="parameter">Show as</annotation> - compress spectrum shown to this number of points. The program reduces 1024 channel of spectrum or the dose rate to the selected number and shows it on graph to speed up the output.\n

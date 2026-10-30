@@ -65,6 +65,7 @@ public class Constants {
     public static final boolean ADD_GPS_TO_FILES_DEFAULT = true;                                                        //add GPS coordinates to files by default
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
     public static final boolean ALLOW_PARTIAL_HISTOGRAM_DEFAULT = false;
+    public static final boolean BLUZ_DNL_CORRECTION_DEFAULT = false;
     public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
     public static final String ATOMSWIFT_DR_NON_COMPENSATED = "non-compensated";
     public static final String ATOMSWIFT_DR_INTERVAL = "interval";
@@ -157,6 +158,7 @@ public class Constants {
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
+        String CONF_BLUZ_DNL_CORRECTION = "bluz_dnl_correction";
         String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
         /**
          * Map basemap provider id: {@code none}, {@code osm}, or {@code custom}.
