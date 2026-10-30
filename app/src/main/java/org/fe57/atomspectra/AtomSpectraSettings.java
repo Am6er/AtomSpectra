@@ -101,6 +101,10 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         setupAllowPartialHistogramCheckbox();
         // --- end usb processing
 
+        // --- bluz processing
+        setupBluZDnlCorrectionCheckbox();
+        // --- end bluz processing
+
         // --- spectrum
         updateReduceToText();
         updateCalibrationFactorText();
@@ -176,6 +180,14 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         checkAllowPartialHistogram.setChecked(sp.getBoolean(Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM, Constants.ALLOW_PARTIAL_HISTOGRAM_DEFAULT));
         checkAllowPartialHistogram.setOnClickListener(v -> {
             saveBooleanPref(checkAllowPartialHistogram.isChecked(), Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM);
+        });
+    }
+
+    private void setupBluZDnlCorrectionCheckbox() {
+        CheckBox checkDnlCorrection = findViewById(R.id.CheckBluZDnlCorrection);
+        checkDnlCorrection.setChecked(sp.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT));
+        checkDnlCorrection.setOnClickListener(v -> {
+            saveBooleanPref(checkDnlCorrection.isChecked(), Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION);
         });
     }
 
