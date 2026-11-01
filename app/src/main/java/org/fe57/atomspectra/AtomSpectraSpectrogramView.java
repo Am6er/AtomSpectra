@@ -230,6 +230,8 @@ public class AtomSpectraSpectrogramView extends View {
     private static final int HANDLE_COLOR_BG = 0xFF44E044; // green
     private static final int HANDLE_COLOR_FG = Color.WHITE;
     private static final int GUIDE_LINE_ALPHA = 110;
+    private static final boolean RENDER_CHANNEL_AXIS = false;
+    private static final boolean RENDER_ENERGY_AXIS = false;
 
     // cps data
     private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // original data list
@@ -800,7 +802,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         if (selectionCandidate.segmentIndex != -1) {
-            int rowIndex = getBinStartRow(selectionCandidate.segmentRowBinIndex, spectrumBinning);
+            int rowIndex = getBinStart(selectionCandidate.segmentRowBinIndex, spectrumBinning);
             SelectionBound candidateBound = new SelectionBound(selectionCandidate.segmentIndex, rowIndex);
 
             // clamp to visible area
@@ -869,7 +871,7 @@ public class AtomSpectraSpectrogramView extends View {
             viewportCenterAnchor = captureViewportCenterAnchor();
         }
 
-        // TODO: validate bin values, must be 2^n
+        // Spectrum binning remains constrained to powers of two.
         this.spectrumBinning = spectrumBinning;
         this.channelBinning = channelBinning;
         this.scale = scale;
@@ -880,7 +882,7 @@ public class AtomSpectraSpectrogramView extends View {
 
         // for each segment apply channel binning first
         int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
-        int channelBinsCount = originalChannelCount / channelBinning;
+        int channelBinsCount = (originalChannelCount + channelBinning - 1) / channelBinning;
         this.segmentsBinData = new ArrayList<>(this.segmentsData.size());
         for (int s = 0; s < this.segmentsData.size(); s++) {
             AtomSpectraSpectrogramData.SegmentData segment = this.segmentsData.get(s);
@@ -892,11 +894,12 @@ public class AtomSpectraSpectrogramView extends View {
                     float[] binnedRow = new float[channelBinsCount];
                     for (int i = 0; i < originalChannelCount; i += channelBinning) {
                         float sum = 0;
-                        for (int j = 0; j < channelBinning && (i + j) < originalChannelCount; j++) {
+                        int channelsInBin = Math.min(channelBinning, originalChannelCount - i);
+                        for (int j = 0; j < channelsInBin; j++) {
                             sum += row[i + j];
                         }
 
-                        binnedRow[i / channelBinning] = sum / channelBinning;
+                        binnedRow[i / channelBinning] = sum / channelsInBin;
                     }
 
                     binnedSpectrogram.add(binnedRow);
@@ -1048,7 +1051,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
 
-        int originalRow = getBinStartRow(meta.segmentRowBinIndex, this.spectrumBinning);
+        int originalRow = getBinStart(meta.segmentRowBinIndex, this.spectrumBinning);
         return new SelectionBound(meta.segmentIndex, originalRow);
     }
 
@@ -1238,14 +1241,18 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     // IMPORTANT: binning arithmetic works only within a single segment
-    // gets original spectrogram index of bin start, i.e. for bin 4 with binning 8 -> 32
-    private int getBinStartRow(int bin, int binning) {
+    // gets the index of the first item in a bin, e.g. bin 4 with binning 8 -> 32
+    private int getBinStart(int bin, int binning) {
         return bin * binning;
     }
 
-    // gets original spectrogram index of bin end, i.e. for bin 4 with binning 8 -> 39
-    private int getBinEndRow(int bin, int binning) {
+    // gets the inclusive index of the last item in a bin, e.g. bin 4 with binning 8 -> 39
+    private int getBinEnd(int bin, int binning) {
         return (bin + 1) * binning - 1;
+    }
+
+    private int getBinEnd(int bin, int binning, int maxValue) {
+        return Math.min(getBinEnd(bin, binning), maxValue);
     }
 
     // gets bin index for a given row and bin, i.e. for row 34 with bin 8 -> 4
@@ -1257,20 +1264,20 @@ public class AtomSpectraSpectrogramView extends View {
     private int ceilRowToBinEndRow(int row, int binning) {
         int bin = getBinForRow(row, binning);
 
-        return getBinEndRow(bin, binning);
+        return getBinEnd(bin, binning);
     }
 
     // for a given row calculates appropriate bin and returns row index for bin start
     private int floorRowToBinStartRow(int row, int binning) {
         int bin = getBinForRow(row, binning);
 
-        return getBinStartRow(bin, binning);
+        return getBinStart(bin, binning);
     }
 
     // for a given bound calculates appropriate row-bin and returns row index for its end
     private SelectionBound ceilBoundToRowBinEnd(SelectionBound bound) {
         int bin = getBinForRow(bound.rowIndex, spectrumBinning);
-        int row = getBinEndRow(bin, spectrumBinning);
+        int row = getBinEnd(bin, spectrumBinning);
 
         return new SelectionBound(bound.segmentIndex, row);
     }
@@ -1278,7 +1285,7 @@ public class AtomSpectraSpectrogramView extends View {
     // for a given bound calculates appropriate row-bin and returns row index for its start
     private SelectionBound floorBoundToRowBinStart(SelectionBound bound) {
         int bin = getBinForRow(bound.rowIndex, spectrumBinning);
-        int row = getBinStartRow(bin, spectrumBinning);
+        int row = getBinStart(bin, spectrumBinning);
 
         return new SelectionBound(bound.segmentIndex, row);
     }
@@ -1374,7 +1381,6 @@ public class AtomSpectraSpectrogramView extends View {
 
         setVisibleRangeSnapshot(virtualRowStart, virtualRowEnd, colBinStart, colBinEnd);
         int axisSegmentIndex = getVisibleEndSegmentIndex();
-        rebuildEnergyTicks(axisSegmentIndex, colBinsCount);
 
         HashSet<Integer> visibleGaps = new HashSet<>();
         int totalPixels = virtualRowsToRender * virtualRowHeightPx * colBinsToRenderWidthPx;
@@ -1448,7 +1454,7 @@ public class AtomSpectraSpectrogramView extends View {
                     }
 
                     int tsBinIndex = rowMeta.segmentRowBinIndex;
-                    int originalRowIndex = getBinEndRow(tsBinIndex, spectrumBinning);
+                    int originalRowIndex = getBinEnd(tsBinIndex, spectrumBinning);
                     if (originalRowIndex >= timestamps.size()) {
                         originalRowIndex = timestamps.size() - 1;
                     }
@@ -1524,7 +1530,7 @@ public class AtomSpectraSpectrogramView extends View {
                 for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
                     int tickX = (colBin - colBinStart) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
 
-                    if (this.energyTicks != null && this.energyTicks.containsKey(colBin)) {
+                    if (RENDER_ENERGY_AXIS && this.energyTicks != null && this.energyTicks.containsKey(colBin)) {
                         Integer energy = this.energyTicks.get(colBin);
 
                         if (energy != null) {
@@ -1563,7 +1569,7 @@ public class AtomSpectraSpectrogramView extends View {
                     // so the top channel gets a label, while the tick itself is drawn at the bin's
                     // left edge - one column short of the boundary it names, as on the energy axis.
                     // Bin 0 is labeled explicitly so the axis starts at 0 ch.
-                    if (hasChannelAxis) {
+                    if (RENDER_CHANNEL_AXIS && hasChannelAxis) {
                         boolean isFirstBin = colBin == 0;
                         int channel = (colBin + 1) * channelBinning * baseChannelBinning;
                         boolean isMajorTick = channel % channelMajorTick == 0;
@@ -1581,8 +1587,14 @@ public class AtomSpectraSpectrogramView extends View {
                     }
                 }
 
-                canvas.drawLine(TIME_AXIS_WIDTH_PX, energyAxisBaseline - 0.5f, TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, energyAxisBaseline - 0.5f, paint);
-                canvas.drawLine(TIME_AXIS_WIDTH_PX, channelAxisBaseline - 0.5f, TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, channelAxisBaseline - 0.5f, paint);
+                if (RENDER_ENERGY_AXIS) {
+                    canvas.drawLine(TIME_AXIS_WIDTH_PX, energyAxisBaseline - 0.5f,
+                            TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, energyAxisBaseline - 0.5f, paint);
+                }
+                if (RENDER_CHANNEL_AXIS) {
+                    canvas.drawLine(TIME_AXIS_WIDTH_PX, channelAxisBaseline - 0.5f,
+                            TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, channelAxisBaseline - 0.5f, paint);
+                }
             }
         }
 
@@ -1692,7 +1704,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
         if (rowStartMeta.segmentIndex >= 0) {
-            this.visibleStartRow = new SelectionBound(rowStartMeta.segmentIndex, getBinStartRow(rowStartMeta.segmentRowBinIndex, spectrumBinning));
+            this.visibleStartRow = new SelectionBound(rowStartMeta.segmentIndex, getBinStart(rowStartMeta.segmentRowBinIndex, spectrumBinning));
         } else {
             this.visibleStartRow = null;
         }
@@ -1708,13 +1720,14 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
         if (rowEndMeta.segmentIndex >= 0) {
-            this.visibleEndRow = new SelectionBound(rowEndMeta.segmentIndex, getBinEndRow(rowEndMeta.segmentRowBinIndex, spectrumBinning));
+            this.visibleEndRow = new SelectionBound(rowEndMeta.segmentIndex, getBinEnd(rowEndMeta.segmentRowBinIndex, spectrumBinning));
         } else {
             this.visibleEndRow = null;
         }
 
-        this.visibleStartChannel = getBinStartRow(colBinStart, channelBinning);
-        this.visibleEndChannel = getBinEndRow(colBinEnd, channelBinning);
+        this.visibleStartChannel = getBinStart(colBinStart, channelBinning);
+        this.visibleEndChannel = getBinEnd(colBinEnd, channelBinning,
+            AtomSpectraSpectrogramData.CHANNEL_COUNT - 1);
     }
 
     private void renderColorBar(int viewWidth, int viewHeight) {

@@ -169,14 +169,7 @@ public final class SpectrogramUIViewState {
     }
 
     private static int clampCbin(int value) {
-        int v = value;
-        if (v < 1) {
-            v = 1;
-        }
-        if (v > MAX_CBIN) {
-            v = MAX_CBIN;
-        }
-        return nearestPowerOfTwo(v, MAX_CBIN);
+        return Math.max(1, Math.min(MAX_CBIN, value));
     }
 
     private static int nearestPowerOfTwo(int value, int max) {
