@@ -1581,8 +1581,9 @@ public class AtomSpectraSpectrogramView extends View {
         // Steps depend on calibration and zoom only, so scrolling never changes the grid.
         double pixelsPerUnit = energyPixelsPerUnit(calibration, unitScale, baseChannelCount,
                 baseChannelBinning, channelBinsCount);
-        double majorStep = majorEnergyStep(paint, unit, calibratedMaxKeV / unitScale,
-                pixelsPerUnit, labelGap);
+        boolean unitAtOrigin = calibratedMinKeV > 0;
+        double majorStep = majorEnergyStep(paint, unitAtOrigin ? null : unit,
+                calibratedMaxKeV / unitScale, pixelsPerUnit, labelGap);
         if (majorStep <= 0) {
             return;
         }
@@ -1594,6 +1595,11 @@ public class AtomSpectraSpectrogramView extends View {
 
         long unitMajorIndex = (long) Math.ceil(Math.max(0, calibratedMinKeV / unitScale) / majorStep - 1e-9);
         float previousLabelRight = axisLeft;
+        if (unitAtOrigin && colBinStart == 0) {
+            paint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText(unit, axisLeft, labelY, paint);
+            previousLabelRight = axisLeft + paint.measureText(unit) + labelGap;
+        }
         for (long index = firstIndex; index <= lastIndex; index++) {
             double baseChannel = energyToBaseChannel(calibration, index * minorStep * unitScale,
                     baseChannelCount);
@@ -1611,7 +1617,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
 
             String label = formatEnergyLabel(majorStep, index / subdivisions);
-            if (index / subdivisions == unitMajorIndex) {
+            if (!unitAtOrigin && index / subdivisions == unitMajorIndex) {
                 label += " " + unit;
             }
             float labelWidth = paint.measureText(label);
@@ -1649,16 +1655,19 @@ public class AtomSpectraSpectrogramView extends View {
         return energySpan > 0 && pixelSpan > 0 ? pixelSpan / energySpan : 0;
     }
 
+    // unit is null when it is drawn separately at the origin rather than on the first tick label.
     private double majorEnergyStep(Paint paint, String unit, double scaleMax, double pixelsPerUnit,
                                    float labelGap) {
         double step = ceilNiceEnergyStep(labelGap / pixelsPerUnit);
+        float unitLabelWidth = unit == null ? 0 : paint.measureText("0 " + unit);
         for (int attempt = 0; step > 0 && attempt < 32; attempt++) {
             String widestLabel = formatEnergyLabel(step, (long) Math.floor(scaleMax / step + 1e-9));
-            float unitLabelWidth = paint.measureText(widestLabel + " " + unit);
             float labelWidth = Math.max(paint.measureText(widestLabel),
                     paint.measureText(formatEnergyLabel(step, 1)));
             // The unit label is left-aligned at the first tick; the next label is centered.
-            if (step * pixelsPerUnit >= unitLabelWidth + labelWidth / 2f + labelGap) {
+            float required = Math.max(labelWidth + labelGap,
+                    unitLabelWidth == 0 ? 0 : unitLabelWidth + labelWidth / 2f + labelGap);
+            if (step * pixelsPerUnit >= required) {
                 break;
             }
             step = ceilNiceEnergyStep(step * 1.01);
