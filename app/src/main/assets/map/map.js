@@ -926,7 +926,6 @@
       if (!pt) {
         return;
       }
-      var rate = pt.rateCps != null ? pt.rateCps : pt.cps;
       var counts = pt.counts > 0 ? pt.counts : 0;
       var html =
         formatCoords(pt.lat, pt.lon) +
@@ -935,7 +934,7 @@
         "<br>" +
         formatDuration(pt.duration) +
         "<br>" +
-        formatCpsWithError(rate, counts);
+        formatCpsWithError(pt.cps, counts);
       showPopup(pt.latlng, html);
     },
 
@@ -1075,36 +1074,41 @@
         }
       }
 
+      function cellKey(item, sizePx) {
+        return Math.floor(item.wx / sizePx) + ":" + Math.floor(item.wy / sizePx);
+      }
+
       function binVisible(sizePx) {
         var cells = Object.create(null);
         var count = 0;
+        var means = null;
+        if (isAvg) {
+          means = Object.create(null);
+          for (var s = 0; s < visible.length; s++) {
+            var sample = visible[s];
+            var sumKey = cellKey(sample, sizePx);
+            var sum = means[sumKey];
+            if (!sum) {
+              means[sumKey] = { sumCps: sample.pt.cps, n: 1 };
+            } else {
+              sum.sumCps += sample.pt.cps;
+              sum.n += 1;
+            }
+          }
+        }
         for (var v = 0; v < visible.length; v++) {
           var item = visible[v];
           var vp = item.pt;
-          var cx = Math.floor(item.wx / sizePx);
-          var cy = Math.floor(item.wy / sizePx);
-          var key = cx + ":" + cy;
+          var key = cellKey(item, sizePx);
           var cell = cells[key];
           if (isAvg) {
-            var sampleDuration = vp.duration > 0 ? vp.duration : 0;
-            var sampleCounts = vp.counts > 0 ? vp.counts : 0;
-            if (!cell) {
-              cells[key] = {
-                sumCps: vp.cps,
-                sumCounts: sampleCounts,
-                sumDuration: sampleDuration,
-                sumX: vp.x,
-                sumY: vp.y,
-                count: 1,
-              };
-              count += 1;
-            } else {
-              cell.sumCps += vp.cps;
-              cell.sumCounts += sampleCounts;
-              cell.sumDuration += sampleDuration;
-              cell.sumX += vp.x;
-              cell.sumY += vp.y;
-              cell.count += 1;
+            var mean = means[key].sumCps / means[key].n;
+            var dist = Math.abs(vp.cps - mean);
+            if (!cell || dist < cell.dist) {
+              cells[key] = { pt: vp, dist: dist };
+              if (!cell) {
+                count += 1;
+              }
             }
           } else if (!cell) {
             cells[key] = vp;
@@ -1116,6 +1120,15 @@
           } else if (vp.cps > cell.cps) {
             cells[key] = vp;
           }
+        }
+        if (isAvg) {
+          var picked = Object.create(null);
+          for (var pickedKey in cells) {
+            if (Object.prototype.hasOwnProperty.call(cells, pickedKey)) {
+              picked[pickedKey] = cells[pickedKey].pt;
+            }
+          }
+          cells = picked;
         }
         return { cells: cells, count: count };
       }
@@ -1131,37 +1144,9 @@
 
       var cells = binned.cells;
       var display = [];
-      if (isAvg) {
-        for (var avgKey in cells) {
-          if (!Object.prototype.hasOwnProperty.call(cells, avgKey)) {
-            continue;
-          }
-          var agg = cells[avgKey];
-          var ax = agg.sumX / agg.count;
-          var ay = agg.sumY / agg.count;
-          var avgCps = agg.sumCps / agg.count;
-          var pooledDuration = agg.sumDuration;
-          var pooledCps =
-            pooledDuration > 0 ? agg.sumCounts / pooledDuration : avgCps;
-          var avgLl = mapObj.containerPointToLatLng(L.point(ax, ay));
-          display.push({
-            lon: avgLl.lng,
-            lat: avgLl.lat,
-            cps: avgCps,
-            rateCps: pooledCps,
-            counts: agg.sumCounts,
-            duration: pooledDuration,
-            ts: 0,
-            x: ax,
-            y: ay,
-            latlng: avgLl,
-          });
-        }
-      } else {
-        for (var keyOut in cells) {
-          if (Object.prototype.hasOwnProperty.call(cells, keyOut)) {
-            display.push(cells[keyOut]);
-          }
+      for (var keyOut in cells) {
+        if (Object.prototype.hasOwnProperty.call(cells, keyOut)) {
+          display.push(cells[keyOut]);
         }
       }
 
