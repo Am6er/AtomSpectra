@@ -184,7 +184,7 @@ public class AtomSpectraSpectrogramView extends View {
     };
 
     private static final float MIN_ENERGY_MINOR_TICK_SPACING_DP = 10f;
-    private static final double[] NICE_ENERGY_STEP_MULTIPLIERS = {1, 2, 2.5, 5, 10};
+    private static final double[] NICE_ENERGY_STEP_MULTIPLIERS = {1, 2, 5, 10};
     private static final MathContext ENERGY_LABEL_MATH_CONTEXT = new MathContext(4, RoundingMode.HALF_UP);
 
     // point size is strictly integer to enable building virtual render map for all rows/gaps
@@ -1591,6 +1591,21 @@ public class AtomSpectraSpectrogramView extends View {
                 (int) (renderedWidthPx / Math.max(1f, widestLabel + labelGap))));
         double majorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetMajorIntervals);
         majorStep = Math.max(minorStep, majorStep);
+        double majorMinorRatio = majorStep / minorStep;
+        long majorMinorMultiple = Math.max(1, Math.round(majorMinorRatio));
+        if (Math.abs(majorMinorRatio - majorMinorMultiple) > 1e-9) {
+            double alignedMinorStep = niceEnergyStep(majorStep / 5.0);
+            if (alignedMinorStep < minorStep
+                    && hasAdequateEnergyTickSpacing(tickVisibleMin, visibleMax, alignedMinorStep,
+                    minimumMinorTickSpacing, calibration, unitScale, baseChannelCount,
+                    baseChannelBinning, channelBinsCount, colBinStart, axisLeft)) {
+                minorStep = alignedMinorStep;
+                majorMinorMultiple = Math.max(1, Math.round(majorStep / minorStep));
+            } else {
+                majorMinorMultiple = Math.max(1, (long) Math.ceil(majorMinorRatio - 1e-10));
+                majorStep = minorStep * majorMinorMultiple;
+            }
+        }
         double endpointTolerance = minorStep * 0.02;
         long firstMinorIndex = (long) Math.ceil(tickVisibleMin / minorStep - 1e-10);
         long lastMinorIndex = (long) Math.floor((visibleMax + endpointTolerance) / minorStep + 1e-10);
@@ -1618,9 +1633,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
             previousTickX = tickX;
 
-            double nearestMajorEnergy = Math.rint(targetEnergy / majorStep) * majorStep;
-            double majorTickTolerance = majorStep * 1e-9;
-            if (Math.abs(targetEnergy - nearestMajorEnergy) <= majorTickTolerance) {
+            if (minorIndex % majorMinorMultiple == 0) {
                 continue;
             }
             int tickHeight = ENERGY_MINOR_TICK_HEIGHT_PX;
@@ -1649,7 +1662,9 @@ public class AtomSpectraSpectrogramView extends View {
             canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
                     baselineY + ENERGY_MAJOR_TICK_HEIGHT_PX, paint);
 
-            String label = formatEnergyLabel(targetEnergy, labelDecimalPlaces);
+                String label = majorIndex == 0
+                    ? "0"
+                    : formatEnergyLabel(targetEnergy, labelDecimalPlaces);
             if (majorIndex == firstScaleMajorIndex) {
                 label += " " + unit;
             }
