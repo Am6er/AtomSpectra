@@ -185,8 +185,7 @@ public class AtomSpectraSpectrogramView extends View {
 
     private static final float MIN_ENERGY_MINOR_TICK_SPACING_DP = 15f;
     private static final double[] NICE_ENERGY_STEP_MULTIPLIERS = {1, 2, 5, 10};
-    private static final int[] ENERGY_MINOR_SUBDIVISIONS = {5, 4, 2};
-    private static final int[] ENERGY_MINOR_SUBDIVISIONS_FOR_FIVE = {5, 2};
+    private static final int[] ENERGY_MINOR_SUBDIVISIONS = {4, 2};
     private static final MathContext ENERGY_LABEL_MATH_CONTEXT = new MathContext(4, RoundingMode.HALF_UP);
 
     // point size is strictly integer to enable building virtual render map for all rows/gaps
@@ -1582,12 +1581,12 @@ public class AtomSpectraSpectrogramView extends View {
         // Steps depend on calibration and zoom only, so scrolling never changes the grid.
         double pixelsPerUnit = energyPixelsPerUnit(calibration, unitScale, baseChannelCount,
                 baseChannelBinning, channelBinsCount);
-        double majorStep = ceilNiceEnergyStep(
-                (paint.measureText("0000 " + unit) + labelGap) / pixelsPerUnit);
+        double majorStep = majorEnergyStep(paint, unit, calibratedMaxKeV / unitScale,
+                pixelsPerUnit, labelGap);
         if (majorStep <= 0) {
             return;
         }
-        int subdivisions = energyMinorSubdivisions(majorStep,
+        int subdivisions = energyMinorSubdivisions(
                 majorStep * pixelsPerUnit, dpToPx(MIN_ENERGY_MINOR_TICK_SPACING_DP));
         double minorStep = majorStep / subdivisions;
         long firstIndex = (long) Math.ceil(tickVisibleMin / minorStep - 1e-9);
@@ -1650,6 +1649,23 @@ public class AtomSpectraSpectrogramView extends View {
         return energySpan > 0 && pixelSpan > 0 ? pixelSpan / energySpan : 0;
     }
 
+    private double majorEnergyStep(Paint paint, String unit, double scaleMax, double pixelsPerUnit,
+                                   float labelGap) {
+        double step = ceilNiceEnergyStep(labelGap / pixelsPerUnit);
+        for (int attempt = 0; step > 0 && attempt < 32; attempt++) {
+            String widestLabel = formatEnergyLabel(step, (long) Math.floor(scaleMax / step + 1e-9));
+            float unitLabelWidth = paint.measureText(widestLabel + " " + unit);
+            float labelWidth = Math.max(paint.measureText(widestLabel),
+                    paint.measureText(formatEnergyLabel(step, 1)));
+            // The unit label is left-aligned at the first tick; the next label is centered.
+            if (step * pixelsPerUnit >= unitLabelWidth + labelWidth / 2f + labelGap) {
+                break;
+            }
+            step = ceilNiceEnergyStep(step * 1.01);
+        }
+        return step;
+    }
+
     private double ceilNiceEnergyStep(double rawStep) {
         if (!Double.isFinite(rawStep) || rawStep <= 0) {
             return 0;
@@ -1663,10 +1679,8 @@ public class AtomSpectraSpectrogramView extends View {
         return 10 * power;
     }
 
-    private int energyMinorSubdivisions(double majorStep, double majorStepPx, float minimumSpacingPx) {
-        double mantissa = majorStep / Math.pow(10, Math.floor(Math.log10(majorStep)));
-        int[] candidates = mantissa > 4.5 ? ENERGY_MINOR_SUBDIVISIONS_FOR_FIVE : ENERGY_MINOR_SUBDIVISIONS;
-        for (int subdivisions : candidates) {
+    private int energyMinorSubdivisions(double majorStepPx, float minimumSpacingPx) {
+        for (int subdivisions : ENERGY_MINOR_SUBDIVISIONS) {
             if (majorStepPx / subdivisions >= minimumSpacingPx) {
                 return subdivisions;
             }
