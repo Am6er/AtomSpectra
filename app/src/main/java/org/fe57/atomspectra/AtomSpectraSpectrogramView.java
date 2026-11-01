@@ -1573,32 +1573,35 @@ public class AtomSpectraSpectrogramView extends View {
         if (visibleMax <= tickVisibleMin) {
             return;
         }
+        double scaleTickMin = Math.max(0, calibratedMinKeV / unitScale);
+        double scaleTickMax = calibratedMaxKeV / unitScale;
+        float fullAxisWidthPx = channelBinsCount * POINT_SIZE_PX;
 
         float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
         float labelGap = dpToPx(4);
         float widestLabel = paint.measureText("0000 " + unit);
         float minimumMinorTickSpacing = dpToPx(MIN_ENERGY_MINOR_TICK_SPACING_DP);
-        int targetMinorIntervals = Math.max(1, (int) (renderedWidthPx / minimumMinorTickSpacing));
-        double minorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetMinorIntervals);
-        while (!hasAdequateEnergyTickSpacing(tickVisibleMin, visibleMax, minorStep,
+        int targetMinorIntervals = Math.max(1, (int) (fullAxisWidthPx / minimumMinorTickSpacing));
+        double minorStep = niceEnergyStep((scaleTickMax - scaleTickMin) / targetMinorIntervals);
+        while (!hasAdequateEnergyTickSpacing(scaleTickMin, scaleTickMax, minorStep,
                 minimumMinorTickSpacing, calibration, unitScale, baseChannelCount,
-                baseChannelBinning, channelBinsCount, colBinStart, axisLeft)) {
+            baseChannelBinning, channelBinsCount, 0, axisLeft)) {
             double nextMinorStep = niceEnergyStep(minorStep * 1.5);
             minorStep = nextMinorStep > minorStep ? nextMinorStep : minorStep * 2;
         }
 
         int targetMajorIntervals = Math.max(1, Math.min(6,
-                (int) (renderedWidthPx / Math.max(1f, widestLabel + labelGap))));
-        double majorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetMajorIntervals);
+            (int) (fullAxisWidthPx / Math.max(1f, widestLabel + labelGap))));
+        double majorStep = niceEnergyStep((scaleTickMax - scaleTickMin) / targetMajorIntervals);
         majorStep = Math.max(minorStep, majorStep);
         double majorMinorRatio = majorStep / minorStep;
         long majorMinorMultiple = Math.max(1, Math.round(majorMinorRatio));
         if (Math.abs(majorMinorRatio - majorMinorMultiple) > 1e-9) {
             double alignedMinorStep = niceEnergyStep(majorStep / 5.0);
-            if (alignedMinorStep < minorStep
-                    && hasAdequateEnergyTickSpacing(tickVisibleMin, visibleMax, alignedMinorStep,
+                if (alignedMinorStep < minorStep
+                    && hasAdequateEnergyTickSpacing(scaleTickMin, scaleTickMax, alignedMinorStep,
                     minimumMinorTickSpacing, calibration, unitScale, baseChannelCount,
-                    baseChannelBinning, channelBinsCount, colBinStart, axisLeft)) {
+                    baseChannelBinning, channelBinsCount, 0, axisLeft)) {
                 minorStep = alignedMinorStep;
                 majorMinorMultiple = Math.max(1, Math.round(majorStep / minorStep));
             } else {
@@ -1611,8 +1614,6 @@ public class AtomSpectraSpectrogramView extends View {
         long lastMinorIndex = (long) Math.floor((visibleMax + endpointTolerance) / minorStep + 1e-10);
         double firstScaleEnergy = Math.max(0, calibratedMinKeV / unitScale);
         long firstScaleMajorIndex = (long) Math.ceil(firstScaleEnergy / majorStep - 1e-10);
-        int labelDecimalPlaces = Math.max(0,
-                BigDecimal.valueOf(majorStep).stripTrailingZeros().scale());
 
         float previousLabelRight = axisLeft;
         float previousTickX = Float.NEGATIVE_INFINITY;
@@ -1664,7 +1665,7 @@ public class AtomSpectraSpectrogramView extends View {
 
                 String label = majorIndex == 0
                     ? "0"
-                    : formatEnergyLabel(targetEnergy, labelDecimalPlaces);
+                    : formatEnergyLabel(targetEnergy);
             if (majorIndex == firstScaleMajorIndex) {
                 label += " " + unit;
             }
@@ -1729,10 +1730,10 @@ public class AtomSpectraSpectrogramView extends View {
         return closestMultiplier * power;
     }
 
-    private String formatEnergyLabel(double energy, int decimalPlaces) {
+    private String formatEnergyLabel(double energy) {
         return BigDecimal.valueOf(energy)
                 .round(ENERGY_LABEL_MATH_CONTEXT)
-                .setScale(decimalPlaces, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
                 .toPlainString();
     }
 
