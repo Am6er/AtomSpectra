@@ -863,7 +863,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         int cbin = state.getCbin(orientation);
         if (cbin > 1) {
-            state.setCbin(orientation, cbin / 2, sharedPreferences);
+            state.setCbin(orientation, cbin - 1, sharedPreferences);
             updateControlPanel();
             updateSpectrogram(false);
         }
@@ -874,7 +874,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         int cbin = state.getCbin(orientation);
         if (cbin < SpectrogramUIViewState.MAX_CBIN) {
-            state.setCbin(orientation, cbin * 2, sharedPreferences);
+            state.setCbin(orientation, cbin + 1, sharedPreferences);
             updateControlPanel();
             updateSpectrogram(false);
         }
