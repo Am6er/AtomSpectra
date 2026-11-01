@@ -188,7 +188,8 @@ public class AtomSpectraSpectrogramView extends View {
     private float TIMESTAMP_MARGIN_LEFT_DP = 2f;
     private float TEXT_FONT_SIZE_DP = 12;
     private float TIMESTAMP_TICK_WIDTH_DP = 8f;
-    private float ENERGY_TICK_HEIGHT_DP = 8f;
+    private float ENERGY_MAJOR_TICK_HEIGHT_DP = 5f;
+    private float ENERGY_MINOR_TICK_HEIGHT_DP = 3f;
     private float CHANNEL_AXIS_HEIGHT_DP = 40f;
     private float HANDLE_SIZE_DP = 24f;
     private float HANDLE_TOUCH_RADIUS_DP = 32f;
@@ -202,7 +203,8 @@ public class AtomSpectraSpectrogramView extends View {
     private int TIMESTAMP_MARGIN_LEFT_PX = (int) TIMESTAMP_MARGIN_LEFT_DP;
     private int TEXT_FONT_SIZE_PX = (int) TEXT_FONT_SIZE_DP;
     private int TIMESTAMP_TICK_WIDTH_PX = (int) TIMESTAMP_TICK_WIDTH_DP;
-    private int ENERGY_TICK_HEIGHT_PX = (int) ENERGY_TICK_HEIGHT_DP;
+    private int ENERGY_MAJOR_TICK_HEIGHT_PX = (int) ENERGY_MAJOR_TICK_HEIGHT_DP;
+    private int ENERGY_MINOR_TICK_HEIGHT_PX = (int) ENERGY_MINOR_TICK_HEIGHT_DP;
     private int CHANNEL_AXIS_HEIGHT_PX = (int) CHANNEL_AXIS_HEIGHT_DP;
     private int HANDLE_SIZE_PX = (int) HANDLE_SIZE_DP;
     private int HANDLE_TOUCH_RADIUS_PX = (int) HANDLE_TOUCH_RADIUS_DP;
@@ -1218,7 +1220,8 @@ public class AtomSpectraSpectrogramView extends View {
         TIMESTAMP_MARGIN_LEFT_PX = dpToPx(TIMESTAMP_MARGIN_LEFT_DP);
         TEXT_FONT_SIZE_PX = dpToPx(TEXT_FONT_SIZE_DP);
         TIMESTAMP_TICK_WIDTH_PX = dpToPx(TIMESTAMP_TICK_WIDTH_DP);
-        ENERGY_TICK_HEIGHT_PX = dpToPx(ENERGY_TICK_HEIGHT_DP);
+        ENERGY_MAJOR_TICK_HEIGHT_PX = dpToPx(ENERGY_MAJOR_TICK_HEIGHT_DP);
+        ENERGY_MINOR_TICK_HEIGHT_PX = dpToPx(ENERGY_MINOR_TICK_HEIGHT_DP);
         CHANNEL_AXIS_HEIGHT_PX = dpToPx(CHANNEL_AXIS_HEIGHT_DP);
         HANDLE_SIZE_PX = dpToPx(HANDLE_SIZE_DP);
         HANDLE_TOUCH_RADIUS_PX = dpToPx(HANDLE_TOUCH_RADIUS_DP);
@@ -1550,8 +1553,8 @@ public class AtomSpectraSpectrogramView extends View {
                             // render MeV tick
                             if (energy % minorTick == 0) {
                                 int tickHeight = energy % majorTick == 0
-                                        ? ENERGY_TICK_HEIGHT_PX
-                                        : ENERGY_TICK_HEIGHT_PX / 2;
+                                        ? ENERGY_MAJOR_TICK_HEIGHT_PX
+                                        : ENERGY_MINOR_TICK_HEIGHT_PX;
                                 canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
                             }
                         }
@@ -1615,7 +1618,7 @@ public class AtomSpectraSpectrogramView extends View {
 
         if (colBinStart == 0) {
             canvas.drawLine(axisLeft - 0.5f, baselineY, axisLeft - 0.5f,
-                    baselineY + ENERGY_TICK_HEIGHT_PX, paint);
+                    baselineY + ENERGY_MAJOR_TICK_HEIGHT_PX, paint);
             String zeroLabel = "0 ch";
             paint.setTextAlign(Paint.Align.LEFT);
             canvas.drawText(zeroLabel, axisLeft, labelY, paint);
@@ -1628,7 +1631,7 @@ public class AtomSpectraSpectrogramView extends View {
                 continue;
             }
             boolean isMajorTick = tickChannel % majorTick == 0;
-            int tickHeight = isMajorTick ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
+            int tickHeight = isMajorTick ? ENERGY_MAJOR_TICK_HEIGHT_PX : ENERGY_MINOR_TICK_HEIGHT_PX;
             canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
                     baselineY + tickHeight, paint);
 
