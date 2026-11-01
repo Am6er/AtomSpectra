@@ -1572,7 +1572,7 @@ public class AtomSpectraSpectrogramView extends View {
 
         float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
         float labelGap = dpToPx(4);
-        float widestLabel = paint.measureText("0.000 " + unit);
+        float widestLabel = paint.measureText("0000");
         int targetIntervals = Math.max(3,
                 (int) (renderedWidthPx / Math.max(1f, widestLabel + labelGap)) - 1);
         double majorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetIntervals);
@@ -1583,10 +1583,11 @@ public class AtomSpectraSpectrogramView extends View {
         double endpointTolerance = majorStep * 0.02;
         long firstMinorIndex = (long) Math.ceil(tickVisibleMin / minorStep - 1e-10);
         long lastMinorIndex = (long) Math.floor((visibleMax + endpointTolerance) / minorStep + 1e-10);
+        double firstScaleEnergy = Math.max(0, calibratedMinKeV / unitScale);
+        long firstScaleMajorIndex = (long) Math.ceil(firstScaleEnergy / majorStep - 1e-10);
 
         float previousLabelRight = axisLeft;
         float previousTickX = Float.NEGATIVE_INFINITY;
-        boolean unitShown = false;
         for (long minorIndex = firstMinorIndex; minorIndex <= lastMinorIndex; minorIndex++) {
             double targetEnergy = minorIndex * minorStep;
             double targetEnergyKeV = targetEnergy * unitScale;
@@ -1613,7 +1614,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
 
             String label = formatEnergyLabel(targetEnergy);
-            if (!unitShown) {
+            if (minorIndex / 5 == firstScaleMajorIndex) {
                 label += " " + unit;
             }
             float labelWidth = paint.measureText(label);
@@ -1635,12 +1636,6 @@ public class AtomSpectraSpectrogramView extends View {
             paint.setTextAlign(alignment);
             canvas.drawText(label, tickX, labelY, paint);
             previousLabelRight = labelRight + labelGap;
-            unitShown = true;
-        }
-
-        if (!unitShown) {
-            paint.setTextAlign(Paint.Align.LEFT);
-            canvas.drawText(unit, axisLeft, labelY, paint);
         }
     }
 
