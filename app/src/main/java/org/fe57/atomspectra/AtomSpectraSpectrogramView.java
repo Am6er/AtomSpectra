@@ -14,10 +14,12 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.MotionEvent;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -232,12 +234,10 @@ public class AtomSpectraSpectrogramView extends View {
     private static final int HANDLE_COLOR_BG = 0xFF44E044; // green
     private static final int HANDLE_COLOR_FG = Color.WHITE;
     private static final int GUIDE_LINE_ALPHA = 110;
-    private static final boolean RENDER_ENERGY_AXIS = false;
 
     // cps data
     private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // original data list
     private ArrayList<ArrayList<float[]>> segmentsBinData = null; // binned segments, cps data only
-    private HashMap<Integer, Integer> energyTicks = null;
 
     // gaps data
     private enum SegmentMismatch {
@@ -1115,27 +1115,6 @@ public class AtomSpectraSpectrogramView extends View {
         return Math.max(1, (int) Math.ceil(requiredHeightPx / pointSizePx));
     }
 
-    // Energy tick positions for the given segment's calibration (CHANNEL_COUNT-space bins).
-    private void rebuildEnergyTicks(int segmentIndex, int channelBinsCount) {
-        this.energyTicks = new HashMap<>();
-        if (channelBinsCount <= 0) {
-            return;
-        }
-
-        double[] allEnergies = new double[channelBinsCount];
-        for (int i = 0; i < channelBinsCount; i++) {
-            allEnergies[i] = AtomSpectraSpectrogramData.instance.channelToEnergy(
-                    segmentIndex, i * channelBinning + (channelBinning - 1));
-        }
-
-        for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 50) {
-            while (allEnergies[channel] < energy) {
-                channel++;
-            }
-            energyTicks.put(channel, energy);
-        }
-    }
-
     // Gap mismatch check vs the previous segment:
     // 1. device info must match exactly
     // 2. calibration coefficients must match as they would in a saved spectrum file
@@ -1523,49 +1502,8 @@ public class AtomSpectraSpectrogramView extends View {
                         ? segmentsData.get(axisSegmentIndex).getBaseSpectrum()
                         : null;
                 int baseChannelCount = baseSpectrum == null ? 0 : baseSpectrum.getDataArray().length;
-                for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
-                    int tickX = (colBin - colBinStart) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
-
-                    if (RENDER_ENERGY_AXIS && this.energyTicks != null && this.energyTicks.containsKey(colBin)) {
-                        Integer energy = this.energyTicks.get(colBin);
-
-                        if (energy != null) {
-                            // render MeV label
-                            int majorTick = 200;
-                            int minorTick = 100;
-                            if (channelBinning == 2) {
-                                majorTick = 500;
-                                minorTick = 100;
-                            }
-                            if (channelBinning == 4) {
-                                majorTick = 1000;
-                                minorTick = 250;
-                            }
-                            if (channelBinning > 4) {
-                                majorTick = 1500;
-                                minorTick = 500;
-                            }
-                            if (energy % majorTick == 0) {
-                                String label = energy == 0 ? "0 MeV" : String.format("%1.1f", energy / 1000.0f);
-                                canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
-                            }
-
-                            // render MeV tick
-                            if (energy % minorTick == 0) {
-                                int tickHeight = energy % majorTick == 0
-                                        ? ENERGY_MAJOR_TICK_HEIGHT_PX
-                                        : ENERGY_MINOR_TICK_HEIGHT_PX;
-                                canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
-                            }
-                        }
-                    }
-
-                }
-
-                if (RENDER_ENERGY_AXIS) {
-                    canvas.drawLine(TIME_AXIS_WIDTH_PX, energyAxisBaseline - 0.5f,
-                            TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, energyAxisBaseline - 0.5f, paint);
-                }
+                renderEnergyAxis(canvas, paint, energyAxisBaseline, baseSpectrum,
+                    colBinsCount, colBinStart, colBinsToRenderWidthPx);
                 renderChannelAxis(canvas, paint, channelAxisBaseline, baseChannelCount,
                     colBinsCount, colBinStart, colBinsToRenderWidthPx);
             }
@@ -1591,6 +1529,183 @@ public class AtomSpectraSpectrogramView extends View {
             verticalOffsetPx += virtualRowHeightPx;
         }
         syncViewportToViewState();
+    }
+
+    private void renderEnergyAxis(Canvas canvas, Paint paint, int baselineY, Spectrum baseSpectrum,
+                                  int channelBinsCount, int colBinStart, int renderedWidthPx) {
+        if (baseSpectrum == null || channelBinsCount <= 0 || renderedWidthPx <= 0
+                || POINT_SIZE_PX <= 0) {
+            return;
+        }
+
+        float axisLeft = TIME_AXIS_WIDTH_PX;
+        float axisRight = axisLeft + renderedWidthPx;
+        canvas.drawLine(axisLeft, baselineY - 0.5f, axisRight, baselineY - 0.5f, paint);
+
+        int baseChannelCount = baseSpectrum.getDataArray().length;
+        if (baseChannelCount < AtomSpectraSpectrogramData.CHANNEL_COUNT
+                || baseChannelCount % AtomSpectraSpectrogramData.CHANNEL_COUNT != 0) {
+            return;
+        }
+        int baseChannelBinning = baseChannelCount / AtomSpectraSpectrogramData.CHANNEL_COUNT;
+        Calibration calibration = baseSpectrum.getSpectrumCalibration();
+        if (calibration == null || !calibration.isCorrect()) {
+            return;
+        }
+
+        double calibratedMinKeV = calibration.toEnergy(0);
+        double calibratedMaxKeV = calibration.toEnergy(baseChannelCount);
+        double unitScale = Math.max(Math.abs(calibratedMinKeV), Math.abs(calibratedMaxKeV)) >= 1000
+                ? 1000.0 : 1.0;
+        String unit = unitScale == 1000.0 ? "MeV" : "keV";
+        int visibleBinCount = renderedWidthPx / POINT_SIZE_PX;
+        int visibleStartChannel = Math.min(AtomSpectraSpectrogramData.CHANNEL_COUNT,
+                colBinStart * channelBinning);
+        int visibleEndChannel = Math.min(AtomSpectraSpectrogramData.CHANNEL_COUNT,
+                (colBinStart + visibleBinCount) * channelBinning);
+        double visibleMin = calibration.toEnergy(visibleStartChannel * baseChannelBinning) / unitScale;
+        double visibleMax = calibration.toEnergy(visibleEndChannel * baseChannelBinning) / unitScale;
+        double tickVisibleMin = Math.max(0, visibleMin);
+        if (visibleMax <= tickVisibleMin) {
+            return;
+        }
+
+        float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
+        float labelGap = dpToPx(4);
+        float widestLabel = paint.measureText("0.000 " + unit);
+        int targetIntervals = Math.max(3,
+                (int) (renderedWidthPx / Math.max(1f, widestLabel + labelGap)) - 1);
+        double majorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetIntervals);
+        if (!Double.isFinite(majorStep) || majorStep <= 0) {
+            return;
+        }
+        double minorStep = majorStep / 5.0;
+        double endpointTolerance = majorStep * 0.02;
+        long firstMinorIndex = (long) Math.ceil(tickVisibleMin / minorStep - 1e-10);
+        long lastMinorIndex = (long) Math.floor((visibleMax + endpointTolerance) / minorStep + 1e-10);
+
+        float previousLabelRight = axisLeft;
+        float previousTickX = Float.NEGATIVE_INFINITY;
+        boolean unitShown = false;
+        for (long minorIndex = firstMinorIndex; minorIndex <= lastMinorIndex; minorIndex++) {
+            double targetEnergy = minorIndex * minorStep;
+            double targetEnergyKeV = targetEnergy * unitScale;
+            if (targetEnergyKeV < calibratedMinKeV - endpointTolerance * unitScale
+                    || targetEnergyKeV > calibratedMaxKeV + endpointTolerance * unitScale) {
+                continue;
+            }
+            targetEnergyKeV = Math.max(calibratedMinKeV, Math.min(calibratedMaxKeV, targetEnergyKeV));
+
+            double baseChannel = energyToBaseChannel(calibration, targetEnergyKeV, baseChannelCount);
+            float tickX = baseChannelToAxisX(baseChannel, baseChannelBinning,
+                    channelBinsCount, colBinStart, axisLeft);
+            if (tickX < axisLeft || tickX > axisRight || tickX - previousTickX < 1f) {
+                continue;
+            }
+            previousTickX = tickX;
+
+            boolean isMajorTick = minorIndex % 5 == 0;
+            int tickHeight = isMajorTick ? ENERGY_MAJOR_TICK_HEIGHT_PX : ENERGY_MINOR_TICK_HEIGHT_PX;
+            canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
+                    baselineY + tickHeight, paint);
+            if (!isMajorTick) {
+                continue;
+            }
+
+            String label = formatEnergyLabel(targetEnergy);
+            if (!unitShown) {
+                label += " " + unit;
+            }
+            float labelWidth = paint.measureText(label);
+            Paint.Align alignment;
+            if (tickX - labelWidth / 2f < axisLeft) {
+                alignment = Paint.Align.LEFT;
+            } else if (tickX + labelWidth / 2f > axisRight) {
+                alignment = Paint.Align.RIGHT;
+            } else {
+                alignment = Paint.Align.CENTER;
+            }
+            float labelLeft = alignment == Paint.Align.LEFT ? tickX
+                    : alignment == Paint.Align.RIGHT ? tickX - labelWidth : tickX - labelWidth / 2f;
+            float labelRight = labelLeft + labelWidth;
+            if (labelLeft < previousLabelRight) {
+                continue;
+            }
+
+            paint.setTextAlign(alignment);
+            canvas.drawText(label, tickX, labelY, paint);
+            previousLabelRight = labelRight + labelGap;
+            unitShown = true;
+        }
+
+        if (!unitShown) {
+            paint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText(unit, axisLeft, labelY, paint);
+        }
+    }
+
+    private double niceEnergyStep(double rawStep) {
+        if (!Double.isFinite(rawStep) || rawStep <= 0) {
+            return 0;
+        }
+        double power = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        double normalized = rawStep / power;
+        double[] niceMultipliers = {1, 2, 2.5, 5, 10};
+        double closestMultiplier = niceMultipliers[0];
+        double closestDistance = Math.abs(normalized - closestMultiplier);
+        for (int i = 1; i < niceMultipliers.length; i++) {
+            double distance = Math.abs(normalized - niceMultipliers[i]);
+            if (distance < closestDistance) {
+                closestMultiplier = niceMultipliers[i];
+                closestDistance = distance;
+            }
+        }
+        return closestMultiplier * power;
+    }
+
+    private String formatEnergyLabel(double energy) {
+        return BigDecimal.valueOf(energy)
+                .round(new MathContext(4, RoundingMode.HALF_UP))
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+    private double energyToBaseChannel(Calibration calibration, double targetEnergy, int channelCount) {
+        int lowerChannel = 0;
+        int upperChannel = channelCount;
+        double lowerEnergy = calibration.toEnergy(lowerChannel);
+        double upperEnergy = calibration.toEnergy(upperChannel);
+        if (targetEnergy <= lowerEnergy) {
+            return lowerChannel;
+        }
+        if (targetEnergy >= upperEnergy) {
+            return upperChannel;
+        }
+
+        while (upperChannel - lowerChannel > 1) {
+            int middleChannel = lowerChannel + (upperChannel - lowerChannel) / 2;
+            double middleEnergy = calibration.toEnergy(middleChannel);
+            if (middleEnergy < targetEnergy) {
+                lowerChannel = middleChannel;
+                lowerEnergy = middleEnergy;
+            } else {
+                upperChannel = middleChannel;
+                upperEnergy = middleEnergy;
+            }
+        }
+        return lowerChannel + (targetEnergy - lowerEnergy) / (upperEnergy - lowerEnergy);
+    }
+
+    private float baseChannelToAxisX(double baseChannel, int baseChannelBinning,
+                                     int channelBinsCount, int colBinStart, float axisLeft) {
+        double sourceChannel = baseChannel / baseChannelBinning;
+        int lastBinStartChannel = (channelBinsCount - 1) * channelBinning;
+        int lastBinChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT - lastBinStartChannel;
+        double columnPosition = sourceChannel <= lastBinStartChannel
+                ? sourceChannel / channelBinning
+                : channelBinsCount - 1
+                + (sourceChannel - lastBinStartChannel) / lastBinChannelCount;
+        return axisLeft + ((float) columnPosition - colBinStart) * POINT_SIZE_PX;
     }
 
     private void renderChannelAxis(Canvas canvas, Paint paint, int baselineY, int baseChannelCount,
