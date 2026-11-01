@@ -184,6 +184,8 @@ public class AtomSpectraSpectrogramView extends View {
     };
 
     private static final float MIN_ENERGY_MINOR_TICK_SPACING_DP = 15f;
+    // Clear space required between major labels, as a multiple of the label width.
+    private static final float ENERGY_LABEL_GAP_FACTOR = 1f;
     private static final double[] NICE_ENERGY_STEP_MULTIPLIERS = {1, 2, 5, 10};
     private static final int[] ENERGY_MINOR_SUBDIVISIONS = {4, 2};
     private static final MathContext ENERGY_LABEL_MATH_CONTEXT = new MathContext(4, RoundingMode.HALF_UP);
@@ -1582,7 +1584,7 @@ public class AtomSpectraSpectrogramView extends View {
         double pixelsPerUnit = energyPixelsPerUnit(calibration, unitScale, baseChannelCount,
                 baseChannelBinning, channelBinsCount);
         boolean unitAtOrigin = calibratedMinKeV > 0;
-        double majorStep = majorEnergyStep(paint, unitAtOrigin ? null : unit,
+        double majorStep = majorEnergyStep(paint, unit, unitAtOrigin,
                 calibratedMaxKeV / unitScale, pixelsPerUnit, labelGap);
         if (majorStep <= 0) {
             return;
@@ -1655,18 +1657,17 @@ public class AtomSpectraSpectrogramView extends View {
         return energySpan > 0 && pixelSpan > 0 ? pixelSpan / energySpan : 0;
     }
 
-    // unit is null when it is drawn separately at the origin rather than on the first tick label.
-    private double majorEnergyStep(Paint paint, String unit, double scaleMax, double pixelsPerUnit,
-                                   float labelGap) {
+    private double majorEnergyStep(Paint paint, String unit, boolean unitAtOrigin, double scaleMax,
+                                   double pixelsPerUnit, float labelGap) {
         double step = ceilNiceEnergyStep(labelGap / pixelsPerUnit);
-        float unitLabelWidth = unit == null ? 0 : paint.measureText("0 " + unit);
+        float unitLabelWidth = paint.measureText(unitAtOrigin ? unit : "0 " + unit);
         for (int attempt = 0; step > 0 && attempt < 32; attempt++) {
             String widestLabel = formatEnergyLabel(step, (long) Math.floor(scaleMax / step + 1e-9));
             float labelWidth = Math.max(paint.measureText(widestLabel),
                     paint.measureText(formatEnergyLabel(step, 1)));
-            // The unit label is left-aligned at the first tick; the next label is centered.
-            float required = Math.max(labelWidth + labelGap,
-                    unitLabelWidth == 0 ? 0 : unitLabelWidth + labelWidth / 2f + labelGap);
+            // Keep about one label width clear between labels; the unit label sits left of the first one.
+            float gap = Math.max(labelGap, labelWidth * ENERGY_LABEL_GAP_FACTOR);
+            float required = Math.max(labelWidth + gap, unitLabelWidth + labelWidth / 2f + gap);
             if (step * pixelsPerUnit >= required) {
                 break;
             }
