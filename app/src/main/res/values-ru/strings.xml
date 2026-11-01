@@ -605,8 +605,10 @@
     <string name="spectrogram_scale_lin">Lin</string>
     <string name="spectrogram_scale_sqrt">Sqrt</string>
     <string name="spectrogram_scale_log">Log</string>
-    <string name="spectrogram_spectrum_bin">Группировка спектров</string>
+    <string name="spectrogram_spectrum_bin">Группировка строк…</string>
     <string name="spectrogram_spectrum_bin_text">Строк в группе (1-%1$d)</string>
+    <string name="spectrogram_channel_bin">Группировка каналов</string>
+    <string name="spectrogram_channel_bin_value">%1$dx</string>
     <string name="hist_view_map">Показать на карте</string>
     <string name="map_activity_title">Atom Spectra Карта</string>
     <string name="map_center_location">Моё местоположение</string>
