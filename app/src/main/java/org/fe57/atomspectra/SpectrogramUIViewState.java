@@ -55,6 +55,10 @@ public final class SpectrogramUIViewState {
         return cbinLandscape;
     }
 
+    public static int[] cbinValues() {
+        return CBIN_VALUES.clone();
+    }
+
     public static boolean canIncreaseCbin(int value) {
         return cbinIndex(clampCbin(value)) < CBIN_VALUES.length - 1;
     }

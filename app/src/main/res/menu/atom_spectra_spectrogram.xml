@@ -55,9 +55,23 @@
 
     <item
         android:id="@+id/action_spectrogram_spectrum_bin"
+        android:icon="@drawable/ic_spg_spectrum_bin_inc"
         android:orderInCategory="92"
         android:showAsAction="never"
         android:title="@string/spectrogram_spectrum_bin" />
+
+    <item
+        android:id="@+id/action_spectrogram_channel_bin"
+        android:icon="@drawable/ic_spg_channel_bin_inc"
+        android:orderInCategory="93"
+        android:showAsAction="never"
+        android:title="@string/spectrogram_channel_bin">
+        <menu>
+            <group
+                android:id="@+id/group_spectrogram_channel_bin"
+                android:checkableBehavior="single" />
+        </menu>
+    </item>
 
     <item
         android:id="@+id/action_spectrogram_show_background"

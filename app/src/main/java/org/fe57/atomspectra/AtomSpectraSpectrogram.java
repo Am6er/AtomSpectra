@@ -20,6 +20,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.WindowManager;
 import android.text.InputFilter;
@@ -44,6 +45,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private static boolean isExportingSpectrum = false;
     private static CancellationToken exportSpectrumCancellationToken = null;
     private static AlertDialog spectrumExportingDialog = null;
+
+    private static final int CBIN_MENU_ID_BASE = 1000; // item id = base + channel binning value
 
     private SharedPreferences sharedPreferences;
     private GestureDetector gestureDetector;
@@ -198,8 +201,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         getMenuInflater().inflate(R.menu.atom_spectra_spectrogram, menu);
         MenuHelper.showOverflowIcons(menu);
         optionsMenu = menu;
+        buildChannelBinMenu();
         updateMapMenu();
         updateScalePaletteMenu();
+        updateChannelBinMenu();
         updateBackgroundMenu();
         return true;
     }
@@ -208,6 +213,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateMapMenu();
         updateScalePaletteMenu();
+        updateChannelBinMenu();
         updateBackgroundMenu();
         return super.onPrepareOptionsMenu(menu);
     }
@@ -243,6 +249,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
 
         int id = item.getItemId();
+        if (id > CBIN_MENU_ID_BASE && id <= CBIN_MENU_ID_BASE + SpectrogramUIViewState.MAX_CBIN) {
+            applyChannelBin(id - CBIN_MENU_ID_BASE);
+            return true;
+        }
         if (id == R.id.action_palette_iron) {
             applyPalette(AtomSpectraSpectrogramView.PALETTE_IRON);
             return true;
@@ -326,6 +336,43 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         updateControlPanel();
         updateScalePaletteMenu();
         updateSpectrogram(false);
+    }
+
+    private void applyChannelBin(int newCbin) {
+        int orientation = getResources().getConfiguration().orientation;
+        SpectrogramUIViewState state = SpectrogramUIViewState.instance;
+        if (newCbin == state.getCbin(orientation)) {
+            return;
+        }
+        state.setCbin(orientation, newCbin, sharedPreferences);
+        updateControlPanel();
+        updateChannelBinMenu();
+        updateSpectrogram(false);
+    }
+
+    private void buildChannelBinMenu() {
+        MenuItem parent = optionsMenu.findItem(R.id.action_spectrogram_channel_bin);
+        if (parent == null || parent.getSubMenu() == null) {
+            return;
+        }
+        SubMenu subMenu = parent.getSubMenu();
+        int order = 0;
+        for (int cbin : SpectrogramUIViewState.cbinValues()) {
+            subMenu.add(R.id.group_spectrogram_channel_bin, CBIN_MENU_ID_BASE + cbin, order++,
+                    getString(R.string.spectrogram_channel_bin_value, cbin));
+        }
+        subMenu.setGroupCheckable(R.id.group_spectrogram_channel_bin, true, true);
+    }
+
+    private void updateChannelBinMenu() {
+        if (optionsMenu == null) {
+            return;
+        }
+        int cbin = SpectrogramUIViewState.instance.getCbin(getResources().getConfiguration().orientation);
+        MenuItem item = optionsMenu.findItem(CBIN_MENU_ID_BASE + cbin);
+        if (item != null) {
+            item.setChecked(true);
+        }
     }
 
     private void updateMapMenu() {
