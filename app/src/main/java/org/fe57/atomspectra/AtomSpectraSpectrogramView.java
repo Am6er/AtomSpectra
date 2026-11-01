@@ -1692,9 +1692,10 @@ public class AtomSpectraSpectrogramView extends View {
         if (majorIndex == 0) {
             return "0";
         }
-        return BigDecimal.valueOf(majorStep).multiply(BigDecimal.valueOf(majorIndex))
+        BigDecimal step = BigDecimal.valueOf(majorStep).stripTrailingZeros();
+        return step.multiply(BigDecimal.valueOf(majorIndex))
                 .round(ENERGY_LABEL_MATH_CONTEXT)
-                .stripTrailingZeros()
+                .setScale(Math.max(1, step.scale()), RoundingMode.HALF_UP)
                 .toPlainString();
     }
 
