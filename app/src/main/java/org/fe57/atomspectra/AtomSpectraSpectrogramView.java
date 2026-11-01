@@ -183,6 +183,10 @@ public class AtomSpectraSpectrogramView extends View {
             0xFFFFFADC, 0xFFFFFADF, 0xFFFFFAE1, 0xFFFFFBE4, 0xFFFFFBE6, 0xFFFFFCE8, 0xFFFFFCEA, 0xFFFFFDED, 0xFFFFFDEF, 0xFFFFFDF1, 0xFFFFFEF4, 0xFFFFFEF6, 0xFFFFFEF9, 0xFFFFFEFB, 0xFFFFFFFD
     };
 
+    private static final float MIN_ENERGY_MINOR_TICK_SPACING_DP = 10f;
+    private static final double[] NICE_ENERGY_STEP_MULTIPLIERS = {1, 2, 2.5, 5, 10};
+    private static final MathContext ENERGY_LABEL_MATH_CONTEXT = new MathContext(4, RoundingMode.HALF_UP);
+
     // point size is strictly integer to enable building virtual render map for all rows/gaps
     private float STROKE_WIDTH_DP = 1.5f;
     private int POINT_SIZE_DP = 2;
@@ -1572,19 +1576,28 @@ public class AtomSpectraSpectrogramView extends View {
 
         float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
         float labelGap = dpToPx(4);
-        float widestLabel = paint.measureText("0000");
-        int targetIntervals = Math.max(3,
-                (int) (renderedWidthPx / Math.max(1f, widestLabel + labelGap)) - 1);
-        double majorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetIntervals);
-        if (!Double.isFinite(majorStep) || majorStep <= 0) {
-            return;
+        float widestLabel = paint.measureText("0000 " + unit);
+        float minimumMinorTickSpacing = dpToPx(MIN_ENERGY_MINOR_TICK_SPACING_DP);
+        int targetMinorIntervals = Math.max(1, (int) (renderedWidthPx / minimumMinorTickSpacing));
+        double minorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetMinorIntervals);
+        while (!hasAdequateEnergyTickSpacing(tickVisibleMin, visibleMax, minorStep,
+                minimumMinorTickSpacing, calibration, unitScale, baseChannelCount,
+                baseChannelBinning, channelBinsCount, colBinStart, axisLeft)) {
+            double nextMinorStep = niceEnergyStep(minorStep * 1.5);
+            minorStep = nextMinorStep > minorStep ? nextMinorStep : minorStep * 2;
         }
-        double minorStep = majorStep / 5.0;
-        double endpointTolerance = majorStep * 0.02;
+
+        int targetMajorIntervals = Math.max(1, Math.min(6,
+                (int) (renderedWidthPx / Math.max(1f, widestLabel + labelGap))));
+        double majorStep = niceEnergyStep((visibleMax - tickVisibleMin) / targetMajorIntervals);
+        majorStep = Math.max(minorStep, majorStep);
+        double endpointTolerance = minorStep * 0.02;
         long firstMinorIndex = (long) Math.ceil(tickVisibleMin / minorStep - 1e-10);
         long lastMinorIndex = (long) Math.floor((visibleMax + endpointTolerance) / minorStep + 1e-10);
         double firstScaleEnergy = Math.max(0, calibratedMinKeV / unitScale);
         long firstScaleMajorIndex = (long) Math.ceil(firstScaleEnergy / majorStep - 1e-10);
+        int labelDecimalPlaces = Math.max(0,
+                BigDecimal.valueOf(majorStep).stripTrailingZeros().scale());
 
         float previousLabelRight = axisLeft;
         float previousTickX = Float.NEGATIVE_INFINITY;
@@ -1605,16 +1618,39 @@ public class AtomSpectraSpectrogramView extends View {
             }
             previousTickX = tickX;
 
-            boolean isMajorTick = minorIndex % 5 == 0;
-            int tickHeight = isMajorTick ? ENERGY_MAJOR_TICK_HEIGHT_PX : ENERGY_MINOR_TICK_HEIGHT_PX;
+            double nearestMajorEnergy = Math.rint(targetEnergy / majorStep) * majorStep;
+            double majorTickTolerance = majorStep * 1e-9;
+            if (Math.abs(targetEnergy - nearestMajorEnergy) <= majorTickTolerance) {
+                continue;
+            }
+            int tickHeight = ENERGY_MINOR_TICK_HEIGHT_PX;
             canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
                     baselineY + tickHeight, paint);
-            if (!isMajorTick) {
+        }
+
+        long firstMajorIndex = (long) Math.ceil(tickVisibleMin / majorStep - 1e-10);
+        long lastMajorIndex = (long) Math.floor((visibleMax + majorStep * 0.02) / majorStep + 1e-10);
+        for (long majorIndex = firstMajorIndex; majorIndex <= lastMajorIndex; majorIndex++) {
+            double targetEnergy = majorIndex * majorStep;
+            double targetEnergyKeV = targetEnergy * unitScale;
+            if (targetEnergyKeV < calibratedMinKeV - majorStep * 0.02 * unitScale
+                    || targetEnergyKeV > calibratedMaxKeV + majorStep * 0.02 * unitScale) {
+                continue;
+            }
+            targetEnergyKeV = Math.max(calibratedMinKeV, Math.min(calibratedMaxKeV, targetEnergyKeV));
+
+            double baseChannel = energyToBaseChannel(calibration, targetEnergyKeV, baseChannelCount);
+            float tickX = baseChannelToAxisX(baseChannel, baseChannelBinning,
+                    channelBinsCount, colBinStart, axisLeft);
+            if (tickX < axisLeft || tickX > axisRight) {
                 continue;
             }
 
-            String label = formatEnergyLabel(targetEnergy);
-            if (minorIndex / 5 == firstScaleMajorIndex) {
+            canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
+                    baselineY + ENERGY_MAJOR_TICK_HEIGHT_PX, paint);
+
+            String label = formatEnergyLabel(targetEnergy, labelDecimalPlaces);
+            if (majorIndex == firstScaleMajorIndex) {
                 label += " " + unit;
             }
             float labelWidth = paint.measureText(label);
@@ -1639,29 +1675,49 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
+    private boolean hasAdequateEnergyTickSpacing(double minEnergy, double maxEnergy, double energyStep,
+                                                  float minimumSpacingPx, Calibration calibration,
+                                                  double unitScale, int baseChannelCount,
+                                                  int baseChannelBinning, int channelBinsCount,
+                                                  int colBinStart, float axisLeft) {
+        long firstTickIndex = (long) Math.ceil(minEnergy / energyStep - 1e-10);
+        long lastTickIndex = (long) Math.floor(maxEnergy / energyStep + 1e-10);
+        float previousTickX = Float.NEGATIVE_INFINITY;
+        for (long tickIndex = firstTickIndex; tickIndex <= lastTickIndex; tickIndex++) {
+            double targetEnergyKeV = tickIndex * energyStep * unitScale;
+            double baseChannel = energyToBaseChannel(calibration, targetEnergyKeV, baseChannelCount);
+            float tickX = baseChannelToAxisX(baseChannel, baseChannelBinning,
+                    channelBinsCount, colBinStart, axisLeft);
+            if (tickX - previousTickX < minimumSpacingPx) {
+                return false;
+            }
+            previousTickX = tickX;
+        }
+        return true;
+    }
+
     private double niceEnergyStep(double rawStep) {
         if (!Double.isFinite(rawStep) || rawStep <= 0) {
             return 0;
         }
         double power = Math.pow(10, Math.floor(Math.log10(rawStep)));
         double normalized = rawStep / power;
-        double[] niceMultipliers = {1, 2, 2.5, 5, 10};
-        double closestMultiplier = niceMultipliers[0];
+        double closestMultiplier = NICE_ENERGY_STEP_MULTIPLIERS[0];
         double closestDistance = Math.abs(normalized - closestMultiplier);
-        for (int i = 1; i < niceMultipliers.length; i++) {
-            double distance = Math.abs(normalized - niceMultipliers[i]);
+        for (int i = 1; i < NICE_ENERGY_STEP_MULTIPLIERS.length; i++) {
+            double distance = Math.abs(normalized - NICE_ENERGY_STEP_MULTIPLIERS[i]);
             if (distance < closestDistance) {
-                closestMultiplier = niceMultipliers[i];
+                closestMultiplier = NICE_ENERGY_STEP_MULTIPLIERS[i];
                 closestDistance = distance;
             }
         }
         return closestMultiplier * power;
     }
 
-    private String formatEnergyLabel(double energy) {
+    private String formatEnergyLabel(double energy, int decimalPlaces) {
         return BigDecimal.valueOf(energy)
-                .round(new MathContext(4, RoundingMode.HALF_UP))
-                .stripTrailingZeros()
+                .round(ENERGY_LABEL_MATH_CONTEXT)
+                .setScale(decimalPlaces, RoundingMode.HALF_UP)
                 .toPlainString();
     }
 
