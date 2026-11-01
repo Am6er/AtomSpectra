@@ -1612,12 +1612,12 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
-        paint.setTextAlign(Paint.Align.LEFT);
 
         if (colBinStart == 0) {
             canvas.drawLine(axisLeft - 0.5f, baselineY, axisLeft - 0.5f,
                     baselineY + ENERGY_TICK_HEIGHT_PX, paint);
             String zeroLabel = "0 ch";
+            paint.setTextAlign(Paint.Align.LEFT);
             canvas.drawText(zeroLabel, axisLeft, labelY, paint);
         }
 
@@ -1637,6 +1637,10 @@ public class AtomSpectraSpectrogramView extends View {
             }
 
             String label = String.valueOf(tickChannel);
+            Paint.Align alignment = tickChannel == baseChannelCount
+                ? Paint.Align.RIGHT
+                : Paint.Align.CENTER;
+            paint.setTextAlign(alignment);
             canvas.drawText(label, tickX, labelY, paint);
         }
     }
