@@ -606,6 +606,8 @@
     <string name="spectrogram_scale_lin">Lin</string>
     <string name="spectrogram_scale_sqrt">Sqrt</string>
     <string name="spectrogram_scale_log">Log</string>
+    <string name="spectrogram_spectrum_bin">Spectrum binning</string>
+    <string name="spectrogram_spectrum_bin_text">Rows per bin (1-%1$d)</string>
     <string name="hist_view_map">View on map</string>
     <string name="map_activity_title">Atom Spectra Map</string>
     <string name="map_center_location">My location</string>

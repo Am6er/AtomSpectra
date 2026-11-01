@@ -14,7 +14,7 @@ import java.util.List;
 public final class SpectrogramUIViewState {
     public static final SpectrogramUIViewState instance = new SpectrogramUIViewState();
 
-    public static final int MAX_SBIN = 256;
+    public static final int MAX_SBIN = 1000;
     public static final int MAX_CBIN = 10;
     public static final int DEFAULT_CBIN_PORTRAIT = 2;
     public static final int DEFAULT_CBIN_LANDSCAPE = 1;
@@ -177,14 +177,7 @@ public final class SpectrogramUIViewState {
     }
 
     private static int clampSbin(int value) {
-        int v = value;
-        if (v < 1) {
-            v = 1;
-        }
-        if (v > MAX_SBIN) {
-            v = MAX_SBIN;
-        }
-        return nearestPowerOfTwo(v, MAX_SBIN);
+        return Math.max(1, Math.min(MAX_SBIN, value));
     }
 
     private static int clampCbin(int value) {
@@ -207,17 +200,6 @@ public final class SpectrogramUIViewState {
             }
         }
         return 0;
-    }
-
-    private static int nearestPowerOfTwo(int value, int max) {
-        int p = 1;
-        while (p < value && p < max) {
-            p <<= 1;
-        }
-        if (p > max) {
-            p = max;
-        }
-        return p;
     }
 
     private static String sanitizeScale(String value) {

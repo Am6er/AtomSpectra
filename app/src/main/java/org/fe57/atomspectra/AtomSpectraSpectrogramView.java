@@ -877,7 +877,7 @@ public class AtomSpectraSpectrogramView extends View {
             viewportCenterAnchor = captureViewportCenterAnchor();
         }
 
-        // Spectrum binning remains constrained to powers of two.
+        // Spectrum binning is any integer in 1..SpectrogramUIViewState.MAX_SBIN; the last bin of a segment may be partial.
         this.spectrumBinning = spectrumBinning;
         this.channelBinning = channelBinning;
         this.scale = scale;

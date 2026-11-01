@@ -226,6 +226,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             startActivity(new Intent(this, AtomSpectraSpectrogramSettings.class));
             return true;
         }
+        if (item.getItemId() == R.id.action_spectrogram_spectrum_bin) {
+            showSpectrumBinDialog();
+            return true;
+        }
         if (item.getItemId() == R.id.action_spectrogram_clear) {
             clearSpectrogram();
             return true;
@@ -843,19 +847,47 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private void reduceSpectrumBin() {
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         if (state.sbin > 1) {
-            state.setSbin(state.sbin / 2, sharedPreferences);
-            updateControlPanel();
-            updateSpectrogram(false);
+            applySpectrumBin(state.sbin / 2);
         }
     }
 
     private void increaseSpectrumBin() {
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         if (state.sbin < SpectrogramUIViewState.MAX_SBIN) {
-            state.setSbin(state.sbin * 2, sharedPreferences);
+            applySpectrumBin(state.sbin * 2);
+        }
+    }
+
+    private void applySpectrumBin(int value) {
+        SpectrogramUIViewState state = SpectrogramUIViewState.instance;
+        int previous = state.sbin;
+        state.setSbin(value, sharedPreferences);
+        if (state.sbin != previous) {
             updateControlPanel();
             updateSpectrogram(false);
         }
+    }
+
+    private void showSpectrumBinDialog() {
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(String.valueOf(SpectrogramUIViewState.MAX_SBIN).length())});
+        input.setText(String.valueOf(SpectrogramUIViewState.instance.sbin));
+        input.selectAll();
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.spectrogram_spectrum_bin)
+                .setMessage(getString(R.string.spectrogram_spectrum_bin_text, SpectrogramUIViewState.MAX_SBIN))
+                .setView(input)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    try {
+                        applySpectrumBin(Integer.parseInt(input.getText().toString().trim()));
+                    } catch (NumberFormatException ignored) {
+                        // empty or invalid input: keep current binning
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void reduceChannelBin() {
