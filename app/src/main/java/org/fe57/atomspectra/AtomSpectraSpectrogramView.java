@@ -1637,8 +1637,6 @@ public class AtomSpectraSpectrogramView extends View {
             }
 
             String label = String.valueOf(tickChannel);
-            boolean isLastChannel = tickChannel == baseChannelCount;
-            paint.setTextAlign(isLastChannel ? Paint.Align.RIGHT : Paint.Align.LEFT);
             canvas.drawText(label, tickX, labelY, paint);
         }
     }
