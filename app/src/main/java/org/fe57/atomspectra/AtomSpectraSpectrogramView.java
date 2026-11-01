@@ -1612,8 +1612,6 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
-        float labelGap = dpToPx(4);
-        float previousLabelRight = axisLeft;
         paint.setTextAlign(Paint.Align.LEFT);
 
         if (colBinStart == 0) {
@@ -1621,19 +1619,14 @@ public class AtomSpectraSpectrogramView extends View {
                     baselineY + ENERGY_TICK_HEIGHT_PX, paint);
             String zeroLabel = "0 ch";
             canvas.drawText(zeroLabel, axisLeft, labelY, paint);
-            previousLabelRight = axisLeft + paint.measureText(zeroLabel) + labelGap;
         }
 
-        int binWidthChannels = channelBinning * baseChannelBinning;
-        int visibleBinCount = renderedWidthPx / POINT_SIZE_PX;
-        int colBinEnd = Math.min(channelBinsCount - 1, colBinStart + visibleBinCount - 1);
         for (int tickChannel = minorTick; tickChannel <= baseChannelCount; tickChannel += minorTick) {
-            int tickBin = (tickChannel + binWidthChannels - 1) / binWidthChannels - 1;
-            if (tickBin < colBinStart || tickBin > colBinEnd) {
+            float tickX = channelToAxisX(tickChannel, baseChannelCount, baseChannelBinning,
+                    channelBinsCount, colBinStart, axisLeft);
+            if (tickX < axisLeft || tickX > axisRight) {
                 continue;
             }
-
-            float tickX = axisLeft + (tickBin - colBinStart) * POINT_SIZE_PX;
             boolean isMajorTick = tickChannel % majorTick == 0;
             int tickHeight = isMajorTick ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
             canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
@@ -1644,25 +1637,29 @@ public class AtomSpectraSpectrogramView extends View {
             }
 
             String label = String.valueOf(tickChannel);
-            float labelWidth = paint.measureText(label);
-            float labelLeft = tickX;
-            float labelRight = tickX + labelWidth;
-            Paint.Align alignment = Paint.Align.LEFT;
-            if (labelRight > axisRight) {
-                alignment = Paint.Align.RIGHT;
-                labelLeft = tickX - labelWidth;
-                labelRight = tickX;
-            }
-
-            if (labelLeft < axisLeft || labelRight > axisRight
-                    || labelLeft < previousLabelRight) {
-                continue;
-            }
-
-            paint.setTextAlign(alignment);
+            boolean isLastChannel = tickChannel == baseChannelCount;
+            paint.setTextAlign(isLastChannel ? Paint.Align.RIGHT : Paint.Align.LEFT);
             canvas.drawText(label, tickX, labelY, paint);
-            previousLabelRight = labelRight + labelGap;
         }
+    }
+
+    private float channelToAxisX(int channel, int baseChannelCount, int baseChannelBinning,
+                                 int channelBinsCount, int colBinStart, float axisLeft) {
+        if (channel <= 0) {
+            return axisLeft;
+        }
+        if (channel >= baseChannelCount) {
+            return axisLeft + (channelBinsCount - colBinStart) * POINT_SIZE_PX;
+        }
+
+        double sourceChannel = channel / (double) baseChannelBinning;
+        int binIndex = (int) (sourceChannel / channelBinning);
+        int binStartChannel = binIndex * channelBinning;
+        int channelsInBin = Math.min(channelBinning,
+                AtomSpectraSpectrogramData.CHANNEL_COUNT - binStartChannel);
+        double columnPosition = binIndex
+                + (sourceChannel - binStartChannel) / channelsInBin;
+        return axisLeft + ((float) columnPosition - colBinStart) * POINT_SIZE_PX;
     }
 
     private int channelAxisTickBinning() {
