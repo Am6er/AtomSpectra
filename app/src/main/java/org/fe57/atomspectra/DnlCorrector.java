@@ -16,9 +16,8 @@ final class DnlCorrector {
     private static final int FIRST_CHANNEL = 100;
     private static final int LAST_CHANNEL = 4000;
     private static final double MIN_BASELINE = 2;
-    // folded chi-square (PERIOD - 1 degrees of freedom, Poisson noise) below which the pattern is not
-    // told from noise; set high because BluZ records most events twice, doubling the real variance
-    private static final double MIN_CHI2 = 300;
+    // folded chi-square (PERIOD - 1 degrees of freedom, Poisson noise) below which the pattern is not told from noise;
+    private static final double MIN_CHI2 = 150;
     private static final int ITERATIONS = 3;
 
     private long[] lastRaw;
