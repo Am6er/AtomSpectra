@@ -503,12 +503,12 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
         ImageButton btnChannelBinInc = findViewById(R.id.buttonChannelBinInc);
         if (btnChannelBinInc != null) {
-            btnChannelBinInc.setEnabled(cbin < SpectrogramUIViewState.MAX_CBIN);
+            btnChannelBinInc.setEnabled(SpectrogramUIViewState.canIncreaseCbin(cbin));
         }
 
         ImageButton btnChannelBinDec = findViewById(R.id.buttonChannelBinDec);
         if (btnChannelBinDec != null) {
-            btnChannelBinDec.setEnabled(cbin > 1);
+            btnChannelBinDec.setEnabled(SpectrogramUIViewState.canDecreaseCbin(cbin));
         }
 
         TextView textPalette = findViewById(R.id.textViewSpgPalette);
@@ -862,8 +862,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         int orientation = getResources().getConfiguration().orientation;
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         int cbin = state.getCbin(orientation);
-        if (cbin > 1) {
-            state.setCbin(orientation, cbin - 1, sharedPreferences);
+        if (SpectrogramUIViewState.canDecreaseCbin(cbin)) {
+            state.setCbin(orientation, SpectrogramUIViewState.previousCbin(cbin), sharedPreferences);
             updateControlPanel();
             updateSpectrogram(false);
         }
@@ -873,8 +873,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         int orientation = getResources().getConfiguration().orientation;
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         int cbin = state.getCbin(orientation);
-        if (cbin < SpectrogramUIViewState.MAX_CBIN) {
-            state.setCbin(orientation, cbin + 1, sharedPreferences);
+        if (SpectrogramUIViewState.canIncreaseCbin(cbin)) {
+            state.setCbin(orientation, SpectrogramUIViewState.nextCbin(cbin), sharedPreferences);
             updateControlPanel();
             updateSpectrogram(false);
         }

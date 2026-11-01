@@ -15,9 +15,10 @@ public final class SpectrogramUIViewState {
     public static final SpectrogramUIViewState instance = new SpectrogramUIViewState();
 
     public static final int MAX_SBIN = 256;
-    public static final int MAX_CBIN = 8;
+    public static final int MAX_CBIN = 10;
     public static final int DEFAULT_CBIN_PORTRAIT = 2;
     public static final int DEFAULT_CBIN_LANDSCAPE = 1;
+    private static final int[] CBIN_VALUES = {1, 2, 3, 4, 5, 6, 8, 10};
 
     public volatile String scale = AtomSpectraSpectrogramView.SCALE_SQRT;
     public volatile String palette = AtomSpectraSpectrogramView.PALETTE_IRON;
@@ -52,6 +53,24 @@ public final class SpectrogramUIViewState {
             return cbinPortrait;
         }
         return cbinLandscape;
+    }
+
+    public static boolean canIncreaseCbin(int value) {
+        return cbinIndex(clampCbin(value)) < CBIN_VALUES.length - 1;
+    }
+
+    public static boolean canDecreaseCbin(int value) {
+        return cbinIndex(clampCbin(value)) > 0;
+    }
+
+    public static int nextCbin(int value) {
+        int index = cbinIndex(clampCbin(value));
+        return CBIN_VALUES[Math.min(index + 1, CBIN_VALUES.length - 1)];
+    }
+
+    public static int previousCbin(int value) {
+        int index = cbinIndex(clampCbin(value));
+        return CBIN_VALUES[Math.max(index - 1, 0)];
     }
 
     @SuppressLint("ApplySharedPref")
@@ -169,7 +188,25 @@ public final class SpectrogramUIViewState {
     }
 
     private static int clampCbin(int value) {
-        return Math.max(1, Math.min(MAX_CBIN, value));
+        int nearestValue = CBIN_VALUES[0];
+        int nearestDistance = Math.abs(value - nearestValue);
+        for (int cbin : CBIN_VALUES) {
+            int distance = Math.abs(value - cbin);
+            if (distance < nearestDistance) {
+                nearestValue = cbin;
+                nearestDistance = distance;
+            }
+        }
+        return nearestValue;
+    }
+
+    private static int cbinIndex(int value) {
+        for (int i = 0; i < CBIN_VALUES.length; i++) {
+            if (CBIN_VALUES[i] == value) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     private static int nearestPowerOfTwo(int value, int max) {
