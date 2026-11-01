@@ -54,6 +54,12 @@
     </item>
 
     <item
+        android:id="@+id/action_spectrogram_spectrum_bin"
+        android:orderInCategory="92"
+        android:showAsAction="never"
+        android:title="@string/spectrogram_spectrum_bin" />
+
+    <item
         android:id="@+id/action_spectrogram_show_background"
         android:icon="@drawable/ic_menu_background"
         android:checkable="true"
