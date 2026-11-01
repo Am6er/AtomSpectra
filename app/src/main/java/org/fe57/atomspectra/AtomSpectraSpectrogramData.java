@@ -145,7 +145,7 @@ public class AtomSpectraSpectrogramData {
         }
 
         float[] binnedCpsData = new float[CHANNEL_COUNT];
-        float totalCps = 0f;
+        long totalCounts = 0;
         for (int i = 0; i < channels.length; i += channelBinning) {
             long summ = 0;
             for (int j = 0; j < channelBinning && (i + j) < channels.length; j++) {
@@ -154,10 +154,10 @@ public class AtomSpectraSpectrogramData {
 
             float binCps = (float) (summ / duration);
             binnedCpsData[i / channelBinning] = binCps;
-            totalCps += binCps;
+            totalCounts += summ;
         }
 
-        MapPoint mapPoint = new MapPoint(latitude, longitude, totalCps, timestamp);
+        MapPoint mapPoint = new MapPoint(latitude, longitude, totalCounts, timestamp, duration);
 
         synchronized (spectrogramSync) {
             Segment current = lastSegment();

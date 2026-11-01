@@ -10,7 +10,8 @@ import java.util.List;
 
 /**
  * Builds the compact JSON payload served at {@code /map-data/track.json}.
- * Point tuples are {@code [longitude, latitude, cps, timestamp]}.
+ * Point tuples are {@code [longitude, latitude, counts, timestamp, durationSeconds]}.
+ * CPS is {@code counts / durationSeconds}.
  */
 final class MapPayload {
     private MapPayload() {
@@ -39,7 +40,7 @@ final class MapPayload {
         writer.beginArray();
         if (MapHelper.hasValidSpectrumLocation(spectrum)) {
             writer.beginArray();
-            writePoint(writer, spectrum.getLongitude(), spectrum.getLatitude(), 0f, spectrum.getSpectrumDate());
+            writePoint(writer, spectrum.getLongitude(), spectrum.getLatitude(), spectrum.getTotalCounts(), spectrum.getSpectrumDate(), spectrum.getSpectrumTime());
             writer.endArray();
         }
         writer.endArray();
@@ -61,20 +62,21 @@ final class MapPayload {
         for (List<MapPoint> track : snapshot.tracks) {
             writer.beginArray();
             for (MapPoint point : track) {
-                writePoint(writer, point.longitude, point.latitude, point.totalCps, point.timestamp);
+                writePoint(writer, point.longitude, point.latitude, point.totalCounts, point.timestamp, point.durationSeconds);
             }
             writer.endArray();
         }
         writer.endArray();
     }
 
-    private static void writePoint(JsonWriter writer, double lon, double lat, float cps, long timestamp)
+    private static void writePoint(JsonWriter writer, double lon, double lat, long counts, long timestamp, double durationSeconds)
             throws IOException {
         writer.beginArray();
         writer.value(lon);
         writer.value(lat);
-        writer.value(cps);
+        writer.value(counts);
         writer.value(timestamp);
+        writer.value(durationSeconds);
         writer.endArray();
     }
 }

@@ -172,7 +172,7 @@ html, body {
 #point-popup {
   position: absolute;
   z-index: 1001;
-  max-width: 220px;
+  max-width: 240px;
   padding: 6px 8px;
   border-radius: 2px;
   background: rgba(255, 255, 255, 0.95);

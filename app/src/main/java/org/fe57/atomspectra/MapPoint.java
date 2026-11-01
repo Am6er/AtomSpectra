@@ -6,13 +6,15 @@ package org.fe57.atomspectra;
 public final class MapPoint {
     public final double latitude;
     public final double longitude;
-    public final float totalCps;
+    public final long totalCounts;
     public final long timestamp;
+    public final float durationSeconds;
 
-    public MapPoint(double latitude, double longitude, float totalCps, long timestamp) {
+    public MapPoint(double latitude, double longitude, long totalCounts, long timestamp, double durationSeconds) {
         this.latitude = latitude;
         this.longitude = longitude;
-        this.totalCps = totalCps;
+        this.totalCounts = totalCounts;
         this.timestamp = timestamp;
+        this.durationSeconds = (float) durationSeconds;
     }
 }
