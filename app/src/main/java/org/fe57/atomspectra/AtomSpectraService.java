@@ -80,6 +80,7 @@ public class AtomSpectraService extends Service {
 
 
     private static int delta_time = Constants.DEFAULT_DELTA_TIME;
+    private static boolean spectrumChangeEnabled = Constants.SPECTRUM_CHANGE_ENABLED_DEFAULT;
     private static int delta_back_time_ratio = 4;
     public static boolean isStarted = false;
 
@@ -491,6 +492,12 @@ public class AtomSpectraService extends Service {
     private void loadSettings() {
         // dose-rate sensitivity (pSv/count) comes from the active profile, loaded further below
         delta_time = sp.getInt(Constants.CONFIG.CONF_SPECTRUM_CHANGE_DIFF_TIME, Constants.DEFAULT_DELTA_TIME);
+        spectrumChangeEnabled = sp.getBoolean(Constants.CONFIG.CONF_SPECTRUM_CHANGE_ENABLED, Constants.SPECTRUM_CHANGE_ENABLED_DEFAULT);
+        synchronized (histogram_all_queue) {    
+            if (!spectrumChangeEnabled) {
+                resetSpectrumChangeWindow();
+            }
+        }
         SearchFSM = sp.getInt(Constants.CONFIG.CONF_SEARCH_MODE, 0);
         spgInterval = sp.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, Constants.SPG_INTERVAL_DEFAULT);
         spgMidnightReset = sp.getBoolean(Constants.CONFIG.CONF_SPG_MIDNIGHT_RESET, Constants.SPG_MIDNIGHT_RESET_DEFAULT);
@@ -2369,12 +2376,15 @@ public class AtomSpectraService extends Service {
     private static final double SPECTRUM_CHANGE_TIME_EPSILON = 1e-3;
 
     private final void calcSpectrumChangeData(double frameDuration) {
-        long[] currentState = Arrays.copyOf(SpectrumData.instance.foreground.getDataArray(), SpectrumData.instance.foreground.getDataArray().length);
-        long[] previousState = currentState;
-        long[] backState = currentState;
-        double foregroundTime = 0;
-        double backgroundTime = 0;
         synchronized (histogram_all_queue) {
+            if (!spectrumChangeEnabled) {
+                return;
+            }
+            long[] currentState = Arrays.copyOf(SpectrumData.instance.foreground.getDataArray(), SpectrumData.instance.foreground.getDataArray().length);
+            long[] previousState = currentState;
+            long[] backState = currentState;
+            double foregroundTime = 0;
+            double backgroundTime = 0;
             if (!histogram_all_queue.isEmpty() && histogram_all_queue.peek().length != currentState.length) {
                 histogram_all_queue.clear();
                 histogram_all_durations.clear();
@@ -2414,16 +2424,15 @@ public class AtomSpectraService extends Service {
                     break;
                 }
             }
-        }
+            long[] deltaFg = new long[currentState.length];
+            long[] deltaBg = new long[currentState.length];
+            for (int i = 0; i < currentState.length; i++) {
+                deltaFg[i] = currentState[i] - previousState[i];
+                deltaBg[i] = currentState[i] - backState[i];
+            }
 
-        long[] deltaFg = new long[currentState.length];
-        long[] deltaBg = new long[currentState.length];
-        for (int i = 0; i < currentState.length; i++) {
-            deltaFg[i] = currentState[i] - previousState[i];
-            deltaBg[i] = currentState[i] - backState[i];
+            SpectrumChangeData.instance.set(deltaFg, deltaBg, foregroundTime, backgroundTime);
         }
-
-        SpectrumChangeData.instance.set(deltaFg, deltaBg, foregroundTime, backgroundTime);
     }
 
     // the readings of a device that is reconnecting or gone are not shown
@@ -2803,8 +2812,8 @@ public class AtomSpectraService extends Service {
     }
 
     private static void resetSpectrumChangeWindow() {
-        SpectrumChangeData.instance.reset();
         synchronized (histogram_all_queue) {
+            SpectrumChangeData.instance.reset();
             histogram_all_queue.clear();
             histogram_all_durations.clear();
         }

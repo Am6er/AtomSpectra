@@ -21,6 +21,7 @@ public final class UIViewState {
     public volatile boolean backgroundSubtract = false;
     public volatile boolean smooth = false;
     public volatile boolean showCalibrationFunction = false;
+    public volatile boolean spectrumChangeEnabled = Constants.SPECTRUM_CHANGE_ENABLED_DEFAULT;
 
     /**
      * Draw the x axis in energy (CONF_CALIBRATED) instead of channels.
@@ -174,6 +175,8 @@ public final class UIViewState {
      * Refresh the preference-derived render settings.
      */
     public void loadFromPreferences(SharedPreferences sp, Resources resources) {
+        spectrumChangeEnabled = sp.getBoolean(Constants.CONFIG.CONF_SPECTRUM_CHANGE_ENABLED,
+            Constants.SPECTRUM_CHANGE_ENABLED_DEFAULT);
         energyAxis = sp.getBoolean(Constants.CONFIG.CONF_CALIBRATED, true);
         smoothWindow = sp.getInt(Constants.CONFIG.CONF_GOLAY_WINDOW, Constants.DEFAULT_GOLAY_WINDOW);
         logScale = sp.getBoolean(Constants.CONFIG.CONF_LOG_SCALE, Constants.LOG_SCALE_DEFAULT);

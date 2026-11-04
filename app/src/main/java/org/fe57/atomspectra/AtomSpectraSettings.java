@@ -113,6 +113,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         // --- end spectrum
 
         // --- spectrum change
+        setupSpectrumChangeEnabledCheckbox();
         updateDiffTimeText();
         // --- end spectrum change
 
@@ -505,6 +506,14 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     // --- end spectrum section
 
     // --- spectrum change section
+    private void setupSpectrumChangeEnabledCheckbox() {
+        CheckBox enableSpectrumChange = findViewById(R.id.enableSpectrumChangeCheckbox);
+        enableSpectrumChange.setChecked(sp.getBoolean(Constants.CONFIG.CONF_SPECTRUM_CHANGE_ENABLED,
+            Constants.SPECTRUM_CHANGE_ENABLED_DEFAULT));
+        enableSpectrumChange.setOnClickListener(v ->
+            saveBooleanPref(enableSpectrumChange.isChecked(), Constants.CONFIG.CONF_SPECTRUM_CHANGE_ENABLED));
+    }
+
     // diff time
     private void updateDiffTimeText() {
         TextView diffTimeText = findViewById(R.id.spectrumChangeDiffTimeText);

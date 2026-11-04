@@ -281,6 +281,7 @@
     <string name="noise_discriminator_format">Noise discriminator: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
     <string name="max_factor_format">Maximum factor: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Smoothness: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="enable_spectrum_change_mode">Enable spectrum change mode</string>
     <string name="spectrum_change_delta_duration_format">Diff time: <xliff:g id="delta_time">%1$d</xliff:g> s</string>
     <string name="channel_compression_format">Channel compression (export): <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">time: <xliff:g id="total_time">%1$s</xliff:g></string>
@@ -670,7 +671,7 @@
     </string>
     <string name="help_text_part1"><big><annotation foreground="caption">1. Operating:</annotation></big>\n
         \tSpectrum, spectrum change and search modes:\n
-        \t- Use navigation <annotation foreground="parameter">Spectrum/Change/Search</annotation> to switch between spectrum display, spectrum change and search mode.\n
+        \t- Use <annotation foreground="parameter">Spectrum</annotation> and <annotation foreground="parameter">Search</annotation> to select the main display mode. By default, tapping <annotation foreground="parameter">Change</annotation> opens the spectrogram. If <annotation foreground="parameter">Enable spectrum change mode</annotation> is turned on in Settings, tapping Change selects spectrum change instead.\n
         \t- Use the device icon to open the device selection.\n
         \t- Use a horizontal pinch to scale channels/energies. Take the fingers off the screen to apply a pinch.\n
         \t- Use a vertical pinch to scale counts.  Take the fingers off the screen to apply a pinch.\n
@@ -686,7 +687,7 @@
         \t- Use <annotation foreground="parameter">D/I</annotation> button to switch between kinds of search plot (dose rate or count rate within interval).\n
         \t- Use <annotation foreground="parameter">F/M/S</annotation> button to switch between search constant (fast, medium, slow).\n
         \n
-        \tSpectrogram display mode (opens with a long tap on the <annotation foreground="parameter">Change</annotation> button or with <annotation foreground="parameter">Spectrogram</annotation> → <annotation foreground="parameter">View</annotation>):\n
+        \tSpectrogram display mode (opens by tapping <annotation foreground="parameter">Change</annotation> when spectrum change mode is disabled; a long tap on Change or <annotation foreground="parameter">Spectrogram</annotation> → <annotation foreground="parameter">View</annotation> opens it regardless of the setting):\n
         \t- Use a horizontal pinch to scale the spectrogram horizontally (channel/energy). Take the fingers off the screen to apply a pinch.\n
         \t- Use a vertical pinch to scale the spectrogram vertically (time). Take the fingers off the screen to apply a pinch.\n
         \t- Use a left/right swipe along the energy/channel axis of the spectrogram to shift the spectrogram left/right.\n
@@ -708,6 +709,7 @@
         \t- The text field <annotation foreground="parameter">time</annotation> displays the total time of spectrum acquisition as hh:mm:ss, with days added when the duration is 24 hours or longer (for example, 2d 03:45:12).\n
         \n
         \tSpectrum <annotation foreground="parameter">Change</annotation> mode:\n
+        \tThis optional mode is disabled by default. Enable it in <annotation foreground="parameter">Settings</annotation> → <annotation foreground="parameter">Spectrum Change</annotation> → <annotation foreground="parameter">Enable spectrum change mode</annotation>. Disabling it while Change is active returns the main view to Spectrum.\n
         \t- This mode displays the change in the spectrum state in a sliding time window. The sliding window size can be selected in the range from 1 to 300 s in the <annotation foreground="parameter">Diff Time</annotation> parameter in the <annotation foreground="parameter">Settings</annotation>. In this mode, two spectra with different sliding window durations are displayed: n seconds and 4n seconds (e.g. 30/120). The color of the short window spectrum (n seconds) in this mode is purple, and the long one (4n seconds) is green. The lines displaying the total acquisition time and count rate of the main spectrum are replaced by a display of the window sizes and count rates within these windows (short/long).\n
         \t- The text field <annotation foreground="parameter">cps</annotation> displays the number of counts during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \t- The text field <annotation foreground="parameter">~cps</annotation> displays the average count rate over the entire energy range for each window.\n
@@ -865,6 +867,7 @@
         \t- <annotation foreground="parameter">Spectrum</annotation> - choose sum, peak or average value on spectrum graph during value compression. Peak values help not to loose small peaks, averaging makes a right graph, sum shows spectre as the device has less channels.\n
         \n
         \tSpectrum change:\n
+        \t- <annotation foreground="parameter">Enable spectrum change mode</annotation> - when off, Change opens the spectrogram, spectrum change calculations stop, and their history is cleared. Re-enabling starts fresh windows from new incoming data. Recording, search and spectrogram processing are unaffected.\n
         \t- <annotation foreground="parameter">Diff time</annotation> - select the duration of sliding window in spectrum change mode.\n
         \n
         \tAtomSwift integration:\n
