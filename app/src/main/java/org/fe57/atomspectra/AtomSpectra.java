@@ -1099,7 +1099,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     public void onClick_renderModeSpectrumChange(View v) {
-        setDisplayMode(Constants.DISPLAY_MODE_SPECTRUM_CHANGE);
+        if (UIViewState.instance.spectrumChangeEnabled) {
+            setDisplayMode(Constants.DISPLAY_MODE_SPECTRUM_CHANGE);
+        } else {
+            showSpectrogramView();
+        }
     }
 
     public void onClick_renderModeSearch(View v) {
@@ -3779,6 +3783,11 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
     }
 
     private void updateDisplayModeViews() {
+        if (UIViewState.instance.displayMode == Constants.DISPLAY_MODE_SPECTRUM_CHANGE
+                && !UIViewState.instance.spectrumChangeEnabled) {
+            UIViewState.instance.displayMode = Constants.DISPLAY_MODE_SPECTRUM;
+        }
+
         Button keVOrChannelButton = findViewById(R.id.keVOrChannelButton);
         Button addCalPointButton = findViewById(R.id.addCalibrationPointButton);
         Button calibrateButton = findViewById(R.id.calibrateButton);

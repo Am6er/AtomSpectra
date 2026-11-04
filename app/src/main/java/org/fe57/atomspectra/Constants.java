@@ -56,6 +56,7 @@ public class Constants {
     public static final boolean OUTPUT_FILE_NAME_ADD_DATE_DEFAULT = true;                                                    //add date to output file name
     public static final boolean OUTPUT_FILE_NAME_ADD_TIME_DEFAULT = true;                                                    //add date to output file name
     public static final int DEFAULT_DELTA_TIME = 1;                                                                      //default delta time in seconds between output
+    public static final boolean SPECTRUM_CHANGE_ENABLED_DEFAULT = false;
     public static String[] LOCALES = {"Default", "Russian", "English"};
     public static String[] LOCALES_ID = {"", "ru", "en"};
     public static final int SPG_DELTA_DURATION_MIN = 5;                                                                          //minimal delta between auto saves
@@ -138,6 +139,7 @@ public class Constants {
         String CONF_MAX_POLI_FACTOR = "Polinom factor";
         String CONF_GOLAY_WINDOW = "Golay window";
         String CONF_AUTO_UPDATE_ISOTOPES = "Auto update isotopes";
+        String CONF_SPECTRUM_CHANGE_ENABLED = "Spectrum change enabled";
         String CONF_SPECTRUM_CHANGE_DIFF_TIME = "Delta time";
         String CONF_LOCALE_ID = "Locale";
         // the device choice restored on the next launch, see DeviceChoice
