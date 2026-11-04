@@ -376,6 +376,12 @@ public class AtomSpectraSpectrogramView extends View {
     private final Object spectrogramBitmapSync = new Object();
     private volatile Bitmap spectrogramBitmap = null;
     private boolean autoScroll = true;
+    private boolean spectrumRecording = false;
+    private int recordingIntervalSeconds = 0;
+    private int rowCount = -1;
+    private String statusLabel = "";
+    private String rowCountLabel = "";
+    private final Paint acquisitionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // reused visible-area pixel buffer, grown on demand (see renderSpectrogramToBitmap)
     private int[] spgPixelsBuffer = null;
@@ -447,6 +453,7 @@ public class AtomSpectraSpectrogramView extends View {
                 canvas.drawBitmap(this.spectrogramBitmap, 0, 0, paint);
             }
         }
+        drawAcquisitionLabels(canvas);
     }
 
     @Override
@@ -747,6 +754,18 @@ public class AtomSpectraSpectrogramView extends View {
         return PADDING_TOP_PX + spectrogramPlotHeightPx(viewHeight);
     }
 
+    private int energyAxisBaselineYpx(int viewHeight) {
+        return spectrogramPlotBottomYpx(viewHeight);
+    }
+
+    private int channelAxisBaselineYpx(int viewHeight) {
+        return spectrogramPlotBottomYpx(viewHeight) + CHANNEL_AXIS_HEIGHT_PX / 2;
+    }
+
+    private float axisLabelYpx(float axisBaselineY) {
+        return axisBaselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
+    }
+
     private float rowToViewportYpx(SelectionBound row) {
         // Sum preceding segment and gap rows, then the bin offset within the target segment.
         int virtualRowIndex = getBinForRow(row.rowIndex, spectrumBinning);
@@ -829,7 +848,22 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
+    public void setRecordingState(boolean recording, int intervalSeconds) {
+        if (spectrumRecording == recording && recordingIntervalSeconds == intervalSeconds && !statusLabel.isEmpty()) {
+            return;
+        }
+        spectrumRecording = recording;
+        recordingIntervalSeconds = intervalSeconds;
+        statusLabel = intervalSeconds <= 0 ? getResources().getString(R.string.spectrogram_delta_off)
+                : getResources().getString(R.string.spectrogram_delta_interval, intervalSeconds);
+        invalidate();
+    }
+
     public void renderSpectrogram(AtomSpectraSpectrogramData data, SpectrogramUIViewState viewState, boolean scrollToBottom) {
+        if (this.rowCount != data.rowCount()) {
+            this.rowCount = data.rowCount();
+            this.rowCountLabel = getResources().getString(R.string.spectrogram_row_count, this.rowCount);
+        }
         this.boundViewState = viewState;
         this.segmentsData = data.getSegments();
         this.backgroundHandlesVisible = viewState.backgroundVisible;
@@ -1500,8 +1534,8 @@ public class AtomSpectraSpectrogramView extends View {
                 paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
                 // energy axis render — channel/energy labels
-                int energyAxisBaseline = spgViewHeight + PADDING_TOP_PX;
-                int channelAxisBaseline = spgViewHeight + PADDING_TOP_PX + CHANNEL_AXIS_HEIGHT_PX / 2;
+                int energyAxisBaseline = energyAxisBaselineYpx(viewHeight);
+                int channelAxisBaseline = channelAxisBaselineYpx(viewHeight);
                 Spectrum baseSpectrum = segmentsData != null
                         && !segmentsData.isEmpty()
                         && axisSegmentIndex >= 0
@@ -1536,6 +1570,53 @@ public class AtomSpectraSpectrogramView extends View {
             verticalOffsetPx += virtualRowHeightPx;
         }
         syncViewportToViewState();
+    }
+
+    // drawn in onDraw, not into the bitmap, so a status change needs no spectrogram re-render
+    private void drawAcquisitionLabels(Canvas canvas) {
+        int viewHeight = getHeight();
+        int energyBaselineY = energyAxisBaselineYpx(viewHeight);
+        if (energyBaselineY < PADDING_TOP_PX || energyBaselineY + CHANNEL_AXIS_HEIGHT_PX > viewHeight) {
+            return;
+        }
+        Paint paint = acquisitionPaint;
+        paint.setColor(Color.WHITE);
+        float left = TIMESTAMP_MARGIN_LEFT_PX;
+        float right = Math.min(TIME_AXIS_WIDTH_PX - dpToPx(4), getWidth());
+        float statusY = axisLabelYpx(energyBaselineY);
+        float rowsY = axisLabelYpx(channelAxisBaselineYpx(viewHeight));
+        int saved = canvas.save();
+        canvas.clipRect(0, energyBaselineY, right, energyBaselineY + CHANNEL_AXIS_HEIGHT_PX);
+        float statusLeft = left + dpToPx(8);
+        float markerCenterY = statusY - TEXT_FONT_SIZE_PX / 2f;
+        if (spectrumRecording) {
+            float radius = dpToPx(2);
+            paint.setColor(Color.RED);
+            canvas.drawCircle(left + radius, markerCenterY, radius, paint);
+        } else {
+            float barWidth = dpToPx(1.5f);
+            float barHalfHeight = dpToPx(3);
+            for (int i = 0; i < 2; i++) {
+                float barLeft = left + i * barWidth * 2;
+                canvas.drawRect(barLeft, markerCenterY - barHalfHeight, barLeft + barWidth, markerCenterY + barHalfHeight, paint);
+            }
+        }
+        paint.setColor(Color.WHITE);
+        drawAcquisitionLabel(canvas, paint, statusLabel, statusLeft, right, statusY);
+        drawAcquisitionLabel(canvas, paint, rowCountLabel, left, right, rowsY);
+        canvas.restoreToCount(saved);
+    }
+
+    private void drawAcquisitionLabel(Canvas canvas, Paint paint, String label, float left, float right, float baseline) {
+        if (right <= left) {
+            return;
+        }
+        paint.setTextSize(TEXT_FONT_SIZE_PX);
+        float width = paint.measureText(label);
+        if (width > right - left) {
+            paint.setTextSize(TEXT_FONT_SIZE_PX * (right - left) / width);
+        }
+        canvas.drawText(label, left, baseline, paint);
     }
 
     private void renderEnergyAxis(Canvas canvas, Paint paint, int baselineY, Spectrum baseSpectrum,
@@ -1577,7 +1658,7 @@ public class AtomSpectraSpectrogramView extends View {
             return;
         }
 
-        float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
+        float labelY = axisLabelYpx(baselineY);
         float labelGap = dpToPx(4);
 
         // Steps depend on calibration and zoom only, so scrolling never changes the grid.
@@ -1768,7 +1849,7 @@ public class AtomSpectraSpectrogramView extends View {
             return;
         }
 
-        float labelY = baselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
+        float labelY = axisLabelYpx(baselineY);
 
         if (colBinStart == 0) {
             canvas.drawLine(axisLeft - 0.5f, baselineY, axisLeft - 0.5f,

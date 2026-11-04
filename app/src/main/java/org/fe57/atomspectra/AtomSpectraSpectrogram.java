@@ -29,7 +29,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -79,6 +78,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM);
         intentFilter.addAction(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED);
+        intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_MENU);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
         } else {
@@ -455,6 +455,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             if (Constants.ACTION.ACTION_SPECTROGRAM_UPDATED.equals(action)) {
                 updateSpectrogram(false);
                 updateMapMenu();
+            } else if (Constants.ACTION.ACTION_UPDATE_MENU.equals(action)) {
+                updateRecordingState();
+                updateMapMenu();
             }
         }
 
@@ -498,6 +501,14 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         dismissSpectrumExportingDialog();
     }
 
+    private void updateRecordingState() {
+        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
+        if (spgView != null) {
+            spgView.setRecordingState(AtomSpectraService.isRecording(), sharedPreferences.getInt(
+                    Constants.CONFIG.CONF_SPG_DELTA_DURATION, Constants.SPG_INTERVAL_DEFAULT));
+        }
+    }
+
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
             SpectrogramUIViewState state = SpectrogramUIViewState.instance;
@@ -514,28 +525,18 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
+                updateRecordingState();
                 spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, state, scrollToBottom);
-            }
-
-            TextView rowCount = findViewById(R.id.textViewRowCount);
-            if (rowCount != null) {
-                rowCount.setText(getString(R.string.spectrogram_row_count, newRowCount));
             }
 
             syncRegionsToPreview();
         }
     }
 
-    @SuppressLint("DefaultLocale")
     private void updateControlPanel() {
         SpectrogramUIViewState state = SpectrogramUIViewState.instance;
         int sbin = state.sbin;
         int cbin = state.getCbin(getResources().getConfiguration().orientation);
-
-        TextView textSpectrumBin = findViewById(R.id.textViewSpcBinValue);
-        if (textSpectrumBin != null) {
-            textSpectrumBin.setText(String.format("↕bin:%dx", sbin));
-        }
 
         ImageButton btnSpectrumBinInc = findViewById(R.id.buttonSpectrumBinInc);
         if (btnSpectrumBinInc != null) {
@@ -547,11 +548,6 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             btnSpectrumBinDec.setEnabled(sbin > 1);
         }
 
-        TextView textChannelBin = findViewById(R.id.textViewChBinValue);
-        if (textChannelBin != null) {
-            textChannelBin.setText(String.format("↔bin:%dx", cbin));
-        }
-
         ImageButton btnChannelBinInc = findViewById(R.id.buttonChannelBinInc);
         if (btnChannelBinInc != null) {
             btnChannelBinInc.setEnabled(SpectrogramUIViewState.canIncreaseCbin(cbin));
@@ -560,16 +556,6 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         ImageButton btnChannelBinDec = findViewById(R.id.buttonChannelBinDec);
         if (btnChannelBinDec != null) {
             btnChannelBinDec.setEnabled(SpectrogramUIViewState.canDecreaseCbin(cbin));
-        }
-
-        TextView textPalette = findViewById(R.id.textViewSpgPalette);
-        if (textPalette != null) {
-            textPalette.setText(state.palette);
-        }
-
-        TextView textScale = findViewById(R.id.textViewSpgScale);
-        if (textScale != null) {
-            textScale.setText(state.scale);
         }
 
         ImageButton toggleBtn = findViewById(R.id.buttonPreviewToggle);

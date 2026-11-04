@@ -620,6 +620,8 @@
     <string name="map_tile_provider_osm">OpenStreetMap</string>
     <string name="map_tile_provider_custom">Custom URL</string>
     <string name="spectrogram_row_count">Rows: %1$d</string>
+    <string name="spectrogram_delta_off">Delta: off</string>
+    <string name="spectrogram_delta_interval">Delta: %1$d s</string>
     <string name="spectrogram_gap_label">gap: %1$s</string>
     <string name="spectrogram_gap_duration_days_hours">%1$dd %2$dh</string>
     <string name="spectrogram_gap_duration_days">%1$dd</string>
