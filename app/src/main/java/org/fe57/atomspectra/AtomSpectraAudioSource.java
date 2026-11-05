@@ -86,6 +86,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     private volatile AudioDeviceInfo device;
     private final String identity;
     private volatile int status = SpectrumSource.STATUS_DISCONNECTED;
+    private volatile ConnectionPhase connectionPhase = ConnectionPhase.NONE;
     private volatile SourceError lastError = null;
     private volatile String deviceId = "default";
     private AudioDeviceCallback deviceLossCallback = null;
@@ -252,6 +253,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     }
 
     private void completeConnect(Context ctx) {
+        this.setConnectionPhase(ConnectionPhase.CONNECTING);
         this.loadAppPreferences(ctx);
 
         this.deviceId = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && this.device != null)
@@ -466,6 +468,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         final Context ctx = this.context;
         if (ctx == null) return;
         this.recoveryCapture = recovering;
+        if (recovering) this.setConnectionPhase(ConnectionPhase.CONNECTING);
         this.capturing = true;
         this.captureConfirmed = false;
         this.setAndEmitStatus(recovering ? SpectrumSource.STATUS_RECOVERING
@@ -663,6 +666,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
             this.sourceHandler.removeCallbacks(this.captureStartTimeout);
             this.recoveryWakeLock.release();
             this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
+            this.setConnectionPhase(ConnectionPhase.NONE);
             AtomSpectraLog.detail(this.context, LogTag.AUDIO, "Audio capture started, device=" + this.deviceId);
         }
         this.audioBytes = samples;
@@ -766,6 +770,11 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     @Override
     public SourceError lastError() {
         return this.lastError;
+    }
+
+    @Override
+    public ConnectionPhase connectionPhase() {
+        return this.connectionPhase;
     }
 
     @Override
@@ -1016,11 +1025,13 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     }
 
     private void emitDisconnected(String reason) {
+        this.setConnectionPhase(ConnectionPhase.NONE);
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_DISCONNECTED)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_DISCONNECT_REASON, reason));
     }
 
     private void emitError(int op, int reason, String text) {
+        if (op == SpectrumSource.OP_CONNECT) this.setConnectionPhase(ConnectionPhase.NONE);
         this.lastError = new SourceError(op, reason, text);
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_ERROR)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_OP, op)
@@ -1029,6 +1040,7 @@ public class AtomSpectraAudioSource implements SpectrumSource {
     }
 
     private void setAndEmitStatus(int status) {
+        if (status == SpectrumSource.STATUS_CLOSED) this.setConnectionPhase(ConnectionPhase.NONE);
         if (status == SpectrumSource.STATUS_CONNECTED_IDLE || status == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
             this.lastError = null;
         }
@@ -1039,11 +1051,19 @@ public class AtomSpectraAudioSource implements SpectrumSource {
         }
     }
 
+    private void setConnectionPhase(ConnectionPhase next) {
+        if (this.connectionPhase == next) return;
+        this.connectionPhase = next;
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_CONNECTION_PHASE));
+    }
+
     private void emitReady() {
         this.lastError = null;
         this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_READY)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, this.channelCount())
                 .putExtra(SpectrumSource.EXTRA_SOURCE_STATUS, this.status)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_DEVICE_ID, this.deviceId));
+        // after the ready reply: the service must not see an unready device without a phase
+        this.setConnectionPhase(ConnectionPhase.NONE);
     }
 }

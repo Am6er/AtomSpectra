@@ -68,6 +68,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
 
     private final int instanceId = SourceInstanceId.next();
     private volatile int status = SpectrumSource.STATUS_DISCONNECTED;
+    private volatile ConnectionPhase connectionPhase = ConnectionPhase.NONE;
     private volatile SourceError lastError = null;
     private UsbDevice device;
     private int firmwareVersion = 0;
@@ -283,6 +284,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
             this.recoveryHandshakeStarted = true;
             this.armRecoveryTimeout(USB_RECOVERY_HANDSHAKE_WINDOW_MS);
         }
+        this.setConnectionPhase(ConnectionPhase.CONNECTING);
         this.setAndEmitStatus(recovering ? SpectrumSource.STATUS_RECOVERING : SpectrumSource.STATUS_CONNECTING);
         String openError = this.openPort();
         if (openError != null) {
@@ -508,6 +510,11 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
     @Override
     public SourceError lastError() {
         return this.lastError;
+    }
+
+    @Override
+    public ConnectionPhase connectionPhase() {
+        return this.connectionPhase;
     }
 
     @Override
@@ -739,6 +746,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         if (status == SpectrumSource.STATUS_CONNECTED_IDLE || status == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
             this.lastError = null;
         }
+        if (status == SpectrumSource.STATUS_CONNECTING) this.setConnectionPhase(ConnectionPhase.CONNECTING);
         if (this.status != status) {
             this.status = status;
             this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_STATUS)
@@ -753,7 +761,15 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
                 .putExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, this.channelCount())
                 .putExtra(SpectrumSource.EXTRA_SOURCE_STATUS, this.status)
                 .putExtra(SpectrumSource.EXTRA_SOURCE_DEVICE_ID, this.deviceId));
+        // after the ready reply: the service must not see an unready device without a phase
+        this.setConnectionPhase(ConnectionPhase.NONE);
         this.startTelemetryPolling();
+    }
+
+    private void setConnectionPhase(ConnectionPhase next) {
+        if (this.connectionPhase == next) return;
+        this.connectionPhase = next;
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_CONNECTION_PHASE));
     }
 
     private void handleDeviceAnswer(@NonNull CommandCode cmd, String answer) {
@@ -1164,6 +1180,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
      * Releases the hardware and leaves the source in DISCONNECTED.
      */
     private void teardownConnection() {
+        this.setConnectionPhase(ConnectionPhase.NONE);
         synchronized (this.circularBufferSync) {
             this.connectionGeneration++;
         }
@@ -1346,6 +1363,7 @@ public class AtomSpectraProSource implements SerialInputOutputManager.Listener, 
         this.asyncTasksHandler.removeCallbacks(this.recoveryRetry);
         this.recoveryWakeLock.release();
         this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
+        this.setConnectionPhase(ConnectionPhase.NONE);
         this.resetHistogramCompleteness();
         this.flushErrorSuppressionLog();
         this.restartDataWatchdog();

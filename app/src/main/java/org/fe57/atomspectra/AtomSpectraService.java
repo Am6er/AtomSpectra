@@ -212,6 +212,7 @@ public class AtomSpectraService extends Service {
     private static volatile boolean deviceReady = false;
     // mirrors of the locked source, updated from its replies
     private static volatile int deviceStatus = SpectrumSource.STATUS_DISCONNECTED;
+    private static volatile SpectrumSource.ConnectionPhase connectionPhase = SpectrumSource.ConnectionPhase.NONE;
     private static volatile SourceError deviceError = null;
     private static volatile boolean recoveryPending = false;
     private static volatile long recoveryStartedAt;
@@ -242,6 +243,10 @@ public class AtomSpectraService extends Service {
      */
     public static boolean isDeviceConnected() {
         return sessionState == DeviceSessionState.LOCKED && deviceReady;
+    }
+
+    public static SpectrumSource.ConnectionPhase connectionPhase() {
+        return connectionPhase;
     }
 
     public static DeviceState deviceState() {
@@ -840,6 +845,7 @@ public class AtomSpectraService extends Service {
         deviceChannelCount = 0;
         wrongFrameLogged = false;
         deviceStatus = source.status();
+        connectionPhase = source.connectionPhase();
         deviceError = null;
         screenFromDevice = false;
         connectDecisionPending = false;
@@ -889,6 +895,7 @@ public class AtomSpectraService extends Service {
             activeSource = null;
         }
         if (active != null) active.close();
+        connectionPhase = SpectrumSource.ConnectionPhase.NONE;
         clearTelemetry();
     }
 
@@ -900,6 +907,7 @@ public class AtomSpectraService extends Service {
         deviceReady = false;
         deviceChannelCount = 0;
         deviceStatus = SpectrumSource.STATUS_DISCONNECTED;
+        connectionPhase = SpectrumSource.ConnectionPhase.NONE;
         deviceError = null;
         recoveryPending = false;
         recoveryCancelledByStop = false;
@@ -1032,12 +1040,16 @@ public class AtomSpectraService extends Service {
         if (active == null || active.instanceId() != id) return;
 
         deviceError = active.lastError();
+        connectionPhase = active.connectionPhase();
         if (action.equals(SpectrumSource.ACTION_SOURCE_DISCONNECTED)
                 || (action.equals(SpectrumSource.ACTION_SOURCE_STATUS)
                 && isTelemetryStale(intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_STATUS, deviceStatus)))) {
             clearTelemetry();
         }
         switch (action) {
+            case SpectrumSource.ACTION_SOURCE_CONNECTION_PHASE:
+                notifyDeviceStateChanged();
+                break;
             case SpectrumSource.ACTION_SOURCE_READY:
                 onSourceReady(intent);
                 notifyDeviceStateChanged();
@@ -1684,6 +1696,7 @@ public class AtomSpectraService extends Service {
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_NOTIFICATION);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_READY);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_STATUS);
+        intentFilter.addAction(SpectrumSource.ACTION_SOURCE_CONNECTION_PHASE);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_ERROR);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DISCONNECTED);
         intentFilter.addAction(SpectrumSource.ACTION_SOURCE_DATA);

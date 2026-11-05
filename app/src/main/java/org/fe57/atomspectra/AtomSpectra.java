@@ -3494,34 +3494,36 @@ public class AtomSpectra extends ComponentActivity implements OnGestureListener 
         inputType.setImageResource(inputIconRes(AtomSpectraService.lockedSourceType(), state));
 
         final String info = userFacingDeviceName();
-        switch (state) {
-            case WAITING:
-                inputType.setContentDescription(getString(R.string.device_waiting_description, info));
-                break;
-            case IDLE:
-                inputType.setContentDescription(getString(R.string.device_idle_description, info));
-                break;
-            case RECORDING:
-                inputType.setContentDescription(getString(R.string.device_recording_description, info));
-                break;
-            case BUSY:
-                inputType.setContentDescription(getString(R.string.device_busy_description, info));
-                break;
-            case RECOVERING:
-                inputType.setContentDescription(getString(R.string.device_recovering_description, info));
-                break;
-            case ERROR:
-                inputType.setContentDescription(getString(R.string.device_error_description, info));
-                break;
-            default:
-                inputType.setContentDescription(info);
-                break;
-        }
+        final SpectrumSource.ConnectionPhase phase = AtomSpectraService.connectionPhase();
+        final int connectionText = phase == SpectrumSource.ConnectionPhase.NONE ? 0
+            : DeviceConnectionStatus.textResource(AtomSpectraService.lockedSourceType(), state, phase);
+        inputType.setContentDescription(connectionText != 0
+            ? getString(R.string.device_connection_description, info, getString(connectionText))
+            : stateDescription(state, info));
 
         boolean canSwitch = canSwitchDevice();
         inputType.setEnabled(canSwitch);
         inputType.setClickable(canSwitch);
         inputType.setOnClickListener(canSwitch ? v -> onClickInputType() : null);
+    }
+
+    private String stateDescription(AtomSpectraService.DeviceState state, String info) {
+        switch (state) {
+            case WAITING:
+                return getString(R.string.device_waiting_description, info);
+            case IDLE:
+                return getString(R.string.device_idle_description, info);
+            case RECORDING:
+                return getString(R.string.device_recording_description, info);
+            case BUSY:
+                return getString(R.string.device_busy_description, info);
+            case RECOVERING:
+                return getString(R.string.device_recovering_description, info);
+            case ERROR:
+                return getString(R.string.device_error_description, info);
+            default:
+                return info;
+        }
     }
 
     // an error or a pending decision has something to offer besides switching the device
