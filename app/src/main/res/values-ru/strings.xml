@@ -72,8 +72,8 @@
     <string name="device_select_none">Устройства не найдены</string>
     <string name="device_select_available">Доступно</string>
     <string name="device_select_unavailable">Не найдено</string>
-    <string name="device_select_connect_device">Не найдено. Подключите устройство.</string>
-    <string name="device_select_searching">Не найдено. Поиск устройства...</string>
+    <string name="device_select_connect_device">Подключите устройство.</string>
+    <string name="device_select_searching">Поиск устройства...</string>
     <string name="device_select_waiting_data">Подключено. Ожидание данных устройства...</string>
     <string name="device_select_connected">Подключено</string>
     <string name="device_select_recording">Запись</string>

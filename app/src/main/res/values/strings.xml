@@ -72,8 +72,8 @@
     <string name="device_select_none">No devices found</string>
     <string name="device_select_available">Available</string>
     <string name="device_select_unavailable">Not found</string>
-    <string name="device_select_connect_device">Not found. Please connect device.</string>
-    <string name="device_select_searching">Not found. Scanning for device...</string>
+    <string name="device_select_connect_device">Please connect device.</string>
+    <string name="device_select_searching">Searching for device...</string>
     <string name="device_select_waiting_data">Connected. Waiting for device data...</string>
     <string name="device_select_connected">Connected</string>
     <string name="device_select_recording">Recording</string>
