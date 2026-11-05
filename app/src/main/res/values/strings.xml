@@ -68,13 +68,19 @@
     <string name="device_select_offline">Work with files</string>
     <string name="device_select_remember">Remember my choice</string>
     <string name="device_select_connecting">Connecting…</string>
-    <string name="device_select_connecting_timed">Connecting… <xliff:g id="seconds">%1$d</xliff:g>s</string>
-    <string name="device_select_waiting">Waiting for device…</string>
-    <string name="device_select_waiting_timed">Waiting for device… <xliff:g id="seconds">%1$d</xliff:g>s</string>
     <string name="device_select_permission_needed">Permission needed — tap to grant</string>
     <string name="device_select_none">No devices found</string>
     <string name="device_select_available">Available</string>
     <string name="device_select_unavailable">Not found</string>
+    <string name="device_select_connect_device">Not found. Please connect device.</string>
+    <string name="device_select_searching">Not found. Scanning for device...</string>
+    <string name="device_select_waiting_data">Connected. Waiting for device data...</string>
+    <string name="device_select_connected">Connected</string>
+    <string name="device_select_recording">Recording</string>
+    <string name="device_select_busy">Executing command...</string>
+    <string name="device_select_reconnecting">Waiting to reconnect...</string>
+    <string name="device_select_status_timed">%1$s %2$ds</string>
+    <string name="device_connection_description">%1$s - %2$s</string>
     <string name="device_select_selected_description">%1$s, selected</string>
     <string name="device_connect_decision_title">Device connected</string>
     <string name="device_connect_decision_text">Device %1$s is connected. The spectrum on the screen is not saved and will be replaced by the device spectrum.</string>

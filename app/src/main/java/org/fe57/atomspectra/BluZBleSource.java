@@ -151,6 +151,7 @@ final class BluZBleSource implements SpectrumSource {
     private boolean dnlCorrection;
     private final ArrayDeque<PendingWrite> writes = new ArrayDeque<>();
     private volatile int status = STATUS_DISCONNECTED;
+    private volatile ConnectionPhase connectionPhase = ConnectionPhase.NONE;
     private volatile SourceError lastError;
     private volatile double[] coefficients = new double[]{0, 3000.0 / 4096};
     private volatile DeviceTelemetry telemetry = DeviceTelemetry.EMPTY;
@@ -289,7 +290,10 @@ final class BluZBleSource implements SpectrumSource {
             return;
         }
         try {
-            if (adapter == null || !adapter.isEnabled()) return;
+            if (adapter == null || !adapter.isEnabled()) {
+                setConnectionPhase(ConnectionPhase.NONE);
+                return;
+            }
             if (adapter.getBluetoothLeScanner() == null) {
                 scheduleRetry();
                 return;
@@ -324,6 +328,7 @@ final class BluZBleSource implements SpectrumSource {
                     Collections.singletonList(new ScanFilter.Builder().setDeviceAddress(address).build()),
                     new ScanSettings.Builder().setScanMode(recoveryActive || userInitiated || isFirstScan
                             ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
+            setConnectionPhase(ConnectionPhase.SEARCHING);
             handler.postDelayed(scanRestart, SCAN_RESTART_MS);
         } catch (SecurityException error) {
             permissionLost();
@@ -335,6 +340,8 @@ final class BluZBleSource implements SpectrumSource {
 
     private void scheduleRetry() {
         if (closed || terminal) return;
+        // nothing is searched for while Bluetooth is off, waitForDevice() keeps the phase NONE then
+        setConnectionPhase(adapter != null && adapter.isEnabled() ? ConnectionPhase.SEARCHING : ConnectionPhase.NONE);
         handler.removeCallbacks(retry);
         if (recoveryActive) {
             handler.postDelayed(retry, RECOVERY_RETRY_MS);
@@ -377,8 +384,10 @@ final class BluZBleSource implements SpectrumSource {
             if (gatt == null) {
                 if (userInitiated && !hasBeenReady) failHandshake(REASON_ERROR, "BluZ connection could not be started");
                 else scheduleRetry();
-            } else
+            } else {
+                setConnectionPhase(ConnectionPhase.CONNECTING);
                 handler.postDelayed(connectionDeadline, CONNECT_MS);
+            }
         } catch (SecurityException error) {
             permissionLost();
         }
@@ -422,6 +431,7 @@ final class BluZBleSource implements SpectrumSource {
                     else connectionLost("Connection lost, status " + gattStatus(result));
                 } else if (newState == BluetoothProfile.STATE_CONNECTED) {
                     physicalConnection = true;
+                    setConnectionPhase(ConnectionPhase.WAITING_FOR_DATA);
                     debug("Connected after " + (SystemClock.elapsedRealtime() - connectStartedAt) + " ms");
                     handler.removeCallbacks(connectionDeadline);
                     handler.postDelayed(connectionDeadline, HANDSHAKE_MS);
@@ -651,6 +661,8 @@ final class BluZBleSource implements SpectrumSource {
                             .putExtra(EXTRA_SOURCE_CHANNEL_COUNT, channelCount())
                             .putExtra(EXTRA_SOURCE_CALIBRATION_COEFFS, coefficients.clone()));
                 }
+                // after the ready reply: the service must not see an unready device without a phase
+                setConnectionPhase(ConnectionPhase.NONE);
             }
             if (stopOnReturn && !frame.isCollecting()) stopOnReturn = false;
             if (toggleOp != 0 && toggleSent && frame.isCollecting() == desiredCollecting) {
@@ -1083,6 +1095,7 @@ final class BluZBleSource implements SpectrumSource {
         cancelRecovery();
         releaseGatt();
         stopScan();
+        setConnectionPhase(ConnectionPhase.NONE);
         handler.removeCallbacks(retry);
         if (recovering) {
             setStatus(STATUS_DISCONNECTED);
@@ -1152,6 +1165,7 @@ final class BluZBleSource implements SpectrumSource {
             stopScan();
             releaseGatt();
             handler.removeCallbacks(retry);
+            setConnectionPhase(ConnectionPhase.NONE);
             if (adapterReceiver != null) {
                 context.unregisterReceiver(adapterReceiver);
                 adapterReceiver = null;
@@ -1170,6 +1184,12 @@ final class BluZBleSource implements SpectrumSource {
         if (status == next) return;
         status = next;
         reply(new Intent(ACTION_SOURCE_STATUS).putExtra(EXTRA_SOURCE_STATUS, next));
+    }
+
+    private void setConnectionPhase(ConnectionPhase next) {
+        if (connectionPhase == next) return;
+        connectionPhase = next;
+        reply(new Intent(ACTION_SOURCE_CONNECTION_PHASE));
     }
 
     private void error(int op, int reason, String text) {
@@ -1279,6 +1299,11 @@ final class BluZBleSource implements SpectrumSource {
     @Override
     public SourceError lastError() {
         return lastError;
+    }
+
+    @Override
+    public ConnectionPhase connectionPhase() {
+        return connectionPhase;
     }
 
     @Override

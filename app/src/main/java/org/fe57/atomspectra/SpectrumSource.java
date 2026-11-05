@@ -17,6 +17,11 @@ public interface SpectrumSource {
     int TYPE_SPECTRA_PRO = 2;
     int TYPE_BLUZ = 3;
 
+    // Limitation: SEARCHING and WAITING_FOR_DATA are reported by BluZ only; other sources use CONNECTING and NONE
+    enum ConnectionPhase {
+        NONE, SEARCHING, CONNECTING, WAITING_FOR_DATA
+    }
+
     // status codes
     public static final int STATUS_DISCONNECTED = 0; // initial status with no physical connection
     public static final int STATUS_CONNECTING = 1; // physical connection established
@@ -71,6 +76,9 @@ public interface SpectrumSource {
     // +++ extras common to every reply intent +++
     String EXTRA_SOURCE_INPUT_TYPE = "org.fe57.atomspectra.EXTRA_SOURCE_INPUT_TYPE";
     String EXTRA_SOURCE_INSTANCE_ID = "org.fe57.atomspectra.EXTRA_SOURCE_INSTANCE_ID";
+
+    // +++ ACTION_SOURCE_CONNECTION_PHASE +++
+    String ACTION_SOURCE_CONNECTION_PHASE = "org.fe57.atomspectra.ACTION_SOURCE_CONNECTION_PHASE";
 
     // +++ ACTION_SOURCE_READY +++
     String ACTION_SOURCE_READY = "org.fe57.atomspectra.ACTION_SOURCE_READY";
@@ -192,6 +200,9 @@ public interface SpectrumSource {
      * (ready, or a successful return to idle or collecting).
      */
     SourceError lastError();
+
+    /** What the source is doing to connect; NONE when it is not connecting. */
+    ConnectionPhase connectionPhase();
 
     /**
      * Channel count. Valid and consistent with {@link #calibration()} from the ready reply on, constant afterwards.

@@ -257,17 +257,10 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
 
     private void showConnecting(boolean show) {
         findViewById(R.id.cancelConnect).setVisibility(show ? View.VISIBLE : View.GONE);
-        boolean suspended = AtomSpectraService.isRecordingSuspended;
-        if (show || suspended) {
-            AtomSpectraService.DeviceState deviceState = AtomSpectraService.deviceState();
-            boolean timed = !(suspended && deviceState == AtomSpectraService.DeviceState.ERROR);
-            if (timed) {
-                if (statusStartedAt == 0) statusStartedAt = SystemClock.elapsedRealtime();
-                statusHandler.removeCallbacks(statusTicker);
-                statusHandler.postDelayed(statusTicker, 1000);
-            } else {
-                stopStatusTicker();
-            }
+        if (isConnectionActive()) {
+            if (statusStartedAt == 0) statusStartedAt = SystemClock.elapsedRealtime();
+            statusHandler.removeCallbacks(statusTicker);
+            statusHandler.postDelayed(statusTicker, 1000);
         } else {
             stopStatusTicker();
             statusStartedAt = 0;
@@ -278,33 +271,38 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
     // one label and bar for the running process: connecting, waiting for the device, or scanning Bluetooth
     private void updateActivityIndicator() {
         TextView status = findViewById(R.id.statusText);
-        boolean suspended = AtomSpectraService.isRecordingSuspended;
-        boolean busy = connecting || suspended;
-        boolean scanning = scanner.isBluetoothScanning();
-        boolean error = suspended
-                && AtomSpectraService.deviceState() == AtomSpectraService.DeviceState.ERROR;
-        status.setVisibility(busy || scanning ? View.VISIBLE : View.GONE);
-        if (error) status.setText(R.string.device_error_notification);
-        else if (busy) updateStatusText();
+        boolean busy = isConnectionActive();
+        // idle states (waiting, error) are reported by the device row only
+        boolean selectedStatus = busy || connecting;
+        boolean scanning = !selectedStatus && scanner.isBluetoothScanning();
+        status.setVisibility(selectedStatus || scanning ? View.VISIBLE : View.GONE);
+        if (selectedStatus) updateStatusText();
         else if (scanning) status.setText(R.string.bluetooth_scanning);
-        if (error || !(busy || scanning)) hideActivityProgress();
+        if (!(busy || scanning)) hideActivityProgress();
         else showActivityProgress(busy);
+    }
+
+    private boolean isConnectionActive() {
+        return AtomSpectraService.deviceState() != AtomSpectraService.DeviceState.ERROR
+                && (connecting || AtomSpectraService.connectionPhase() != SpectrumSource.ConnectionPhase.NONE);
+    }
+
+    private int selectedStatusResource() {
+        int resource = DeviceConnectionStatus.textResource(AtomSpectraService.lockedSourceType(),
+                AtomSpectraService.deviceState(), AtomSpectraService.connectionPhase());
+        // the selection is accepted but the source has not reported a phase yet
+        return resource == 0 && connecting ? R.string.device_select_connecting : resource;
     }
 
     private void updateStatusText() {
         TextView status = findViewById(R.id.statusText);
         if (status.getVisibility() != View.VISIBLE) return;
-        boolean suspended = AtomSpectraService.isRecordingSuspended;
-        AtomSpectraService.DeviceState deviceState = AtomSpectraService.deviceState();
-        if (suspended && deviceState == AtomSpectraService.DeviceState.ERROR) {
-            status.setText(R.string.device_error_notification);
-            return;
-        }
+        int resource = selectedStatusResource();
+        if (resource == 0) return;
         int seconds = statusStartedAt == 0 ? 0
                 : (int) ((SystemClock.elapsedRealtime() - statusStartedAt) / 1000);
-        boolean waiting = suspended && deviceState != AtomSpectraService.DeviceState.BUSY;
-        status.setText(getString(waiting ? R.string.device_select_waiting_timed
-                : R.string.device_select_connecting_timed, seconds));
+        status.setText(isConnectionActive() ? getString(R.string.device_select_status_timed,
+                getString(resource), seconds) : getString(resource));
     }
 
     private void stopStatusTicker() {
@@ -423,7 +421,14 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 && AtomSpectraService.isDeviceConnected());
         String titleText = rowTitle(device);
         StringBuilder subtitle = new StringBuilder();
-        if (!available) subtitle.append(getString(R.string.device_select_unavailable));
+        // Limitation: the connection status is shown on the locked device's row only
+        int resource = locked != null && device.matches(locked.type, locked.identity)
+                ? selectedStatusResource() : 0;
+        if (resource == 0 && !available) {
+            resource = device.type == SpectrumSource.TYPE_BLUZ ? R.string.device_select_unavailable
+                    : R.string.device_select_connect_device;
+        }
+        if (resource != 0) subtitle.append(getString(resource));
         if (!device.permissionGranted) {
             if (subtitle.length() > 0) subtitle.append('\n');
             subtitle.append(getString(R.string.device_select_permission_needed));
@@ -535,6 +540,7 @@ public class AtomSpectraDeviceSelect extends ComponentActivity {
                 : state == DeviceScanner.BluetoothState.OFF ? R.string.bluetooth_enable
                   : state == DeviceScanner.BluetoothState.LOCATION_DISABLED ? R.string.bluetooth_location_enable
                     : R.string.bluetooth_scan);
+        showConnecting(connecting);
     }
 
     private void onBluetoothAction() {
