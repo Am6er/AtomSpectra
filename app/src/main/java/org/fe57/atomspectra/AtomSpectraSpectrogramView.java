@@ -1504,14 +1504,16 @@ public class AtomSpectraSpectrogramView extends View {
 
                     int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
                     int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
-                    if (dateLabel.equals(currentDateLabel)) {
-                        // render time only
-                        canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
-                    } else {
-                        // render both date and time (either first date label or new date)
-                        canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY, paint);
-                        canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
-                        currentDateLabel = dateLabel;
+                    if (tickY + TEXT_FONT_SIZE_PX <= spgViewHeight + PADDING_TOP_PX) {
+                        if (dateLabel.equals(currentDateLabel)) {
+                            // render time only
+                            canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+                        } else {
+                            // render both date and time (either first date label or new date)
+                            canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY, paint);
+                            canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+                            currentDateLabel = dateLabel;
+                        }
                     }
 
                     canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
@@ -1583,27 +1585,33 @@ public class AtomSpectraSpectrogramView extends View {
         paint.setColor(Color.WHITE);
         float left = TIMESTAMP_MARGIN_LEFT_PX;
         float right = Math.min(TIME_AXIS_WIDTH_PX - dpToPx(4), getWidth());
-        float statusY = axisLabelYpx(energyBaselineY);
-        float rowsY = axisLabelYpx(channelAxisBaselineYpx(viewHeight));
+        float rowsY = axisLabelYpx(energyBaselineY);
+        float statusY = axisLabelYpx(channelAxisBaselineYpx(viewHeight));
+        float statusLeft = left + dpToPx(12);
+        float markerCenterY = statusY - dpToPx(TEXT_FONT_SIZE_DP / 2.5f);
+
         int saved = canvas.save();
         canvas.clipRect(0, energyBaselineY, right, energyBaselineY + CHANNEL_AXIS_HEIGHT_PX);
-        float statusLeft = left + dpToPx(8);
-        float markerCenterY = statusY - TEXT_FONT_SIZE_PX / 2f;
-        if (spectrumRecording) {
-            float radius = dpToPx(2);
-            paint.setColor(Color.RED);
-            canvas.drawCircle(left + radius, markerCenterY, radius, paint);
-        } else {
-            float barWidth = dpToPx(1.5f);
-            float barHalfHeight = dpToPx(3);
-            for (int i = 0; i < 2; i++) {
-                float barLeft = left + i * barWidth * 2;
-                canvas.drawRect(barLeft, markerCenterY - barHalfHeight, barLeft + barWidth, markerCenterY + barHalfHeight, paint);
+
+        if (recordingIntervalSeconds > 0) {
+            if (spectrumRecording) {
+                float radius = dpToPx(4);
+                paint.setColor(Color.RED);
+                canvas.drawCircle(left + radius, markerCenterY, radius, paint);
+            } else {
+                float barWidth = dpToPx(2.5f);
+                float barHalfHeight = dpToPx(4);
+                for (int i = 0; i < 2; i++) {
+                    float barLeft = left + i * barWidth * 2;
+                    canvas.drawRect(barLeft, markerCenterY - barHalfHeight + dpToPx(1), barLeft + barWidth, markerCenterY + barHalfHeight, paint);
+                }
             }
         }
+
         paint.setColor(Color.WHITE);
-        drawAcquisitionLabel(canvas, paint, statusLabel, statusLeft, right, statusY);
         drawAcquisitionLabel(canvas, paint, rowCountLabel, left, right, rowsY);
+        drawAcquisitionLabel(canvas, paint, statusLabel, recordingIntervalSeconds > 0 ? statusLeft : left, right, statusY);
+
         canvas.restoreToCount(saved);
     }
 
