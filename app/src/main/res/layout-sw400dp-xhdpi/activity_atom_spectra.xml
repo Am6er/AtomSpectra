@@ -228,6 +228,7 @@
 
         <TextView
             android:id="@+id/displayModeSpectrumButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -241,6 +242,7 @@
 
         <TextView
             android:id="@+id/displayModeSpectrumChangeButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -253,6 +255,7 @@
 
         <TextView
             android:id="@+id/displayModeSearchButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
