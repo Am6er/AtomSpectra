@@ -71,7 +71,38 @@ final class BluZCommandCodec {
                 }
                 continue;
             }
+            int level = BluZSettings.levelIndex(key);
+            if (level >= 0) {
+                int raw = BluZSettings.levelToDevice(BluZSettings.number(value));
+                if (raw < 0) throw new IllegalArgumentException("BluZ alarm level is out of range");
+                // 32-bit big-endian on the wire, 16-bit in the firmware
+                packet[4 + level * 4] = 0;
+                packet[5 + level * 4] = 0;
+                packet[6 + level * 4] = (byte) (raw >> 8);
+                packet[7 + level * 4] = (byte) raw;
+                continue;
+            }
+            int levelSound = BluZSettings.levelSoundIndex(key);
+            if (levelSound >= 0) {
+                setBit(packet, 20, 2 + levelSound, flag(value));
+                continue;
+            }
+            int levelVibro = BluZSettings.levelVibroIndex(key);
+            if (levelVibro >= 0) {
+                setBit(packet, 20, 5 + levelVibro, flag(value));
+                continue;
+            }
             switch (key) {
+                case BluZSettings.SENSITIVITY:
+                    float coefficient = BluZSettings.sensitivityToDevice(BluZSettings.number(value));
+                    if (!Float.isFinite(coefficient) || coefficient <= 0) {
+                        throw new IllegalArgumentException("Invalid BluZ sensitivity");
+                    }
+                    int coefficientBits = Float.floatToIntBits(coefficient);
+                    for (int byteIndex = 0; byteIndex < 4; byteIndex++) {
+                        packet[16 + byteIndex] = (byte) (coefficientBits >>> (24 - byteIndex * 8));
+                    }
+                    break;
                 case BluZSettings.PULSE_LED:
                     setBit(packet, 20, 0, flag(value));
                     break;

@@ -20,11 +20,23 @@ final class BluZSettings {
     static final String ADC_SAMPLE = "adc_sample";
     static final String HV = "hv";
     static final String COMPARATOR = "comparator";
+    static final String SENSITIVITY = "sensitivity";
+    static final String[] LEVEL = {"level1", "level2", "level3"};
+    static final String[] LEVEL_SOUND = {"level1_sound", "level2_sound", "level3_sound"};
+    static final String[] LEVEL_VIBRO = {"level1_vibro", "level2_vibro", "level3_vibro"};
+
+    // the device keeps alarm levels and the CPS coefficient in uR/h; 1 uSv/h is taken as 100 uR/h
+    private static final double UR_PER_USV = 100;
+    static final int LEVEL_MAX_RAW = 65535;
+    static final double SENSITIVITY_MIN = 1e-6;
+    static final double SENSITIVITY_MAX = 1e3;
 
     // header offsets of the calibration floats {E0, D, C, B, A} in the 4096 mode, see docs/bluz-device-protocol.md
     private static final int[] CALIBRATION_OFFSETS = {70, 66, 82, 78, 74};
     private static final int HV_OFFSET = 50;
     private static final int COMPARATOR_OFFSET = 52;
+    private static final int SENSITIVITY_OFFSET = 46;
+    private static final int[] LEVEL_OFFSETS = {54, 56, 58};
     private static final int LED_SOUND_FLAGS = 60;
     private static final int AUTOSTART_FLAGS = 61;
     private static final int ADC_FLAGS = 97;
@@ -49,6 +61,21 @@ final class BluZSettings {
                             .expert().help(R.string.bluz_setting_hv_help),
                     SettingDescriptor.integer(COMPARATOR, R.string.bluz_setting_comparator, 0, 1023)
                             .expert().help(R.string.bluz_setting_comparator_help))
+            .category(R.string.bluz_settings_alarm,
+                    level(0, R.string.bluz_setting_level1).help(R.string.bluz_setting_level_help),
+                    SettingDescriptor.bool(LEVEL_SOUND[0], R.string.bluz_setting_level1_sound),
+                    SettingDescriptor.bool(LEVEL_VIBRO[0], R.string.bluz_setting_level1_vibro),
+                    level(1, R.string.bluz_setting_level2).help(R.string.bluz_setting_level_help),
+                    SettingDescriptor.bool(LEVEL_SOUND[1], R.string.bluz_setting_level2_sound),
+                    SettingDescriptor.bool(LEVEL_VIBRO[1], R.string.bluz_setting_level2_vibro),
+                    level(2, R.string.bluz_setting_level3).help(R.string.bluz_setting_level_help),
+                    SettingDescriptor.bool(LEVEL_SOUND[2], R.string.bluz_setting_level3_sound),
+                    SettingDescriptor.bool(LEVEL_VIBRO[2], R.string.bluz_setting_level3_vibro))
+            .category(R.string.bluz_settings_dosimeter,
+                    SettingDescriptor.decimal(SENSITIVITY, R.string.bluz_setting_sensitivity)
+                            .range(SENSITIVITY_MIN, SENSITIVITY_MAX).digits(9)
+                            .unit(R.string.bluz_unit_usv_h_per_cps).expert()
+                            .help(R.string.bluz_setting_sensitivity_help))
             .build();
 
     private BluZSettings() {
@@ -57,6 +84,26 @@ final class BluZSettings {
     private static SettingDescriptor calibration(int index, int labelRes) {
         // nine significant digits write a float32 back unchanged
         return SettingDescriptor.decimal(CALIBRATION[index], labelRes).digits(9);
+    }
+
+    private static SettingDescriptor level(int index, int labelRes) {
+        return SettingDescriptor.decimal(LEVEL[index], labelRes)
+                .range(0, LEVEL_MAX_RAW / UR_PER_USV).unit(R.string.graph_show_mkSv);
+    }
+
+    /**
+     * An alarm level in uSv/h as the whole uR/h the device stores; -1 when it does not fit.
+     */
+    static int levelToDevice(double microSievertPerHour) {
+        double raw = Math.rint(microSievertPerHour * UR_PER_USV);
+        return raw >= 0 && raw <= LEVEL_MAX_RAW ? (int) raw : -1;
+    }
+
+    /**
+     * The CPS coefficient in uSv/h per cps as the float32 the device stores.
+     */
+    static float sensitivityToDevice(double microSievertPerHourPerCps) {
+        return (float) (microSievertPerHourPerCps * UR_PER_USV);
     }
 
     /**
@@ -78,17 +125,32 @@ final class BluZSettings {
         values.put(ADC_SAMPLE, header[ADC_FLAGS] & 7);
         values.put(HV, bytes.getShort(HV_OFFSET) & 1023);
         values.put(COMPARATOR, bytes.getShort(COMPARATOR_OFFSET) & 1023);
+        values.put(SENSITIVITY, (double) bytes.getFloat(SENSITIVITY_OFFSET) / UR_PER_USV);
+        for (int index = 0; index < LEVEL.length; index++) {
+            values.put(LEVEL[index], (bytes.getShort(LEVEL_OFFSETS[index]) & 0xFFFF) / UR_PER_USV);
+            values.put(LEVEL_SOUND[index], (ledSound & (1 << (2 + index))) != 0);
+            values.put(LEVEL_VIBRO[index], (ledSound & (1 << (5 + index))) != 0);
+        }
         return Collections.unmodifiableMap(values);
     }
 
     /**
-     * The values as the device will report them back: calibration is stored as float32.
+     * The values as the device will report them back: calibration and sensitivity are stored as float32,
+     * alarm levels as whole uR/h.
      */
     static Map<String, Object> normalize(Map<String, Object> changes) {
         Map<String, Object> normalized = new HashMap<>();
         for (Map.Entry<String, Object> change : changes.entrySet()) {
+            String key = change.getKey();
             Object value = change.getValue();
-            normalized.put(change.getKey(), isCalibration(change.getKey()) ? (Object) (double) (float) number(value) : value);
+            if (isCalibration(key)) {
+                value = (double) (float) number(value);
+            } else if (SENSITIVITY.equals(key)) {
+                value = (double) sensitivityToDevice(number(value)) / UR_PER_USV;
+            } else if (indexOf(LEVEL, key) >= 0) {
+                value = levelToDevice(number(value)) / UR_PER_USV;
+            }
+            normalized.put(key, value);
         }
         return normalized;
     }
@@ -122,15 +184,28 @@ final class BluZSettings {
     }
 
     static boolean isCalibration(String key) {
-        for (String name : CALIBRATION) {
-            if (name.equals(key)) return true;
-        }
-        return false;
+        return calibrationIndex(key) >= 0;
     }
 
     static int calibrationIndex(String key) {
-        for (int index = 0; index < CALIBRATION.length; index++) {
-            if (CALIBRATION[index].equals(key)) return index;
+        return indexOf(CALIBRATION, key);
+    }
+
+    static int levelIndex(String key) {
+        return indexOf(LEVEL, key);
+    }
+
+    static int levelSoundIndex(String key) {
+        return indexOf(LEVEL_SOUND, key);
+    }
+
+    static int levelVibroIndex(String key) {
+        return indexOf(LEVEL_VIBRO, key);
+    }
+
+    private static int indexOf(String[] keys, String key) {
+        for (int index = 0; index < keys.length; index++) {
+            if (keys[index].equals(key)) return index;
         }
         return -1;
     }
