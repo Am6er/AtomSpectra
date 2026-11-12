@@ -629,6 +629,7 @@
     <string name="spectrogram_delta_off">Delta: off</string>
     <string name="spectrogram_delta_interval">Delta: %1$d s</string>
     <string name="spectrogram_gap_label">gap: %1$s</string>
+    <string name="spectrogram_compact_gaps">Compact gaps</string>
     <string name="spectrogram_gap_duration_days_hours">%1$dd %2$dh</string>
     <string name="spectrogram_gap_duration_days">%1$dd</string>
     <string name="spectrogram_gap_duration_hours_minutes">%1$dh %2$dm</string>
@@ -933,7 +934,7 @@
     <string name="bluz_setting_level1">Level 1</string>
     <string name="bluz_setting_level2">Level 2</string>
     <string name="bluz_setting_level3">Level 3</string>
-    <string name="bluz_setting_level_help">0 disables the level. Step 0.01 μSv/h. Levels don't add up: the highest exceeded level decides, and the sound and vibration of the lower ones are ignored.</string>
+    <string name="bluz_setting_level_help">0 disables the level. Step 0.01 μSv/h. Levels don\'t add up: the highest exceeded level decides, and the sound and vibration of the lower ones are ignored.</string>
     <string name="bluz_setting_level1_sound">Level 1: sound</string>
     <string name="bluz_setting_level2_sound">Level 2: sound</string>
     <string name="bluz_setting_level3_sound">Level 3: sound</string>

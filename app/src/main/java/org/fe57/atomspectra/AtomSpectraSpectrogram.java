@@ -247,6 +247,13 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             updateSpectrogram(false);
             return true;
         }
+        if (item.getItemId() == R.id.action_spectrogram_compact_gaps) {
+            boolean next = !SpectrogramUIViewState.instance.compactGaps;
+            SpectrogramUIViewState.instance.setCompactGaps(next, sharedPreferences);
+            item.setChecked(next);
+            updateSpectrogram(false);
+            return true;
+        }
 
         int id = item.getItemId();
         if (id > CBIN_MENU_ID_BASE && id <= CBIN_MENU_ID_BASE + SpectrogramUIViewState.MAX_CBIN) {
@@ -392,6 +399,10 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         MenuItem backgroundItem = optionsMenu.findItem(R.id.action_spectrogram_show_background);
         if (backgroundItem != null) {
             backgroundItem.setChecked(SpectrogramUIViewState.instance.backgroundVisible);
+        }
+        MenuItem compactGapsItem = optionsMenu.findItem(R.id.action_spectrogram_compact_gaps);
+        if (compactGapsItem != null) {
+            compactGapsItem.setChecked(SpectrogramUIViewState.instance.compactGaps);
         }
     }
 
