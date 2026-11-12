@@ -157,6 +157,7 @@ public class Constants {
         String CONF_SPG_CBIN_LANDSCAPE = "spg_cbin_landscape";
         String CONF_SPG_PREVIEW_VISIBLE = "spg_preview_visible";
         String CONF_SPG_BACKGROUND_VISIBLE = "spg_background_visible";
+        String CONF_SPG_COMPACT_GAPS = "spg_compact_gaps";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";

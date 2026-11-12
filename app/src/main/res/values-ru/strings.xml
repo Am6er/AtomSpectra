@@ -628,6 +628,7 @@
     <string name="spectrogram_delta_off">Дельта: выкл</string>
     <string name="spectrogram_delta_interval">Дельта: %1$d с</string>
     <string name="spectrogram_gap_label">пропуск: %1$s</string>
+    <string name="spectrogram_compact_gaps">Компактные пропуски</string>
     <string name="spectrogram_gap_duration_days_hours">%1$dд %2$dч</string>
     <string name="spectrogram_gap_duration_days">%1$dд</string>
     <string name="spectrogram_gap_duration_hours_minutes">%1$dч %2$dм</string>

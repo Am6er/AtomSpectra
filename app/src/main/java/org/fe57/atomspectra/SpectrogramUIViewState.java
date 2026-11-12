@@ -27,6 +27,7 @@ public final class SpectrogramUIViewState {
     public volatile int cbinLandscape = DEFAULT_CBIN_LANDSCAPE;
     public volatile boolean previewVisible = true;
     public volatile boolean backgroundVisible = true;
+    public volatile boolean compactGaps = false;
 
     /** Vertical pan in px (not persisted). */
     public volatile int verticalOffsetPx = 0;
@@ -119,6 +120,12 @@ public final class SpectrogramUIViewState {
         sp.edit().putBoolean(Constants.CONFIG.CONF_SPG_BACKGROUND_VISIBLE, value).commit();
     }
 
+    @SuppressLint("ApplySharedPref")
+    public void setCompactGaps(boolean value, SharedPreferences sp) {
+        compactGaps = value;
+        sp.edit().putBoolean(Constants.CONFIG.CONF_SPG_COMPACT_GAPS, value).commit();
+    }
+
     /**
      * New spectrogram recording: clear selection and reset spectrum binning.
      * Does not reset palette, scale, channel bins, or visibility toggles.
@@ -178,6 +185,7 @@ public final class SpectrogramUIViewState {
         cbinLandscape = clampCbin(sp.getInt(Constants.CONFIG.CONF_SPG_CBIN_LANDSCAPE, DEFAULT_CBIN_LANDSCAPE));
         previewVisible = sp.getBoolean(Constants.CONFIG.CONF_SPG_PREVIEW_VISIBLE, true);
         backgroundVisible = sp.getBoolean(Constants.CONFIG.CONF_SPG_BACKGROUND_VISIBLE, true);
+        compactGaps = sp.getBoolean(Constants.CONFIG.CONF_SPG_COMPACT_GAPS, false);
     }
 
     private static int clampSbin(int value) {

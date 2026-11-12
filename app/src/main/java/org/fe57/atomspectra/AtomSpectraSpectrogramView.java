@@ -259,12 +259,14 @@ public class AtomSpectraSpectrogramView extends View {
         final int heightRows;
         final String durationLabel;
         final SegmentMismatch mismatch;
+        final boolean compact; // single unlabeled row
 
-        private GapMeta(int middleLinePx, int heightRows, String durationLabel, SegmentMismatch mismatch) {
+        private GapMeta(int middleLinePx, int heightRows, String durationLabel, SegmentMismatch mismatch, boolean compact) {
             this.middleLinePx = middleLinePx;
             this.heightRows = heightRows;
             this.durationLabel = durationLabel;
             this.mismatch = mismatch;
+            this.compact = compact;
         }
     }
 
@@ -304,6 +306,7 @@ public class AtomSpectraSpectrogramView extends View {
     // binning
     private int channelBinning = 1;
     private int spectrumBinning = 1;
+    private boolean compactGaps = false;
 
     // color schema and scale
     private String scale = SCALE_SQRT;
@@ -906,15 +909,16 @@ public class AtomSpectraSpectrogramView extends View {
 
         // When spectrum binning changes, keep the viewport's center content stable (or stay pinned
         // to the bottom if auto-scrolling). Capture before overwriting spectrumBinning / virtual rows.
-        boolean spectrumBinningChanged = spectrumBinning != this.spectrumBinning;
-        boolean pinToBottom = scrollToBottom || (spectrumBinningChanged && this.autoScroll);
+        boolean layoutChanged = spectrumBinning != this.spectrumBinning || viewState.compactGaps != this.compactGaps;
+        boolean pinToBottom = scrollToBottom || (layoutChanged && this.autoScroll);
         SelectionBound viewportCenterAnchor = null;
-        if (!pinToBottom && spectrumBinningChanged) {
+        if (!pinToBottom && layoutChanged) {
             viewportCenterAnchor = captureViewportCenterAnchor();
         }
 
         // Spectrum binning is any integer in 1..SpectrogramUIViewState.MAX_SBIN; the last bin of a segment may be partial.
         this.spectrumBinning = spectrumBinning;
+        this.compactGaps = viewState.compactGaps;
         this.channelBinning = channelBinning;
         this.scale = scale;
         this.palette = palette;
@@ -969,7 +973,7 @@ public class AtomSpectraSpectrogramView extends View {
                 String durationLabel = getResources().getString(R.string.spectrogram_gap_label, formatGapDuration(gapMillis));
                 int rowsToAdd = gapBandHeightRows(mismatch != SegmentMismatch.NONE);
                 int middleLinePx = virtualRows.size() * POINT_SIZE_PX + rowsToAdd * POINT_SIZE_PX / 2;
-                GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch);
+                GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch, this.compactGaps);
                 this.gapsMeta.add(gap);
                 while (rowsToAdd > 0) {
                     virtualRows.add(new VirtualRowMeta(this.gapsMeta.size() - 1));
@@ -1146,6 +1150,9 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     private int gapBandHeightRows(boolean isMismatch) {
+        if (this.compactGaps) {
+            return 1;
+        }
         int pointSizePx = Math.max(1, POINT_SIZE_PX);
         Paint paint = new Paint();
         paint.setTextSize(TEXT_FONT_SIZE_PX);
@@ -1949,7 +1956,7 @@ public class AtomSpectraSpectrogramView extends View {
 
             for (int gapIndex : visibleGaps) {
                 GapMeta gap = this.gapsMeta.get(gapIndex);
-                if (gap == null) {
+                if (gap == null || gap.compact) {
                     continue;
                 }
 
