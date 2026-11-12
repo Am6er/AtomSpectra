@@ -1506,8 +1506,14 @@ public class AtomSpectraSpectrogramView extends View {
                     int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
                     boolean segmentStart = tsBinIndex == 0;
 
+                    long timestamp = timestamps.get(originalRowIndex);
+                    String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
+                    String dateLabel = timestampStr[0];
+                    String timeLabel = timestampStr[1];
+
                     // a segment's first timestamp always wins: erase the previous label text if they overlap
-                    if (segmentStart && lastLabelTickY >= 0 && tickY - lastLabelTickY < 2 * TEXT_FONT_SIZE_PX) {
+                    float labelTop = dateLabel.equals(currentDateLabel) ? tickY : tickY - TEXT_FONT_SIZE_PX;
+                    if (segmentStart && lastLabelTickY >= 0 && labelTop < lastLabelTickY + TEXT_FONT_SIZE_PX) {
                         boolean lastLabelHadDate = !dateBeforeLastLabel.equals(currentDateLabel);
                         float top = lastLabelHadDate ? lastLabelTickY - TEXT_FONT_SIZE_PX : lastLabelTickY;
                         canvas.drawRect(0, top, TIME_AXIS_WIDTH_PX - TIMESTAMP_TICK_WIDTH_PX,
@@ -1515,11 +1521,6 @@ public class AtomSpectraSpectrogramView extends View {
                         currentDateLabel = dateBeforeLastLabel;
                         lastLabelTickY = -1;
                     }
-
-                    long timestamp = timestamps.get(originalRowIndex);
-                    String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
-                    String dateLabel = timestampStr[0];
-                    String timeLabel = timestampStr[1];
 
                     // label tick
                     int tickWidth = segmentStart || (tsBinIndex + 1) % 100 == 0
