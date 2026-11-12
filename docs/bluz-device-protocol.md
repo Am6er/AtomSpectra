@@ -318,6 +318,13 @@ sound divided by 10 and bit 5 for LED divided by 10. Header byte 61 bits 0/1/2
 map to command bits 0/4/5; header byte 97 bits 0-2 map to command bits 1-3.
 The overload flag is not written back as a setting.
 
+The settings screen shows the alarm levels (header 54/56/58), their sound and
+vibration flags (byte 60 bits 2-7) and the CPS coefficient (header 46) in uSv/h,
+taking 1 uSv/h as 100 uR/h: levels have a 0.01 uSv/h step and a 655.35 uSv/h
+maximum, and a level of 0 disables it. The coefficient is shown as uSv/h per cps
+and is marked expert; the app refuses to write a non-positive or non-finite one,
+which the firmware itself does not validate.
+
 Alarm values are 32-bit on the wire but uint16 in firmware RAM/flash; copied
 header values fit, and outgoing upper bytes are zero. A resolution-only update
 sets byte 37 to 2 and preserves every other writable setting. **Changing sample

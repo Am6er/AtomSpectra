@@ -871,6 +871,7 @@
         \n
         \tBluZ:\n
         \t- <annotation foreground="parameter">Корректировать неравномерность каналов АЦП (DNL)</annotation> - исправлять неравномерную ширину каналов АЦП BluZ, видимую как регулярная «гребёнка» в спектре. Коррекция начинается после набора достаточного числа отсчётов и применяется также к сохраняемым файлам. Изменение параметра во время записи спектрограммы искажает запись.\n
+        \t- <annotation foreground="parameter">Сигнализация</annotation> и <annotation foreground="parameter">Дозиметр</annotation> (настройки устройства) - пороги сигнализации и чувствительность хранятся в самом BluZ и работают на нём. Мощность дозы в режиме поиска приложение считает по своим профилям чувствительности (см. раздел 4).\n
 
         \n
         \tСпектр:\n
@@ -915,6 +916,8 @@
     <string name="device_settings_calibration">Калибровка</string>
     <string name="bluz_settings_indication">Индикация</string>
     <string name="bluz_settings_spectrometer">Спектрометр</string>
+    <string name="bluz_settings_alarm">Сигнализация</string>
+    <string name="bluz_settings_dosimeter">Дозиметр</string>
     <string name="device_setting_cal0">Коэффициент 0 (смещение)</string>
     <string name="device_setting_cal1">Коэффициент 1 (x)</string>
     <string name="device_setting_cal2">Коэффициент 2 (x²)</string>
@@ -932,6 +935,19 @@
     <string name="bluz_setting_hv_help">Код 10 бит, 0–1023.</string>
     <string name="bluz_setting_comparator">Порог компаратора</string>
     <string name="bluz_setting_comparator_help">Код 10 бит, 0–1023.</string>
+    <string name="bluz_setting_level1">Порог 1</string>
+    <string name="bluz_setting_level2">Порог 2</string>
+    <string name="bluz_setting_level3">Порог 3</string>
+    <string name="bluz_setting_level_help">0 отключает порог. Шаг 0,01 мкЗв/ч. Пороги не складываются: решает наивысший превышенный, звук и вибрация низших игнорируются.</string>
+    <string name="bluz_setting_level1_sound">Порог 1: звук</string>
+    <string name="bluz_setting_level2_sound">Порог 2: звук</string>
+    <string name="bluz_setting_level3_sound">Порог 3: звук</string>
+    <string name="bluz_setting_level1_vibro">Порог 1: вибрация</string>
+    <string name="bluz_setting_level2_vibro">Порог 2: вибрация</string>
+    <string name="bluz_setting_level3_vibro">Порог 3: вибрация</string>
+    <string name="bluz_setting_sensitivity">Чувствительность</string>
+    <string name="bluz_setting_sensitivity_help">Мощность дозы, соответствующая одному импульсу в секунду. Используется только устройством и не влияет на мощность дозы, которую считает приложение в режиме поиска.</string>
+    <string name="bluz_unit_usv_h_per_cps">мкЗв/ч на имп/с</string>
     <string name="spectra_pro_settings_device">Устройство</string>
     <string name="spectra_pro_setting_noise">Порог шума (NOS)</string>
     <string name="spectra_pro_setting_noise_help">Значение 0–4095.</string>

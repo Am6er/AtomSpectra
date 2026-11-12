@@ -866,6 +866,7 @@
         \n
         \tBluZ:\n
         \t- <annotation foreground="parameter">Correct uneven ADC channel widths (DNL)</annotation> - correct the uneven widths of the BluZ ADC channels, seen as a regular comb in the spectrum. The correction starts once enough counts are collected and also applies to saved files. Changing it while a spectrogram is being recorded distorts the recording.\n
+        \t- <annotation foreground="parameter">Alarm</annotation> and <annotation foreground="parameter">Dosimeter</annotation> (device settings) - the alarm levels and sensitivity are stored in and used by the BluZ itself. The app calculates the dose rate in Search mode from its own sensitivity profiles (see section 4).\n
 
         \n
         \tSpectrum:\n
@@ -910,6 +911,8 @@
     <string name="device_settings_calibration">Calibration</string>
     <string name="bluz_settings_indication">Indication</string>
     <string name="bluz_settings_spectrometer">Spectrometer</string>
+    <string name="bluz_settings_alarm">Alarm</string>
+    <string name="bluz_settings_dosimeter">Dosimeter</string>
     <string name="device_setting_cal0">Coefficient 0 (offset)</string>
     <string name="device_setting_cal1">Coefficient 1 (x)</string>
     <string name="device_setting_cal2">Coefficient 2 (x²)</string>
@@ -927,6 +930,19 @@
     <string name="bluz_setting_hv_help">Raw 10-bit value, 0–1023.</string>
     <string name="bluz_setting_comparator">Comparator threshold</string>
     <string name="bluz_setting_comparator_help">Raw 10-bit value, 0–1023.</string>
+    <string name="bluz_setting_level1">Level 1</string>
+    <string name="bluz_setting_level2">Level 2</string>
+    <string name="bluz_setting_level3">Level 3</string>
+    <string name="bluz_setting_level_help">0 disables the level. Step 0.01 μSv/h. Levels don't add up: the highest exceeded level decides, and the sound and vibration of the lower ones are ignored.</string>
+    <string name="bluz_setting_level1_sound">Level 1: sound</string>
+    <string name="bluz_setting_level2_sound">Level 2: sound</string>
+    <string name="bluz_setting_level3_sound">Level 3: sound</string>
+    <string name="bluz_setting_level1_vibro">Level 1: vibration</string>
+    <string name="bluz_setting_level2_vibro">Level 2: vibration</string>
+    <string name="bluz_setting_level3_vibro">Level 3: vibration</string>
+    <string name="bluz_setting_sensitivity">Sensitivity</string>
+    <string name="bluz_setting_sensitivity_help">Dose rate that one count per second corresponds to. Used by the device only; it does not affect the dose rate calculated by the app in Search mode.</string>
+    <string name="bluz_unit_usv_h_per_cps">μSv/h per cps</string>
     <string name="spectra_pro_settings_device">Device</string>
     <string name="spectra_pro_setting_noise">Noise threshold (NOS)</string>
     <string name="spectra_pro_setting_noise_help">Raw value 0–4095.</string>
