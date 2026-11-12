@@ -8,6 +8,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -259,14 +261,12 @@ public class AtomSpectraSpectrogramView extends View {
         final int heightRows;
         final String durationLabel;
         final SegmentMismatch mismatch;
-        final boolean compact; // single unlabeled row
 
-        private GapMeta(int middleLinePx, int heightRows, String durationLabel, SegmentMismatch mismatch, boolean compact) {
+        private GapMeta(int middleLinePx, int heightRows, String durationLabel, SegmentMismatch mismatch) {
             this.middleLinePx = middleLinePx;
             this.heightRows = heightRows;
             this.durationLabel = durationLabel;
             this.mismatch = mismatch;
-            this.compact = compact;
         }
     }
 
@@ -973,7 +973,7 @@ public class AtomSpectraSpectrogramView extends View {
                 String durationLabel = getResources().getString(R.string.spectrogram_gap_label, formatGapDuration(gapMillis));
                 int rowsToAdd = gapBandHeightRows(mismatch != SegmentMismatch.NONE);
                 int middleLinePx = virtualRows.size() * POINT_SIZE_PX + rowsToAdd * POINT_SIZE_PX / 2;
-                GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch, this.compactGaps);
+                GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch);
                 this.gapsMeta.add(gap);
                 while (rowsToAdd > 0) {
                     virtualRows.add(new VirtualRowMeta(this.gapsMeta.size() - 1));
@@ -1470,6 +1470,10 @@ public class AtomSpectraSpectrogramView extends View {
                 paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
 
                 String currentDateLabel = "";
+                String dateBeforeLastLabel = "";
+                int lastLabelTickY = -1;
+                Paint erasePaint = new Paint();
+                erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
                 for (int virtualRowIndex = virtualRowStart; virtualRowIndex <= virtualRowEnd; virtualRowIndex++) {
                     VirtualRowMeta rowMeta = virtualRowsMeta[virtualRowIndex];
                     if (rowMeta.gapIndex >= 0) {
@@ -1499,19 +1503,33 @@ public class AtomSpectraSpectrogramView extends View {
                         continue;
                     }
 
+                    int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
+                    boolean segmentStart = tsBinIndex == 0;
+
+                    // a segment's first timestamp always wins: erase the previous label text if they overlap
+                    if (segmentStart && lastLabelTickY >= 0 && tickY - lastLabelTickY < 2 * TEXT_FONT_SIZE_PX) {
+                        boolean lastLabelHadDate = !dateBeforeLastLabel.equals(currentDateLabel);
+                        float top = lastLabelHadDate ? lastLabelTickY - TEXT_FONT_SIZE_PX : lastLabelTickY;
+                        canvas.drawRect(0, top, TIME_AXIS_WIDTH_PX - TIMESTAMP_TICK_WIDTH_PX,
+                                lastLabelTickY + TEXT_FONT_SIZE_PX * 1.25f, erasePaint);
+                        currentDateLabel = dateBeforeLastLabel;
+                        lastLabelTickY = -1;
+                    }
+
                     long timestamp = timestamps.get(originalRowIndex);
                     String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
                     String dateLabel = timestampStr[0];
                     String timeLabel = timestampStr[1];
 
                     // label tick
-                    int tickWidth = tsBinIndex == 0 || (tsBinIndex + 1) % 100 == 0
+                    int tickWidth = segmentStart || (tsBinIndex + 1) % 100 == 0
                             ? TIMESTAMP_TICK_WIDTH_PX
                             : TIMESTAMP_TICK_WIDTH_PX / 2;
 
                     int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
-                    int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
                     if (tickY + TEXT_FONT_SIZE_PX <= spgViewHeight + PADDING_TOP_PX) {
+                        dateBeforeLastLabel = currentDateLabel;
+                        lastLabelTickY = tickY;
                         if (dateLabel.equals(currentDateLabel)) {
                             // render time only
                             canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
@@ -1932,7 +1950,7 @@ public class AtomSpectraSpectrogramView extends View {
 
     // renders centered duration (and, for mismatched gaps, warning) labels within each visible gap band
     private void renderGapLabels(HashSet<Integer> visibleGaps, int viewWidth, int spgViewHeight) {
-        if (visibleGaps.isEmpty() || this.gapsMeta == null) {
+        if (this.compactGaps || visibleGaps.isEmpty() || this.gapsMeta == null) {
             return;
         }
 
@@ -1956,7 +1974,7 @@ public class AtomSpectraSpectrogramView extends View {
 
             for (int gapIndex : visibleGaps) {
                 GapMeta gap = this.gapsMeta.get(gapIndex);
-                if (gap == null || gap.compact) {
+                if (gap == null) {
                     continue;
                 }
 
