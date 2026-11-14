@@ -898,6 +898,9 @@ public class AtomSpectraSpectrogramView extends View {
         this.fgLeftHandleRow = fgLeftBound; // Math.min(fgLeftBound, maxRow);
         this.fgRightHandleRow = fgRightBound; // Math.min(fgRightBound, maxRow);
         if (!hasRows) {
+            this.channelBinning = channelBinning;
+            this.scale = scale;
+            this.palette = palette;
             this.segmentsBinData = new ArrayList<>();
             this.gapsMeta = new ArrayList<>();
             this.virtualRowsMeta = new VirtualRowMeta[0];
@@ -1335,16 +1338,16 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
 
-        if (this.segmentsBinData == null || this.segmentsBinData.isEmpty()) {
-            return;
-        }
         ArrayList<float[]> firstNonEmptyBinData = null;
-        for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
-            if (!segmentBinData.isEmpty()) {
-                firstNonEmptyBinData = segmentBinData;
+        if (this.segmentsBinData != null) {
+            for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
+                if (!segmentBinData.isEmpty()) {
+                    firstNonEmptyBinData = segmentBinData;
+                }
             }
         }
         if (firstNonEmptyBinData == null) {
+            renderEmptyView(viewWidth, viewHeight);
             return;
         }
 
@@ -1462,12 +1465,7 @@ public class AtomSpectraSpectrogramView extends View {
         synchronized (this.spectrogramBitmapSync) {
             if (this.spectrogramBitmap != null) {
                 Canvas canvas = new Canvas(this.spectrogramBitmap);
-                Paint paint = new Paint();
-                paint.setAntiAlias(true);
-                paint.setColor(Color.WHITE);
-                paint.setTextSize(TEXT_FONT_SIZE_PX);
-                paint.setStyle(Paint.Style.FILL);
-                paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
+                Paint paint = newAxisPaint();
 
                 String currentDateLabel = "";
                 String dateBeforeLastLabel = "";
@@ -1545,36 +1543,15 @@ public class AtomSpectraSpectrogramView extends View {
                     canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
                 }
 
-                canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, PADDING_TOP_PX, TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
-                // canvas.drawLine(viewWidth - PADDING_RIGHT_PX + 0.5f, PADDING_TOP_PX, viewWidth - PADDING_RIGHT_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
+                drawTimeAxisLine(canvas, paint, spgViewHeight);
             }
         }
 
         // render energy axis
         synchronized (this.spectrogramBitmapSync) {
             if (this.spectrogramBitmap != null) {
-                Canvas canvas = new Canvas(this.spectrogramBitmap);
-                Paint paint = new Paint();
-                paint.setAntiAlias(true);
-                paint.setColor(Color.WHITE);
-                paint.setTextSize(TEXT_FONT_SIZE_PX);
-                paint.setStyle(Paint.Style.FILL);
-                paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
-
-                // energy axis render — channel/energy labels
-                int energyAxisBaseline = energyAxisBaselineYpx(viewHeight);
-                int channelAxisBaseline = channelAxisBaselineYpx(viewHeight);
-                Spectrum baseSpectrum = segmentsData != null
-                        && !segmentsData.isEmpty()
-                        && axisSegmentIndex >= 0
-                        && axisSegmentIndex < segmentsData.size()
-                        ? segmentsData.get(axisSegmentIndex).getBaseSpectrum()
-                        : null;
-                int baseChannelCount = baseSpectrum == null ? 0 : baseSpectrum.getDataArray().length;
-                renderEnergyAxis(canvas, paint, energyAxisBaseline, baseSpectrum,
-                    colBinsCount, colBinStart, colBinsToRenderWidthPx);
-                renderChannelAxis(canvas, paint, channelAxisBaseline, baseChannelCount,
-                    colBinsCount, colBinStart, colBinsToRenderWidthPx);
+                renderEnergyAndChannelAxes(new Canvas(this.spectrogramBitmap), newAxisPaint(), viewHeight,
+                        axisSegmentIndex, 0, colBinsCount, colBinStart, colBinsToRenderWidthPx);
             }
         }
 
@@ -1598,6 +1575,64 @@ public class AtomSpectraSpectrogramView extends View {
             verticalOffsetPx += virtualRowHeightPx;
         }
         syncViewportToViewState();
+    }
+
+    // placeholder axes shown until the first spectrogram row arrives
+    private void renderEmptyView(int viewWidth, int viewHeight) {
+        int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
+        int spgViewHeight = spectrogramPlotHeightPx(viewHeight);
+        if (spgViewWidth <= 0 || spgViewHeight <= 0) {
+            return;
+        }
+
+        int colBinsCount = (AtomSpectraSpectrogramData.CHANNEL_COUNT + channelBinning - 1) / channelBinning;
+        int renderedWidthPx = Math.min(colBinsCount, spgViewWidth / POINT_SIZE_PX) * POINT_SIZE_PX;
+
+        synchronized (this.spectrogramBitmapSync) {
+            if (this.spectrogramBitmap == null) {
+                return;
+            }
+            Canvas canvas = new Canvas(this.spectrogramBitmap);
+            Paint paint = newAxisPaint();
+            drawTimeAxisLine(canvas, paint, spgViewHeight);
+
+            // a segment with a base spectrum but no rows still gets calibrated axes;
+            // without one the energy axis is the baseline only and the channel axis uses the default range
+            renderEnergyAndChannelAxes(canvas, paint, viewHeight, segmentsData == null ? -1 : segmentsData.size() - 1,
+                    AtomSpectraSpectrogramData.CHANNEL_COUNT, colBinsCount, 0, renderedWidthPx);
+        }
+
+        renderColorBar(viewWidth, viewHeight);
+    }
+
+    private Paint newAxisPaint() {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(TEXT_FONT_SIZE_PX);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
+        return paint;
+    }
+
+    private void drawTimeAxisLine(Canvas canvas, Paint paint, int spgViewHeight) {
+        canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, PADDING_TOP_PX,
+                TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
+    }
+
+    private void renderEnergyAndChannelAxes(Canvas canvas, Paint paint, int viewHeight, int axisSegmentIndex,
+                                            int fallbackChannelCount, int colBinsCount, int colBinStart,
+                                            int renderedWidthPx) {
+        Spectrum baseSpectrum = segmentsData != null
+                && axisSegmentIndex >= 0
+                && axisSegmentIndex < segmentsData.size()
+                ? segmentsData.get(axisSegmentIndex).getBaseSpectrum()
+                : null;
+        int baseChannelCount = baseSpectrum == null ? fallbackChannelCount : baseSpectrum.getDataArray().length;
+        renderEnergyAxis(canvas, paint, energyAxisBaselineYpx(viewHeight), baseSpectrum,
+                colBinsCount, colBinStart, renderedWidthPx);
+        renderChannelAxis(canvas, paint, channelAxisBaselineYpx(viewHeight), baseChannelCount,
+                colBinsCount, colBinStart, renderedWidthPx);
     }
 
     // drawn in onDraw, not into the bitmap, so a status change needs no spectrogram re-render
