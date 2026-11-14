@@ -1577,7 +1577,7 @@ public class AtomSpectraSpectrogramView extends View {
         syncViewportToViewState();
     }
 
-    // placeholder axes shown until the first spectrogram row arrives
+    // only the time axis line, energy axis line and color bar are shown until the first spectrogram row arrives
     private void renderEmptyView(int viewWidth, int viewHeight) {
         int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
         int spgViewHeight = spectrogramPlotHeightPx(viewHeight);
@@ -1596,10 +1596,8 @@ public class AtomSpectraSpectrogramView extends View {
             Paint paint = newAxisPaint();
             drawTimeAxisLine(canvas, paint, spgViewHeight);
 
-            // a segment with a base spectrum but no rows still gets calibrated axes;
-            // without one the energy axis is the baseline only and the channel axis uses the default range
-            renderEnergyAndChannelAxes(canvas, paint, viewHeight, segmentsData == null ? -1 : segmentsData.size() - 1,
-                    AtomSpectraSpectrogramData.CHANNEL_COUNT, colBinsCount, 0, renderedWidthPx);
+            float baselineY = energyAxisBaselineYpx(viewHeight) - 0.5f;
+            canvas.drawLine(TIME_AXIS_WIDTH_PX, baselineY, TIME_AXIS_WIDTH_PX + renderedWidthPx, baselineY, paint);
         }
 
         renderColorBar(viewWidth, viewHeight);
