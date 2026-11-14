@@ -55,6 +55,7 @@ public class AtomSpectraFindIsotope extends Activity implements OnItemSelectedLi
         super.onCreate(savedInstanceState);
         SharedPreferences sp = PrefHelper.getASSharedPreferences(this);
         setContentView(R.layout.activity_atom_spectra_find_isotope);
+        KeyboardHelper.consumeEnterIn(findViewById(android.R.id.content));
         ((EditText) findViewById(R.id.editResolution)).setText(String.format(Locale.getDefault(), "%.1f", sp.getFloat(Constants.SEARCH.PREF_RESOLUTION, Constants.RESOLUTION_DEFAULT)));
         ((EditText) findViewById(R.id.editTolerance)).setText(String.format(Locale.getDefault(), "%.2f", sp.getFloat(Constants.SEARCH.PREF_TOLERANCE, Constants.TOLERANCE_DEFAULT)));
         ((EditText) findViewById(R.id.editThreshold)).setText(String.format(Locale.getDefault(), "%.1f", sp.getFloat(Constants.SEARCH.PREF_THRESHOLD, Constants.THRESHOLD_DEFAULT)));
