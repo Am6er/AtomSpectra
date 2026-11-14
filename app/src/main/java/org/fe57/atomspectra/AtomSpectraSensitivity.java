@@ -93,6 +93,7 @@ public class AtomSpectraSensitivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_atom_spectra_sensivity);
+        KeyboardHelper.consumeEnterIn(findViewById(android.R.id.content));
 
         ActionBar bar = getActionBar();
         if (bar != null) {

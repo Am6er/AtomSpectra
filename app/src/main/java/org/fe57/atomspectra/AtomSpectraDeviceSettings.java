@@ -411,6 +411,7 @@ public class AtomSpectraDeviceSettings extends Activity {
             valueRow = view.findViewById(R.id.settingValueRow);
             edit = view.findViewById(R.id.settingEdit);
             select = view.findViewById(R.id.settingSelect);
+            KeyboardHelper.consumeEnterIn(view);
         }
 
         void bind(SettingDescriptor descriptor) {
