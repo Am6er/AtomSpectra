@@ -79,6 +79,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SPECTROGRAM);
         intentFilter.addAction(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_MENU);
+        intentFilter.addAction(Constants.ACTION.ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             registerReceiver(mDataUpdateReceiver, intentFilter, RECEIVER_NOT_EXPORTED);
         } else {
@@ -474,6 +475,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             } else if (Constants.ACTION.ACTION_UPDATE_MENU.equals(action)) {
                 updateRecordingState();
                 updateMapMenu();
+            } else if (Constants.ACTION.ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED.equals(action)) {
+                updateControlPanel();
             }
         }
 
@@ -788,12 +791,15 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                     exportSpectrumCancellationToken = new CancellationToken();
                     showSpectrumExportingDialog();
 
+                    // the activity may be recreated during export (e.g. rotation), so the control
+                    // panel is updated by broadcast, which reaches the current instance
+                    Intent exportStateChanged = new Intent(Constants.ACTION.ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED)
+                            .setPackage(Constants.PACKAGE_NAME);
+                    Context appContext = getApplicationContext();
                     Handler mainHandler = new Handler(Looper.getMainLooper());
                     new Thread(() -> {
                         isExportingSpectrum = true;
-                        mainHandler.post(() -> {
-                            updateControlPanel();
-                        });
+                        appContext.sendBroadcast(exportStateChanged);
                         try {
                             if (exportBg) {
                                 exportSpectrum(exportSnapshot, bgLeft, bgRight, bgName, exportSpectrumCancellationToken);
@@ -803,10 +809,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                             }
                         } finally {
                             isExportingSpectrum = false;
-                            mainHandler.post(() -> {
-                                dismissSpectrumExportingDialog();
-                                updateControlPanel();
-                            });
+                            mainHandler.post(() -> dismissSpectrumExportingDialog());
+                            appContext.sendBroadcast(exportStateChanged);
                         }
                     }).start();
                 })
