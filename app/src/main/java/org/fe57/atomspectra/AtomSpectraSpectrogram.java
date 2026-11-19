@@ -144,25 +144,30 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         if (state.bgLeftBound == null || state.bgRightBound == null || state.fgLeftBound == null || state.fgRightBound == null) {
             return;
         }
+        // the selection refers to the rendered snapshot, so the preview is computed from it too
+        AtomSpectraSpectrogramData.Snapshot snapshot = spgView.getSnapshot();
+        if (snapshot == null) {
+            return;
+        }
         double[] bg = state.backgroundVisible
-                ? AtomSpectraSpectrogramData.instance.averageSpectrum(
+                ? snapshot.averageSpectrum(
                 state.bgLeftBound.segmentIndex, state.bgLeftBound.rowIndex,
                 state.bgRightBound.segmentIndex, state.bgRightBound.rowIndex)
                 : null;
-        double[] fg = AtomSpectraSpectrogramData.instance.averageSpectrum(
+        double[] fg = snapshot.averageSpectrum(
                 state.fgLeftBound.segmentIndex, state.fgLeftBound.rowIndex,
                 state.fgRightBound.segmentIndex, state.fgRightBound.rowIndex);
-        double[] energies = computeEnergiesArray(spgView.getVisibleEndSegmentIndex());
+        double[] energies = computeEnergiesArray(snapshot, spgView.getVisibleEndSegmentIndex());
         preview.setScale(state.scale);
         preview.setSpectra(bg, fg, energies);
         preview.setVisibleChannelRange(spgView.getVisibleStartChannel(), spgView.getVisibleEndChannel());
     }
 
-    private double[] computeEnergiesArray(int segmentIndex) {
+    private double[] computeEnergiesArray(AtomSpectraSpectrogramData.Snapshot snapshot, int segmentIndex) {
         int channelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
         double[] energies = new double[channelCount];
         for (int i = 0; i < channelCount; i++) {
-            energies[i] = AtomSpectraSpectrogramData.instance.channelToEnergy(segmentIndex, i);
+            energies[i] = snapshot.channelToEnergy(segmentIndex, i);
         }
         return energies;
     }
@@ -523,9 +528,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
     private void updateSpectrogram(boolean scrollToBottom) {
         if (isActive) {
             SpectrogramUIViewState state = SpectrogramUIViewState.instance;
-            state.applySelectionShifts(AtomSpectraSpectrogramData.instance.takeSelectionShifts());
-            int newRowCount = AtomSpectraSpectrogramData.instance.rowCount();
-            if (newRowCount == 0) {
+            AtomSpectraSpectrogramData.Snapshot snapshot = AtomSpectraSpectrogramData.instance.takeSnapshot();
+            state.applySelectionShifts(snapshot.getSelectionShifts());
+            if (snapshot.rowCount() == 0) {
                 state.clearSelection();
                 state.resetVerticalScroll(true);
             } else if (state.bgLeftBound == null || state.bgRightBound == null
@@ -537,8 +542,9 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
             AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
             if (spgView != null) {
                 updateRecordingState();
-                spgView.renderSpectrogram(AtomSpectraSpectrogramData.instance, state, scrollToBottom);
+                spgView.renderSpectrogram(snapshot, state, scrollToBottom);
             }
+            updateExportButton();
 
             syncRegionsToPreview();
         }
@@ -576,10 +582,16 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                     : R.drawable.ic_spg_spectrum_preview_show);
         }
 
+        updateExportButton();
+    }
+
+    // export works on the rendered snapshot, so its availability is decided by it too
+    private void updateExportButton() {
         ImageButton exportButton = findViewById(R.id.buttonExportSpectrum);
         if (exportButton != null) {
             boolean filenameIsSet = AtomSpectraSpectrogramData.instance.getSpectrogramFileName() != null;
-            boolean rowsAvailable = AtomSpectraSpectrogramData.instance.rowCount() > 0;
+            AtomSpectraSpectrogramData.Snapshot snapshot = renderedSnapshot();
+            boolean rowsAvailable = snapshot != null && snapshot.rowCount() > 0;
             exportButton.setEnabled(!isExportingSpectrum && filenameIsSet && rowsAvailable);
         }
     }
@@ -685,7 +697,8 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
     private void showSpectrumExportNameDialog() {
         String basePrefix = "";
-        Spectrum baseSpectrum = AtomSpectraSpectrogramData.instance.baseSegment().getBaseSpectrum();
+        AtomSpectraSpectrogramData.Snapshot snapshot = renderedSnapshot();
+        Spectrum baseSpectrum = snapshot != null ? snapshot.getFirstBaseSpectrum() : null;
         if (baseSpectrum != null && !baseSpectrum.getSuffix().isEmpty()) {
             basePrefix = baseSpectrum.getSuffix() + "-";
         }
@@ -759,6 +772,19 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                         return;
                     }
 
+                    // capture the selection together with the snapshot it refers to; data and
+                    // selection keep changing on the main thread while the export runs
+                    AtomSpectraSpectrogramData.Snapshot exportSnapshot = renderedSnapshot();
+                    SpectrogramUIViewState exportState = SpectrogramUIViewState.instance;
+                    AtomSpectraSpectrogramView.SelectionBound bgLeft = exportState.bgLeftBound;
+                    AtomSpectraSpectrogramView.SelectionBound bgRight = exportState.bgRightBound;
+                    AtomSpectraSpectrogramView.SelectionBound fgLeft = exportState.fgLeftBound;
+                    AtomSpectraSpectrogramView.SelectionBound fgRight = exportState.fgRightBound;
+                    // data may have been cleared while the dialog was open
+                    if (exportSnapshot == null || bgLeft == null || bgRight == null || fgLeft == null || fgRight == null) {
+                        return;
+                    }
+
                     exportSpectrumCancellationToken = new CancellationToken();
                     showSpectrumExportingDialog();
 
@@ -769,12 +795,11 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
                             updateControlPanel();
                         });
                         try {
-                            SpectrogramUIViewState exportState = SpectrogramUIViewState.instance;
                             if (exportBg) {
-                                exportSpectrum(exportState.bgLeftBound, exportState.bgRightBound, bgName, exportSpectrumCancellationToken);
+                                exportSpectrum(exportSnapshot, bgLeft, bgRight, bgName, exportSpectrumCancellationToken);
                             }
                             if (exportFg && !exportSpectrumCancellationToken.isCancelled()) {
-                                exportSpectrum(exportState.fgLeftBound, exportState.fgRightBound, fgName, exportSpectrumCancellationToken);
+                                exportSpectrum(exportSnapshot, fgLeft, fgRight, fgName, exportSpectrumCancellationToken);
                             }
                         } finally {
                             isExportingSpectrum = false;
@@ -817,7 +842,12 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
         }
     }
 
-    private void exportSpectrum(AtomSpectraSpectrogramView.SelectionBound leftBound, AtomSpectraSpectrogramView.SelectionBound rightBound, String spectrumName, CancellationToken cancellationToken) {
+    private AtomSpectraSpectrogramData.Snapshot renderedSnapshot() {
+        AtomSpectraSpectrogramView spgView = findViewById(R.id.viewSpectrogram);
+        return spgView != null ? spgView.getSnapshot() : null;
+    }
+
+    private void exportSpectrum(AtomSpectraSpectrogramData.Snapshot snapshot, AtomSpectraSpectrogramView.SelectionBound leftBound, AtomSpectraSpectrogramView.SelectionBound rightBound, String spectrumName, CancellationToken cancellationToken) {
         SpectrumFileAS spectrum = new SpectrumFileAS();
         AtomSpectraSpectrogramView.SelectionBound fromDelta;
         AtomSpectraSpectrogramView.SelectionBound toDelta;
@@ -831,7 +861,7 @@ public class AtomSpectraSpectrogram extends Activity implements GestureDetector.
 
         try {
             List<AtomSpectraSpectrogramData.SegmentExportRange> ranges =
-                    AtomSpectraSpectrogramData.instance.resolveExportRanges(fromDelta.segmentIndex, fromDelta.rowIndex, toDelta.segmentIndex, toDelta.rowIndex);
+                    snapshot.resolveExportRanges(fromDelta.segmentIndex, fromDelta.rowIndex, toDelta.segmentIndex, toDelta.rowIndex);
             Handler mainHandler = new Handler(Looper.getMainLooper());
             String spectrumFileName = spectrum.exportSpectrogramPartAsSpectrum(ranges, spectrumName, this, progress -> {
                 mainHandler.post(() -> {

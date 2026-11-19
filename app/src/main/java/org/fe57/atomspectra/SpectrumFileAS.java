@@ -370,7 +370,7 @@ public class SpectrumFileAS extends SpectrumFile {
 
     /**
      * Combines deltas from one or more segment ranges (see
-     * {@link AtomSpectraSpectrogramData#resolveExportRanges}) into a single exported
+     * {@link AtomSpectraSpectrogramData.Snapshot#resolveExportRanges}) into a single exported
      * spectrum file. Ranges are processed in order; only deltas are combined across
      * ranges/segments — base spectrums are read solely to locate/skip to each range's
      * deltas within its own file. The combined output's calibration and device info come

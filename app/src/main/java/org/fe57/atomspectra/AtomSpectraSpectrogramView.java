@@ -245,7 +245,8 @@ public class AtomSpectraSpectrogramView extends View {
     private static final int GUIDE_LINE_ALPHA = 110;
 
     // cps data
-    private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // original data list
+    private AtomSpectraSpectrogramData.Snapshot snapshot = null; // data currently rendered, selection indices refer to it
+    private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // snapshot.getSegments()
     private ArrayList<List<float[]>> segmentsBinData = null; // binned segments, cps data only
 
     // gaps data
@@ -341,7 +342,7 @@ public class AtomSpectraSpectrogramView extends View {
             return new SelectionBound(0, 0);
         }
 
-        // bound after oldest data was removed, see AtomSpectraSpectrogramData.takeSelectionShifts();
+        // bound after oldest data was removed, see AtomSpectraSpectrogramData.Snapshot.getSelectionShifts();
         // a bound inside removed data moves to the start of what is left
         public SelectionBound shifted(int shift) {
             if (shift == AtomSpectraSpectrogramData.SHIFT_SEGMENT_DROPPED) {
@@ -442,6 +443,10 @@ public class AtomSpectraSpectrogramView extends View {
 
     public int getVisibleEndChannel() {
         return visibleEndChannel;
+    }
+
+    public AtomSpectraSpectrogramData.Snapshot getSnapshot() {
+        return snapshot;
     }
 
     public int getVisibleEndSegmentIndex() {
@@ -862,12 +867,11 @@ public class AtomSpectraSpectrogramView extends View {
         invalidate();
     }
 
-    public void renderSpectrogram(AtomSpectraSpectrogramData data, SpectrogramUIViewState viewState, boolean scrollToBottom) {
-        this.segmentsData = data.getSegments();
-        int snapshotRowCount = 0;
-        for (AtomSpectraSpectrogramData.SegmentData segment : this.segmentsData) {
-            snapshotRowCount += segment.getRowCount();
-        }
+    // viewState selection must already be shifted to the snapshot (see Snapshot.getSelectionShifts)
+    public void renderSpectrogram(AtomSpectraSpectrogramData.Snapshot snapshot, SpectrogramUIViewState viewState, boolean scrollToBottom) {
+        this.snapshot = snapshot;
+        this.segmentsData = snapshot.getSegments();
+        int snapshotRowCount = snapshot.rowCount();
         if (this.rowCount != snapshotRowCount) {
             this.rowCount = snapshotRowCount;
             this.rowCountLabel = getResources().getString(R.string.spectrogram_row_count, this.rowCount);
@@ -888,14 +892,8 @@ public class AtomSpectraSpectrogramView extends View {
         // Treat "no delta rows yet" the same as "no segments": a segment can exist with a base
         // spectrum but zero rows (recording just started). In that case the caller passes null
         // bounds, so we must not fall through to the handle logic. See AtomSpectraSpectrogram
-        // .updateSpectrogram, which keys emptiness off rowCount() (total rows), not segment count.
-        boolean hasRows = false;
-        for (AtomSpectraSpectrogramData.SegmentData segment : this.segmentsData) {
-            if (segment.getRowCount() > 0) {
-                hasRows = true;
-                break;
-            }
-        }
+        // .updateSpectrogram, which keys emptiness off the snapshot's total row count, not segment count.
+        boolean hasRows = snapshotRowCount > 0;
         // TODO: cap handles?
         this.bgLeftHandleRow = bgLeftBound; // Math.min(bgLeftBound, maxRow);
         this.bgRightHandleRow = bgRightBound; // Math.min(bgRightBound, maxRow);
