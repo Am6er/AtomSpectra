@@ -197,6 +197,8 @@ public class Constants {
         String ACTION_LOG_UPDATED = "org.fe57.atomspectra.ACTION_LOG_UPDATED";
         String ACTION_CLOSE_SPECTROGRAM = "org.fe57.atomspectra.ACTION_CLOSE_SPECTROGRAM";
         String ACTION_SPECTROGRAM_UPDATED = "org.fe57.atomspectra.ACTION_SPECTROGRAM_UPDATED";
+        // spectrum export from spectrogram started or finished; the activity may have been recreated meanwhile
+        String ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED = "org.fe57.atomspectra.ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED";
 
         // attach/detach USB
         // sent by AtomSpectraSerial on errors
