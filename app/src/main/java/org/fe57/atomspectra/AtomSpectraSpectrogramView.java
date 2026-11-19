@@ -246,7 +246,7 @@ public class AtomSpectraSpectrogramView extends View {
 
     // cps data
     private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // original data list
-    private ArrayList<ArrayList<float[]>> segmentsBinData = null; // binned segments, cps data only
+    private ArrayList<List<float[]>> segmentsBinData = null; // binned segments, cps data only
 
     // gaps data
     private enum SegmentMismatch {
@@ -863,12 +863,16 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     public void renderSpectrogram(AtomSpectraSpectrogramData data, SpectrogramUIViewState viewState, boolean scrollToBottom) {
-        if (this.rowCount != data.rowCount()) {
-            this.rowCount = data.rowCount();
+        this.segmentsData = data.getSegments();
+        int snapshotRowCount = 0;
+        for (AtomSpectraSpectrogramData.SegmentData segment : this.segmentsData) {
+            snapshotRowCount += segment.getRowCount();
+        }
+        if (this.rowCount != snapshotRowCount) {
+            this.rowCount = snapshotRowCount;
             this.rowCountLabel = getResources().getString(R.string.spectrogram_row_count, this.rowCount);
         }
         this.boundViewState = viewState;
-        this.segmentsData = data.getSegments();
         this.backgroundHandlesVisible = viewState.backgroundVisible;
         applyViewportFromViewState(viewState);
 
@@ -935,8 +939,8 @@ public class AtomSpectraSpectrogramView extends View {
         this.segmentsBinData = new ArrayList<>(this.segmentsData.size());
         for (int s = 0; s < this.segmentsData.size(); s++) {
             AtomSpectraSpectrogramData.SegmentData segment = this.segmentsData.get(s);
-            ArrayList<float[]> originalSpectrogram = segment.getSpectrogram();
-            ArrayList<float[]> binnedSpectrogram;
+            List<float[]> originalSpectrogram = segment.getSpectrogram();
+            List<float[]> binnedSpectrogram;
             if (channelBinning > 1) {
                 binnedSpectrogram = new ArrayList<>(originalSpectrogram.size());
                 for (float[] row : originalSpectrogram) {
@@ -986,8 +990,8 @@ public class AtomSpectraSpectrogramView extends View {
 
             if (spectrumBinning > 1) {
                 // insert binned segment to virtual rows
-                ArrayList<Float> originalDurations = segment.getDurations();
-                ArrayList<float[]> binnedSpectrogram = this.segmentsBinData.get(s);
+                List<Float> originalDurations = segment.getDurations();
+                List<float[]> binnedSpectrogram = this.segmentsBinData.get(s);
                 ArrayList<float[]> spectrumBinnedSpectrogram = new ArrayList<>(binnedSpectrogram.size() / spectrumBinning);
                 for (int i = 0; i < binnedSpectrogram.size(); i += spectrumBinning) {
                     float binnedDuration = 0;
@@ -1022,7 +1026,7 @@ public class AtomSpectraSpectrogramView extends View {
         this.virtualRowsMeta = virtualRows.toArray(new VirtualRowMeta[0]);
 
         this.spectrogramMaxCps = 0;
-        for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
+        for (List<float[]> segmentBinData : this.segmentsBinData) {
             for (float[] deltas : segmentBinData) {
                 for (double value : deltas) {
                     if (value > this.spectrogramMaxCps) {
@@ -1338,9 +1342,9 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
 
-        ArrayList<float[]> firstNonEmptyBinData = null;
+        List<float[]> firstNonEmptyBinData = null;
         if (this.segmentsBinData != null) {
-            for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
+            for (List<float[]> segmentBinData : this.segmentsBinData) {
                 if (!segmentBinData.isEmpty()) {
                     firstNonEmptyBinData = segmentBinData;
                 }
@@ -1427,7 +1431,7 @@ public class AtomSpectraSpectrogramView extends View {
             VirtualRowMeta rowMeta = virtualRowsMeta[virtualRowIndex];
             if (rowMeta.segmentIndex >= 0) {
                 int rowBin = rowMeta.segmentRowBinIndex;
-                ArrayList<float[]> spectrogramBinData = this.segmentsBinData.get(rowMeta.segmentIndex);
+                List<float[]> spectrogramBinData = this.segmentsBinData.get(rowMeta.segmentIndex);
                 for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
                     double value = spectrogramBinData.get(rowBin)[colBin];
                     int color = mapValueToColor(value);
@@ -1479,7 +1483,7 @@ public class AtomSpectraSpectrogramView extends View {
                         continue;
                     }
                     AtomSpectraSpectrogramData.SegmentData segment = this.segmentsData.get(rowMeta.segmentIndex);
-                    ArrayList<Long> timestamps = segment.getTimestamps();
+                    List<Long> timestamps = segment.getTimestamps();
                     if (timestamps.isEmpty()) {
                         continue;
                     }

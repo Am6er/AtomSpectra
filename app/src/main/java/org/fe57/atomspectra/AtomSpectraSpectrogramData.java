@@ -247,62 +247,54 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    // read-only snapshot of one segment's data
+    // immutable snapshot of one segment's data; must be created under spectrogramSync
+    // so that spectrogram, timestamps and durations have the same rows
     public static final class SegmentData {
-        private final Segment segment;
+        private final Spectrum baseSpectrum;
+        private final List<float[]> spectrogram;
+        private final List<Long> timestamps;
+        private final List<Float> durations;
 
         private SegmentData(Segment segment) {
-            this.segment = segment;
+            this.baseSpectrum = segment.baseSpectrum;
+            this.spectrogram = Collections.unmodifiableList(new ArrayList<>(segment.spectrogram));
+            this.timestamps = Collections.unmodifiableList(new ArrayList<>(segment.timestamps));
+            this.durations = Collections.unmodifiableList(new ArrayList<>(segment.durations));
         }
 
-        public ArrayList<float[]> getSpectrogram() {
-            return new ArrayList<>(segment.spectrogram);
+        public List<float[]> getSpectrogram() {
+            return spectrogram;
         }
 
-        public ArrayList<Long> getTimestamps() {
-            return new ArrayList<>(segment.timestamps);
+        public List<Long> getTimestamps() {
+            return timestamps;
         }
 
-        public ArrayList<Float> getDurations() {
-            return new ArrayList<>(segment.durations);
-        }
-
-        public ArrayList<MapPoint> getMapPoints() {
-            return new ArrayList<>(segment.mapPoints);
-        }
-
-        public boolean hasValidMapPoints() {
-            for (MapPoint point : segment.mapPoints) {
-                if (MapHelper.isValidLocation(point.latitude, point.longitude)) {
-                    return true;
-                }
-            }
-            return false;
+        public List<Float> getDurations() {
+            return durations;
         }
 
         public Spectrum getBaseSpectrum() {
-            return this.segment.baseSpectrum;
+            return baseSpectrum;
         }
 
         public int getRowCount() {
-            return segment.spectrogram.size();
+            return spectrogram.size();
         }
 
         public long getStartTime() {
-            return this.segment.baseSpectrum.getSpectrumDate();
+            return baseSpectrum.getSpectrumDate();
         }
 
         public long getEndTime() {
-            if (this.segment.timestamps.isEmpty()) {
-                return this.getStartTime();
-            } else {
-                return this.segment.timestamps.get(this.segment.timestamps.size() - 1);
-            }
+            return timestamps.isEmpty() ? getStartTime() : timestamps.get(timestamps.size() - 1);
         }
     }
 
     public SegmentData baseSegment() {
-        return segments.isEmpty() ? null : new SegmentData(segments.get(0));
+        synchronized (spectrogramSync) {
+            return segments.isEmpty() ? null : new SegmentData(segments.get(0));
+        }
     }
 
     public List<SegmentData> getSegments() {
