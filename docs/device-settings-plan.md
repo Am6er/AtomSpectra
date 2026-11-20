@@ -72,7 +72,7 @@ Everything goes through command 0, a read-modify-write on the latest retained 10
 | Spectrometer | HV | int 0–1023, raw | expert | 10-bit |
 | Spectrometer | Comparator | int 0–1023, raw | expert | 10-bit |
 
-Not exposed: resolution (the app is fixed at 4096 and sets it itself), bits per channel (managed by firmware), the unused raw calibration slots, battery calibration (command 7) and `VibroEnable`. All unexposed raw bytes and floats are preserved bit-for-bit.
+Not exposed: resolution (the app is fixed at 4096 and sets it itself), the unused raw calibration slots, battery calibration (command 7) and `VibroEnable`. All unexposed raw bytes and floats are preserved bit-for-bit.
 
 Implementation:
 

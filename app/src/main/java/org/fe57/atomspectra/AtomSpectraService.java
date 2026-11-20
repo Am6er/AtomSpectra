@@ -1224,6 +1224,10 @@ public class AtomSpectraService extends Service {
         final int reason = intent.getIntExtra(SpectrumSource.EXTRA_SOURCE_ERROR_REASON, SpectrumSource.REASON_ERROR);
         final String text = intent.getStringExtra(SpectrumSource.EXTRA_SOURCE_ERROR_TEXT);
 
+        if (op == SpectrumSource.OP_CONNECT && reason == SpectrumSource.REASON_UNSUPPORTED) {
+            abandonLock(getStringOrDefaultLocale(R.string.device_protocol_unsupported));
+            return;
+        }
         if (op == SpectrumSource.OP_CONNECT && reason == SpectrumSource.REASON_PERMISSION) {
             abandonLock(getStringOrDefaultLocale(R.string.device_permission_lost));
             return;

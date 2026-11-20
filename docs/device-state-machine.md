@@ -487,6 +487,7 @@ source reports a disconnect.
 | Kind | Origin | State | Recovery |
 |---|---|---|---|
 | Permission missing or denied at connect (`REASON_PERMISSION`) | microphone permission, USB permission | session falls back to `UNSELECTED`, toast, selection screen opens | user picks a device; remembered choice untouched |
+| Unsupported device protocol (`REASON_UNSUPPORTED`) | BluZ frame with a protocol version newer than the app knows | session falls back to `UNSELECTED`, toast asks to update the app, selection screen opens | update the app; no retry, remembered choice untouched |
 | Failed connect (`OP_CONNECT`), not permission | handshake error, port open failure | session stays `LOCKED`, device state `ERROR`, the source stops trying | status dialog: **Retry** (`retryConnect`) or reselect the same device. No automatic retry |
 | Failed command (`OP_START`, `OP_STOP`, `OP_RESET`, `OP_CALIBRATION_SAVE`, …) | timeout, device error | device state `ERROR` while status is `COMMAND_FAILED`; a start/stop failure reverts the recording intent; toast | clears by itself when the source next reaches idle or collecting |
 | Pick failed during selection | any of the above while the user is choosing | session `UNSELECTED`, `ACTION_DEVICE_SELECTION_REQUIRED` carries the text, the selection screen shows it | user picks again |
