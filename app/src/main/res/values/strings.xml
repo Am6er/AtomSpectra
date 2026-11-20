@@ -94,6 +94,7 @@
     <string name="start_discard_button">Discard and start</string>
     <string name="device_error_notification">Device error</string>
     <string name="device_permission_lost">Permission for the selected device is missing. Please select a device.</string>
+    <string name="device_protocol_unsupported">The device uses a newer protocol version. Please update the app.</string>
     <string name="toast_device_spectra_pro">Spectra Pro</string>
     <string name="toast_device_bluz">BluZ</string>
     <string name="toast_device_audio">Audio device</string>

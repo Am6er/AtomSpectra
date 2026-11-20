@@ -94,6 +94,7 @@
     <string name="start_discard_button">Не сохранять и начать</string>
     <string name="device_error_notification">Ошибка устройства</string>
     <string name="device_permission_lost">Нет разрешения на выбранное устройство. Выберите устройство.</string>
+    <string name="device_protocol_unsupported">Устройство использует более новую версию протокола. Обновите приложение.</string>
     <string name="toast_device_spectra_pro">Устройство Spectra Pro</string>
     <string name="toast_device_bluz">Устройство BluZ</string>
     <string name="toast_device_audio">Аудиоустройство</string>

@@ -43,7 +43,6 @@ final class BluZCommandCodec {
         packet[38] = (byte) ((flags & 1) | ((snapshot[97] & 7) << 1)
                 | ((flags & 2) << 3) | ((flags & 4) << 3));
         System.arraycopy(snapshot, 94, packet, 63, 2);
-        packet[65] = snapshot[96];
         checksum(packet);
         return packet;
     }

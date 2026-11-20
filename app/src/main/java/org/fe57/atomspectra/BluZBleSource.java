@@ -34,6 +34,7 @@ import java.util.UUID;
 
 @SuppressLint("MissingPermission")
 final class BluZBleSource implements SpectrumSource {
+    private static final boolean LOG_PACKET_STATS = true;
     private static final UUID SERVICE = UUID.fromString("0000fe80-cc7a-482a-984a-7f2ed5b3e58f");
     private static final UUID NOTIFY = UUID.fromString("0000fe81-8e22-4541-9d4c-21edae82ed19");
     private static final UUID WRITE = UUID.fromString("0000fe82-8e22-4541-9d4c-21edae82ed19");
@@ -170,6 +171,8 @@ final class BluZBleSource implements SpectrumSource {
     private boolean hasBeenReady;
     private boolean physicalConnection;
     private boolean subscribed;
+    // the device answered the hardware info request with a supported protocol version
+    private boolean hardwareInfo;
     private boolean writing;
     private long retryDelay = MIN_RETRY_MS;
     private boolean userInitiated;
@@ -404,7 +407,8 @@ final class BluZBleSource implements SpectrumSource {
                 scheduleRetry();
             }
         } else if (hasBeenReady) connectionLostNow("BluZ handshake timed out");
-        else failHandshake(REASON_TIMEOUT, "BluZ handshake timed out");
+        else failHandshake(REASON_TIMEOUT, hardwareInfo ? "BluZ handshake timed out"
+                : "BluZ did not answer the hardware info request, check the connection or update the firmware");
     };
 
     private boolean current(BluetoothGatt candidate) {
@@ -514,6 +518,7 @@ final class BluZBleSource implements SpectrumSource {
                     return;
                 }
                 subscribed = true;
+                enqueue(BluZCommandCodec.command(10), OP_CONNECT, null);
             });
         }
 
@@ -613,19 +618,29 @@ final class BluZBleSource implements SpectrumSource {
             permissionLost();
             return;
         }
-        boolean header = packet.length >= 4 && packet[0] == '<' && packet[1] == 'B' && packet[2] == '>';
+        boolean header = decoder.startsFrame(packet);
         if (header) {
             handler.removeCallbacks(assemblyDeadline);
             handler.postDelayed(assemblyDeadline, ASSEMBLY_MS);
         }
         try {
             BluZFrameDecoder.Frame frame = decoder.accept(packet);
-            if (decoder.takeDroppedFrames() > 0) skipped("BluZ frame was interrupted");
             if (frame == null) return;
+            if (LOG_PACKET_STATS && frame.channels > 0) logSpectrum(frame);
             handler.removeCallbacks(assemblyDeadline);
+            if (!hardwareInfo) {
+                // frames before the answer to the hardware info request are ignored
+                if (!frame.isHardwareInfo()) return;
+                hardwareInfo = true;
+                enqueue(BluZCommandCodec.command(11), OP_CONNECT, null);
+                return;
+            }
+            if (frame.isHardwareInfo()) return;
             latestSettings = frame.settings.clone();
             settingsSnapshot = BluZSettings.parse(latestSettings);
             if (!frame.isNormal()) return;
+            // the first frame is the answer to the initial spectrum request
+            if (!ready && !frame.hasSpectrum()) return;
             latest = frame;
             updateTelemetry(frame);
             if (!ready) {
@@ -713,12 +728,15 @@ final class BluZBleSource implements SpectrumSource {
             // an unconfirmed reset leaves a working link: the next frame shows the device is alive
             if (lastError != null && lastError.op == OP_RESET) recover();
             if (lastError == null) updateObservedStatus();
-            if (frame.isCollecting() && frame.channels != channelCount()) {
-                skipped("BluZ frame at " + frame.channels + " channels, switching to 4096");
-            } else if (frame.isCollecting() && !resetPending) {
-                broadcastData(frame);
+            // a stopped device sends a spectrum only as the answer to command 11, so every spectrum frame is published
+            if (frame.hasSpectrum() && status != STATUS_DISCONNECTED) {
+                if (frame.channels != channelCount()) {
+                    skipped("BluZ frame at " + frame.channels + " channels, switching to 4096");
+                } else if (!resetPending) {
+                    broadcastData(frame);
+                }
             }
-            if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted
+            if (frame.hasSpectrum() && frame.channels != 4096 && !resolutionAttempted
                     && !calibrationPending && !settingsPending) {
                 resolutionAttempted = true;
                 resolutionPending = true;
@@ -726,11 +744,24 @@ final class BluZBleSource implements SpectrumSource {
                     resolutionSent = true;
                     handler.postDelayed(resolutionDeadline, COMMAND_MS);
                 });
+                // an idle device sends no spectrum frame by itself to confirm the new resolution
+                enqueue(BluZCommandCodec.command(11), OP_SETTINGS_SAVE, null);
             }
+        } catch (BluZFrameDecoder.UnsupportedVersionException error) {
+            handler.removeCallbacks(assemblyDeadline);
+            failHandshake(REASON_UNSUPPORTED, error.getMessage());
         } catch (IllegalArgumentException error) {
             handler.removeCallbacks(assemblyDeadline);
             skipped(error.getMessage());
         }
+    }
+
+    // the baselines are the same spectrum sent raw in a version 1 frame
+    private void logSpectrum(BluZFrameDecoder.Frame frame) {
+        int raw = 4 * frame.channels;
+        debug("Spectrum rx: " + (frame.hasSpectrum() ? "live" : "history") + " channels=" + frame.channels
+                + " codec=" + (frame.compressed ? "dpcm" : "raw") + " payload=" + frame.payloadBytes + "/" + raw
+                + " B notifications=" + frame.notifications + "/" + BluZFrameDecoder.notificationsFor(raw) + " (vs raw)");
     }
 
     private void updateTelemetry(BluZFrameDecoder.Frame frame) {
@@ -790,11 +821,7 @@ final class BluZBleSource implements SpectrumSource {
     public void requestShowData() {
         dispatch(() -> {
             if (!usable(OP_SHOW)) return;
-            if (latest != null && latest.isCollecting() && latest.channels == channelCount()) broadcastData(latest);
-            else reply(new Intent(ACTION_SOURCE_DATA)
-                    .putExtra(EXTRA_SOURCE_DATA_HISTOGRAM, new long[channelCount()])
-                    .putExtra(EXTRA_SOURCE_DATA_RECORDING_TIME, latest != null ? latest.time : 0.0)
-                    .putExtra(EXTRA_SOURCE_DATA_CP1S, 0));
+            enqueue(BluZCommandCodec.command(11), OP_SHOW, null);
         });
     }
 
@@ -962,7 +989,7 @@ final class BluZBleSource implements SpectrumSource {
         PendingWrite pending = writes.peek();
         if (pending != null) {
             writeFailed(pending.op, "BluZ GATT write timed out");
-            connectionLostNow("BluZ transport write timed out");
+            if (gatt != null) connectionLostNow("BluZ transport write timed out");
         }
     };
 
@@ -1001,6 +1028,12 @@ final class BluZBleSource implements SpectrumSource {
         if (pendingUserSettings && op != OP_SETTINGS_SAVE)
             settingsError(REASON_ERROR, text);
         if (op == OP_SETTINGS_SAVE && pendingUserSettings) settingsFailed = true;
+        if (op == OP_CONNECT && !ready) {
+            // a failed handshake write ends the attempt like a missed handshake does
+            if (recoveryActive || !hasBeenReady) failHandshake(REASON_ERROR, text);
+            else connectionLostNow(text);
+            return;
+        }
         error(op, REASON_ERROR, text);
     }
 
@@ -1088,7 +1121,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void failHandshake(int reason, String text) {
-        if (recoveryActive && reason != REASON_PERMISSION) {
+        if (recoveryActive && reason != REASON_PERMISSION && reason != REASON_UNSUPPORTED) {
             AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: GATT setup failed: " + text);
             recoveryAttemptFailed();
             return;
@@ -1122,6 +1155,7 @@ final class BluZBleSource implements SpectrumSource {
         ready = false;
         physicalConnection = false;
         subscribed = false;
+        hardwareInfo = false;
         writing = false;
         latest = null;
         latestSettings = null;

@@ -6,12 +6,22 @@ import java.util.Arrays;
 
 final class BluZFrameDecoder {
     static final int CHANNEL_COUNT = 4096;
-    private final byte[] buffer = new byte[40 * 244];
+    private static final int NOTIFICATION_SIZE = 244;
+    private static final int SPECTRUM_OFFSET = 1424;
+    private static final int MAX_NOTIFICATIONS = 73;
+    private static final int FLAG_RUNNING = 0x02;
+    private static final int HW_INFO_TYPE = 7;
+    private static final int PROTOCOL_VERSION = 1;
+    private final byte[] buffer = new byte[MAX_NOTIFICATIONS * NOTIFICATION_SIZE];
     private int remaining;
     private int length;
     private int checksum;
     private int type;
-    private int packetLength;
+    private int version;
+    private int expected;
+    private boolean running;
+    private int format;
+    private int payloadBytes;
 
     void reset() {
         remaining = 0;
@@ -23,46 +33,35 @@ final class BluZFrameDecoder {
         return remaining > 0;
     }
 
+    /**
+     * Whether the packet begins a new frame. Continuations of a frame carry spectrum bytes, which may
+     * also look like a header, so while one is assembling nothing starts a frame.
+     */
+    boolean startsFrame(byte[] packet) {
+        boolean header = packet != null && packet.length >= 4 && packet[0] == '<' && packet[1] == 'B' && packet[2] == '>';
+        return header && remaining == 0;
+    }
+
+    /**
+     * Notifications needed for a frame whose spectrum takes the given number of bytes.
+     */
+    static int notificationsFor(int payloadBytes) {
+        return (SPECTRUM_OFFSET + payloadBytes + 2 + NOTIFICATION_SIZE - 1) / NOTIFICATION_SIZE;
+    }
+
     Frame accept(byte[] packet) {
-        if (packet == null || (packet.length != 244 && packet.length != 248)) {
+        if (packet == null || (packet.length != NOTIFICATION_SIZE && packet.length != NOTIFICATION_SIZE + 4)) {
             reset();
             throw new IllegalArgumentException("Invalid BluZ notification length");
         }
-        boolean header = packet[0] == '<' && packet[1] == 'B' && packet[2] == '>';
-        if (header) {
-            boolean interrupted = remaining > 0;
+        if (startsFrame(packet)) {
             reset();
-            type = packet[3] & 255;
-            switch (type) {
-                case 0:
-                    remaining = 6;
-                    break;
-                case 1:
-                case 4:
-                    remaining = 16;
-                    break;
-                case 2:
-                case 5:
-                    remaining = 23;
-                    break;
-                case 3:
-                case 6:
-                    remaining = 40;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown BluZ frame type");
-            }
-            packetLength = packet.length;
-            if (interrupted) droppedFrames++;
+            beginFrame(packet);
         } else if (remaining == 0) {
             return null;
         }
-        if (packetLength != packet.length) {
-            reset();
-            throw new IllegalArgumentException("BluZ notification size changed within frame");
-        }
         remaining--;
-        int payloadLength = remaining == 0 ? 242 : 244;
+        int payloadLength = remaining == 0 ? 242 : NOTIFICATION_SIZE;
         if (length + payloadLength > buffer.length) {
             reset();
             throw new IllegalArgumentException("BluZ frame overflow");
@@ -78,35 +77,69 @@ final class BluZFrameDecoder {
             reset();
             throw new IllegalArgumentException("BluZ checksum mismatch");
         }
-        int channels = type == 0 ? 0 : 1024 << ((type - 1) % 3);
-        if (length < 1424 + channels * 2) {
+        // only a complete frame with a valid checksum proves the version is real and not a stray header
+        if (version != PROTOCOL_VERSION) {
             reset();
-            throw new IllegalArgumentException("Incomplete BluZ frame");
+            throw new UnsupportedVersionException(version);
         }
+        int channels = type == 0 || type == HW_INFO_TYPE ? 0 : 1024 << ((type - 1) % 3);
         byte[] snapshot = Arrays.copyOf(buffer, 100);
-        int bits = snapshot[96] & 255;
-        if (bits < 16 || bits > 32) bits = 20;
-        long[] histogram = new long[0];
-        if (type >= 1 && type <= 3) {
-            histogram = new long[channels];
-            double multiplier = bits * Math.log(2.0) / 65535.0;
-            for (int channel = 0; channel < channels; channel++) {
-                int offset = 1424 + channel * 2;
-                int encoded = (buffer[offset] & 255) | ((buffer[offset + 1] & 255) << 8);
-                histogram[channel] = Math.max(0, Math.round(Math.expm1(encoded * multiplier)));
-            }
-        }
-        Frame frame = new Frame(type, channels, snapshot, histogram);
+        long[] histogram = type == HW_INFO_TYPE ? new long[0] : decodeSpectrum(channels);
+        Frame frame = new Frame(type, channels, snapshot, histogram, running, format == 1, payloadBytes, expected);
         reset();
         return frame;
     }
 
-    private int droppedFrames;
+    /**
+     * Reads the header of the first notification: byte 3 is the frame type, byte 4 the flags, byte 5
+     * the number of notifications, bytes 6-7 the protocol version, byte 96 the spectrum format.
+     */
+    private void beginFrame(byte[] packet) {
+        type = packet[3] & 255;
+        if (type > HW_INFO_TYPE) throw new IllegalArgumentException("Unknown BluZ frame type");
+        version = (packet[6] & 255) | ((packet[7] & 255) << 8);
+        running = (packet[4] & FLAG_RUNNING) != 0;
+        format = packet[96] & 255;
+        expected = packet[5] & 255;
+        if (expected == 0 || expected > MAX_NOTIFICATIONS) {
+            throw new IllegalArgumentException("BluZ frame declares " + expected + " notifications");
+        }
+        if (type == HW_INFO_TYPE && expected != 1) {
+            throw new IllegalArgumentException("BluZ hardware info must be one notification");
+        }
+        remaining = expected;
+    }
 
-    int takeDroppedFrames() {
-        int count = droppedFrames;
-        droppedFrames = 0;
-        return count;
+    /**
+     * Decodes the spectrum of a frame and checks that the rest of the frame is zero padding of the
+     * declared number of notifications. History spectra are validated only.
+     */
+    private long[] decodeSpectrum(int channels) {
+        int end = length;
+        long[] histogram = new long[channels];
+        int consumed = 0;
+        if (channels > 0) {
+            try {
+                if (format == 0) consumed = BluZSpectrumCodec.readRaw(buffer, SPECTRUM_OFFSET, end, histogram);
+                else if (format == 1) consumed = BluZSpectrumCodec.decode(buffer, SPECTRUM_OFFSET, end, histogram);
+                else throw new IllegalArgumentException("Unknown BluZ spectrum format " + format);
+            } catch (IllegalArgumentException error) {
+                reset();
+                throw error;
+            }
+        }
+        for (int index = SPECTRUM_OFFSET + consumed; index < end; index++) {
+            if (buffer[index] != 0) {
+                reset();
+                throw new IllegalArgumentException("BluZ frame padding is not zero");
+            }
+        }
+        if (notificationsFor(consumed) != expected) {
+            reset();
+            throw new IllegalArgumentException("BluZ frame has extra padding notifications");
+        }
+        payloadBytes = consumed;
+        return type >= 1 && type <= 3 ? histogram : new long[0];
     }
 
     private static final double[] BATTERY_VOLTS = {2.9, 3.0, 3.3, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0, 4.1, 4.2};
@@ -132,11 +165,31 @@ final class BluZFrameDecoder {
                 | (((long) bytes[offset + 3] & 255) << 24);
     }
 
+    /**
+     * The device sends a protocol version this decoder does not know: newer firmware needs a newer app,
+     * older firmware needs an update.
+     */
+    static final class UnsupportedVersionException extends IllegalArgumentException {
+        UnsupportedVersionException(int version) {
+            super("Unsupported BluZ protocol version " + version);
+        }
+    }
+
     static final class Frame {
         final int type;
         final int channels;
         final byte[] settings;
         final long[] histogram;
+        /**
+         * The device is collecting; a spectrum frame is also sent on request while it is stopped.
+         */
+        final boolean running;
+        final boolean compressed;
+        /**
+         * Size of the spectrum data without padding and the number of notifications.
+         */
+        final int payloadBytes;
+        final int notifications;
         final double time;
         final long pulses;
         final int cps;
@@ -149,11 +202,16 @@ final class BluZFrameDecoder {
          */
         final Double batteryVolts;
 
-        Frame(int type, int channels, byte[] settings, long[] histogram) {
+        Frame(int type, int channels, byte[] settings, long[] histogram, boolean running, boolean compressed,
+              int payloadBytes, int notifications) {
             this.type = type;
             this.channels = channels;
             this.settings = settings;
             this.histogram = histogram;
+            this.running = running;
+            this.compressed = compressed;
+            this.payloadBytes = payloadBytes;
+            this.notifications = notifications;
             time = uint32(settings, 86);
             pulses = uint32(settings, 90);
             cps = (int) Math.min(Integer.MAX_VALUE, uint32(settings, 14));
@@ -168,8 +226,16 @@ final class BluZFrameDecoder {
             return type <= 3;
         }
 
-        boolean isCollecting() {
+        boolean hasSpectrum() {
             return type >= 1 && type <= 3;
+        }
+
+        boolean isCollecting() {
+            return running;
+        }
+
+        boolean isHardwareInfo() {
+            return type == HW_INFO_TYPE;
         }
 
         double[] calibration() {

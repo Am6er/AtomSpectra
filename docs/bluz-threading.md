@@ -154,9 +154,11 @@ sequenceDiagram
     Owner-->>Service: READY with status and 4096 channels
 ```
 
-A complete, checksum-valid normal frame establishes source readiness. Idle is
-type 0; collecting is types 1-3. History frames do not establish current
-acquisition state. During ordinary initialization, the first normal frame supplies
+After the hardware info handshake (command 10, type 7 reply, protocol version 1) the source
+requests the spectrum (command 11) and the first complete, checksum-valid spectrum frame (types 1-3)
+establishes source readiness. Frames before the handshake reply are ignored. Collecting is the running flag
+of the frame header; a spectrum frame can also describe an idle device. History frames do not establish
+current acquisition state. During ordinary initialization, the first spectrum frame supplies
 calibration and the current status along with `READY`. Collecting recovery
 instead completes with `STATUS_CONNECTED_COLLECTING`, without a ready event.
 
@@ -185,8 +187,8 @@ snapshot. The source does not treat a physical connection alone as recovery.
 
 `onPacket()` and `BluZFrameDecoder` execute on the input handler. A frame header
 arms a ten-second assembly deadline; a completed frame cancels it. An incomplete
-or interrupted frame produces a skipped-data notification rather than a partial
-spectrum publication.
+frame is dropped when the deadline expires and produces a skipped-data notification
+rather than a partial spectrum publication.
 
 ```mermaid
 sequenceDiagram
@@ -204,7 +206,7 @@ sequenceDiagram
         Decoder-->>Owner: Frame and checksum-valid settings
         Owner->>Owner: Update latest snapshot and confirm pending operations
         Owner->>Owner: Update observed acquisition status
-        opt Collecting
+        opt Spectrum frame of the native size
             Owner-->>Service: DATA with copied histogram, time and count rate
         end
     else Complete history frame
@@ -216,12 +218,12 @@ sequenceDiagram
 All output spectra contain 4096 channels. Lower-resolution live frames are
 skipped by the source (decoded at native size, not published). A proven live resolution mismatch
 may queue a preserving settings write; a later 4096-channel frame confirms it.
-Repeated mismatch does not continually enqueue flash writes. Idle connection
-does not probe resolution, change settings or start acquisition automatically.
+Repeated mismatch does not continually enqueue flash writes. The initial spectrum request of an idle connection can reveal a non-4096 resolution and trigger the same write; otherwise an idle connection
+does not change settings or start acquisition automatically.
 
-`requestShowData()` publishes the current 4096-channel live frame, otherwise
-an empty idle histogram. BluZ cannot accept an initial histogram supplied by the
-service. Calibration writes use the latest settings snapshot and are confirmed
+`requestShowData()` sends command 11; the 4096-channel spectrum frame that answers it is published like a live frame,
+also from an idle device. BluZ cannot accept an
+initial histogram supplied by the service. Calibration writes use the latest settings snapshot and are confirmed
 by matching coefficients in a normal frame.
 
 ## 6. Write queue and frame-confirmed commands

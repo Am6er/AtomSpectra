@@ -72,6 +72,7 @@ public interface SpectrumSource {
     int REASON_ERROR = 1;
     int REASON_TIMEOUT = 2;
     int REASON_PERMISSION = 3; // the system permission needed to use the device is missing or was denied
+    int REASON_UNSUPPORTED = 4; // the device speaks a protocol version this app cannot read; retrying cannot help
 
     // +++ extras common to every reply intent +++
     String EXTRA_SOURCE_INPUT_TYPE = "org.fe57.atomspectra.EXTRA_SOURCE_INPUT_TYPE";

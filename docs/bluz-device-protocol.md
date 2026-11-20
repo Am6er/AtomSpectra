@@ -46,8 +46,8 @@ The local firmware does **not** advertise the service UUID. Discovery should
 use the local name, not a service-UUID advertisement filter. A known device can
 be identified by its MAC address.
 
-Clients discover the service, negotiate MTU, enable the incoming characteristic
-and write its CCCD. Prefer indication if the characteristic supports it;
+Clients discover the service, negotiate MTU once, enable the incoming characteristic
+and write its CCCD, then run the handshake below. Prefer indication if the characteristic supports it;
 otherwise use notification. CCCD completion establishes transport readiness,
 not knowledge of acquisition state or settings: those require a valid frame.
 AtomSpectra requires negotiated MTU >= 251 for its v2-compatible writes.
@@ -61,7 +61,7 @@ client.
 | Device condition | Frames sent | Spectrum/time behaviour |
 |---|---|---|
 | No subscribed BLE client | No periodic GATT frames | Acquisition may still run; disconnect is not a stop command |
-| Spectrometer stopped | Type 0: header/settings, dosimeter ring and log | Accumulated spectrum remains in RAM but is not transmitted; spectrometer time is retained |
+| Spectrometer stopped | Type 0: header/settings, dosimeter ring and log | Accumulated spectrum remains in RAM and is transmitted only as the reply to command 11; spectrometer time is retained |
 | Running at 1024 | Type 1: common payload plus 1024-channel live spectrum | Adjacent groups of four raw bins are summed; AtomSpectra skips the spectrum and switches to 4096 |
 | Running at 2048 | Type 2: common payload plus 2048-channel live spectrum | Adjacent groups of two raw bins are summed; AtomSpectra skips the spectrum and switches to 4096 |
 | Running at 4096 | Type 3: common payload plus 4096-channel live spectrum | One raw bin per transmitted channel |
@@ -70,9 +70,9 @@ client.
 All complete frames, including type 0 and history replies, carry the common
 settings snapshot. However, **configured resolution is absent from the common
 header**. It is revealed by live/history frame type only. Current running state
-is inferred from normal types: 0 is stopped, 1-3 are running. Types 4-6 do not
-prove running or stopped state and must not change the client's last observed
-normal state. The stored autostart flag is not current running state.
+is flag bit 1 of byte 4, present in every frame: a spectrum frame requested
+with command 11 can arrive while the device is stopped. Types 4-6 do not
+change the client's last observed normal state. The stored autostart flag is not current running state.
 
 ```mermaid
 stateDiagram-v2
@@ -99,6 +99,11 @@ Local firmware sends a complete frame when `connectFlag` is true and
 guaranteed arrival interval: its strict comparison, timer tick and BLE transfer
 duration must be considered before assuming exact wall-clock cadence.
 
+Commands 5, 10, 11 and 12 and every state-changing command make the next pass of the firmware main loop
+send the requested frame (hardware info, history, spectrum, dosimeter, or the current mode's frame), one frame
+per pass; the reply can wait up to about a second because the processor sleeps between interrupts. Any
+frame restarts the 5 s timer.
+
 Each cycle constructs the header/settings, 512-entry dosimeter ring and 50-entry
 log, with a spectrum only when the selected frame type requires one. A complete
 frame is sent as a burst of notifications. It is not one notification per
@@ -113,17 +118,18 @@ or stop acquisition.
 
 The first notification starts with ASCII `<B>` (`3C 42 3E`), followed by an
 unsigned type byte at offset 3. Continuation notifications have no sequence
-number or repeated header. Type determines the expected notification count.
+number or repeated header. Byte 5 of the first notification gives the notification count.
 
-| Type | Histogram kind | Channels | Notifications | Meaningful reassembled bytes |
+| Type | Histogram kind | Channels | Notifications (raw spectrum, maximum) | Meaningful reassembled bytes (raw spectrum) |
 |---|---|---|---|---|
 | 0 | None | 0 | 6 | 1424 |
-| 1 | Live | 1024 | 16 | 3472 |
-| 2 | Live | 2048 | 23 | 5520 |
-| 3 | Live | 4096 | 40 | 9616 |
-| 4 | History | 1024 | 16 | 3472 |
-| 5 | History | 2048 | 23 | 5520 |
-| 6 | History | 4096 | 40 | 9616 |
+| 1 | Live | 1024 | 23 | 5520 |
+| 2 | Live | 2048 | 40 | 9616 |
+| 3 | Live | 4096 | 73 | 17808 |
+| 4 | History | 1024 | 23 | 5520 |
+| 5 | History | 2048 | 40 | 9616 |
+| 6 | History | 4096 | 73 | 17808 |
+| 7 | Hardware info | 0 | 1 | Header only |
 
 The raw firmware payload uses 244-byte chunks. In the final chunk, offsets
 242-243 hold the 16-bit little-endian sum checksum. Concatenate ordinary chunks'
@@ -131,19 +137,60 @@ bytes 0-243 and the last chunk's bytes 0-241, then compare their byte sum modulo
 65536 with that checksum. Frame padding after the meaningful payload participates
 in the checksum and is not spectrum data.
 
-AtomSpectra also accepts 248-byte notifications, taking the first 244 bytes per
-ordinary notification and excluding its trailing four bytes; on the final
-notification it takes 242 payload bytes and reads checksum at 242-243. This
-matches the v2 app's stripping rules for 248-byte notifications. For raw
-244-byte notifications AtomSpectra retains the full firmware payload, rather
-than stripping another four bytes. Actual notification length on the user's
-firmware still needs capture. Size must remain consistent within one frame.
+The firmware's data per notification is 244 bytes; at the negotiated MTU of 251 a notification is 248 bytes
+on air, and the last four are not data. AtomSpectra takes the first 244 bytes of each ordinary notification
+and 242 bytes of the last one, and reads the checksum at offsets 242-243. It also accepts a plain 244-byte
+notification and rejects any other length.
 
-A new `<B>` abandons an incomplete frame and starts another. Missing or
+While a frame is assembling, a notification that starts with `<B>` is data, not a new frame, so a lost
+notification spoils the frame and can swallow the start of the next one until the assembly deadline. Missing or
 duplicated notifications cannot be diagnosed from a sequence number; checksum,
 completeness and an assembly deadline gate publication. The checksum is a simple
 sum, not a CRC or cryptographic integrity check. Clients must not apply settings
 or publish a histogram from an incomplete or unchecked frame.
+
+### Frame Header and Size
+
+The header fields that describe the frame:
+
+| Offset | Field |
+|---|---|
+| 3 | Frame type, 0-7 |
+| 4 | Flags: bit 0 alarm inhibited (not used by AtomSpectra), bit 1 spectrometer running; other bits are ignored |
+| 5 | Total number of notifications of the frame, including the first and the last |
+| 6-7 | Protocol version, uint16 little-endian, currently `1`; these two bytes never change their position |
+| 96 | Spectrum format: `0` raw, `1` compressed (see Spectrum Format); `0` in frames without a spectrum |
+| 1424 | Spectrum of types 1-6, then zero padding up to the checksum |
+
+Counts are exact and lossless. The checksum is in the last two bytes of the final notification and
+covers everything before it, including padding. The notification count is
+`ceil((1424 + payload + 2) / 244)`: 6 for type 0 and at most 23 / 40 / 73 for 1024 / 2048 / 4096
+channels. The sender uses the compressed payload only when it is smaller than the raw one; the receiver
+does not check that.
+
+The count comes from byte 5 (it must be 1..73; it is checked again after reassembly), and once a frame
+has started every following notification is data until the declared count is reached, even if it
+starts with `<B>`. After the checksum, the spectrum is decoded, the padding must be zero and the
+notification count must match the bytes actually used, otherwise the frame is rejected. History
+spectra (types 4-6) are validated the same way but only their header is used.
+
+A frame with a version other than 1 is not a transient error: newer firmware needs a newer app, older
+firmware needs an update. The source stops with a terminal `OP_CONNECT` error, reason
+`REASON_UNSUPPORTED`, and does not retry, even during recovery. The service treats it like a missing
+permission: the session falls back to `UNSELECTED`, a toast asks the user to update the app, and the
+selection screen opens. The decoder reports the version as unsupported only after the checksum is valid,
+so a stray `<B>` inside spectrum data cannot end the session. Firmware that does not know the hardware
+info command never answers it, and the first connection ends with the handshake timeout, whose text tells the user to check the connection or update the firmware. A failed write of command 10 or 11 ends the attempt the same way at once, without waiting for the timeout.
+
+### Handshake and Initial State
+
+After the CCCD write completes, AtomSpectra sends command 10 (hardware info). The reply is a type 7
+frame of one notification that carries only the header (the rest is zero); its version is checked as
+above. Until that reply arrives every other frame is ignored, even a valid periodic one. Then
+AtomSpectra always sends command 11 (spectrum), whatever the spectrometer state and pulse count, and the
+source becomes ready on the first frame with a spectrum (types 1-3), which is the reply. Only
+a running device is streamed to the application; for an idle one the service asks for the spectrum
+once with a show request.
 
 ## Common Header and Payload
 
@@ -155,8 +202,11 @@ Unspecified bytes are reserved or not interpreted by the reviewed clients.
 | Offset | Size | Field |
 |---|---|---|
 | 0 | 3 | ASCII `<B>` |
-| 3 | 1 | Frame type, 0-6 |
-| 4-9 | 6 | Reserved/not interpreted |
+| 3 | 1 | Frame type, 0-7 |
+| 4 | 1 | Flags (see Frame Header and Size) |
+| 5 | 1 | Number of notifications |
+| 6 | 2 | Protocol version, uint16 |
+| 8-9 | 2 | Reserved |
 | 10 | 4 | Dosimeter total pulses, uint32 |
 | 14 | 4 | Pulses per second, uint32 |
 | 18 | 4 | Dosimeter total time, uint32 seconds |
@@ -174,12 +224,12 @@ Unspecified bytes are reserved or not interpreted by the reviewed clients.
 | 86 | 4 | Spectrometer acquisition time, uint32 seconds |
 | 90 | 4 | Spectrometer pulse count, uint32 |
 | 94 | 2 | Dosimeter averaging window, uint16 |
-| 96 | 1 | Bits per channel, 16-32; default 20 |
+| 96 | 1 | Spectrum format, 0 raw / 1 compressed |
 | 97 | 1 | ADC sample time in bits 0-2; overload flag in bit 3 |
 | 98-99 | 2 | Reserved/not interpreted |
 | 100 | 1024 | Dosimeter ring: 512 little-endian uint16 values |
 | 1124 | 300 | Log: 50 entries, each uint32 time + uint16 event type |
-| 1424 | 2 times channel count | Compressed spectrum/history, present only for types 1-6 |
+| 1424 | Up to 4 times channel count | Spectrum or history, present only for types 1-6 |
 
 The dosimeter pulse/time totals are distinct from spectrometer pulse/time.
 Command 3 resets dosimeter accumulation; command 1 resets spectrometer
@@ -205,24 +255,20 @@ battery calibration coefficient `battKoeff`. The latter two are stored in flash
 but are not assigned by command 0, so that command preserves their RAM values.
 The transmitted battery voltage already has `battKoeff` applied.
 
-## Spectrum Storage and Compression
+## Spectrum Storage and Format
 
 Firmware accumulates a 4096-bin RAM spectrum of raw ADC channels. When building
 a frame, resolution selects groups of 4, 2 or 1 adjacent bins for 1024, 2048 or
 4096 output channels. Resolution affects transmission, not which raw bins are
 accumulated. Changing only resolution needs neither a reset nor a brief stop.
 
-Each grouped count is logarithmically compressed into a little-endian uint16
-code. For code $v$ and advertised bits per channel $b$, decode as:
+### Spectrum Format
 
-$$
-\operatorname{count} = \exp\left(\frac{v b \ln 2}{65535}\right) - 1
-$$
-
-Compression is lossy. Integer display requires rounding after decompression;
-channel differences between frames can be coarse, and changing transmitted
-resolution does not yield an exact regrouping of decoded counts. Local firmware
-can increase bits per channel when counts grow, so read it from every frame.
+Counts are `uint32` per channel. Byte 96 selects the encoding: `0` is raw, little-endian, 4 bytes per
+channel; `1` is DPCM + ZigZag + varint: the difference to the previous channel modulo 2^32
+(`prev = 0` before the first channel), ZigZag `(d << 1) ^ (d >> 31)`, then base-128 varint, least-significant
+group first, bit 7 set while more bytes follow. Example: `[0, 1, 0, 65]` encodes to `00 02 01 82 01`.
+There is no logarithmic transform and no bits-per-channel setting.
 
 The history spectrum is a different RAM buffer, filled while acquisition runs
 and an alarm level is exceeded. It may be all zeros on a device that never ran.
@@ -287,6 +333,10 @@ before claiming the local firmware and installed device are equivalent.
 | 6 | None | Finds device using sound and vibration |
 | 7 | Big-endian float at 4 | Supplies real battery voltage; firmware derives/stores its voltage calibration coefficient |
 | 8 | None | Clears history spectrum; local `BluZ_LPM` only |
+| 9 | None | Toggles the alarm inhibit flag |
+| 10 | None | Hardware info: reply is a type 7 frame (header only) with the protocol version |
+| 11 | None | Spectrum: reply is a type 1-3 frame at the current resolution, also while the spectrometer is stopped |
+| 12 | None | Dosimeter: reply is a type 0 frame, also while the spectrometer is running |
 
 Command 7 is battery calibration, not a request for a voltage report. Battery
 voltage is already sent in every frame at offset 30. Neither disconnect nor
@@ -311,7 +361,6 @@ parsing/reformatting them, preserving their bit patterns.
 | 39 / 43 / 47 | Floats big-endian | Firmware 2048 A / B / C; v2 D/E occupy 43/47 | 62 / 66 / 70 |
 | 51 / 55 / 59 | Floats big-endian | Firmware 4096 A / B / C | 74 / 78 / 82 |
 | 63 | uint16 little-endian | Dosimeter averaging window | 94 |
-| 65 | Byte | Bits per channel | 96 |
 
 Command byte 38 uses bit 0 for autostart, bits 1-3 for sample time, bit 4 for
 sound divided by 10 and bit 5 for LED divided by 10. Header byte 61 bits 0/1/2
@@ -352,15 +401,14 @@ a flash write as a routine check. Reflashing the user's devices is not available
 ## Client Data Policy
 
 AtomSpectra reports a constant 4096-channel spectrum and only from native 4096
-live frames (type 3). A live frame at 1024 or 2048 channels (type 1/2) is
+spectrum frames (type 3: live, or the reply to command 11). A spectrum frame at 1024 or 2048 channels (type 1/2) is
 validated and its settings header is retained, and its spectrum is decoded at its native
 size, but the source does not publish it and reports the frame as skipped.
 
-The client changes resolution only after a live type 1/2 frame proves a
-mismatch. Type 0 alone causes no settings write. Once the device reports 4096,
-its next live frame is published normally. An idle show request, or one made
-while the latest frame is not a 4096 live frame, cannot retrieve accumulated
-live data; AtomSpectra returns an empty histogram with the retained acquisition
-time from the latest frame (0 before any frame) rather than briefly starting the
-device. History frames are never published as live data. The service's existing
+The client changes resolution only after a type 1/2 spectrum frame (a live frame or the reply
+to command 11, also from an idle device) proves a mismatch, then requests the spectrum again to confirm it.
+Type 0 alone causes no settings write. Once the device reports 4096,
+its next live frame is published normally. A show request sends command 11. Every spectrum frame of the native size is published, so the reply from an
+idle device (which does not start it) is published like a live frame; a reply at 1024 or 2048 channels is skipped
+and triggers the resolution change. History frames are never published as live data. The service's existing
 diffing calculation is unchanged.
