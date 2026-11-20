@@ -713,7 +713,11 @@ final class BluZBleSource implements SpectrumSource {
             // an unconfirmed reset leaves a working link: the next frame shows the device is alive
             if (lastError != null && lastError.op == OP_RESET) recover();
             if (lastError == null) updateObservedStatus();
-            if (frame.isCollecting() && !resetPending) broadcastData(frame);
+            if (frame.isCollecting() && frame.channels != channelCount()) {
+                skipped("BluZ frame at " + frame.channels + " channels, switching to 4096");
+            } else if (frame.isCollecting() && !resetPending) {
+                broadcastData(frame);
+            }
             if (frame.isCollecting() && frame.channels != 4096 && !resolutionAttempted
                     && !calibrationPending && !settingsPending) {
                 resolutionAttempted = true;
@@ -786,7 +790,7 @@ final class BluZBleSource implements SpectrumSource {
     public void requestShowData() {
         dispatch(() -> {
             if (!usable(OP_SHOW)) return;
-            if (latest != null && latest.isCollecting()) broadcastData(latest);
+            if (latest != null && latest.isCollecting() && latest.channels == channelCount()) broadcastData(latest);
             else reply(new Intent(ACTION_SOURCE_DATA)
                     .putExtra(EXTRA_SOURCE_DATA_HISTOGRAM, new long[channelCount()])
                     .putExtra(EXTRA_SOURCE_DATA_RECORDING_TIME, latest != null ? latest.time : 0.0)

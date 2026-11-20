@@ -62,8 +62,8 @@ client.
 |---|---|---|
 | No subscribed BLE client | No periodic GATT frames | Acquisition may still run; disconnect is not a stop command |
 | Spectrometer stopped | Type 0: header/settings, dosimeter ring and log | Accumulated spectrum remains in RAM but is not transmitted; spectrometer time is retained |
-| Running at 1024 | Type 1: common payload plus 1024-channel live spectrum | Adjacent groups of four raw bins are summed |
-| Running at 2048 | Type 2: common payload plus 2048-channel live spectrum | Adjacent groups of two raw bins are summed |
+| Running at 1024 | Type 1: common payload plus 1024-channel live spectrum | Adjacent groups of four raw bins are summed; AtomSpectra skips the spectrum and switches to 4096 |
+| Running at 2048 | Type 2: common payload plus 2048-channel live spectrum | Adjacent groups of two raw bins are summed; AtomSpectra skips the spectrum and switches to 4096 |
 | Running at 4096 | Type 3: common payload plus 4096-channel live spectrum | One raw bin per transmitted channel |
 | History requested | One type 4, 5 or 6 frame, then the previous normal type | Separate history buffer, not the accumulated live spectrum |
 
@@ -351,16 +351,16 @@ a flash write as a routine check. Reflashing the user's devices is not available
 
 ## Client Data Policy
 
-AtomSpectra reports a constant 4096-channel spectrum. For a decoded integer count
-`count` in a 1024/2048 frame, split directly across `factor = 4096/N` adjacent
-bins: each receives `count / factor`, and the first `count % factor` bins receive
-one extra. Thus one 1024-bin count of 5 becomes `[2, 1, 1, 1]`; one 2048-bin count
-of 5 becomes `[3, 2]`. This preserves decoded totals, not physical fine-bin detail.
+AtomSpectra reports a constant 4096-channel spectrum and only from native 4096
+live frames (type 3). A live frame at 1024 or 2048 channels (type 1/2) is
+validated and its settings header is retained, and its spectrum is decoded at its native
+size, but the source does not publish it and reports the frame as skipped.
 
-The client retains lower-resolution live frames and changes resolution only
-after a live type 1/2 frame proves a mismatch. Type 0 alone causes no settings
-write. An idle show request cannot retrieve accumulated live data; AtomSpectra
-returns an empty histogram with the retained acquisition time from the latest
-frame (0 before any frame) rather than briefly starting the device. History frames are never published as live data. Switching from expanded
-to native 4096 bins may redistribute accumulated counts and distort per-channel
-differences; the service's existing diffing calculation is unchanged.
+The client changes resolution only after a live type 1/2 frame proves a
+mismatch. Type 0 alone causes no settings write. Once the device reports 4096,
+its next live frame is published normally. An idle show request, or one made
+while the latest frame is not a 4096 live frame, cannot retrieve accumulated
+live data; AtomSpectra returns an empty histogram with the retained acquisition
+time from the latest frame (0 before any frame) rather than briefly starting the
+device. History frames are never published as live data. The service's existing
+diffing calculation is unchanged.
