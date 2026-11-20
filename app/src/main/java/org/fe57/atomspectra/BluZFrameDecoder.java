@@ -86,20 +86,14 @@ final class BluZFrameDecoder {
         byte[] snapshot = Arrays.copyOf(buffer, 100);
         int bits = snapshot[96] & 255;
         if (bits < 16 || bits > 32) bits = 20;
-        long[] histogram = null;
+        long[] histogram = new long[0];
         if (type >= 1 && type <= 3) {
-            histogram = new long[CHANNEL_COUNT];
-            int factor = CHANNEL_COUNT / channels;
+            histogram = new long[channels];
             double multiplier = bits * Math.log(2.0) / 65535.0;
             for (int channel = 0; channel < channels; channel++) {
                 int offset = 1424 + channel * 2;
                 int encoded = (buffer[offset] & 255) | ((buffer[offset + 1] & 255) << 8);
-                long count = Math.max(0, Math.round(Math.expm1(encoded * multiplier)));
-                long quotient = count / factor;
-                int remainder = (int) (count % factor);
-                for (int part = 0; part < factor; part++) {
-                    histogram[channel * factor + part] = quotient + (part < remainder ? 1 : 0);
-                }
+                histogram[channel] = Math.max(0, Math.round(Math.expm1(encoded * multiplier)));
             }
         }
         Frame frame = new Frame(type, channels, snapshot, histogram);

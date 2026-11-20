@@ -213,13 +213,13 @@ sequenceDiagram
     end
 ```
 
-All output spectra contain 4096 channels. Lower-resolution live spectra are
-expanded count-preservingly by the decoder. A proven live resolution mismatch
+All output spectra contain 4096 channels. Lower-resolution live frames are
+skipped by the source (decoded at native size, not published). A proven live resolution mismatch
 may queue a preserving settings write; a later 4096-channel frame confirms it.
 Repeated mismatch does not continually enqueue flash writes. Idle connection
 does not probe resolution, change settings or start acquisition automatically.
 
-`requestShowData()` publishes the current live frame if collecting, otherwise
+`requestShowData()` publishes the current 4096-channel live frame, otherwise
 an empty idle histogram. BluZ cannot accept an initial histogram supplied by the
 service. Calibration writes use the latest settings snapshot and are confirmed
 by matching coefficients in a normal frame.
@@ -417,7 +417,7 @@ handler, so its close operation can complete inline before replacement setup.
 
 ## 11. Scheduling and verification boundaries
 
-Frame decoding, histogram expansion and source state transitions share the
+Frame decoding, histogram decoding and source state transitions share the
 service input queue with other service work. There is no separate decoder worker
 or explicit notification backpressure. Heavy queue load can delay callbacks,
 frame confirmation and deadlines.
