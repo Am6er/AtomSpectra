@@ -161,7 +161,8 @@ The header fields that describe the frame:
 | 3 | Frame type, 0-7 |
 | 4 | Flags: bit 0 alarm inhibited (not used by AtomSpectra), bit 1 spectrometer running; other bits are ignored |
 | 5 | Total number of notifications of the frame, including the first and the last |
-| 6-7 | Protocol version, uint16 little-endian, currently `1`; these two bytes never change their position |
+| 6 | Major protocol version, currently `1`; only this byte decides compatibility |
+| 7 | Minor protocol version, currently `0`; a change never breaks the exchange (it only adds commands and features), logged as `major.minor` after a successful handshake. Bytes 6-7 never change their position |
 | 96 | Spectrum format: `0` raw, `1` compressed (see Spectrum Format); `0` in frames without a spectrum |
 | 1424 | Spectrum of types 1-6, then zero padding up to the checksum |
 
@@ -177,7 +178,7 @@ starts with `<B>`. After the checksum, the spectrum is decoded, the padding must
 notification count must match the bytes actually used, otherwise the frame is rejected. History
 spectra (types 4-6) are validated the same way but only their header is used.
 
-A frame with a version other than 1 is not a transient error: newer firmware needs a newer app, older
+A frame with a major version other than 1 is not a transient error: newer firmware needs a newer app, older
 firmware needs an update. The source stops with a terminal `OP_CONNECT` error, reason
 `REASON_UNSUPPORTED`, and does not retry, even during recovery. The service treats it like a missing
 permission: the session falls back to `UNSELECTED`, a toast asks the user to update the app, and the
@@ -210,7 +211,8 @@ Unspecified bytes are reserved or not interpreted by the reviewed clients.
 | 3 | 1 | Frame type, 0-7 |
 | 4 | 1 | Flags (see Frame Header and Size) |
 | 5 | 1 | Number of notifications |
-| 6 | 2 | Protocol version, uint16 |
+| 6 | 1 | Major protocol version |
+| 7 | 1 | Minor protocol version |
 | 8-9 | 2 | Reserved |
 | 10 | 4 | Dosimeter total pulses, uint32 |
 | 14 | 4 | Pulses per second, uint32 |

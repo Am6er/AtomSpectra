@@ -11,7 +11,7 @@ final class BluZFrameDecoder {
     private static final int MAX_NOTIFICATIONS = 73;
     private static final int FLAG_RUNNING = 0x02;
     private static final int HW_INFO_TYPE = 7;
-    private static final int PROTOCOL_VERSION = 1;
+    private static final int PROTOCOL_MAJOR = 1;
     private final byte[] buffer = new byte[MAX_NOTIFICATIONS * NOTIFICATION_SIZE];
     private int remaining;
     private int length;
@@ -78,7 +78,7 @@ final class BluZFrameDecoder {
             throw new IllegalArgumentException("BluZ checksum mismatch");
         }
         // only a complete frame with a valid checksum proves the version is real and not a stray header
-        if (version != PROTOCOL_VERSION) {
+        if (version != PROTOCOL_MAJOR) {
             reset();
             throw new UnsupportedVersionException(version);
         }
@@ -92,12 +92,12 @@ final class BluZFrameDecoder {
 
     /**
      * Reads the header of the first notification: byte 3 is the frame type, byte 4 the flags, byte 5
-     * the number of notifications, bytes 6-7 the protocol version, byte 96 the spectrum format.
+     * the number of notifications, byte 6 the major and byte 7 the minor protocol version, byte 96 the spectrum format.
      */
     private void beginFrame(byte[] packet) {
         type = packet[3] & 255;
         if (type > HW_INFO_TYPE) throw new IllegalArgumentException("Unknown BluZ frame type");
-        version = (packet[6] & 255) | ((packet[7] & 255) << 8);
+        version = packet[6] & 255; // major only, the minor version (byte 7) never affects compatibility
         running = (packet[4] & FLAG_RUNNING) != 0;
         format = packet[96] & 255;
         expected = packet[5] & 255;
@@ -171,7 +171,7 @@ final class BluZFrameDecoder {
      */
     static final class UnsupportedVersionException extends IllegalArgumentException {
         UnsupportedVersionException(int version) {
-            super("Unsupported BluZ protocol version " + version);
+            super("Unsupported BluZ protocol major version " + version);
         }
     }
 

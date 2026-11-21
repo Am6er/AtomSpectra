@@ -643,6 +643,7 @@ final class BluZBleSource implements SpectrumSource {
                 // frames before the answer to the hardware info request are ignored
                 if (!frame.isHardwareInfo()) return;
                 hardwareInfo = true;
+                debug("Protocol version " + (frame.settings[6] & 255) + "." + (frame.settings[7] & 255));
                 // the device sends no periodic frames until the interval is set; its reply is the first frame
                 sentNotificationInterval = notificationInterval;
                 enqueue(BluZCommandCodec.notificationInterval(notificationInterval, true), OP_CONNECT, null);
