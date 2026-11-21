@@ -34,7 +34,7 @@ import java.util.UUID;
 
 @SuppressLint("MissingPermission")
 final class BluZBleSource implements SpectrumSource {
-    private static final boolean LOG_PACKET_STATS = true;
+    private static final boolean LOG_PACKET_STATS = false;
     private static final UUID SERVICE = UUID.fromString("0000fe80-cc7a-482a-984a-7f2ed5b3e58f");
     private static final UUID NOTIFY = UUID.fromString("0000fe81-8e22-4541-9d4c-21edae82ed19");
     private static final UUID WRITE = UUID.fromString("0000fe82-8e22-4541-9d4c-21edae82ed19");
