@@ -265,6 +265,36 @@
                 android:text="@string/bluz_dnl_correction"
                 android:textColor="#FFFFFFFF" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_BluZInterval_minus"
+                    android:text="@string/minus" />
+
+                <TextView
+                    android:id="@+id/bluzNotificationIntervalText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="80"
+                    android:gravity="center"
+                    android:textColor="#FFFFFF" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="24dp"
+                    android:onClick="onClick_BluZInterval_plus"
+                    android:text="@string/plus" />
+            </LinearLayout>
+
 <!-- End BluZ -->
 <!-- Spectrum -->
 

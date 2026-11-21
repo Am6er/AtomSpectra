@@ -162,6 +162,7 @@
     <string name="enable_pileup">Enable pile-up correction</string>
     <string name="allow_partial_histogram_data">Allow spectrum processing with partial data</string>
     <string name="bluz_dnl_correction">Correct uneven ADC channel widths (DNL)</string>
+    <string name="bluz_notification_interval_format">Update interval: <xliff:g id="interval">%1$d</xliff:g> s</string>
     <string name="invert">Invert input</string>
     <string name="add_gps">Add GPS coordinates to files</string>
     <string name="update_isotopes">Auto search isotopes</string>

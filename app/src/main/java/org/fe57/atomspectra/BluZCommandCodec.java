@@ -19,6 +19,18 @@ final class BluZCommandCodec {
         return packet;
     }
 
+    /**
+     * Command 13: the device sends a frame every {@code seconds}, 0 turns the periodic frames off.
+     * It answers with a spectrum frame when {@code forceSpectrum} is set, otherwise with a frame of the current mode.
+     */
+    static byte[] notificationInterval(int seconds, boolean forceSpectrum) {
+        byte[] packet = command(13);
+        packet[4] = (byte) seconds;
+        packet[5] = (byte) (forceSpectrum ? 1 : 0);
+        checksum(packet);
+        return packet;
+    }
+
     static byte[] resolution4096(byte[] snapshot) {
         if (snapshot == null || snapshot.length < 100) {
             throw new IllegalArgumentException("Missing BluZ settings snapshot");

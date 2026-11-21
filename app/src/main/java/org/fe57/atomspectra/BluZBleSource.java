@@ -150,6 +150,8 @@ final class BluZBleSource implements SpectrumSource {
     private final BluZFrameDecoder decoder = new BluZFrameDecoder();
     private final DnlCorrector dnlCorrector = new DnlCorrector();
     private boolean dnlCorrection;
+    private int notificationInterval = Constants.BLUZ_NOTIFICATION_INTERVAL_DEFAULT;
+    private int sentNotificationInterval;
     private final ArrayDeque<PendingWrite> writes = new ArrayDeque<>();
     private volatile int status = STATUS_DISCONNECTED;
     private volatile ConnectionPhase connectionPhase = ConnectionPhase.NONE;
@@ -224,11 +226,19 @@ final class BluZBleSource implements SpectrumSource {
     private void loadAppPreferences() {
         dnlCorrection = PrefHelper.getASSharedPreferences(context)
                 .getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT);
+        notificationInterval = PrefHelper.getASSharedPreferences(context)
+                .getInt(Constants.CONFIG.CONF_BLUZ_NOTIFICATION_INTERVAL, Constants.BLUZ_NOTIFICATION_INTERVAL_DEFAULT);
     }
 
     @Override
     public void onAppPreferencesChanged() {
-        dispatch(this::loadAppPreferences);
+        dispatch(() -> {
+            loadAppPreferences();
+            if (ready && gatt != null && notificationInterval != sentNotificationInterval) {
+                sentNotificationInterval = notificationInterval;
+                enqueue(BluZCommandCodec.notificationInterval(notificationInterval, false), OP_SHOW, null);
+            }
+        });
     }
 
     @Override
@@ -632,7 +642,9 @@ final class BluZBleSource implements SpectrumSource {
                 // frames before the answer to the hardware info request are ignored
                 if (!frame.isHardwareInfo()) return;
                 hardwareInfo = true;
-                enqueue(BluZCommandCodec.command(11), OP_CONNECT, null);
+                // the device sends no periodic frames until the interval is set; its reply is the first frame
+                sentNotificationInterval = notificationInterval;
+                enqueue(BluZCommandCodec.notificationInterval(notificationInterval, true), OP_CONNECT, null);
                 return;
             }
             if (frame.isHardwareInfo()) return;

@@ -103,6 +103,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
         // --- bluz processing
         setupBluZDnlCorrectionCheckbox();
+        updateBluZIntervalText();
         // --- end bluz processing
 
         // --- spectrum
@@ -190,6 +191,25 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         checkDnlCorrection.setOnClickListener(v -> {
             saveBooleanPref(checkDnlCorrection.isChecked(), Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION);
         });
+    }
+
+    private int bluzInterval() {
+        return sp.getInt(Constants.CONFIG.CONF_BLUZ_NOTIFICATION_INTERVAL, Constants.BLUZ_NOTIFICATION_INTERVAL_DEFAULT);
+    }
+
+    private void updateBluZIntervalText() {
+        TextView text = findViewById(R.id.bluzNotificationIntervalText);
+        text.setText(getString(R.string.bluz_notification_interval_format, bluzInterval()));
+    }
+
+    public void onClick_BluZInterval_minus(View v) {
+        saveIntPref(Math.max(Constants.BLUZ_NOTIFICATION_INTERVAL_MIN, bluzInterval() - 1), Constants.CONFIG.CONF_BLUZ_NOTIFICATION_INTERVAL);
+        updateBluZIntervalText();
+    }
+
+    public void onClick_BluZInterval_plus(View v) {
+        saveIntPref(Math.min(Constants.BLUZ_NOTIFICATION_INTERVAL_MAX, bluzInterval() + 1), Constants.CONFIG.CONF_BLUZ_NOTIFICATION_INTERVAL);
+        updateBluZIntervalText();
     }
 
     // raw audio

@@ -162,6 +162,7 @@
     <string name="enable_pileup">Включить анализ наложения импульсов</string>
     <string name="allow_partial_histogram_data">Разрешить обработку спектров с частичными данными</string>
     <string name="bluz_dnl_correction">Корректировать неравномерность каналов АЦП (DNL)</string>
+    <string name="bluz_notification_interval_format">Интервал обновления: <xliff:g id="interval">%1$d</xliff:g> с</string>
     <string name="invert">Инвертировать вход</string>
     <string name="add_gps">Добавлять координаты GPS в файлы</string>
     <string name="update_isotopes">Автоматический поиск изотопов</string>

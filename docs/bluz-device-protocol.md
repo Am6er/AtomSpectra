@@ -93,16 +93,19 @@ count and spectrometer time. A resolution-only change clears none of them.
 
 ## Transmission Cycle
 
-Local firmware sends a complete frame when `connectFlag` is true and
-`interval2 < intervalNow`, then assigns `interval2 = intervalNow + INTERVAL2`.
-`INTERVAL2` is 5 in the reviewed checkout. This is a scheduler rule, not a
+Local firmware sends a periodic frame when `connectFlag` is true, `notifyInterval` is not 0 and
+`interval2 < intervalNow`, and assigns `interval2 = intervalNow + notifyInterval` after the frame is sent.
+`notifyInterval` is set by command 13 (byte 4, seconds, 0 turns the periodic frames off), is kept only in RAM and is
+reset to 0 when a client subscribes, so a new connection gets no periodic frames until it asks for them.
+Command 13 (byte 4: seconds, byte 5 bit 0: `forceSpectrum`: answer with a spectrum frame as to command 11, otherwise with a frame of the current mode); the current value is in byte 8 of every frame. A frame that took longer than
+the interval does not queue the next one, because the interval counts from the end of the transfer. This is a scheduler rule, not a
 guaranteed arrival interval: its strict comparison, timer tick and BLE transfer
 duration must be considered before assuming exact wall-clock cadence.
 
 Commands 5, 10, 11 and 12 and every state-changing command make the next pass of the firmware main loop
 send the requested frame (hardware info, history, spectrum, dosimeter, or the current mode's frame), one frame
 per pass; the reply can wait up to about a second because the processor sleeps between interrupts. Any
-frame restarts the 5 s timer.
+frame restarts the interval timer.
 
 Each cycle constructs the header/settings, 512-entry dosimeter ring and 50-entry
 log, with a spectrum only when the selected frame type requires one. A complete
@@ -187,10 +190,12 @@ info command never answers it, and the first connection ends with the handshake 
 After the CCCD write completes, AtomSpectra sends command 10 (hardware info). The reply is a type 7
 frame of one notification that carries only the header (the rest is zero); its version is checked as
 above. Until that reply arrives every other frame is ignored, even a valid periodic one. Then
-AtomSpectra always sends command 11 (spectrum), whatever the spectrometer state and pulse count, and the
-source becomes ready on the first frame with a spectrum (types 1-3), which is the reply. Only
+AtomSpectra sends command 13 with the update interval from the settings (1-5 s, 5 by default). The reply is the first
+frame; its byte 8 (the interval in use) is not checked. AtomSpectra sets `forceSpectrum` in the same command (byte 5 bit 0),
+whatever the spectrometer state and pulse count, so command 11 is not sent. The
+source becomes ready on the first frame with a spectrum (types 1-3). Only
 a running device is streamed to the application; for an idle one the service asks for the spectrum
-once with a show request.
+once with a show request. A change of the interval in the settings is sent as command 13 to a connected device.
 
 ## Common Header and Payload
 
