@@ -510,6 +510,10 @@ final class BluZBleSource implements SpectrumSource {
         public void onMtuChanged(BluetoothGatt candidate, int mtu, int result) {
             dispatch(() -> {
                 if (!current(candidate) || subscribed) return;
+                if (notifyCharacteristic == null) {
+                    debug("MTU=" + mtu + " (ignored, services not discovered yet)");
+                    return;
+                }
                 debug("MTU=" + mtu + ", status=" + gattStatus(result));
                 if (result != BluetoothGatt.GATT_SUCCESS || mtu < 251) {
                     failHandshake(REASON_ERROR, "BluZ requires an MTU of at least 251");
