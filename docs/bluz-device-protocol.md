@@ -94,12 +94,12 @@ count and spectrometer time. A resolution-only change clears none of them.
 ## Transmission Cycle
 
 Local firmware sends a periodic frame when `connectFlag` is true, `notifyInterval` is not 0 and
-`interval2 < intervalNow`, and assigns `interval2 = intervalNow + notifyInterval` after the frame is sent.
+`interval2 <= intervalNow`, and assigns `interval2 = intervalNow + notifyInterval` after the frame is sent.
 `notifyInterval` is set by command 13 (byte 4, seconds, 0 turns the periodic frames off), is kept only in RAM and is
 reset to 0 when a client subscribes, so a new connection gets no periodic frames until it asks for them.
 Command 13 (byte 4: seconds, byte 5 bit 0: `forceSpectrum`: answer with a spectrum frame as to command 11, otherwise with a frame of the current mode); the current value is in byte 8 of every frame. A frame that took longer than
 the interval does not queue the next one, because the interval counts from the end of the transfer. This is a scheduler rule, not a
-guaranteed arrival interval: its strict comparison, timer tick and BLE transfer
+guaranteed arrival interval: the one-second timer tick and the BLE transfer
 duration must be considered before assuming exact wall-clock cadence.
 
 Commands 5, 10, 11 and 12 and every state-changing command make the next pass of the firmware main loop

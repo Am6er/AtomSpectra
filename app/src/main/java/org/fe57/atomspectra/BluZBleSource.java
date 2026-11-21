@@ -234,9 +234,10 @@ final class BluZBleSource implements SpectrumSource {
     public void onAppPreferencesChanged() {
         dispatch(() -> {
             loadAppPreferences();
-            if (ready && gatt != null && notificationInterval != sentNotificationInterval) {
+            // hardwareInfo is set when command 13 has already been sent, which is before the source is ready
+            if (hardwareInfo && gatt != null && notificationInterval != sentNotificationInterval) {
                 sentNotificationInterval = notificationInterval;
-                enqueue(BluZCommandCodec.notificationInterval(notificationInterval, false), OP_SHOW, null);
+                enqueue(BluZCommandCodec.notificationInterval(notificationInterval, false), ready ? OP_SHOW : OP_CONNECT, null);
             }
         });
     }
