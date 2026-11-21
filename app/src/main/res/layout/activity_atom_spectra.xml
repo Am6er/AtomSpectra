@@ -16,21 +16,22 @@
         android:clickable="true"
         android:onClick="onClickShape" />
 
-    <Button
+    <ImageButton
         android:id="@+id/inputTypeButton"
-        style="?android:attr/buttonStyleSmall"
-
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:layout_gravity="top|right"
         android:layout_marginTop="45dp"
         android:layout_marginRight="0dp"
-        android:background="@drawable/input_none"
+        android:adjustViewBounds="true"
         android:clickable="false"
+        android:contentDescription="@string/action_switch_device"
         android:enabled="false"
         android:focusable="false"
-        android:textColor="#FFFFFFFF"
-        android:textSize="8dp" />
+        android:foregroundGravity="center"
+        android:padding="0dp"
+        android:scaleType="center"
+        android:src="@drawable/input_none" />
 
     <Button
         android:id="@+id/keVOrChannelButton"
@@ -137,11 +138,11 @@
         android:foregroundGravity="center"
         android:onClick="onClickDeleteSpc"
         android:scaleType="fitCenter"
-        android:src="@drawable/menu_clear_spectrum" />
+        android:src="@drawable/ic_menu_delete" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="42dp"
         android:layout_gravity="bottom"
         android:background="#333333"
 
@@ -149,6 +150,7 @@
 
         <TextView
             android:id="@+id/displayModeSpectrumButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -162,6 +164,7 @@
 
         <TextView
             android:id="@+id/displayModeSpectrumChangeButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -174,6 +177,7 @@
 
         <TextView
             android:id="@+id/displayModeSearchButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"

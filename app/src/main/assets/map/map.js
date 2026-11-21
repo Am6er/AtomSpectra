@@ -285,6 +285,12 @@
     return Math.exp(v) - 1;
   }
 
+  function cpsFromSample(counts, duration) {
+    counts = Number(counts) || 0;
+    duration = Number(duration) || 0;
+    return duration > 0 ? counts / duration : 0;
+  }
+
   function scaleValue(cps) {
     if (SCALE_MODE === "lin") {
       return Math.max(0, cps);
@@ -369,7 +375,7 @@
     for (var t = 0; t < tracks.length; t++) {
       var track = tracks[t];
       for (var i = 0; i < track.length; i++) {
-        values.push(scaleValue(track[i][2]));
+        values.push(scaleValue(cpsFromSample(track[i][2], track[i][4])));
       }
     }
     values.sort(function (a, b) {
@@ -399,6 +405,16 @@
     };
   }
 
+  function formatScaledMagnitude(scaled) {
+    if (scaled >= 100) {
+      return scaled.toFixed(1);
+    }
+    if (scaled >= 10) {
+      return scaled.toFixed(2);
+    }
+    return scaled.toFixed(3);
+  }
+
   function formatLegendCps(value) {
     if (!isFinite(value) || value < 0) {
       value = 0;
@@ -415,13 +431,27 @@
       scaled = value / 1e3;
       suffix = "k";
     }
-    if (scaled >= 100) {
-      return scaled.toFixed(1) + suffix;
+    return formatScaledMagnitude(scaled) + suffix;
+  }
+
+  // Same unit steps as AtomSpectra.formatCpsWithError: cps below 1000, kcps above.
+  function formatCpsWithError(cps, counts) {
+    if (!isFinite(cps) || cps < 0) {
+      cps = 0;
     }
-    if (scaled >= 10) {
-      return scaled.toFixed(2) + suffix;
+    var scaled = cps;
+    var unit = "cps";
+    if (cps >= 1000) {
+      scaled = cps / 1000;
+      unit = "kcps";
     }
-    return scaled.toFixed(3) + suffix;
+    var text = formatScaledMagnitude(scaled) + " " + unit;
+    if (counts > 0 && isFinite(counts)) {
+      // Same as the status line: 1-sigma % is sqrt(N)/N*100, shown as round(that * 2).
+      var oneSigmaPercent = Math.sqrt(counts) / counts * 100;
+      text += " ±" + Math.round(oneSigmaPercent * 2) + "%";
+    }
+    return text;
   }
 
   function paintLegendSwatch() {
@@ -758,6 +788,10 @@
   window.addEventListener("touchend", endLegendDrag);
   window.addEventListener("touchcancel", endLegendDrag);
 
+  function pad2(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
+
   function formatTimestamp(ts) {
     if (!ts) {
       return "—";
@@ -767,25 +801,46 @@
       if (isNaN(d.getTime())) {
         return String(ts);
       }
-      function pad(n) {
-        return n < 10 ? "0" + n : String(n);
-      }
       return (
         d.getFullYear() +
         "-" +
-        pad(d.getMonth() + 1) +
+        pad2(d.getMonth() + 1) +
         "-" +
-        pad(d.getDate()) +
+        pad2(d.getDate()) +
         " " +
-        pad(d.getHours()) +
+        pad2(d.getHours()) +
         ":" +
-        pad(d.getMinutes()) +
+        pad2(d.getMinutes()) +
         ":" +
-        pad(d.getSeconds())
+        pad2(d.getSeconds())
       );
     } catch (e) {
       return String(ts);
     }
+  }
+
+  // Under a minute: seconds. Longer: the same h:mm:ss / Nd h:mm:ss as spectrum time.
+  function formatDuration(seconds) {
+    if (!(seconds > 0) || !isFinite(seconds)) {
+      return "—";
+    }
+    if (seconds < 60) {
+      var rounded = Math.round(seconds * 10) / 10;
+      if (rounded === Math.round(rounded)) {
+        return Math.round(rounded) + " s";
+      }
+      return rounded.toFixed(1) + " s";
+    }
+    var total = Math.round(seconds);
+    var days = Math.floor(total / 86400);
+    var hours = Math.floor((total % 86400) / 3600);
+    var minutes = Math.floor((total % 3600) / 60);
+    var secs = total % 60;
+    var hms = pad2(hours) + ":" + pad2(minutes) + ":" + pad2(secs);
+    if (days > 0) {
+      return days + "d " + hms;
+    }
+    return hms;
   }
 
   var popupLatLng = null;
@@ -871,13 +926,15 @@
       if (!pt) {
         return;
       }
+      var counts = pt.counts > 0 ? pt.counts : 0;
       var html =
         formatCoords(pt.lat, pt.lon) +
         "<br>" +
-        formatTimestamp(pt.ts);
-      if (!this._isSpectrum) {
-        html += "<br>CPS: " + pt.cps.toFixed(pt.cps >= 10 ? 1 : 2);
-      }
+        formatTimestamp(pt.ts) +
+        "<br>" +
+        formatDuration(pt.duration) +
+        "<br>" +
+        formatCpsWithError(pt.cps, counts);
       showPopup(pt.latlng, html);
     },
 
@@ -934,11 +991,15 @@
         var prepared = [];
         for (var i = 0; i < track.length; i++) {
           var pt = track[i];
+          var duration = Number(pt[4]) || 0;
+          var counts = Number(pt[2]) || 0;
           prepared.push({
             lon: pt[0],
             lat: pt[1],
-            cps: pt[2],
+            counts: counts,
+            cps: cpsFromSample(counts, duration),
             ts: pt[3],
+            duration: duration,
             x: 0,
             y: 0,
             latlng: L.latLng(pt[1], pt[0]),
@@ -1013,30 +1074,41 @@
         }
       }
 
+      function cellKey(item, sizePx) {
+        return Math.floor(item.wx / sizePx) + ":" + Math.floor(item.wy / sizePx);
+      }
+
       function binVisible(sizePx) {
         var cells = Object.create(null);
         var count = 0;
+        var means = null;
+        if (isAvg) {
+          means = Object.create(null);
+          for (var s = 0; s < visible.length; s++) {
+            var sample = visible[s];
+            var sumKey = cellKey(sample, sizePx);
+            var sum = means[sumKey];
+            if (!sum) {
+              means[sumKey] = { sumCps: sample.pt.cps, n: 1 };
+            } else {
+              sum.sumCps += sample.pt.cps;
+              sum.n += 1;
+            }
+          }
+        }
         for (var v = 0; v < visible.length; v++) {
           var item = visible[v];
           var vp = item.pt;
-          var cx = Math.floor(item.wx / sizePx);
-          var cy = Math.floor(item.wy / sizePx);
-          var key = cx + ":" + cy;
+          var key = cellKey(item, sizePx);
           var cell = cells[key];
           if (isAvg) {
-            if (!cell) {
-              cells[key] = {
-                sumCps: vp.cps,
-                sumX: vp.x,
-                sumY: vp.y,
-                count: 1,
-              };
-              count += 1;
-            } else {
-              cell.sumCps += vp.cps;
-              cell.sumX += vp.x;
-              cell.sumY += vp.y;
-              cell.count += 1;
+            var mean = means[key].sumCps / means[key].n;
+            var dist = Math.abs(vp.cps - mean);
+            if (!cell || dist < cell.dist) {
+              cells[key] = { pt: vp, dist: dist };
+              if (!cell) {
+                count += 1;
+              }
             }
           } else if (!cell) {
             cells[key] = vp;
@@ -1048,6 +1120,15 @@
           } else if (vp.cps > cell.cps) {
             cells[key] = vp;
           }
+        }
+        if (isAvg) {
+          var picked = Object.create(null);
+          for (var pickedKey in cells) {
+            if (Object.prototype.hasOwnProperty.call(cells, pickedKey)) {
+              picked[pickedKey] = cells[pickedKey].pt;
+            }
+          }
+          cells = picked;
         }
         return { cells: cells, count: count };
       }
@@ -1063,31 +1144,9 @@
 
       var cells = binned.cells;
       var display = [];
-      if (isAvg) {
-        for (var avgKey in cells) {
-          if (!Object.prototype.hasOwnProperty.call(cells, avgKey)) {
-            continue;
-          }
-          var agg = cells[avgKey];
-          var ax = agg.sumX / agg.count;
-          var ay = agg.sumY / agg.count;
-          var avgCps = agg.sumCps / agg.count;
-          var avgLl = mapObj.containerPointToLatLng(L.point(ax, ay));
-          display.push({
-            lon: avgLl.lng,
-            lat: avgLl.lat,
-            cps: avgCps,
-            ts: 0,
-            x: ax,
-            y: ay,
-            latlng: avgLl,
-          });
-        }
-      } else {
-        for (var keyOut in cells) {
-          if (Object.prototype.hasOwnProperty.call(cells, keyOut)) {
-            display.push(cells[keyOut]);
-          }
+      for (var keyOut in cells) {
+        if (Object.prototype.hasOwnProperty.call(cells, keyOut)) {
+          display.push(cells[keyOut]);
         }
       }
 

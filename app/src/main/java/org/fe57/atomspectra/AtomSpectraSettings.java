@@ -13,7 +13,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.gesture.GestureOverlayView;
 import android.gesture.GestureOverlayView.OnGestureListener;
-import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -22,11 +21,9 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.DocumentsContract;
 import android.text.InputType;
-import android.text.method.NumberKeyListener;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
-import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,13 +33,13 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.util.Locale;
 
+// TODO: describe these preferences with a SettingsSchema (SOFTWARE scope) and render them with the rows of AtomSpectraDeviceSettings
 public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     private final static String TAG = AtomSpectraSettings.class.getSimpleName();
@@ -54,23 +51,19 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     private GestureDetector gestureDetector;
     private TextView countsTextField;
     private SharedPreferences sp;
+    private final SharedPreferences.OnSharedPreferenceChangeListener logPreferenceChange = (preferences, key) -> {
+        if (!active || key == null) return;
+        Object value = preferences.getAll().get(key);
+        // strings may hold device names/identities, URLs or paths: log their key only
+        boolean plain = value instanceof Boolean || value instanceof Number;
+        AtomSpectraLog.action(this, LogTag.SETTINGS_ACT, "Preference changed: " + key + (plain ? " = " + value : ""));
+    };
     private TextView doseRateFreqLabel;
     private TextView workingDirText;
-    private TextView outputDeviceText;
-    private int outputDeviceID = -1;
-    private String outputDeviceName = "(none)";
-    private TextView inputDeviceText;
-    private int inputDeviceID = -1;
-    private String inputDeviceName = "(none)";
     private final int SELECT_DIR_CODE_SETTINGS = 100;
     private boolean showPulseShape = false;
 
     private float zoom_factor = 1;
-    private int usb_noise_value = 25;
-    private boolean retrySend = true;
-
-    private static final String SETTINGS_GET_INF_ID = "Inf get";
-    private static final String SETTINGS_SET_NOISE_ID = "Noise set";
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -97,9 +90,9 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         setupPileUpCheckbox();
         setupRawAudioSourceCheckbox();
         setupInvertAudioCheckbox();
-        setupInputSoundCheckbox();
         updateMinFrontPointsText();
         updateMaxFrontPointsText();
+        updateNoiseDiscriminatorTextFromPrefs();
         setupDoseUpdateFrequency();
         setupAudioSectionAvailability();
         // --- end audio processing
@@ -108,30 +101,21 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         setupAllowPartialHistogramCheckbox();
         // --- end usb processing
 
+        // --- bluz processing
+        setupBluZDnlCorrectionCheckbox();
+        // --- end bluz processing
+
         // --- spectrum
         updateReduceToText();
-        updateNoiseDiscriminatorTextFromPrefs();
         updateCalibrationFactorText();
         updateSmoothText();
         updateCompressGraphText();
         // --- end spectrum
 
         // --- spectrum change
+        setupSpectrumChangeEnabledCheckbox();
         updateDiffTimeText();
         // --- end spectrum change
-
-        // --- spectrogram
-        setupSpgMidnightResetCheckbox();
-        updateSpgDeltaDurationText();
-        // --- end spectrogram
-
-        // --- interval search section
-        setupEnableSearchAlarmCheckbox();
-        setupSearchAlarmOutputDeviceText();
-        updateSearchEnergyRangeText();
-        updateSearchAlarmVolumeText();
-        updateSearchAlarmDetectionLevelText();
-        // --- end interval search section
 
         // --- AtomSwift integration section
         setupAtomSwiftIntegrationCheckbox();
@@ -169,8 +153,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initializeGestures();
 
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
-        sendUsbInfoRequest();
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
     }
 
     @Override
@@ -183,29 +166,29 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         return super.onOptionsItemSelected(item);
     }
 
-    private void sendUsbInfoRequest() {
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_USB_COMMAND) // Command will not be executed if USB-serial does not exist
-                .putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID, SETTINGS_GET_INF_ID)
-                .putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA, "-inf")
-                .setPackage(Constants.PACKAGE_NAME));
-    }
-
     // --- audio processing section
     // pile up
     private void setupPileUpCheckbox() {
         CheckBox pileUpCheckBox = findViewById(R.id.CheckPileUp);
-        pileUpCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, Constants.PILE_UP_DEFAULT));
+        pileUpCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, AtomSpectraAudioSource.PILE_UP_DEFAULT));
         pileUpCheckBox.setOnClickListener(v -> {
             saveBooleanPref(pileUpCheckBox.isChecked(), Constants.CONFIG.CONF_PILE_UP);
-            stopRecording();
         });
     }
 
     private void setupAllowPartialHistogramCheckbox() {
         CheckBox checkAllowPartialHistogram = findViewById(R.id.CheckAllowPartialHistogram);
-        checkAllowPartialHistogram.setChecked(sp.getBoolean(Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM, Constants.USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT));
+        checkAllowPartialHistogram.setChecked(sp.getBoolean(Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM, Constants.ALLOW_PARTIAL_HISTOGRAM_DEFAULT));
         checkAllowPartialHistogram.setOnClickListener(v -> {
-            saveBooleanPref(checkAllowPartialHistogram.isChecked(), Constants.CONFIG.CONF_USB_ALLOW_PARTIAL_HISTOGRAM);
+            saveBooleanPref(checkAllowPartialHistogram.isChecked(), Constants.CONFIG.CONF_ALLOW_PARTIAL_HISTOGRAM);
+        });
+    }
+
+    private void setupBluZDnlCorrectionCheckbox() {
+        CheckBox checkDnlCorrection = findViewById(R.id.CheckBluZDnlCorrection);
+        checkDnlCorrection.setChecked(sp.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT));
+        checkDnlCorrection.setOnClickListener(v -> {
+            saveBooleanPref(checkDnlCorrection.isChecked(), Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION);
         });
     }
 
@@ -218,121 +201,49 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 rawAudio.setEnabled(false);
                 rawAudio.setChecked(false);
                 rawAudio.setVisibility(CheckBox.INVISIBLE);
-                saveIntPref(Constants.AUDIO_SOURCE_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
+                saveIntPref(AtomSpectraAudioSource.AUDIO_SOURCE_SETTING_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
             } else {
                 rawAudio.setEnabled(true);
                 rawAudio.setVisibility(CheckBox.VISIBLE);
-                int currentValue = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, Constants.AUDIO_SOURCE_DEFAULT);
-                rawAudio.setChecked(currentValue == Constants.AUDIO_SOURCE_RAW);
+                int currentValue = sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, AtomSpectraAudioSource.AUDIO_SOURCE_SETTING_DEFAULT);
+                rawAudio.setChecked(currentValue == AtomSpectraAudioSource.AUDIO_SOURCE_SETTING_RAW);
             }
         } else {
             rawAudio.setEnabled(false);
             rawAudio.setChecked(false);
             rawAudio.setVisibility(CheckBox.INVISIBLE);
-            saveIntPref(Constants.AUDIO_SOURCE_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
+            saveIntPref(AtomSpectraAudioSource.AUDIO_SOURCE_SETTING_VOICE, Constants.CONFIG.CONF_AUDIO_SOURCE);
         }
 
         rawAudio.setOnClickListener(v -> {
             int newValue = rawAudio.isChecked()
-                    ? Constants.AUDIO_SOURCE_RAW
-                    : Constants.AUDIO_SOURCE_VOICE;
+                    ? AtomSpectraAudioSource.AUDIO_SOURCE_SETTING_RAW
+                    : AtomSpectraAudioSource.AUDIO_SOURCE_SETTING_VOICE;
             saveIntPref(newValue, Constants.CONFIG.CONF_AUDIO_SOURCE);
-            stopRecording();
         });
     }
 
     // invert input
     private void setupInvertAudioCheckbox() {
         CheckBox checkInvert = findViewById(R.id.CheckInvert);
-        checkInvert.setChecked(sp.getBoolean(Constants.CONFIG.CONF_INVERSION, Constants.INVERSE_DEFAULT));
+        checkInvert.setChecked(sp.getBoolean(Constants.CONFIG.CONF_INVERSION, AtomSpectraAudioSource.INVERSE_DEFAULT));
         checkInvert.setOnClickListener(v -> {
             saveBooleanPref(checkInvert.isChecked(), Constants.CONFIG.CONF_INVERSION);
-            stopRecording();
         });
-    }
-
-    // input sound
-    private void setupInputSoundCheckbox() {
-        inputDeviceText = findViewById(R.id.inputSoundText);
-        inputDeviceID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
-        inputDeviceName = sp.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
-        updateInputDeviceText();
-        CheckBox inputSoundCheckBox = findViewById(R.id.inputSoundCheckbox);
-        inputSoundCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false) && !inputDeviceName.equals("(none)"));
-        inputSoundCheckBox.setEnabled(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
-        inputSoundCheckBox.setOnClickListener(v -> {
-            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-            boolean inputSound = ((CheckBox) v).isChecked();
-            String inputName = settings.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
-            if (inputName == null)
-                inputName = "(none)";
-            if (inputName.equals("(none)")) {
-                inputSound = false;
-                ((CheckBox) v).setChecked(false);
-            }
-
-            saveBooleanPref(inputSound, Constants.CONFIG.CONF_INPUT_SOUND);
-        });
-    }
-
-    private void updateInputDeviceText() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioDeviceInfo deviceIn;
-            if (inputDeviceID == -1) {
-                deviceIn = AtomSpectraService.getDeviceInput(this, -1, null, false);
-            } else {
-                deviceIn = AtomSpectraService.getDeviceInput(this, inputDeviceID, inputDeviceName, true);
-            }
-            int inputDeviceType;
-            if (deviceIn == null) {
-                inputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
-            } else {
-                inputDeviceType = deviceIn.getType();
-            }
-            inputDeviceText.setText(String.format(Locale.US, "%s: %s", AtomSpectraService.audioDeviceNames[Constants.MinMax(inputDeviceType, 0, AtomSpectraService.audioDeviceNames.length - 1)], inputDeviceName));
-        } else {
-            inputDeviceText.setEnabled(false);
-        }
-    }
-
-    public void onSelectInputSoundClick(View v) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioDeviceInfo deviceIn = AtomSpectraService.getDeviceInput(this, inputDeviceID, inputDeviceName, false);
-            int inputDeviceType;
-            if (deviceIn != null) {
-                inputDeviceID = deviceIn.getId();
-                inputDeviceName = deviceIn.getProductName().toString();
-                inputDeviceType = deviceIn.getType();
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, inputDeviceID);
-                editor.putString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, inputDeviceName);
-                editor.apply();
-            } else {
-                inputDeviceID = -1;
-                inputDeviceName = "(none)";
-                inputDeviceType = 0;
-            }
-            inputDeviceText.setText(String.format(Locale.US, "%s: %s", AtomSpectraService.audioDeviceNames[Constants.MinMax(inputDeviceType, 0, AtomSpectraService.audioDeviceNames.length - 1)], inputDeviceName));
-        } else {
-            inputDeviceText.setEnabled(false);
-        }
     }
 
     // min front points
     private void updateMinFrontPointsText() {
         TextView minFrontPointsTextField = findViewById(R.id.minFrontText);
-        minFrontPointsTextField.setText(getString(R.string.min_front_points_format, sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT)));
+        minFrontPointsTextField.setText(getString(R.string.min_front_points_format, sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, AtomSpectraAudioSource.MIN_FRONT_POINTS_DEFAULT)));
     }
 
     public void onClick_minFront_plus(View v) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
-        int rr = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
+        int r = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, AtomSpectraAudioSource.MIN_FRONT_POINTS_DEFAULT);
+        int rr = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, AtomSpectraAudioSource.MAX_FRONT_POINTS_DEFAULT);
         if (r < rr - 1) {
             r++;
-            if (!AtomSpectraService.getFreeze()) {
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-            }
         }
 
         saveMinFrontPoints(r);
@@ -340,12 +251,9 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     public void onClick_minFront_minus(View v) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
+        int r = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, AtomSpectraAudioSource.MIN_FRONT_POINTS_DEFAULT);
         if (r > 1) {
             r--;
-            if (!AtomSpectraService.getFreeze()) {
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-            }
         }
 
         saveMinFrontPoints(r);
@@ -360,18 +268,15 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     // max front points
     private void updateMaxFrontPointsText() {
         TextView maxFrontPointsTextField = findViewById(R.id.maxFrontText);
-        maxFrontPointsTextField.setText(getString(R.string.max_front_points_format, sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)));
+        maxFrontPointsTextField.setText(getString(R.string.max_front_points_format, sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, AtomSpectraAudioSource.MAX_FRONT_POINTS_DEFAULT)));
         showPulseShape = true;
     }
 
     public void onClick_maxFront_plus(View v) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
+        int r = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, AtomSpectraAudioSource.MAX_FRONT_POINTS_DEFAULT);
         if (r < 4096) {
             r++;
-            if (!AtomSpectraService.getFreeze()) {
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-            }
         }
 
         saveMaxFrontPoints(r);
@@ -379,13 +284,10 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     public void onClick_maxFront_minus(View v) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT);
-        int rr = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT);
+        int r = settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, AtomSpectraAudioSource.MAX_FRONT_POINTS_DEFAULT);
+        int rr = settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, AtomSpectraAudioSource.MIN_FRONT_POINTS_DEFAULT);
         if (r > rr + 1) {
             r--;
-            if (!AtomSpectraService.getFreeze()) {
-                sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-            }
         }
 
         saveMaxFrontPoints(r);
@@ -428,64 +330,34 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     // noise discriminator
     private void updateNoiseDiscriminatorTextFromPrefs() {
         TextView noiseText = findViewById(R.id.noiseText);
-        noiseText.setText(getString(R.string.noise_discriminator_format, sp.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT)));
-    }
-
-    private void updateNoiseDiscriminatorTextFromUSB() {
-        TextView noiseText = findViewById(R.id.noiseText);
-        noiseText.setText(getString(R.string.noise_discriminator_format, usb_noise_value));
+        noiseText.setText(getString(R.string.noise_discriminator_format, sp.getInt(Constants.CONFIG.CONF_NOISE, AtomSpectraAudioSource.NOISE_DISCRIMINATOR_DEFAULT)));
     }
 
     public void onClick_noise_minus(View v) {
-        if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
-            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-            int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
+        int r = settings.getInt(Constants.CONFIG.CONF_NOISE, AtomSpectraAudioSource.NOISE_DISCRIMINATOR_DEFAULT);
 
-            if (r > 0) {
-                r--;
-                stopRecording();
-            }
-
-            saveNoiseDiscriminatorToPrefs(r);
-        } else {
-            if (usb_noise_value > 0) {
-                usb_noise_value--;
-                stopRecording();
-            }
-            saveNoiseDiscriminatorToUSB(usb_noise_value);
+        if (r > 0) {
+            r--;
         }
+
+        saveNoiseDiscriminatorToPrefs(r);
     }
 
     public void onClick_noise_plus(View v) {
-        if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
-            SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-            int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
+        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
+        int r = settings.getInt(Constants.CONFIG.CONF_NOISE, AtomSpectraAudioSource.NOISE_DISCRIMINATOR_DEFAULT);
 
-            if (r < (Constants.NUM_HIST_POINTS / 4)) {
-                r++;
-                stopRecording();
-            }
-
-            saveNoiseDiscriminatorToPrefs(r);
-        } else {
-            if (usb_noise_value < (Constants.NUM_HIST_POINTS / 4)) {
-                usb_noise_value++;
-                stopRecording();
-            }
-            saveNoiseDiscriminatorToUSB(usb_noise_value);
+        if (r < AtomSpectraAudioSource.NOISE_DISCRIMINATOR_MAX) {
+            r++;
         }
+
+        saveNoiseDiscriminatorToPrefs(r);
     }
 
     private void saveNoiseDiscriminatorToPrefs(int val) {
         saveIntPref(val, Constants.CONFIG.CONF_NOISE);
         updateNoiseDiscriminatorTextFromPrefs();
-    }
-
-    private void saveNoiseDiscriminatorToUSB(int val) {
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_SEND_USB_COMMAND)
-                .putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_ID, SETTINGS_SET_NOISE_ID)
-                .putExtra(Constants.ACTION_PARAMETERS.USB_COMMAND_DATA, "-nos " + val)
-                .setPackage(Constants.PACKAGE_NAME));
     }
 
     public void onClick_noise(View v) {
@@ -500,9 +372,9 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         alert.setView(input);
 
         alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-            if (AtomSpectraService.inputType == AtomSpectraService.INPUT_AUDIO) {
+            if (AtomSpectraService.lockedSourceType() == SpectrumSource.TYPE_AUDIO) {
                 SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-                int r = settings.getInt(Constants.CONFIG.CONF_NOISE, Constants.NOISE_DISCRIMINATOR_DEFAULT);
+                int r = settings.getInt(Constants.CONFIG.CONF_NOISE, AtomSpectraAudioSource.NOISE_DISCRIMINATOR_DEFAULT);
                 String value = input.getText().toString();
                 int intValue = r;
                 try {
@@ -510,21 +382,9 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 } catch (NumberFormatException nfe) {
                     System.out.println("Could not parse " + nfe);
                 }
-                intValue = StrictMath.max(0, StrictMath.min(Constants.NUM_HIST_POINTS / 4, intValue));
+                intValue = StrictMath.max(0, StrictMath.min(AtomSpectraAudioSource.NOISE_DISCRIMINATOR_MAX, intValue));
                 saveNoiseDiscriminatorToPrefs(intValue);
             }
-            if (AtomSpectraService.inputType == AtomSpectraService.INPUT_SERIAL) {
-                String value = input.getText().toString();
-                int intValue = usb_noise_value;
-                try {
-                    intValue = Integer.parseInt(value);
-                } catch (NumberFormatException nfe) {
-                    System.out.println("Could not parse " + nfe);
-                }
-                usb_noise_value = StrictMath.max(0, StrictMath.min(Constants.NUM_HIST_POINTS / 4, intValue));
-                saveNoiseDiscriminatorToUSB(usb_noise_value);
-            }
-            stopRecording();
         });
         alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
         });
@@ -567,8 +427,8 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     private void saveFactor(int val) {
         saveIntPref(val, Constants.CONFIG.CONF_MAX_POLI_FACTOR);
         updateCalibrationFactorText();
-        if (AtomSpectraService.newCalibration.getPointsCount() > 1)
-            AtomSpectraService.newCalibration.Calculate(val);
+        if (SpectrumData.instance.newCalibration.getPointsCount() > 1)
+            SpectrumData.instance.newCalibration.Calculate(val);
     }
 
     // smooth window size
@@ -646,6 +506,14 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     // --- end spectrum section
 
     // --- spectrum change section
+    private void setupSpectrumChangeEnabledCheckbox() {
+        CheckBox enableSpectrumChange = findViewById(R.id.enableSpectrumChangeCheckbox);
+        enableSpectrumChange.setChecked(sp.getBoolean(Constants.CONFIG.CONF_SPECTRUM_CHANGE_ENABLED,
+            Constants.SPECTRUM_CHANGE_ENABLED_DEFAULT));
+        enableSpectrumChange.setOnClickListener(v ->
+            saveBooleanPref(enableSpectrumChange.isChecked(), Constants.CONFIG.CONF_SPECTRUM_CHANGE_ENABLED));
+    }
+
     // diff time
     private void updateDiffTimeText() {
         TextView diffTimeText = findViewById(R.id.spectrumChangeDiffTimeText);
@@ -692,61 +560,11 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
     // --- end spectrum change section
 
-    // --- spectrogram section
-    // midnight reset
-    private void setupSpgMidnightResetCheckbox() {
-        CheckBox checkSpgMidnightReset = findViewById(R.id.spgMidnightReset);
-        checkSpgMidnightReset.setChecked(sp.getBoolean(Constants.CONFIG.CONF_SPG_MIDNIGHT_RESET, Constants.SPG_MIDNIGHT_RESET_DEFAULT));
-        checkSpgMidnightReset.setOnClickListener(v -> {
-            saveBooleanPref(checkSpgMidnightReset.isChecked(), Constants.CONFIG.CONF_SPG_MIDNIGHT_RESET);
-        });
-    }
-
-    // save delta every n sec
-    private void updateSpgDeltaDurationText() {
-        TextView spgDeltaDurationText = findViewById(R.id.spgDeltaDurationText);
-        int value = sp.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
-        if (value > 0) {
-            spgDeltaDurationText.setText(getString(R.string.settings_spg_delta_duration, value));
-        } else {
-            spgDeltaDurationText.setText(getString(R.string.settings_spg_save_delta_off));
-        }
-    }
-
-    public void onClick_spgDeltaDuration_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int val = settings.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
-        if (val > Constants.SPG_DELTA_DURATION_MIN) {
-            val -= Constants.SPG_DELTA_DURATION_MIN;
-        } else {
-            val = 0;
-        }
-
-        saveSpgDeltaDuration(val);
-    }
-
-    public void onClick_spgDeltaDuration_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int val = settings.getInt(Constants.CONFIG.CONF_SPG_DELTA_DURATION, 0);
-        if (val <= (Constants.SPG_DELTA_DURATION_MAX - Constants.SPG_DELTA_DURATION_MIN)) {
-            val += Constants.SPG_DELTA_DURATION_MIN;
-        } else {
-            val = Constants.SPG_DELTA_DURATION_MAX;
-        }
-
-        saveSpgDeltaDuration(val);
-    }
-
-    private void saveSpgDeltaDuration(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_SPG_DELTA_DURATION);
-        updateSpgDeltaDurationText();
-    }
-    // --- end spectrogram section
 
     // --- dose update frequency (audio processing) ---
     private void setupDoseUpdateFrequency() {
         doseRateFreqLabel = findViewById(R.id.updateFreqLabel);
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
+        doseRateFreqLabel.setText(getString(R.string.doserateUpdatePeriod, sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
     }
 
     public void onClick_increaseFreq(View v) {
@@ -768,7 +586,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 break;
         }
         saveIntPref(freq, Constants.CONFIG.CONF_DOSE_UPDATE);
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", freq));
+        doseRateFreqLabel.setText(getString(R.string.doserateUpdatePeriod, freq));
     }
 
     public void onClick_decreaseFreq(View v) {
@@ -786,222 +604,10 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 break;
         }
         saveIntPref(freq, Constants.CONFIG.CONF_DOSE_UPDATE);
-        doseRateFreqLabel.setText(String.format(Locale.US, "%d", freq));
+        doseRateFreqLabel.setText(getString(R.string.doserateUpdatePeriod, freq));
     }
     // --- end dose rate section
 
-    // --- interval search section
-    // alarm enable
-    private void setupEnableSearchAlarmCheckbox() {
-        CheckBox alarmEnabledCheckBox = findViewById(R.id.intervalSearchSoundEnabled);
-        alarmEnabledCheckBox.setChecked(sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false));
-        alarmEnabledCheckBox.setEnabled(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M);
-        alarmEnabledCheckBox.setOnClickListener(v -> {
-            saveBooleanPref(alarmEnabledCheckBox.isChecked(), Constants.CONFIG.CONF_OUTPUT_SOUND);
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_MENU).setPackage(Constants.PACKAGE_NAME));
-        });
-    }
-
-    // alarm output device
-    private void setupSearchAlarmOutputDeviceText() {
-        outputDeviceID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
-        outputDeviceName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
-        outputDeviceText = findViewById(R.id.intervalSearchSoundOutputDevice);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioDeviceInfo deviceOut;
-            if (outputDeviceID == -1) {
-                deviceOut = AtomSpectraService.getDeviceOutput(getApplicationContext(), -1, null, false);
-            } else {
-                deviceOut = AtomSpectraService.getDeviceOutput(getApplicationContext(), outputDeviceID, outputDeviceName, true);
-            }
-            int outputDeviceType;
-            if (deviceOut == null) {
-                outputDeviceType = AudioDeviceInfo.TYPE_UNKNOWN;
-            } else {
-                outputDeviceType = deviceOut.getType();
-            }
-            outputDeviceText.setText(String.format(Locale.US, "%s: %s", AtomSpectraService.audioDeviceNames[Constants.MinMax(outputDeviceType, 0, AtomSpectraService.audioDeviceNames.length - 1)], outputDeviceName));
-        } else {
-            outputDeviceText.setEnabled(false);
-        }
-    }
-
-    public void onSelectSearchAlarmOutputDevice(View v) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AudioDeviceInfo deviceOut = AtomSpectraService.getDeviceOutput(this, outputDeviceID, outputDeviceName, false);
-            int outputDeviceType;
-            if (deviceOut != null) {
-                outputDeviceID = deviceOut.getId();
-                outputDeviceName = deviceOut.getProductName().toString();
-                outputDeviceType = deviceOut.getType();
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, outputDeviceID);
-                editor.putString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, outputDeviceName);
-                editor.apply();
-            } else {
-                outputDeviceID = -1;
-                outputDeviceName = "(none)";
-                outputDeviceType = 0;
-            }
-            outputDeviceText.setText(String.format(Locale.US, "%s: %s", AtomSpectraService.audioDeviceNames[Constants.MinMax(outputDeviceType, 0, AtomSpectraService.audioDeviceNames.length - 1)], outputDeviceName));
-        } else {
-            outputDeviceText.setEnabled(false);
-        }
-    }
-
-    // energy range
-    private void updateSearchEnergyRangeText() {
-        TextView energyRangeText = findViewById(R.id.intervalSearchEnergyRange);
-        if (AtomSpectraService.leftChannelInterval != 0 || AtomSpectraService.rightChannelInterval != Constants.NUM_HIST_POINTS - 1)
-            energyRangeText.setText(getString(R.string.interval_search_energy_range_format, AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.leftChannelInterval), AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toEnergy(AtomSpectraService.rightChannelInterval)));
-        else
-            energyRangeText.setText(getString(R.string.interval_search_energy_range_full));
-    }
-
-    public void onSelectIntervalClick(View energyRangeText) {
-        final AlertDialog.Builder alert = new AlertDialog.Builder(this);
-
-        alert.setTitle(getString(R.string.ask_select_interval_title));
-        alert.setMessage(getString(R.string.ask_select_interval_text));
-
-        final EditText input = new EditText(this);
-        input.setKeyListener(new NumberKeyListener() {
-            @NonNull
-            @Override
-            protected char[] getAcceptedChars() {
-                return new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.'};
-            }
-
-            @Override
-            public int getInputType() {
-                return InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_VARIATION_NORMAL;
-            }
-        });
-        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        alert.setView(input);
-
-        alert.setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-            String value = input.getText().toString();
-            if ("-1".equals(value)) {
-                AtomSpectraService.resetInterval();
-                AtomSpectraService.getIntervalSearchAlarmBaseline().reset();
-                updateSearchEnergyRangeText();
-            } else {
-                if (value.contains("-")) {
-                    String num1 = value.substring(0, value.indexOf("-"));
-                    String num2 = value.substring(value.indexOf("-") + 1);
-                    try {
-                        double val1 = Double.parseDouble(num1);
-                        int number1 = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(val1);
-                        double val2 = Double.parseDouble(num2);
-                        int number2 = AtomSpectraService.ForegroundSpectrum.getSpectrumCalibration().toChannel(val2);
-                        if (number1 < 0 || number1 >= number2 || number2 >= Constants.NUM_HIST_POINTS - 1)
-                            return;
-                        AtomSpectraService.setEnergyInterval(val1, val2);
-                        AtomSpectraService.getIntervalSearchAlarmBaseline().reset();
-                        updateSearchEnergyRangeText();
-                    } catch (Exception ignored) {
-
-                    }
-                }
-            }
-        });
-        alert.setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> {
-        });
-        closeKeyboardOnAlertDismiss(alert);
-        alert.show();
-    }
-
-    // sound volume
-    private void updateSearchAlarmVolumeText() {
-        TextView alarmVolumeText = findViewById(R.id.intervalSearchAlarmVolumeText);
-        alarmVolumeText.setText(getString(R.string.interval_search_sound_volume, sp.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT)));
-    }
-
-    public void onClick_intervalAlarmVolume_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
-
-        if (r < 10) {
-            r = 10;
-        }
-        if (r > 100) {
-            r = 100;
-        }
-        if (r > 10) {
-            r -= 10;
-        }
-
-        saveSearchAlarmVolume(r);
-    }
-
-    public void onClick_intervalAlarmVolume_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = settings.getInt(Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME, Constants.ALARM_VOLUME_DEFAULT);
-
-        if (r < 10) {
-            r = 10;
-        }
-        if (r > 100) {
-            r = 100;
-        }
-        if (r < 100) {
-            r += 10;
-        }
-
-        saveSearchAlarmVolume(r);
-    }
-
-    private void saveSearchAlarmVolume(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_SEARCH_ALARM_VOLUME);
-        updateSearchAlarmVolumeText();
-    }
-
-    // detection level
-    private void updateSearchAlarmDetectionLevelText() {
-        TextView detectionLevelText = findViewById(R.id.intervalSearchDetectionLevelText);
-        detectionLevelText.setText(getString(R.string.interval_search_detection_level, sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT)));
-    }
-
-    public void onClick_intervalDetectionLevel_minus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
-
-        if (r < 3) {
-            r = 3;
-        }
-        if (r > 9) {
-            r = 9;
-        }
-        if (r > 3) {
-            r -= 1;
-        }
-
-        saveSearchDetectionLevelVolume(r);
-    }
-
-    public void onClick_intervalDetectionLevel_plus(View v) {
-        SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
-        int r = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
-
-        if (r < 3) {
-            r = 3;
-        }
-        if (r > 9) {
-            r = 9;
-        }
-        if (r < 9) {
-            r += 1;
-        }
-
-        saveSearchDetectionLevelVolume(r);
-    }
-
-    private void saveSearchDetectionLevelVolume(int val) {
-        saveIntPref(val, Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL);
-        updateSearchAlarmDetectionLevelText();
-    }
-    // --- end interval search section
 
     // --- AtomSwift integration section
     // send data
@@ -1134,7 +740,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 }
             } catch (Exception e) {
                 prefEditor.remove(Constants.CONFIG.CONF_DIRECTORY_SELECTED);
-                Toast.makeText(this, getString(R.string.storage_required), Toast.LENGTH_LONG).show();
+                ToastHelper.showErrorAndLog(this, LogTag.SETTINGS_ACT, getString(R.string.storage_required));
             }
             prefEditor.apply();
         }
@@ -1157,7 +763,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         enableGPSCheckbox.setOnClickListener(v -> {
             saveBooleanPref(((CheckBox) v).isChecked(), Constants.CONFIG.CONF_ADD_GPS_TO_FILES);
             sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
-            sendBroadcast(new Intent(Constants.ACTION.ACTION_CHECK_GPS_AVAILABILITY).setPackage(Constants.PACKAGE_NAME));
         });
     }
 
@@ -1189,7 +794,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         boolean micGranted = AppPermissions.isMicGranted(this);
         int[] audioControls = {
                 R.id.CheckPileUp, R.id.CheckRawAudio, R.id.CheckInvert,
-                R.id.inputSoundCheckbox, R.id.inputSoundText,
                 R.id.decMinFrontButton, R.id.incMinFrontButton,
                 R.id.decMaxFrontButton, R.id.incMaxFrontButton,
                 R.id.increaseFreq, R.id.decreaseFreq
@@ -1268,7 +872,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
 
     private void saveExportChannelCompression(int val) {
-        AtomSpectra.exportChannelCompression = val;
         saveIntPref(val, Constants.CONFIG.CONF_EXPORT_COMPRESSION);
         updateExportChannelCompressionText();
     }
@@ -1353,10 +956,6 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
     // --- end misc section
 
-    private void stopRecording() {
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_FREEZE_DATA).putExtra(AtomSpectraSerial.EXTRA_DATA_TYPE, true).setPackage(Constants.PACKAGE_NAME));
-    }
-
     private void saveStringPref(String value, String setting) {
         SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
         SharedPreferences.Editor prefEditor = settings.edit();
@@ -1406,12 +1005,24 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     }
 
     private void returnFromSettings() {
-        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+        sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    @Override
+    public void startActivityForResult(Intent intent, int requestCode, Bundle options) {
+        if (requestCode >= 0) AtomSpectraApplication.externalUiStarted(this);
+        try {
+            super.startActivityForResult(intent, requestCode, options);
+        } catch (RuntimeException error) {
+            AtomSpectraApplication.externalUiFinished(this);
+            throw error;
+        }
     }
 
     @SuppressLint("WrongConstant")
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        AtomSpectraApplication.externalUiFinished(this);
         if (requestCode == SELECT_DIR_CODE_SETTINGS) {
             if (resultCode == RESULT_OK && (data != null)) {
                 SharedPreferences settings = PrefHelper.getASSharedPreferences(this);
@@ -1424,6 +1035,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                             | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     getContentResolver().takePersistableUriPermission(uri, takeFlags);
                     workingDirText.setText(uri.getPath());
+                    AtomSpectraLog.action(this, LogTag.SETTINGS_ACT, "Working directory selected");
                 }
                 editor.apply();
             }
@@ -1433,11 +1045,10 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
 
     private static IntentFilter makeAtomSpectraUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(AtomSpectraService.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction(Constants.ACTION.ACTION_AUDIO_CHANGED);
+        intentFilter.addAction(Constants.ACTION.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(Constants.ACTION.ACTION_RAW_AUDIO_SNAPSHOT);
         intentFilter.addAction(Constants.ACTION.ACTION_CLOSE_SETTINGS);
         intentFilter.addAction(Constants.ACTION.ACTION_UPDATE_SETTINGS);
-        intentFilter.addAction(Constants.ACTION.ACTION_USB_HAS_ANSWER);
         return intentFilter;
     }
 
@@ -1445,95 +1056,38 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            if (AtomSpectraService.ACTION_DATA_AVAILABLE.equals(action) && active) {
-                Bundle mBundle = intent.getExtras();
-                if (mBundle != null) {
-                    int cps = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S);
-                    int cps_interval = mBundle.getInt(AtomSpectraService.EXTRA_DATA_INT_CP1S_INTERVAL);
-                    countsTextField.setText(getString(R.string.cps_show, cps, cps_interval));
-                    SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
-                    if (showPulseShape) {
-                        double[] reference_pulse_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REFERENCE_PULSE_DATA);
-                        if (reference_pulse_data == null) {
-                            reference_pulse_data = new double[1024];
-                        }
-                        mAtomSpectraSignalView.showReferencePulse(
-                                reference_pulse_data,
-                                settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, Constants.MIN_FRONT_POINTS_DEFAULT),
-                                settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, Constants.MAX_FRONT_POINTS_DEFAULT)
-                        );
-                    } else {
-                        double[] realtime_audio_data = mBundle.getDoubleArray(AtomSpectraService.EXTRA_DATA_ARRAY_DOUBLE_REALTIME_AUDIO_DATA);
-                        if (realtime_audio_data == null) {
-                            realtime_audio_data = new double[1024];
-                        }
-                        mAtomSpectraSignalView.showOscilloscope(
-                                realtime_audio_data,
-                                zoom_factor
-                        );
+            if (Constants.ACTION.ACTION_DATA_AVAILABLE.equals(action) && active) {
+                countsTextField.setText(getString(R.string.cps_show, MeasurementData.instance.cp1s, MeasurementData.instance.cp1sInterval));
+            }
+            if (Constants.ACTION.ACTION_RAW_AUDIO_SNAPSHOT.equals(action) && active) {
+                SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
+                if (showPulseShape) {
+                    double[] reference_pulse_data = AudioScopeData.instance.getReferencePulse();
+                    if (reference_pulse_data.length == 0) {
+                        reference_pulse_data = new double[1024];
                     }
-                    //	Log.d(TAG, "data received from service  "+ String.valueOf(array_length));
+                    mAtomSpectraSignalView.showReferencePulse(
+                            reference_pulse_data,
+                            settings.getInt(Constants.CONFIG.CONF_MIN_POINTS, AtomSpectraAudioSource.MIN_FRONT_POINTS_DEFAULT),
+                            settings.getInt(Constants.CONFIG.CONF_MAX_POINTS, AtomSpectraAudioSource.MAX_FRONT_POINTS_DEFAULT)
+                    );
+                } else {
+                    double[] realtime_audio_data = AudioScopeData.instance.getSamples();
+                    if (realtime_audio_data.length == 0) {
+                        realtime_audio_data = new double[1024];
+                    }
+                    mAtomSpectraSignalView.showOscilloscope(realtime_audio_data, zoom_factor);
                 }
             }
             if (Constants.ACTION.ACTION_CLOSE_SETTINGS.equals(action)) {
                 returnFromSettings();
                 finish();
             }
-            if (Constants.ACTION.ACTION_USB_HAS_ANSWER.equals(action)) {
-                String id = intent.getStringExtra(AtomSpectraSerial.EXTRA_ID);
-                String data = intent.getStringExtra(AtomSpectraSerial.EXTRA_RESULT);
-                if (SETTINGS_GET_INF_ID.equals(id)) {
-                    if (data != null) {
-                        String val = AtomSpectraSerial.getParameter(data, "NOISE");
-                        if (val != null) {
-                            try {
-                                usb_noise_value = Integer.parseInt(val);
-                                updateNoiseDiscriminatorTextFromUSB();
-                                retrySend = true;
-                            } catch (NumberFormatException nfe) {
-                                //nothing
-                            }
-                        } else {
-                            if (retrySend) {
-                                retrySend = false;
-                                //Retry a command to ensure it is not a device failure
-                                sendUsbInfoRequest();
-                            } else {
-                                //Skip command resending
-                                retrySend = true;
-                            }
-                        }
-                    }
-                } else if (SETTINGS_SET_NOISE_ID.equals(id)) {
-                    if (AtomSpectraSerial.COMMAND_RESULT_OK.equals(data)) {
-                        updateNoiseDiscriminatorTextFromUSB();
-                    }
-                }
-            }
-            if (Constants.ACTION.ACTION_AUDIO_CHANGED.equals(action)) {
-                outputDeviceID = sp.getInt(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_ID, -1);
-                outputDeviceName = sp.getString(Constants.CONFIG.CONF_OUTPUT_SOUND_DEVICE_NAME, "(none)");
-                setupSearchAlarmOutputDeviceText();
-                CheckBox searchAlarmEnabledCheckBox = findViewById(R.id.intervalSearchSoundEnabled);
-                if (!sp.getBoolean(Constants.CONFIG.CONF_OUTPUT_SOUND, false))
-                    searchAlarmEnabledCheckBox.setChecked(false);
-
-                inputDeviceID = sp.getInt(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_ID, -1);
-                inputDeviceName = sp.getString(Constants.CONFIG.CONF_INPUT_SOUND_DEVICE_NAME, "(none)");
-                updateInputDeviceText();
-                CheckBox inputSoundCheckbox = findViewById(R.id.inputSoundCheckbox);
-                if (!sp.getBoolean(Constants.CONFIG.CONF_INPUT_SOUND, false))
-                    inputSoundCheckbox.setChecked(false);
-            }
             if (Constants.ACTION.ACTION_UPDATE_SETTINGS.equals(action)) {
                 SharedPreferences settings = PrefHelper.getASSharedPreferences(getApplicationContext());
                 CheckBox box = findViewById(R.id.enableGPSCheckbox);
                 box.setChecked(settings.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT));
-                if (AtomSpectraService.inputType != AtomSpectraService.INPUT_SERIAL) {
-                    updateNoiseDiscriminatorTextFromPrefs();
-                } else {
-                    sendUsbInfoRequest();
-                }
+                updateNoiseDiscriminatorTextFromPrefs();
             }
         }
 
@@ -1542,6 +1096,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     @Override
     public void onStart() {
         super.onStart();
+        sp.registerOnSharedPreferenceChangeListener(logPreferenceChange);
         Log.d(TAG, "-XxX-  onStart");
     }
 
@@ -1549,6 +1104,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     protected void onResume() {
         super.onResume();
         active = true;
+        AudioScopeData.instance.wanted = true;
         showPulseShape = false;
         Log.d(TAG, "registerReceiver");
 
@@ -1558,6 +1114,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     protected void onPause() {
         super.onPause();
         active = false;
+        AudioScopeData.instance.wanted = false;
         Log.d(TAG, "-XxX-  pause");
         returnFromSettings();
     }
@@ -1565,6 +1122,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
     @Override
     protected void onStop() {
         super.onStop();
+        sp.unregisterOnSharedPreferenceChangeListener(logPreferenceChange);
     }
 
     @Override
@@ -1616,23 +1174,21 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
                 try {
                     if (detector.isSwipeLeft(e1, e2, velocityX)) {
                         //showToast("Left Swipe");
-                        showPulseShape =! showPulseShape;
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+                        showPulseShape = !showPulseShape;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
 
                     } else if (detector.isSwipeRight(e1, e2, velocityX)) {
                         //showToast("Right Swipe");
-                        showPulseShape =! showPulseShape;
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_CLEAR_IMPULSE).setPackage(Constants.PACKAGE_NAME));
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+                        showPulseShape = !showPulseShape;
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
                     } else if (detector.isSwipeDown(e1, e2, velocityY)) {
                         if (zoom_factor > 1.1) zoom_factor /= 2;
                         else showToast(getString(R.string.graph_min_zoom));
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
                     } else if (detector.isSwipeUp(e1, e2, velocityY)) {
                         if (zoom_factor < 40) zoom_factor *= 2;
                         else showToast(getString(R.string.graph_max_zoom));
-                        sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GRAPH).setPackage(Constants.PACKAGE_NAME));
+                        sendBroadcast(new Intent(Constants.ACTION.ACTION_DATA_AVAILABLE).setPackage(Constants.PACKAGE_NAME));
                     }
 
                 } catch (Exception ignored) {
@@ -1642,7 +1198,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
             }
 
             private void showToast(String phrase) {
-                Toast.makeText(getApplicationContext(), phrase, Toast.LENGTH_SHORT).show();
+                ToastHelper.showToastAndLog(getApplicationContext(), LogTag.SETTINGS_ACT, phrase);
             }
         });
     }

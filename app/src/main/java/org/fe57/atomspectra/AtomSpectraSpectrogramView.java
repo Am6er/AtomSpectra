@@ -8,16 +8,20 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.MotionEvent;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -181,6 +185,13 @@ public class AtomSpectraSpectrogramView extends View {
             0xFFFFFADC, 0xFFFFFADF, 0xFFFFFAE1, 0xFFFFFBE4, 0xFFFFFBE6, 0xFFFFFCE8, 0xFFFFFCEA, 0xFFFFFDED, 0xFFFFFDEF, 0xFFFFFDF1, 0xFFFFFEF4, 0xFFFFFEF6, 0xFFFFFEF9, 0xFFFFFEFB, 0xFFFFFFFD
     };
 
+    private static final float MIN_ENERGY_MINOR_TICK_SPACING_DP = 15f;
+    // Clear space required between major labels, as a multiple of the label width.
+    private static final float ENERGY_LABEL_GAP_FACTOR = 1f;
+    private static final double[] NICE_ENERGY_STEP_MULTIPLIERS = {1, 2, 5, 10};
+    private static final int[] ENERGY_MINOR_SUBDIVISIONS = {4, 2};
+    private static final MathContext ENERGY_LABEL_MATH_CONTEXT = new MathContext(4, RoundingMode.HALF_UP);
+
     // point size is strictly integer to enable building virtual render map for all rows/gaps
     private float STROKE_WIDTH_DP = 1.5f;
     private int POINT_SIZE_DP = 2;
@@ -188,7 +199,8 @@ public class AtomSpectraSpectrogramView extends View {
     private float TIMESTAMP_MARGIN_LEFT_DP = 2f;
     private float TEXT_FONT_SIZE_DP = 12;
     private float TIMESTAMP_TICK_WIDTH_DP = 8f;
-    private float ENERGY_TICK_HEIGHT_DP = 8f;
+    private float ENERGY_MAJOR_TICK_HEIGHT_DP = 5f;
+    private float ENERGY_MINOR_TICK_HEIGHT_DP = 3f;
     private float CHANNEL_AXIS_HEIGHT_DP = 40f;
     private float HANDLE_SIZE_DP = 24f;
     private float HANDLE_TOUCH_RADIUS_DP = 32f;
@@ -196,14 +208,14 @@ public class AtomSpectraSpectrogramView extends View {
     private float PADDING_RIGHT_DP = HANDLE_SIZE_DP;
     private float COLOR_BAR_HEIGHT_DP = 16f;
     private float COLOR_BAR_MARGIN_TOP_DP = 4f;
-    private int GAP_BAND_HEIGHT_ROWS = 25;
 
     private int POINT_SIZE_PX = POINT_SIZE_DP;
     private int TIME_AXIS_WIDTH_PX = (int) TIME_AXIS_WIDTH_DP;
     private int TIMESTAMP_MARGIN_LEFT_PX = (int) TIMESTAMP_MARGIN_LEFT_DP;
     private int TEXT_FONT_SIZE_PX = (int) TEXT_FONT_SIZE_DP;
     private int TIMESTAMP_TICK_WIDTH_PX = (int) TIMESTAMP_TICK_WIDTH_DP;
-    private int ENERGY_TICK_HEIGHT_PX = (int) ENERGY_TICK_HEIGHT_DP;
+    private int ENERGY_MAJOR_TICK_HEIGHT_PX = (int) ENERGY_MAJOR_TICK_HEIGHT_DP;
+    private int ENERGY_MINOR_TICK_HEIGHT_PX = (int) ENERGY_MINOR_TICK_HEIGHT_DP;
     private int CHANNEL_AXIS_HEIGHT_PX = (int) CHANNEL_AXIS_HEIGHT_DP;
     private int HANDLE_SIZE_PX = (int) HANDLE_SIZE_DP;
     private int HANDLE_TOUCH_RADIUS_PX = (int) HANDLE_TOUCH_RADIUS_DP;
@@ -211,13 +223,13 @@ public class AtomSpectraSpectrogramView extends View {
     private int PADDING_RIGHT_PX = (int) HANDLE_SIZE_DP;
     private int COLOR_BAR_HEIGHT_PX = (int) COLOR_BAR_HEIGHT_DP;
     private int COLOR_BAR_MARGIN_TOP_PX = (int) COLOR_BAR_MARGIN_TOP_DP;
-    private int GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_PX;
 
     private int TIMESTAMP_EACH_BINS = 25;
 
     // gap band appearance
     private static final int GAP_BAND_COLOR = 0xFF000000;
     private static final int GAP_MISMATCH_TEXT_COLOR = 0xFFFF9800; // amber warning
+    private static final float GAP_LABEL_VERTICAL_PADDING_DP = 2f;
 
     // region handle constants
     public static final int HANDLE_NONE = 0;
@@ -233,20 +245,29 @@ public class AtomSpectraSpectrogramView extends View {
     private static final int GUIDE_LINE_ALPHA = 110;
 
     // cps data
-    private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // original data list
-    private ArrayList<ArrayList<float[]>> segmentsBinData = null; // binned segments, cps data only
-    private HashMap<Integer, Integer> energyTicks = null;
+    private AtomSpectraSpectrogramData.Snapshot snapshot = null; // data currently rendered, selection indices refer to it
+    private List<AtomSpectraSpectrogramData.SegmentData> segmentsData = null; // snapshot.getSegments()
+    private ArrayList<List<float[]>> segmentsBinData = null; // binned segments, cps data only
 
     // gaps data
+    private enum SegmentMismatch {
+        NONE,
+        DEVICE,
+        CALIBRATION,
+        BOTH
+    }
+
     private static final class GapMeta {
         final int middleLinePx; // spectrogram-related
+        final int heightRows;
         final String durationLabel;
-        final boolean isMismatch;
+        final SegmentMismatch mismatch;
 
-        private GapMeta(int middleLinePx, String durationLabel, boolean isMismatch) {
+        private GapMeta(int middleLinePx, int heightRows, String durationLabel, SegmentMismatch mismatch) {
             this.middleLinePx = middleLinePx;
+            this.heightRows = heightRows;
             this.durationLabel = durationLabel;
-            this.isMismatch = isMismatch;
+            this.mismatch = mismatch;
         }
     }
 
@@ -272,7 +293,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
     }
 
-    // single row per row-bin, GAP_BAND_HEIGHT_ROWS per gap
+    // single row per row-bin; gaps use enough rows for their labels
     private VirtualRowMeta[] virtualRowsMeta = null;
 
     // user selected range
@@ -286,6 +307,7 @@ public class AtomSpectraSpectrogramView extends View {
     // binning
     private int channelBinning = 1;
     private int spectrumBinning = 1;
+    private boolean compactGaps = false;
 
     // color schema and scale
     private String scale = SCALE_SQRT;
@@ -320,6 +342,15 @@ public class AtomSpectraSpectrogramView extends View {
             return new SelectionBound(0, 0);
         }
 
+        // bound after oldest data was removed, see AtomSpectraSpectrogramData.Snapshot.getSelectionShifts();
+        // a bound inside removed data moves to the start of what is left
+        public SelectionBound shifted(int shift) {
+            if (shift == AtomSpectraSpectrogramData.SHIFT_SEGMENT_DROPPED) {
+                return segmentIndex > 0 ? new SelectionBound(segmentIndex - 1, rowIndex) : zeroIndex();
+            }
+            return segmentIndex == 0 ? new SelectionBound(0, Math.max(0, rowIndex - shift)) : this;
+        }
+
         // lexicographic order: segment first, then row within the segment
         public int compareTo(SelectionBound other) {
             if (segmentIndex != other.segmentIndex) {
@@ -333,6 +364,7 @@ public class AtomSpectraSpectrogramView extends View {
     private SelectionBound bgRightHandleRow = null;
     private SelectionBound fgLeftHandleRow = null;
     private SelectionBound fgRightHandleRow = null;
+    private boolean backgroundHandlesVisible = true;
 
     // last visible window snapshot (in original cols / spectrogramData row indices) - used for change-detection
     private SelectionBound visibleStartRow = null;
@@ -343,10 +375,17 @@ public class AtomSpectraSpectrogramView extends View {
     private int reportedVisibleEndChannel = -1;
 
     private OnSpectrogramStateChangedListener stateChangedListener = null;
+    private SpectrogramUIViewState boundViewState = null;
 
     private final Object spectrogramBitmapSync = new Object();
     private volatile Bitmap spectrogramBitmap = null;
     private boolean autoScroll = true;
+    private boolean spectrumRecording = false;
+    private int recordingIntervalSeconds = 0;
+    private int rowCount = -1;
+    private String statusLabel = "";
+    private String rowCountLabel = "";
+    private final Paint acquisitionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     // reused visible-area pixel buffer, grown on demand (see renderSpectrogramToBitmap)
     private int[] spgPixelsBuffer = null;
@@ -406,6 +445,14 @@ public class AtomSpectraSpectrogramView extends View {
         return visibleEndChannel;
     }
 
+    public AtomSpectraSpectrogramData.Snapshot getSnapshot() {
+        return snapshot;
+    }
+
+    public int getVisibleEndSegmentIndex() {
+        return visibleEndRow != null ? visibleEndRow.segmentIndex : 0;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         synchronized (spectrogramBitmapSync) {
@@ -414,6 +461,7 @@ public class AtomSpectraSpectrogramView extends View {
                 canvas.drawBitmap(this.spectrogramBitmap, 0, 0, paint);
             }
         }
+        drawAcquisitionLabels(canvas);
     }
 
     @Override
@@ -481,6 +529,7 @@ public class AtomSpectraSpectrogramView extends View {
                     this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
                     buildColorLut();
                     renderSpectrogramToBitmap();
+                    syncViewportToViewState();
                     invalidate();
                     return true;
                 }
@@ -514,6 +563,7 @@ public class AtomSpectraSpectrogramView extends View {
                         }
 
                         renderSpectrogramToBitmap();
+                        syncViewportToViewState();
                         invalidate();
                     }
                 }
@@ -522,14 +572,19 @@ public class AtomSpectraSpectrogramView extends View {
             case MotionEvent.ACTION_CANCEL:
                 if (draggingColorBarHandle != HANDLE_NONE) {
                     draggingColorBarHandle = HANDLE_NONE;
+                    syncViewportToViewState();
                     return true;
                 }
                 if (draggingSelectionHandle != HANDLE_NONE) {
                     draggingSelectionHandle = HANDLE_NONE;
+                    syncSelectionToViewState();
                     if (stateChangedListener != null) {
                         stateChangedListener.onRowSelectionChanged();
                     }
                     return true;
+                }
+                if (isDragging) {
+                    syncViewportToViewState();
                 }
                 isDragging = false;
                 lockHorizontalMove = false;
@@ -549,7 +604,9 @@ public class AtomSpectraSpectrogramView extends View {
 
         // selection handles: distance to the triangle apex
         if (visibleStartRow != null && visibleEndRow != null && POINT_SIZE_PX > 0) {
-            int[] handles = new int[]{HANDLE_FG_LEFT, HANDLE_BG_LEFT, HANDLE_FG_RIGHT, HANDLE_BG_RIGHT};
+            int[] handles = backgroundHandlesVisible
+                    ? new int[]{HANDLE_FG_LEFT, HANDLE_BG_LEFT, HANDLE_FG_RIGHT, HANDLE_BG_RIGHT}
+                    : new int[]{HANDLE_FG_LEFT, HANDLE_FG_RIGHT};
             for (int handle : handles) {
                 SelectionBound row = getRowForSelectionHandle(handle);
                 if (row == null) continue;
@@ -638,6 +695,33 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         ensureHandlesIncludeWholeBins();
+        syncSelectionToViewState();
+    }
+
+    private void applyViewportFromViewState(SpectrogramUIViewState viewState) {
+        colorBarMinFraction = viewState.colorBarMinFraction;
+        colorBarMaxFraction = viewState.colorBarMaxFraction;
+        verticalOffsetPx = viewState.verticalOffsetPx;
+        horizontalOffsetPx = viewState.horizontalOffsetPx;
+        autoScroll = viewState.autoScroll;
+    }
+
+    private void syncViewportToViewState() {
+        if (boundViewState == null) {
+            return;
+        }
+        boundViewState.colorBarMinFraction = colorBarMinFraction;
+        boundViewState.colorBarMaxFraction = colorBarMaxFraction;
+        boundViewState.verticalOffsetPx = verticalOffsetPx;
+        boundViewState.horizontalOffsetPx = horizontalOffsetPx;
+        boundViewState.autoScroll = autoScroll;
+    }
+
+    private void syncSelectionToViewState() {
+        if (boundViewState == null) {
+            return;
+        }
+        boundViewState.setSelection(bgLeftHandleRow, bgRightHandleRow, fgLeftHandleRow, fgRightHandleRow);
     }
 
     private void ensureHandlesIncludeWholeBins() {
@@ -678,11 +762,23 @@ public class AtomSpectraSpectrogramView extends View {
         return PADDING_TOP_PX + spectrogramPlotHeightPx(viewHeight);
     }
 
+    private int energyAxisBaselineYpx(int viewHeight) {
+        return spectrogramPlotBottomYpx(viewHeight);
+    }
+
+    private int channelAxisBaselineYpx(int viewHeight) {
+        return spectrogramPlotBottomYpx(viewHeight) + CHANNEL_AXIS_HEIGHT_PX / 2;
+    }
+
+    private float axisLabelYpx(float axisBaselineY) {
+        return axisBaselineY + TEXT_FONT_SIZE_PX + dpToPx(3);
+    }
+
     private float rowToViewportYpx(SelectionBound row) {
-        // sum full preceding segments plus one gap band per boundary, then the bin offset within the target segment
+        // Sum preceding segment and gap rows, then the bin offset within the target segment.
         int virtualRowIndex = getBinForRow(row.rowIndex, spectrumBinning);
         for (int s = 0; s < row.segmentIndex; s++) {
-            virtualRowIndex += segmentsBinData.get(s).size() + GAP_BAND_HEIGHT_ROWS;
+            virtualRowIndex += segmentsBinData.get(s).size() + gapsMeta.get(s).heightRows;
         }
 
         float y = PADDING_TOP_PX + (virtualRowIndex * POINT_SIZE_PX - snappedVerticalOffsetPx()) + POINT_SIZE_PX / 2f;
@@ -701,7 +797,7 @@ public class AtomSpectraSpectrogramView extends View {
     // always selects bin start for row index within a segment
     private SelectionBound touchYToBinStartRow(float y) {
         if (POINT_SIZE_PX <= 0) {
-            AtomSpectraLog.addMessage(getContext(), "ERROR: POINT_SIZE_PX is zero!");
+            AtomSpectraLog.error(getContext(), LogTag.SPECTROGRAM_VIEW, "Cannot render spectrogram: point size is zero");
             return visibleStartRow;
         }
 
@@ -741,7 +837,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         if (selectionCandidate.segmentIndex != -1) {
-            int rowIndex = getBinStartRow(selectionCandidate.segmentRowBinIndex, spectrumBinning);
+            int rowIndex = getBinStart(selectionCandidate.segmentRowBinIndex, spectrumBinning);
             SelectionBound candidateBound = new SelectionBound(selectionCandidate.segmentIndex, rowIndex);
 
             // clamp to visible area
@@ -755,77 +851,106 @@ public class AtomSpectraSpectrogramView extends View {
             return candidateBound;
         } else {
             // TODO: log? it is quite unexpected to get here
-            AtomSpectraLog.addMessage(getContext(), "Unexpected: touchYToBinStartRow failed to find segment");
+            AtomSpectraLog.detail(getContext(), LogTag.SPECTROGRAM_VIEW, "touchYToBinStartRow failed to find segment");
             return null;
         }
     }
 
-    public void renderSpectrogram(AtomSpectraSpectrogramData data, int spectrumBinning, int channelBinning,
-                                  String scale, String palette, boolean scrollToBottom,
-                                  SelectionBound bgLeftBound, SelectionBound bgRightBound, SelectionBound fgLeftBound, SelectionBound fgRightBound) {
-        this.segmentsData = data.getSegments();
+    public void setRecordingState(boolean recording, int intervalSeconds) {
+        if (spectrumRecording == recording && recordingIntervalSeconds == intervalSeconds && !statusLabel.isEmpty()) {
+            return;
+        }
+        spectrumRecording = recording;
+        recordingIntervalSeconds = intervalSeconds;
+        statusLabel = intervalSeconds <= 0 ? getResources().getString(R.string.spectrogram_delta_off)
+                : getResources().getString(R.string.spectrogram_delta_interval, intervalSeconds);
+        invalidate();
+    }
+
+    // viewState selection must already be shifted to the snapshot (see Snapshot.getSelectionShifts)
+    public void renderSpectrogram(AtomSpectraSpectrogramData.Snapshot snapshot, SpectrogramUIViewState viewState, boolean scrollToBottom) {
+        this.snapshot = snapshot;
+        this.segmentsData = snapshot.getSegments();
+        int snapshotRowCount = snapshot.rowCount();
+        if (this.rowCount != snapshotRowCount) {
+            this.rowCount = snapshotRowCount;
+            this.rowCountLabel = getResources().getString(R.string.spectrogram_row_count, this.rowCount);
+        }
+        this.boundViewState = viewState;
+        this.backgroundHandlesVisible = viewState.backgroundVisible;
+        applyViewportFromViewState(viewState);
+
+        int spectrumBinning = viewState.sbin;
+        int channelBinning = viewState.getCbin(getResources().getConfiguration().orientation);
+        String scale = viewState.scale;
+        String palette = viewState.palette;
+        SelectionBound bgLeftBound = viewState.bgLeftBound;
+        SelectionBound bgRightBound = viewState.bgRightBound;
+        SelectionBound fgLeftBound = viewState.fgLeftBound;
+        SelectionBound fgRightBound = viewState.fgRightBound;
+
         // Treat "no delta rows yet" the same as "no segments": a segment can exist with a base
         // spectrum but zero rows (recording just started). In that case the caller passes null
         // bounds, so we must not fall through to the handle logic. See AtomSpectraSpectrogram
-        // .updateSpectrogram, which keys emptiness off rowCount() (total rows), not segment count.
-        boolean hasRows = false;
-        for (AtomSpectraSpectrogramData.SegmentData segment : this.segmentsData) {
-            if (segment.getRowCount() > 0) {
-                hasRows = true;
-                break;
-            }
-        }
+        // .updateSpectrogram, which keys emptiness off the snapshot's total row count, not segment count.
+        boolean hasRows = snapshotRowCount > 0;
+        // TODO: cap handles?
+        this.bgLeftHandleRow = bgLeftBound; // Math.min(bgLeftBound, maxRow);
+        this.bgRightHandleRow = bgRightBound; // Math.min(bgRightBound, maxRow);
+        this.fgLeftHandleRow = fgLeftBound; // Math.min(fgLeftBound, maxRow);
+        this.fgRightHandleRow = fgRightBound; // Math.min(fgRightBound, maxRow);
         if (!hasRows) {
+            this.channelBinning = channelBinning;
+            this.scale = scale;
+            this.palette = palette;
             this.segmentsBinData = new ArrayList<>();
             this.gapsMeta = new ArrayList<>();
             this.virtualRowsMeta = new VirtualRowMeta[0];
             this.renderSpectrogramToBitmap();
+            syncViewportToViewState();
             this.invalidate();
             return;
         }
 
         // When spectrum binning changes, keep the viewport's center content stable (or stay pinned
         // to the bottom if auto-scrolling). Capture before overwriting spectrumBinning / virtual rows.
-        boolean spectrumBinningChanged = spectrumBinning != this.spectrumBinning;
-        boolean pinToBottom = scrollToBottom || (spectrumBinningChanged && this.autoScroll);
+        boolean layoutChanged = spectrumBinning != this.spectrumBinning || viewState.compactGaps != this.compactGaps;
+        boolean pinToBottom = scrollToBottom || (layoutChanged && this.autoScroll);
         SelectionBound viewportCenterAnchor = null;
-        if (!pinToBottom && spectrumBinningChanged) {
+        if (!pinToBottom && layoutChanged) {
             viewportCenterAnchor = captureViewportCenterAnchor();
         }
 
-        // TODO: validate bin values, must be 2^n
+        // Spectrum binning is any integer in 1..SpectrogramUIViewState.MAX_SBIN; the last bin of a segment may be partial.
         this.spectrumBinning = spectrumBinning;
+        this.compactGaps = viewState.compactGaps;
         this.channelBinning = channelBinning;
         this.scale = scale;
         this.palette = palette;
 
-        // TODO: cap handles?
-        this.bgLeftHandleRow = bgLeftBound; // Math.min(bgLeftBound, maxRow);
-        this.bgRightHandleRow = bgRightBound; // Math.min(bgRightBound, maxRow);
-        ;
-        this.fgLeftHandleRow = fgLeftBound; // Math.min(fgLeftBound, maxRow);
-        this.fgRightHandleRow = fgRightBound; // Math.min(fgRightBound, maxRow);
         ensureHandlesIncludeWholeBins();
+        syncSelectionToViewState();
 
         // for each segment apply channel binning first
         int originalChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT;
-        int channelBinsCount = originalChannelCount / channelBinning;
+        int channelBinsCount = (originalChannelCount + channelBinning - 1) / channelBinning;
         this.segmentsBinData = new ArrayList<>(this.segmentsData.size());
         for (int s = 0; s < this.segmentsData.size(); s++) {
             AtomSpectraSpectrogramData.SegmentData segment = this.segmentsData.get(s);
-            ArrayList<float[]> originalSpectrogram = segment.getSpectrogram();
-            ArrayList<float[]> binnedSpectrogram;
+            List<float[]> originalSpectrogram = segment.getSpectrogram();
+            List<float[]> binnedSpectrogram;
             if (channelBinning > 1) {
                 binnedSpectrogram = new ArrayList<>(originalSpectrogram.size());
                 for (float[] row : originalSpectrogram) {
                     float[] binnedRow = new float[channelBinsCount];
                     for (int i = 0; i < originalChannelCount; i += channelBinning) {
                         float sum = 0;
-                        for (int j = 0; j < channelBinning && (i + j) < originalChannelCount; j++) {
+                        int channelsInBin = Math.min(channelBinning, originalChannelCount - i);
+                        for (int j = 0; j < channelsInBin; j++) {
                             sum += row[i + j];
                         }
 
-                        binnedRow[i / channelBinning] = sum / channelBinning;
+                        binnedRow[i / channelBinning] = sum / channelsInBin;
                     }
 
                     binnedSpectrogram.add(binnedRow);
@@ -838,7 +963,6 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         // apply spectrum binning and build virtual rows table
-        AtomSpectraSpectrogramData.SegmentData baseSegment = this.segmentsData.get(0);
         AtomSpectraSpectrogramData.SegmentData previousSegment = null;
         ArrayList<VirtualRowMeta> virtualRows = new ArrayList<>();
         this.gapsMeta = new ArrayList<>(this.segmentsData.size() - 1);
@@ -849,12 +973,13 @@ public class AtomSpectraSpectrogramView extends View {
                 long gapStart = previousSegment.getEndTime();
                 long gapEnd = segment.getStartTime();
                 long gapMillis = Math.max(0, gapEnd - gapStart);
-                boolean mismatch = isSegmentMismatch(baseSegment.getBaseSpectrum(), segment.getBaseSpectrum());
+                SegmentMismatch mismatch = classifySegmentMismatch(
+                        previousSegment.getBaseSpectrum(), segment.getBaseSpectrum());
                 String durationLabel = getResources().getString(R.string.spectrogram_gap_label, formatGapDuration(gapMillis));
-                int middleLinePx = virtualRows.size() * POINT_SIZE_PX + GAP_BAND_HEIGHT_PX / 2;
-                GapMeta gap = new GapMeta(middleLinePx, durationLabel, mismatch);
+                int rowsToAdd = gapBandHeightRows(mismatch != SegmentMismatch.NONE);
+                int middleLinePx = virtualRows.size() * POINT_SIZE_PX + rowsToAdd * POINT_SIZE_PX / 2;
+                GapMeta gap = new GapMeta(middleLinePx, rowsToAdd, durationLabel, mismatch);
                 this.gapsMeta.add(gap);
-                int rowsToAdd = GAP_BAND_HEIGHT_ROWS; // TODO: gap size based on mismatch (one/two lines of text)
                 while (rowsToAdd > 0) {
                     virtualRows.add(new VirtualRowMeta(this.gapsMeta.size() - 1));
                     rowsToAdd--;
@@ -863,8 +988,8 @@ public class AtomSpectraSpectrogramView extends View {
 
             if (spectrumBinning > 1) {
                 // insert binned segment to virtual rows
-                ArrayList<Float> originalDurations = segment.getDurations();
-                ArrayList<float[]> binnedSpectrogram = this.segmentsBinData.get(s);
+                List<Float> originalDurations = segment.getDurations();
+                List<float[]> binnedSpectrogram = this.segmentsBinData.get(s);
                 ArrayList<float[]> spectrumBinnedSpectrogram = new ArrayList<>(binnedSpectrogram.size() / spectrumBinning);
                 for (int i = 0; i < binnedSpectrogram.size(); i += spectrumBinning) {
                     float binnedDuration = 0;
@@ -899,7 +1024,7 @@ public class AtomSpectraSpectrogramView extends View {
         this.virtualRowsMeta = virtualRows.toArray(new VirtualRowMeta[0]);
 
         this.spectrogramMaxCps = 0;
-        for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
+        for (List<float[]> segmentBinData : this.segmentsBinData) {
             for (float[] deltas : segmentBinData) {
                 for (double value : deltas) {
                     if (value > this.spectrogramMaxCps) {
@@ -913,23 +1038,6 @@ public class AtomSpectraSpectrogramView extends View {
         this.maxValue = colorBarMaxFraction * this.spectrogramMaxCps;
         buildColorLut();
 
-        // calculate energy for each channel
-        double[] allEnergies = new double[channelBinsCount];
-        for (int i = 0; i < channelBinsCount; i++) {
-            double energy = data.channelToEnergy(i * channelBinning + (channelBinning - 1));
-            allEnergies[i] = energy;
-        }
-
-        // calculate channels for 0, 100, 200, 300... energies
-        this.energyTicks = new HashMap<>();
-        for (int energy = 0, channel = 0; energy < allEnergies[allEnergies.length - 1]; energy += 100) {
-            while (allEnergies[channel] < energy) {
-                channel++;
-            }
-
-            energyTicks.put(channel, energy);
-        }
-
         if (pinToBottom) {
             verticalOffsetPx = this.virtualRowsMeta.length * POINT_SIZE_PX;
         } else if (viewportCenterAnchor != null) {
@@ -937,6 +1045,7 @@ public class AtomSpectraSpectrogramView extends View {
         }
 
         this.renderSpectrogramToBitmap();
+        syncViewportToViewState();
         this.invalidate();
     }
 
@@ -993,7 +1102,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
 
-        int originalRow = getBinStartRow(meta.segmentRowBinIndex, this.spectrumBinning);
+        int originalRow = getBinStart(meta.segmentRowBinIndex, this.spectrumBinning);
         return new SelectionBound(meta.segmentIndex, originalRow);
     }
 
@@ -1045,12 +1154,26 @@ public class AtomSpectraSpectrogramView extends View {
         verticalOffsetPx = virtualRow * POINT_SIZE_PX - spgViewHeight / 2;
     }
 
-    // Gap mismatch check:
+    private int gapBandHeightRows(boolean isMismatch) {
+        if (this.compactGaps) {
+            return 1;
+        }
+        int pointSizePx = Math.max(1, POINT_SIZE_PX);
+        Paint paint = new Paint();
+        paint.setTextSize(TEXT_FONT_SIZE_PX);
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        float lineHeight = fontMetrics.descent - fontMetrics.ascent;
+        int lineCount = isMismatch ? 2 : 1;
+        float requiredHeightPx = lineCount * lineHeight + 2 * dpToPx(GAP_LABEL_VERTICAL_PADDING_DP);
+        return Math.max(1, (int) Math.ceil(requiredHeightPx / pointSizePx));
+    }
+
+    // Gap mismatch check vs the previous segment:
     // 1. device info must match exactly
     // 2. calibration coefficients must match as they would in a saved spectrum file
-    private boolean isSegmentMismatch(Spectrum a, Spectrum b) {
+    private SegmentMismatch classifySegmentMismatch(Spectrum a, Spectrum b) {
         if (a == null || b == null) {
-            return false;
+            return SegmentMismatch.NONE;
         }
 
         String deviceInfoA = a.getDeviceInfo();
@@ -1061,7 +1184,16 @@ public class AtomSpectraSpectrogramView extends View {
         Calibration calB = b.getSpectrumCalibration();
         boolean calibrationMismatch = calA == null ? calB != null : !calA.hasEquivalentCoefficients(calB);
 
-        return deviceInfoMismatch || calibrationMismatch;
+        if (deviceInfoMismatch && calibrationMismatch) {
+            return SegmentMismatch.BOTH;
+        }
+        if (deviceInfoMismatch) {
+            return SegmentMismatch.DEVICE;
+        }
+        if (calibrationMismatch) {
+            return SegmentMismatch.CALIBRATION;
+        }
+        return SegmentMismatch.NONE;
     }
 
     // Formats a gap duration using the largest two non-zero time units (e.g. "2d 4h", "3h",
@@ -1120,7 +1252,8 @@ public class AtomSpectraSpectrogramView extends View {
         TIMESTAMP_MARGIN_LEFT_PX = dpToPx(TIMESTAMP_MARGIN_LEFT_DP);
         TEXT_FONT_SIZE_PX = dpToPx(TEXT_FONT_SIZE_DP);
         TIMESTAMP_TICK_WIDTH_PX = dpToPx(TIMESTAMP_TICK_WIDTH_DP);
-        ENERGY_TICK_HEIGHT_PX = dpToPx(ENERGY_TICK_HEIGHT_DP);
+        ENERGY_MAJOR_TICK_HEIGHT_PX = dpToPx(ENERGY_MAJOR_TICK_HEIGHT_DP);
+        ENERGY_MINOR_TICK_HEIGHT_PX = dpToPx(ENERGY_MINOR_TICK_HEIGHT_DP);
         CHANNEL_AXIS_HEIGHT_PX = dpToPx(CHANNEL_AXIS_HEIGHT_DP);
         HANDLE_SIZE_PX = dpToPx(HANDLE_SIZE_DP);
         HANDLE_TOUCH_RADIUS_PX = dpToPx(HANDLE_TOUCH_RADIUS_DP);
@@ -1128,11 +1261,6 @@ public class AtomSpectraSpectrogramView extends View {
         PADDING_RIGHT_PX = dpToPx(PADDING_RIGHT_DP);
         COLOR_BAR_HEIGHT_PX = dpToPx(COLOR_BAR_HEIGHT_DP);
         COLOR_BAR_MARGIN_TOP_PX = dpToPx(COLOR_BAR_MARGIN_TOP_DP);
-        // The gap band is rendered as GAP_BAND_HEIGHT_ROWS virtual rows, each POINT_SIZE_PX
-        // tall, so its true on-screen height must be derived from the (density-bucketed)
-        // POINT_SIZE_PX - not dpToPx(GAP_BAND_HEIGHT_DP), which diverges from it at densities
-        // where POINT_SIZE_PX is overridden, mis-centering the gap label.
-        GAP_BAND_HEIGHT_PX = GAP_BAND_HEIGHT_ROWS * POINT_SIZE_PX;
     }
 
     private void recycleBitmap() {
@@ -1147,14 +1275,18 @@ public class AtomSpectraSpectrogramView extends View {
     }
 
     // IMPORTANT: binning arithmetic works only within a single segment
-    // gets original spectrogram index of bin start, i.e. for bin 4 with binning 8 -> 32
-    private int getBinStartRow(int bin, int binning) {
+    // gets the index of the first item in a bin, e.g. bin 4 with binning 8 -> 32
+    private int getBinStart(int bin, int binning) {
         return bin * binning;
     }
 
-    // gets original spectrogram index of bin end, i.e. for bin 4 with binning 8 -> 39
-    private int getBinEndRow(int bin, int binning) {
+    // gets the inclusive index of the last item in a bin, e.g. bin 4 with binning 8 -> 39
+    private int getBinEnd(int bin, int binning) {
         return (bin + 1) * binning - 1;
+    }
+
+    private int getBinEnd(int bin, int binning, int maxValue) {
+        return Math.min(getBinEnd(bin, binning), maxValue);
     }
 
     // gets bin index for a given row and bin, i.e. for row 34 with bin 8 -> 4
@@ -1166,20 +1298,20 @@ public class AtomSpectraSpectrogramView extends View {
     private int ceilRowToBinEndRow(int row, int binning) {
         int bin = getBinForRow(row, binning);
 
-        return getBinEndRow(bin, binning);
+        return getBinEnd(bin, binning);
     }
 
     // for a given row calculates appropriate bin and returns row index for bin start
     private int floorRowToBinStartRow(int row, int binning) {
         int bin = getBinForRow(row, binning);
 
-        return getBinStartRow(bin, binning);
+        return getBinStart(bin, binning);
     }
 
     // for a given bound calculates appropriate row-bin and returns row index for its end
     private SelectionBound ceilBoundToRowBinEnd(SelectionBound bound) {
         int bin = getBinForRow(bound.rowIndex, spectrumBinning);
-        int row = getBinEndRow(bin, spectrumBinning);
+        int row = getBinEnd(bin, spectrumBinning);
 
         return new SelectionBound(bound.segmentIndex, row);
     }
@@ -1187,7 +1319,7 @@ public class AtomSpectraSpectrogramView extends View {
     // for a given bound calculates appropriate row-bin and returns row index for its start
     private SelectionBound floorBoundToRowBinStart(SelectionBound bound) {
         int bin = getBinForRow(bound.rowIndex, spectrumBinning);
-        int row = getBinStartRow(bin, spectrumBinning);
+        int row = getBinStart(bin, spectrumBinning);
 
         return new SelectionBound(bound.segmentIndex, row);
     }
@@ -1208,16 +1340,16 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
 
-        if (this.segmentsBinData == null || this.segmentsBinData.isEmpty()) {
-            return;
-        }
-        ArrayList<float[]> firstNonEmptyBinData = null;
-        for (ArrayList<float[]> segmentBinData : this.segmentsBinData) {
-            if (!segmentBinData.isEmpty()) {
-                firstNonEmptyBinData = segmentBinData;
+        List<float[]> firstNonEmptyBinData = null;
+        if (this.segmentsBinData != null) {
+            for (List<float[]> segmentBinData : this.segmentsBinData) {
+                if (!segmentBinData.isEmpty()) {
+                    firstNonEmptyBinData = segmentBinData;
+                }
             }
         }
         if (firstNonEmptyBinData == null) {
+            renderEmptyView(viewWidth, viewHeight);
             return;
         }
 
@@ -1282,6 +1414,7 @@ public class AtomSpectraSpectrogramView extends View {
         int colBinsToRenderWidthPx = colBinsToRender * colBinWidthPx;
 
         setVisibleRangeSnapshot(virtualRowStart, virtualRowEnd, colBinStart, colBinEnd);
+        int axisSegmentIndex = getVisibleEndSegmentIndex();
 
         HashSet<Integer> visibleGaps = new HashSet<>();
         int totalPixels = virtualRowsToRender * virtualRowHeightPx * colBinsToRenderWidthPx;
@@ -1296,7 +1429,7 @@ public class AtomSpectraSpectrogramView extends View {
             VirtualRowMeta rowMeta = virtualRowsMeta[virtualRowIndex];
             if (rowMeta.segmentIndex >= 0) {
                 int rowBin = rowMeta.segmentRowBinIndex;
-                ArrayList<float[]> spectrogramBinData = this.segmentsBinData.get(rowMeta.segmentIndex);
+                List<float[]> spectrogramBinData = this.segmentsBinData.get(rowMeta.segmentIndex);
                 for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
                     double value = spectrogramBinData.get(rowBin)[colBin];
                     int color = mapValueToColor(value);
@@ -1334,14 +1467,13 @@ public class AtomSpectraSpectrogramView extends View {
         synchronized (this.spectrogramBitmapSync) {
             if (this.spectrogramBitmap != null) {
                 Canvas canvas = new Canvas(this.spectrogramBitmap);
-                Paint paint = new Paint();
-                paint.setAntiAlias(true);
-                paint.setColor(Color.WHITE);
-                paint.setTextSize(TEXT_FONT_SIZE_PX);
-                paint.setStyle(Paint.Style.FILL);
-                paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
+                Paint paint = newAxisPaint();
 
                 String currentDateLabel = "";
+                String dateBeforeLastLabel = "";
+                int lastLabelTickY = -1;
+                Paint erasePaint = new Paint();
+                erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
                 for (int virtualRowIndex = virtualRowStart; virtualRowIndex <= virtualRowEnd; virtualRowIndex++) {
                     VirtualRowMeta rowMeta = virtualRowsMeta[virtualRowIndex];
                     if (rowMeta.gapIndex >= 0) {
@@ -1349,13 +1481,13 @@ public class AtomSpectraSpectrogramView extends View {
                         continue;
                     }
                     AtomSpectraSpectrogramData.SegmentData segment = this.segmentsData.get(rowMeta.segmentIndex);
-                    ArrayList<Long> timestamps = segment.getTimestamps();
+                    List<Long> timestamps = segment.getTimestamps();
                     if (timestamps.isEmpty()) {
                         continue;
                     }
 
                     int tsBinIndex = rowMeta.segmentRowBinIndex;
-                    int originalRowIndex = getBinEndRow(tsBinIndex, spectrumBinning);
+                    int originalRowIndex = getBinEnd(tsBinIndex, spectrumBinning);
                     if (originalRowIndex >= timestamps.size()) {
                         originalRowIndex = timestamps.size() - 1;
                     }
@@ -1371,122 +1503,57 @@ public class AtomSpectraSpectrogramView extends View {
                         continue;
                     }
 
+                    int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
+                    boolean segmentStart = tsBinIndex == 0;
+
                     long timestamp = timestamps.get(originalRowIndex);
                     String[] timestampStr = formatDate(new Date(timestamp)).split(" ");
                     String dateLabel = timestampStr[0];
                     String timeLabel = timestampStr[1];
 
+                    // a segment's first timestamp always wins: erase the previous label text if they overlap
+                    float labelTop = dateLabel.equals(currentDateLabel) ? tickY : tickY - TEXT_FONT_SIZE_PX;
+                    if (segmentStart && lastLabelTickY >= 0 && labelTop < lastLabelTickY + TEXT_FONT_SIZE_PX) {
+                        boolean lastLabelHadDate = !dateBeforeLastLabel.equals(currentDateLabel);
+                        float top = lastLabelHadDate ? lastLabelTickY - TEXT_FONT_SIZE_PX : lastLabelTickY;
+                        canvas.drawRect(0, top, TIME_AXIS_WIDTH_PX - TIMESTAMP_TICK_WIDTH_PX,
+                                lastLabelTickY + TEXT_FONT_SIZE_PX * 1.25f, erasePaint);
+                        currentDateLabel = dateBeforeLastLabel;
+                        lastLabelTickY = -1;
+                    }
+
                     // label tick
-                    int tickWidth = tsBinIndex == 0 || (tsBinIndex + 1) % 100 == 0
+                    int tickWidth = segmentStart || (tsBinIndex + 1) % 100 == 0
                             ? TIMESTAMP_TICK_WIDTH_PX
                             : TIMESTAMP_TICK_WIDTH_PX / 2;
 
                     int tickX = TIME_AXIS_WIDTH_PX - tickWidth;
-                    int tickY = (virtualRowIndex - virtualRowStart) * POINT_SIZE_PX + PADDING_TOP_PX;
-                    if (dateLabel.equals(currentDateLabel)) {
-                        // render time only
-                        canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
-                    } else {
-                        // render both date and time (either first date label or new date)
-                        canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY, paint);
-                        canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
-                        currentDateLabel = dateLabel;
+                    if (tickY + TEXT_FONT_SIZE_PX <= spgViewHeight + PADDING_TOP_PX) {
+                        dateBeforeLastLabel = currentDateLabel;
+                        lastLabelTickY = tickY;
+                        if (dateLabel.equals(currentDateLabel)) {
+                            // render time only
+                            canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+                        } else {
+                            // render both date and time (either first date label or new date)
+                            canvas.drawText(dateLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY, paint);
+                            canvas.drawText(timeLabel, TIMESTAMP_MARGIN_LEFT_PX, tickY + TEXT_FONT_SIZE_PX, paint);
+                            currentDateLabel = dateLabel;
+                        }
                     }
 
                     canvas.drawLine(tickX, tickY + 0.5f, TIME_AXIS_WIDTH_PX, tickY + 0.5f, paint);
                 }
 
-                canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, PADDING_TOP_PX, TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
-                // canvas.drawLine(viewWidth - PADDING_RIGHT_PX + 0.5f, PADDING_TOP_PX, viewWidth - PADDING_RIGHT_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
+                drawTimeAxisLine(canvas, paint, spgViewHeight);
             }
         }
 
         // render energy axis
         synchronized (this.spectrogramBitmapSync) {
             if (this.spectrogramBitmap != null) {
-                Canvas canvas = new Canvas(this.spectrogramBitmap);
-                Paint paint = new Paint();
-                paint.setAntiAlias(true);
-                paint.setColor(Color.WHITE);
-                paint.setTextSize(TEXT_FONT_SIZE_PX);
-                paint.setStyle(Paint.Style.FILL);
-                paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
-
-                // energy axis render
-                int energyAxisBaseline = spgViewHeight + PADDING_TOP_PX;
-                int channelAxisBaseline = spgViewHeight + PADDING_TOP_PX + CHANNEL_AXIS_HEIGHT_PX / 2;
-                Spectrum baseSpectrum = segmentsData != null && !segmentsData.isEmpty()
-                        ? segmentsData.get(0).getBaseSpectrum()
-                        : null;
-                int baseChannelCount = baseSpectrum == null ? 0 : baseSpectrum.getDataArray().length;
-                int baseChannelBinning = baseChannelCount / AtomSpectraSpectrogramData.CHANNEL_COUNT;
-                // a base spectrum narrower than CHANNEL_COUNT cannot be mapped onto the bins,
-                // so the channel axis is left empty rather than labeled with zeros
-                boolean hasChannelAxis = baseChannelBinning >= 1;
-                int channelMajorTick = baseChannelCount / 8 * channelBinning;
-                int channelMinorTick = channelMajorTick / 4;
-                for (int colBin = colBinStart; colBin <= colBinEnd; colBin++) {
-                    int tickX = (colBin - colBinStart) * POINT_SIZE_PX + TIME_AXIS_WIDTH_PX;
-
-                    if (this.energyTicks != null && this.energyTicks.containsKey(colBin)) {
-                        Integer energy = this.energyTicks.get(colBin);
-
-                        if (energy != null) {
-                            // render MeV label
-                            int majorTick = 500;
-                            int minorTick = 100;
-                            if (channelBinning == 2) {
-                                majorTick = 1000;
-                                minorTick = 200;
-                            }
-                            if (channelBinning == 4) {
-                                majorTick = 1000;
-                                minorTick = 500;
-                            }
-                            if (channelBinning > 4) {
-                                majorTick = 1500;
-                                minorTick = 500;
-                            }
-                            if (energy % majorTick == 0) {
-                                String label = energy == 0 ? "0 MeV" : String.format("%1.1f", energy / 1000.0f);
-                                canvas.drawText(label, tickX, energyAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
-                            }
-
-                            // render MeV tick
-                            if (energy % minorTick == 0) {
-                                int tickHeight = energy % majorTick == 0
-                                        ? ENERGY_TICK_HEIGHT_PX
-                                        : ENERGY_TICK_HEIGHT_PX / 2;
-                                canvas.drawLine(tickX - 0.5f, energyAxisBaseline, tickX - 0.5f, energyAxisBaseline + tickHeight, paint);
-                            }
-                        }
-                    }
-
-                    // render ch label - always expressed in base spectrum (unbinned) channel numbers.
-                    // The label is the channel just past this bin's range (1024, 2048, ... 8192),
-                    // so the top channel gets a label, while the tick itself is drawn at the bin's
-                    // left edge - one column short of the boundary it names, as on the energy axis.
-                    // Bin 0 is labeled explicitly so the axis starts at 0 ch.
-                    if (hasChannelAxis) {
-                        boolean isFirstBin = colBin == 0;
-                        int channel = (colBin + 1) * channelBinning * baseChannelBinning;
-                        boolean isMajorTick = channel % channelMajorTick == 0;
-                        if (isFirstBin) {
-                            canvas.drawText("0 ch", tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
-                        } else if (isMajorTick) {
-                            canvas.drawText(String.format("%d", channel), tickX, channelAxisBaseline + TEXT_FONT_SIZE_PX + dpToPx(3), paint);
-                        }
-
-                        // render ch tick
-                        if (isFirstBin || isMajorTick || channel % channelMinorTick == 0) {
-                            int tickHeight = (isFirstBin || isMajorTick) ? ENERGY_TICK_HEIGHT_PX : ENERGY_TICK_HEIGHT_PX / 2;
-                            canvas.drawLine(tickX - 0.5f, channelAxisBaseline, tickX - 0.5f, channelAxisBaseline + tickHeight, paint);
-                        }
-                    }
-                }
-
-                canvas.drawLine(TIME_AXIS_WIDTH_PX, energyAxisBaseline - 0.5f, TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, energyAxisBaseline - 0.5f, paint);
-                canvas.drawLine(TIME_AXIS_WIDTH_PX, channelAxisBaseline - 0.5f, TIME_AXIS_WIDTH_PX + colBinsToRenderWidthPx, channelAxisBaseline - 0.5f, paint);
+                renderEnergyAndChannelAxes(new Canvas(this.spectrogramBitmap), newAxisPaint(), viewHeight,
+                        axisSegmentIndex, 0, colBinsCount, colBinStart, colBinsToRenderWidthPx);
             }
         }
 
@@ -1509,11 +1576,417 @@ public class AtomSpectraSpectrogramView extends View {
         if (this.autoScroll) {
             verticalOffsetPx += virtualRowHeightPx;
         }
+        syncViewportToViewState();
+    }
+
+    // only the time axis line, energy axis line and color bar are shown until the first spectrogram row arrives
+    private void renderEmptyView(int viewWidth, int viewHeight) {
+        int spgViewWidth = viewWidth - TIME_AXIS_WIDTH_PX - PADDING_RIGHT_PX;
+        int spgViewHeight = spectrogramPlotHeightPx(viewHeight);
+        if (spgViewWidth <= 0 || spgViewHeight <= 0) {
+            return;
+        }
+
+        int colBinsCount = (AtomSpectraSpectrogramData.CHANNEL_COUNT + channelBinning - 1) / channelBinning;
+        int renderedWidthPx = Math.min(colBinsCount, spgViewWidth / POINT_SIZE_PX) * POINT_SIZE_PX;
+
+        synchronized (this.spectrogramBitmapSync) {
+            if (this.spectrogramBitmap == null) {
+                return;
+            }
+            Canvas canvas = new Canvas(this.spectrogramBitmap);
+            Paint paint = newAxisPaint();
+            drawTimeAxisLine(canvas, paint, spgViewHeight);
+
+            float baselineY = energyAxisBaselineYpx(viewHeight) - 0.5f;
+            canvas.drawLine(TIME_AXIS_WIDTH_PX, baselineY, TIME_AXIS_WIDTH_PX + renderedWidthPx, baselineY, paint);
+        }
+
+        renderColorBar(viewWidth, viewHeight);
+    }
+
+    private Paint newAxisPaint() {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(TEXT_FONT_SIZE_PX);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(dpToPx(STROKE_WIDTH_DP));
+        return paint;
+    }
+
+    private void drawTimeAxisLine(Canvas canvas, Paint paint, int spgViewHeight) {
+        canvas.drawLine(TIME_AXIS_WIDTH_PX - 0.5f, PADDING_TOP_PX,
+                TIME_AXIS_WIDTH_PX - 0.5f, spgViewHeight + PADDING_TOP_PX, paint);
+    }
+
+    private void renderEnergyAndChannelAxes(Canvas canvas, Paint paint, int viewHeight, int axisSegmentIndex,
+                                            int fallbackChannelCount, int colBinsCount, int colBinStart,
+                                            int renderedWidthPx) {
+        Spectrum baseSpectrum = segmentsData != null
+                && axisSegmentIndex >= 0
+                && axisSegmentIndex < segmentsData.size()
+                ? segmentsData.get(axisSegmentIndex).getBaseSpectrum()
+                : null;
+        int baseChannelCount = baseSpectrum == null ? fallbackChannelCount : baseSpectrum.getDataArray().length;
+        renderEnergyAxis(canvas, paint, energyAxisBaselineYpx(viewHeight), baseSpectrum,
+                colBinsCount, colBinStart, renderedWidthPx);
+        renderChannelAxis(canvas, paint, channelAxisBaselineYpx(viewHeight), baseChannelCount,
+                colBinsCount, colBinStart, renderedWidthPx);
+    }
+
+    // drawn in onDraw, not into the bitmap, so a status change needs no spectrogram re-render
+    private void drawAcquisitionLabels(Canvas canvas) {
+        int viewHeight = getHeight();
+        int energyBaselineY = energyAxisBaselineYpx(viewHeight);
+        if (energyBaselineY < PADDING_TOP_PX || energyBaselineY + CHANNEL_AXIS_HEIGHT_PX > viewHeight) {
+            return;
+        }
+        Paint paint = acquisitionPaint;
+        paint.setColor(Color.WHITE);
+        float left = TIMESTAMP_MARGIN_LEFT_PX;
+        float right = Math.min(TIME_AXIS_WIDTH_PX - dpToPx(4), getWidth());
+        float rowsY = axisLabelYpx(energyBaselineY);
+        float statusY = axisLabelYpx(channelAxisBaselineYpx(viewHeight));
+        float statusLeft = left + dpToPx(12);
+        float markerCenterY = statusY - dpToPx(TEXT_FONT_SIZE_DP / 2.5f);
+
+        int saved = canvas.save();
+        canvas.clipRect(0, energyBaselineY, right, energyBaselineY + CHANNEL_AXIS_HEIGHT_PX);
+
+        if (recordingIntervalSeconds > 0) {
+            if (spectrumRecording) {
+                float radius = dpToPx(4);
+                paint.setColor(Color.RED);
+                canvas.drawCircle(left + radius, markerCenterY, radius, paint);
+            } else {
+                float barWidth = dpToPx(2.5f);
+                float barHalfHeight = dpToPx(4);
+                for (int i = 0; i < 2; i++) {
+                    float barLeft = left + i * barWidth * 2;
+                    canvas.drawRect(barLeft, markerCenterY - barHalfHeight + dpToPx(1), barLeft + barWidth, markerCenterY + barHalfHeight, paint);
+                }
+            }
+        }
+
+        paint.setColor(Color.WHITE);
+        drawAcquisitionLabel(canvas, paint, rowCountLabel, left, right, rowsY);
+        drawAcquisitionLabel(canvas, paint, statusLabel, recordingIntervalSeconds > 0 ? statusLeft : left, right, statusY);
+
+        canvas.restoreToCount(saved);
+    }
+
+    private void drawAcquisitionLabel(Canvas canvas, Paint paint, String label, float left, float right, float baseline) {
+        if (right <= left) {
+            return;
+        }
+        paint.setTextSize(TEXT_FONT_SIZE_PX);
+        float width = paint.measureText(label);
+        if (width > right - left) {
+            paint.setTextSize(TEXT_FONT_SIZE_PX * (right - left) / width);
+        }
+        canvas.drawText(label, left, baseline, paint);
+    }
+
+    private void renderEnergyAxis(Canvas canvas, Paint paint, int baselineY, Spectrum baseSpectrum,
+                                  int channelBinsCount, int colBinStart, int renderedWidthPx) {
+        if (baseSpectrum == null || channelBinsCount <= 0 || renderedWidthPx <= 0
+                || POINT_SIZE_PX <= 0) {
+            return;
+        }
+
+        float axisLeft = TIME_AXIS_WIDTH_PX;
+        float axisRight = axisLeft + renderedWidthPx;
+        canvas.drawLine(axisLeft, baselineY - 0.5f, axisRight, baselineY - 0.5f, paint);
+
+        int baseChannelCount = baseSpectrum.getDataArray().length;
+        if (baseChannelCount < AtomSpectraSpectrogramData.CHANNEL_COUNT
+                || baseChannelCount % AtomSpectraSpectrogramData.CHANNEL_COUNT != 0) {
+            return;
+        }
+        int baseChannelBinning = baseChannelCount / AtomSpectraSpectrogramData.CHANNEL_COUNT;
+        Calibration calibration = baseSpectrum.getSpectrumCalibration();
+        if (calibration == null || !calibration.isCorrect()) {
+            return;
+        }
+
+        double calibratedMinKeV = calibration.toEnergy(0);
+        double calibratedMaxKeV = calibration.toEnergy(baseChannelCount);
+        double unitScale = Math.max(Math.abs(calibratedMinKeV), Math.abs(calibratedMaxKeV)) >= 1000
+                ? 1000.0 : 1.0;
+        String unit = unitScale == 1000.0 ? "MeV" : "keV";
+        int visibleBinCount = renderedWidthPx / POINT_SIZE_PX;
+        int visibleStartChannel = Math.min(AtomSpectraSpectrogramData.CHANNEL_COUNT,
+                colBinStart * channelBinning);
+        int visibleEndChannel = Math.min(AtomSpectraSpectrogramData.CHANNEL_COUNT,
+                (colBinStart + visibleBinCount) * channelBinning);
+        double visibleMin = calibration.toEnergy(visibleStartChannel * baseChannelBinning) / unitScale;
+        double visibleMax = calibration.toEnergy(visibleEndChannel * baseChannelBinning) / unitScale;
+        double tickVisibleMin = Math.max(0, visibleMin);
+        if (visibleMax <= tickVisibleMin) {
+            return;
+        }
+
+        float labelY = axisLabelYpx(baselineY);
+        float labelGap = dpToPx(4);
+
+        // Steps depend on calibration and zoom only, so scrolling never changes the grid.
+        double pixelsPerUnit = energyPixelsPerUnit(calibration, unitScale, baseChannelCount,
+                baseChannelBinning, channelBinsCount);
+        boolean unitAtOrigin = calibratedMinKeV > 0;
+        double majorStep = majorEnergyStep(paint, unit, unitAtOrigin,
+                calibratedMaxKeV / unitScale, pixelsPerUnit, labelGap);
+        if (majorStep <= 0) {
+            return;
+        }
+        int subdivisions = energyMinorSubdivisions(
+                majorStep * pixelsPerUnit, dpToPx(MIN_ENERGY_MINOR_TICK_SPACING_DP));
+        double minorStep = majorStep / subdivisions;
+        long firstIndex = (long) Math.ceil(tickVisibleMin / minorStep - 1e-9);
+        long lastIndex = (long) Math.floor(visibleMax / minorStep + 1e-9);
+
+        long unitMajorIndex = (long) Math.ceil(Math.max(0, calibratedMinKeV / unitScale) / majorStep - 1e-9);
+        float previousLabelRight = axisLeft;
+        if (unitAtOrigin && colBinStart == 0) {
+            paint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText(unit, axisLeft, labelY, paint);
+            previousLabelRight = axisLeft + paint.measureText(unit) + labelGap;
+        }
+        for (long index = firstIndex; index <= lastIndex; index++) {
+            double baseChannel = energyToBaseChannel(calibration, index * minorStep * unitScale,
+                    baseChannelCount);
+            float tickX = baseChannelToAxisX(baseChannel, baseChannelBinning,
+                    channelBinsCount, colBinStart, axisLeft);
+            if (tickX < axisLeft - 0.5f || tickX > axisRight + 0.5f) {
+                continue;
+            }
+
+            boolean isMajor = index % subdivisions == 0;
+            canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f, baselineY
+                    + (isMajor ? ENERGY_MAJOR_TICK_HEIGHT_PX : ENERGY_MINOR_TICK_HEIGHT_PX), paint);
+            if (!isMajor) {
+                continue;
+            }
+
+            String label = formatEnergyLabel(majorStep, index / subdivisions);
+            if (!unitAtOrigin && index / subdivisions == unitMajorIndex) {
+                label += " " + unit;
+            }
+            float labelWidth = paint.measureText(label);
+            Paint.Align alignment;
+            if (tickX - labelWidth / 2f < axisLeft) {
+                alignment = Paint.Align.LEFT;
+            } else if (tickX + labelWidth / 2f > axisRight) {
+                alignment = Paint.Align.RIGHT;
+            } else {
+                alignment = Paint.Align.CENTER;
+            }
+            float labelLeft = alignment == Paint.Align.LEFT ? tickX
+                    : alignment == Paint.Align.RIGHT ? tickX - labelWidth : tickX - labelWidth / 2f;
+            float labelRight = labelLeft + labelWidth;
+            if (labelLeft < previousLabelRight) {
+                continue;
+            }
+
+            paint.setTextAlign(alignment);
+            canvas.drawText(label, tickX, labelY, paint);
+            previousLabelRight = labelRight + labelGap;
+        }
+    }
+
+    // Pixels per displayed energy unit around the middle of the calibrated scale.
+    private double energyPixelsPerUnit(Calibration calibration, double unitScale, int baseChannelCount,
+                                       int baseChannelBinning, int channelBinsCount) {
+        int middle = baseChannelCount / 2;
+        int halfWindow = Math.max(1, baseChannelCount / 16);
+        int low = middle - halfWindow;
+        int high = middle + halfWindow;
+        double energySpan = (calibration.toEnergy(high) - calibration.toEnergy(low)) / unitScale;
+        float pixelSpan = baseChannelToAxisX(high, baseChannelBinning, channelBinsCount, 0, 0)
+                - baseChannelToAxisX(low, baseChannelBinning, channelBinsCount, 0, 0);
+        return energySpan > 0 && pixelSpan > 0 ? pixelSpan / energySpan : 0;
+    }
+
+    private double majorEnergyStep(Paint paint, String unit, boolean unitAtOrigin, double scaleMax,
+                                   double pixelsPerUnit, float labelGap) {
+        double step = ceilNiceEnergyStep(labelGap / pixelsPerUnit);
+        float unitLabelWidth = paint.measureText(unitAtOrigin ? unit : "0 " + unit);
+        for (int attempt = 0; step > 0 && attempt < 32; attempt++) {
+            String widestLabel = formatEnergyLabel(step, (long) Math.floor(scaleMax / step + 1e-9));
+            float labelWidth = Math.max(paint.measureText(widestLabel),
+                    paint.measureText(formatEnergyLabel(step, 1)));
+            // Keep about one label width clear between labels; the unit label sits left of the first one.
+            float gap = Math.max(labelGap, labelWidth * ENERGY_LABEL_GAP_FACTOR);
+            float required = Math.max(labelWidth + gap, unitLabelWidth + labelWidth / 2f + gap);
+            if (step * pixelsPerUnit >= required) {
+                break;
+            }
+            step = ceilNiceEnergyStep(step * 1.01);
+        }
+        return step;
+    }
+
+    private double ceilNiceEnergyStep(double rawStep) {
+        if (!Double.isFinite(rawStep) || rawStep <= 0) {
+            return 0;
+        }
+        double power = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        for (double multiplier : NICE_ENERGY_STEP_MULTIPLIERS) {
+            if (multiplier * power >= rawStep * (1 - 1e-9)) {
+                return multiplier * power;
+            }
+        }
+        return 10 * power;
+    }
+
+    private int energyMinorSubdivisions(double majorStepPx, float minimumSpacingPx) {
+        for (int subdivisions : ENERGY_MINOR_SUBDIVISIONS) {
+            if (majorStepPx / subdivisions >= minimumSpacingPx) {
+                return subdivisions;
+            }
+        }
+        return 1;
+    }
+
+    private String formatEnergyLabel(double majorStep, long majorIndex) {
+        if (majorIndex == 0) {
+            return "0";
+        }
+        BigDecimal step = BigDecimal.valueOf(majorStep).stripTrailingZeros();
+        return step.multiply(BigDecimal.valueOf(majorIndex))
+                .round(ENERGY_LABEL_MATH_CONTEXT)
+                .setScale(Math.max(1, step.scale()), RoundingMode.HALF_UP)
+                .toPlainString();
+    }
+
+    private double energyToBaseChannel(Calibration calibration, double targetEnergy, int channelCount) {
+        int lowerChannel = 0;
+        int upperChannel = channelCount;
+        double lowerEnergy = calibration.toEnergy(lowerChannel);
+        double upperEnergy = calibration.toEnergy(upperChannel);
+        if (targetEnergy <= lowerEnergy) {
+            return lowerChannel;
+        }
+        if (targetEnergy >= upperEnergy) {
+            return upperChannel;
+        }
+
+        while (upperChannel - lowerChannel > 1) {
+            int middleChannel = lowerChannel + (upperChannel - lowerChannel) / 2;
+            double middleEnergy = calibration.toEnergy(middleChannel);
+            if (middleEnergy < targetEnergy) {
+                lowerChannel = middleChannel;
+                lowerEnergy = middleEnergy;
+            } else {
+                upperChannel = middleChannel;
+                upperEnergy = middleEnergy;
+            }
+        }
+        return lowerChannel + (targetEnergy - lowerEnergy) / (upperEnergy - lowerEnergy);
+    }
+
+    private float baseChannelToAxisX(double baseChannel, int baseChannelBinning,
+                                     int channelBinsCount, int colBinStart, float axisLeft) {
+        double sourceChannel = baseChannel / baseChannelBinning;
+        int lastBinStartChannel = (channelBinsCount - 1) * channelBinning;
+        int lastBinChannelCount = AtomSpectraSpectrogramData.CHANNEL_COUNT - lastBinStartChannel;
+        double columnPosition = sourceChannel <= lastBinStartChannel
+                ? sourceChannel / channelBinning
+                : channelBinsCount - 1
+                + (sourceChannel - lastBinStartChannel) / lastBinChannelCount;
+        return axisLeft + ((float) columnPosition - colBinStart) * POINT_SIZE_PX;
+    }
+
+    private void renderChannelAxis(Canvas canvas, Paint paint, int baselineY, int baseChannelCount,
+                                  int channelBinsCount, int colBinStart, int renderedWidthPx) {
+        if (channelBinsCount <= 0 || renderedWidthPx <= 0 || POINT_SIZE_PX <= 0) {
+            return;
+        }
+
+        float axisLeft = TIME_AXIS_WIDTH_PX;
+        float axisRight = axisLeft + renderedWidthPx;
+        canvas.drawLine(axisLeft, baselineY - 0.5f, axisRight, baselineY - 0.5f, paint);
+        if (baseChannelCount < AtomSpectraSpectrogramData.CHANNEL_COUNT) {
+            return;
+        }
+
+        int tickBinning = channelAxisTickBinning();
+        int baseChannelBinning = baseChannelCount / AtomSpectraSpectrogramData.CHANNEL_COUNT;
+        int majorTick = baseChannelCount / 16 * tickBinning;
+        int minorTick = majorTick / 2;
+        if (majorTick <= 0 || minorTick <= 0) {
+            return;
+        }
+
+        float labelY = axisLabelYpx(baselineY);
+
+        if (colBinStart == 0) {
+            canvas.drawLine(axisLeft - 0.5f, baselineY, axisLeft - 0.5f,
+                    baselineY + ENERGY_MAJOR_TICK_HEIGHT_PX, paint);
+            String zeroLabel = "0 ch";
+            paint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText(zeroLabel, axisLeft, labelY, paint);
+        }
+
+        for (int tickChannel = minorTick; tickChannel <= baseChannelCount; tickChannel += minorTick) {
+            float tickX = channelToAxisX(tickChannel, baseChannelCount, baseChannelBinning,
+                    channelBinsCount, colBinStart, axisLeft);
+            if (tickX < axisLeft || tickX > axisRight) {
+                continue;
+            }
+            boolean isMajorTick = tickChannel % majorTick == 0;
+            int tickHeight = isMajorTick ? ENERGY_MAJOR_TICK_HEIGHT_PX : ENERGY_MINOR_TICK_HEIGHT_PX;
+            canvas.drawLine(tickX - 0.5f, baselineY, tickX - 0.5f,
+                    baselineY + tickHeight, paint);
+
+            if (!isMajorTick) {
+                continue;
+            }
+
+            String label = String.valueOf(tickChannel);
+            Paint.Align alignment = tickChannel == baseChannelCount
+                ? Paint.Align.RIGHT
+                : Paint.Align.CENTER;
+            paint.setTextAlign(alignment);
+            canvas.drawText(label, tickX, labelY, paint);
+        }
+    }
+
+    private float channelToAxisX(int channel, int baseChannelCount, int baseChannelBinning,
+                                 int channelBinsCount, int colBinStart, float axisLeft) {
+        if (channel <= 0) {
+            return axisLeft;
+        }
+        if (channel >= baseChannelCount) {
+            return axisLeft + (channelBinsCount - colBinStart) * POINT_SIZE_PX;
+        }
+
+        double sourceChannel = channel / (double) baseChannelBinning;
+        int binIndex = (int) (sourceChannel / channelBinning);
+        int binStartChannel = binIndex * channelBinning;
+        int channelsInBin = Math.min(channelBinning,
+                AtomSpectraSpectrogramData.CHANNEL_COUNT - binStartChannel);
+        double columnPosition = binIndex
+                + (sourceChannel - binStartChannel) / channelsInBin;
+        return axisLeft + ((float) columnPosition - colBinStart) * POINT_SIZE_PX;
+    }
+
+    private int channelAxisTickBinning() {
+        if (channelBinning <= 2) {
+            return channelBinning;
+        }
+        if (channelBinning == 3) {
+            return 2;
+        }
+        if (channelBinning <= 6) {
+            return 4;
+        }
+        return 8;
     }
 
     // renders centered duration (and, for mismatched gaps, warning) labels within each visible gap band
     private void renderGapLabels(HashSet<Integer> visibleGaps, int viewWidth, int spgViewHeight) {
-        if (visibleGaps.isEmpty() || this.gapsMeta == null) {
+        if (this.compactGaps || visibleGaps.isEmpty() || this.gapsMeta == null) {
             return;
         }
 
@@ -1544,12 +2017,27 @@ public class AtomSpectraSpectrogramView extends View {
                 // gap.middleLinePx is a virtual-layout coordinate; map it to the viewport
                 float middleY = PADDING_TOP_PX + gap.middleLinePx - snappedVerticalOffsetPx();
 
-                if (gap.isMismatch) {
-                    String warning = getResources().getString(R.string.spectrogram_gap_mismatch_warning);
+                if (gap.mismatch != SegmentMismatch.NONE) {
+                    String warning;
+                    switch (gap.mismatch) {
+                        case DEVICE:
+                            warning = getResources().getString(R.string.spectrogram_gap_mismatch_device);
+                            break;
+                        case CALIBRATION:
+                            warning = getResources().getString(R.string.spectrogram_gap_mismatch_calibration);
+                            break;
+                        case BOTH:
+                        default:
+                            warning = getResources().getString(R.string.spectrogram_gap_mismatch_both);
+                            break;
+                    }
                     // stack the two lines around the gap center
+                    paint.setColor(Color.WHITE);
                     drawGapLabelLine(canvas, paint, gap.durationLabel, centerX, middleY - lineHeight / 2f, fm, spgTop, spgBottom);
+                    paint.setColor(GAP_MISMATCH_TEXT_COLOR);
                     drawGapLabelLine(canvas, paint, warning, centerX, middleY + lineHeight / 2f, fm, spgTop, spgBottom);
                 } else {
+                    paint.setColor(Color.WHITE);
                     drawGapLabelLine(canvas, paint, gap.durationLabel, centerX, middleY, fm, spgTop, spgBottom);
                 }
             }
@@ -1580,7 +2068,7 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
         if (rowStartMeta.segmentIndex >= 0) {
-            this.visibleStartRow = new SelectionBound(rowStartMeta.segmentIndex, getBinStartRow(rowStartMeta.segmentRowBinIndex, spectrumBinning));
+            this.visibleStartRow = new SelectionBound(rowStartMeta.segmentIndex, getBinStart(rowStartMeta.segmentRowBinIndex, spectrumBinning));
         } else {
             this.visibleStartRow = null;
         }
@@ -1596,13 +2084,14 @@ public class AtomSpectraSpectrogramView extends View {
             }
         }
         if (rowEndMeta.segmentIndex >= 0) {
-            this.visibleEndRow = new SelectionBound(rowEndMeta.segmentIndex, getBinEndRow(rowEndMeta.segmentRowBinIndex, spectrumBinning));
+            this.visibleEndRow = new SelectionBound(rowEndMeta.segmentIndex, getBinEnd(rowEndMeta.segmentRowBinIndex, spectrumBinning));
         } else {
             this.visibleEndRow = null;
         }
 
-        this.visibleStartChannel = getBinStartRow(colBinStart, channelBinning);
-        this.visibleEndChannel = getBinEndRow(colBinEnd, channelBinning);
+        this.visibleStartChannel = getBinStart(colBinStart, channelBinning);
+        this.visibleEndChannel = getBinEnd(colBinEnd, channelBinning,
+            AtomSpectraSpectrogramData.CHANNEL_COUNT - 1);
     }
 
     private void renderColorBar(int viewWidth, int viewHeight) {
@@ -1618,7 +2107,8 @@ public class AtomSpectraSpectrogramView extends View {
 
             int barTop = viewHeight - COLOR_BAR_HEIGHT_PX;
             int barBottom = viewHeight;
-            if (barTop < 0) return; // view shorter than the color bar: setPixels y would be negative
+            if (barTop < 0)
+                return; // view shorter than the color bar: setPixels y would be negative
 
             int[] colors = paletteColors();
 
@@ -1710,10 +2200,12 @@ public class AtomSpectraSpectrogramView extends View {
             trianglePaint.setAntiAlias(true);
             trianglePaint.setStyle(Paint.Style.FILL);
 
-            drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
-                    bgLeftHandleRow, true, HANDLE_COLOR_BG);
-            drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
-                    bgRightHandleRow, false, HANDLE_COLOR_BG);
+            if (backgroundHandlesVisible) {
+                drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
+                        bgLeftHandleRow, true, HANDLE_COLOR_BG);
+                drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
+                        bgRightHandleRow, false, HANDLE_COLOR_BG);
+            }
             drawHandle(canvas, guidePaint, trianglePaint, viewWidth,
                     fgLeftHandleRow, true, HANDLE_COLOR_FG);
             drawHandle(canvas, guidePaint, trianglePaint, viewWidth,

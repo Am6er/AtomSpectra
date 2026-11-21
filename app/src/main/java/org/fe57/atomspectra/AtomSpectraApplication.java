@@ -1,0 +1,95 @@
+package org.fe57.atomspectra;
+
+import android.app.Activity;
+import android.app.Application;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+
+public class AtomSpectraApplication extends Application implements Application.ActivityLifecycleCallbacks {
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Set<Activity> externalUi = Collections.newSetFromMap(new IdentityHashMap<>());
+    private int startedActivities;
+    private boolean foreground;
+    private final Runnable backgroundCheck = () -> {
+        if (startedActivities == 0 && externalUi.isEmpty() && foreground) {
+            foreground = false;
+            AtomSpectraLog.detail(this, LogTag.APP, "App moved to background");
+        }
+    };
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        AtomSpectraLog.clear(this);
+        registerActivityLifecycleCallbacks(this);
+        AtomSpectraLog.event(this, LogTag.APP, "App started: " + BuildConfig.VERSION_NAME
+                + "." + BuildConfig.VERSION_CODE + Constants.TEST_DISPLAY_SUFFIX);
+        AtomSpectraLog.event(this, LogTag.APP, "Device: " + Build.MANUFACTURER + " " + Build.MODEL + ", Android "
+                + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")");
+    }
+
+    static void externalUiStarted(Activity activity) {
+        Application application = activity.getApplication();
+        if (application instanceof AtomSpectraApplication) {
+            ((AtomSpectraApplication) application).externalUi.add(activity);
+        }
+    }
+
+    static void externalUiFinished(Activity activity) {
+        Application application = activity.getApplication();
+        if (application instanceof AtomSpectraApplication) {
+            ((AtomSpectraApplication) application).externalUi.remove(activity);
+        }
+    }
+
+    @Override
+    public void onActivityStarted(Activity activity) {
+        startedActivities++;
+        handler.removeCallbacks(backgroundCheck);
+        if (!foreground) {
+            foreground = true;
+            AtomSpectraLog.detail(this, LogTag.APP, "App moved to foreground");
+        }
+    }
+
+    @Override
+    public void onActivityStopped(Activity activity) {
+        startedActivities--;
+        if (startedActivities == 0 && !activity.isChangingConfigurations()) {
+            handler.postDelayed(backgroundCheck, 700);
+        }
+    }
+
+    @Override
+    public void onActivityDestroyed(Activity activity) {
+        externalUi.remove(activity);
+    }
+
+    @Override
+    public void onActivityCreated(Activity activity, Bundle state) {
+        applyLocalizedTitle(activity);
+    }
+
+    private static void applyLocalizedTitle(Activity activity) {
+        try {
+            ActivityInfo info = activity.getPackageManager().getActivityInfo(activity.getComponentName(), 0);
+            int labelRes = info.labelRes != 0 ? info.labelRes : info.applicationInfo.labelRes;
+            if (labelRes != 0) {
+                activity.setTitle(activity.getString(labelRes));
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {
+        }
+    }
+
+    @Override public void onActivityResumed(Activity activity) { }
+    @Override public void onActivityPaused(Activity activity) { }
+    @Override public void onActivitySaveInstanceState(Activity activity, Bundle state) { }
+}

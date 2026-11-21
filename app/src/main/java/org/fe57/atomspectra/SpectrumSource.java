@@ -1,0 +1,254 @@
+package org.fe57.atomspectra;
+
+import java.util.Map;
+
+/**
+ * An asynchronous spectrum source: microphone, USB spectrometer or wireless device.
+ * Abstraction used to unify device communication protocol related to spectrum data flow:
+ * 1. connecting to device
+ * 2. running/stopping/resetting spectrum acquisition
+ * 3. storing calibration
+ * 4. defining data format and intents for asynchronous operation
+ */
+public interface SpectrumSource {
+    // source type codes
+    int TYPE_NONE = 0;
+    int TYPE_AUDIO = 1;
+    int TYPE_SPECTRA_PRO = 2;
+    int TYPE_BLUZ = 3;
+
+    // Limitation: SEARCHING and WAITING_FOR_DATA are reported by BluZ only; other sources use CONNECTING and NONE
+    enum ConnectionPhase {
+        NONE, SEARCHING, CONNECTING, WAITING_FOR_DATA
+    }
+
+    // status codes
+    public static final int STATUS_DISCONNECTED = 0; // initial status with no physical connection
+    public static final int STATUS_CONNECTING = 1; // physical connection established
+    public static final int STATUS_CONNECTED_IDLE = 2; // device paused spectrum collection
+    public static final int STATUS_CONNECTED_COLLECTING = 3; // device is collecting spectrum
+    public static final int STATUS_CONNECTED_EXECUTING_COMMAND = 4; // device is executing command
+    public static final int STATUS_CONNECTED_COMMAND_FAILED = 5; // last command errored out or timed out
+    public static final int STATUS_CLOSED = 6; // source is closed and couldn't be reused anymore
+    public static final int STATUS_RECOVERING = 7; // source is reconnecting without reporting a disconnect yet
+
+    // op codes
+    int OP_CONNECT = 1;
+    int OP_START = 2;
+    int OP_STOP = 3;
+    int OP_SHOW = 4;
+    int OP_RESET = 5;
+    int OP_CALIBRATION_SAVE = 6;
+    int OP_SETTINGS_SAVE = 7;
+    int OP_TELEMETRY = 8;
+
+    /**
+     * Human-readable name for an OP_* code, for logging.
+     */
+    static String opName(int op) {
+        switch (op) {
+            case OP_CONNECT:
+                return "OP_CONNECT";
+            case OP_START:
+                return "OP_START";
+            case OP_STOP:
+                return "OP_STOP";
+            case OP_SHOW:
+                return "OP_SHOW";
+            case OP_RESET:
+                return "OP_RESET";
+            case OP_CALIBRATION_SAVE:
+                return "OP_CALIBRATION_SAVE";
+            case OP_SETTINGS_SAVE:
+                return "OP_SETTINGS_SAVE";
+            case OP_TELEMETRY:
+                return "OP_TELEMETRY";
+            default:
+                return "op=" + op;
+        }
+    }
+
+    // failure reasons carried by the error intent
+    int REASON_ERROR = 1;
+    int REASON_TIMEOUT = 2;
+    int REASON_PERMISSION = 3; // the system permission needed to use the device is missing or was denied
+    int REASON_UNSUPPORTED = 4; // the device speaks a protocol version this app cannot read; retrying cannot help
+
+    // +++ extras common to every reply intent +++
+    String EXTRA_SOURCE_INPUT_TYPE = "org.fe57.atomspectra.EXTRA_SOURCE_INPUT_TYPE";
+    String EXTRA_SOURCE_INSTANCE_ID = "org.fe57.atomspectra.EXTRA_SOURCE_INSTANCE_ID";
+
+    // +++ ACTION_SOURCE_CONNECTION_PHASE +++
+    String ACTION_SOURCE_CONNECTION_PHASE = "org.fe57.atomspectra.ACTION_SOURCE_CONNECTION_PHASE";
+
+    // +++ ACTION_SOURCE_READY +++
+    String ACTION_SOURCE_READY = "org.fe57.atomspectra.ACTION_SOURCE_READY";
+    String EXTRA_SOURCE_STATUS = "org.fe57.atomspectra.EXTRA_SOURCE_STATUS";
+    String EXTRA_SOURCE_DEVICE_ID = "org.fe57.atomspectra.EXTRA_SOURCE_DEVICE_ID";
+    String EXTRA_SOURCE_CALIBRATION_COEFFS = "org.fe57.atomspectra.EXTRA_SOURCE_CALIBRATION_COEFFS";
+    String EXTRA_SOURCE_CHANNEL_COUNT = "org.fe57.atomspectra.EXTRA_SOURCE_CHANNEL_COUNT";
+
+    // +++ ACTION_SOURCE_STATUS +++
+    String ACTION_SOURCE_STATUS = "org.fe57.atomspectra.ACTION_SOURCE_STATUS";
+
+    // +++ ACTION_SOURCE_ERROR +++
+    String ACTION_SOURCE_ERROR = "org.fe57.atomspectra.ACTION_SOURCE_ERROR";
+    String EXTRA_SOURCE_ERROR_OP = "org.fe57.atomspectra.EXTRA_SOURCE_ERROR_OP";
+    String EXTRA_SOURCE_ERROR_REASON = "org.fe57.atomspectra.EXTRA_SOURCE_ERROR_REASON";
+    String EXTRA_SOURCE_ERROR_TEXT = "org.fe57.atomspectra.EXTRA_SOURCE_ERROR_TEXT";
+
+    // +++ ACTION_SOURCE_DISCONNECTED +++
+    String ACTION_SOURCE_DISCONNECTED = "org.fe57.atomspectra.ACTION_SOURCE_DISCONNECTED";
+    String EXTRA_SOURCE_DISCONNECT_REASON = "org.fe57.atomspectra.EXTRA_SOURCE_DISCONNECT_REASON";
+
+    // +++ ACTION_SOURCE_DATA +++
+    String ACTION_SOURCE_DATA = "org.fe57.atomspectra.ACTION_SOURCE_DATA";
+    String EXTRA_SOURCE_DATA_HISTOGRAM = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_HISTOGRAM";
+    String EXTRA_SOURCE_DATA_RECORDING_TIME = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_RECORDING_TIME";
+    String EXTRA_SOURCE_DATA_CP1S = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_CPS";
+
+    // +++ ACTION_SOURCE_DATA_SKIPPED +++
+    String ACTION_SOURCE_DATA_SKIPPED = "org.fe57.atomspectra.ACTION_SOURCE_DATA_SKIPPED";
+    String EXTRA_SOURCE_DATA_SKIPPED_REASON = "org.fe57.atomspectra.EXTRA_SOURCE_DATA_SKIPPED_REASON";
+
+    // +++ ACTION_SOURCE_TELEMETRY +++
+    String ACTION_SOURCE_TELEMETRY = "org.fe57.atomspectra.ACTION_SOURCE_TELEMETRY";
+
+    // +++ ACTION_SOURCE_CALIBRATION_SAVED +++
+    String ACTION_SOURCE_CALIBRATION_SAVED = "org.fe57.atomspectra.ACTION_SOURCE_CALIBRATION_SAVED";
+
+    // +++ ACTION_SOURCE_SETTINGS_SAVED +++
+    String ACTION_SOURCE_SETTINGS_SAVED = "org.fe57.atomspectra.ACTION_SOURCE_SETTINGS_SAVED";
+
+    /**
+     * Connect and hand-shake. Load necessary device metadata like calibration, device id etc. Success is opened intent.
+     * A device that is not there yet is not an error: the source stays disconnected, waits for it and connects when it appears.
+     * The same wait applies after the device is lost. A failed hand-shake is an error reply and the source stops trying
+     * until the next requestConnect().
+     * Repeated requests while connected or connecting are harmless and do not reset acquisition or spectrum data.
+     *
+     * @param userInitiated the user is waiting for this connect: a device that cannot be reached is reported
+     *                      as an error reply instead of being waited for. Ignored by sources that have nothing to wait for.
+     */
+    void requestConnect(boolean userInitiated);
+
+    /**
+     * Request current data state. Success is single data intent.
+     */
+    void requestShowData();
+
+    /**
+     * Begin acquisition. Success is data intents starting to arrive.
+     */
+    void requestStart();
+
+    /**
+     * Halt acquisition. Success is data intents stopping.
+     */
+    void requestStop();
+
+    /**
+     * Clear the device-side spectrum.
+     */
+    void requestReset();
+
+    /**
+     * Save calibration to device.
+     */
+    void requestSaveCalibration(double[] coeffs);
+
+    /**
+     * The application preferences (shared app settings, not settings stored on the device) have changed.
+     * A connected source re-reads the ones it depends on. Default is no-op.
+     */
+    default void onAppPreferencesChanged() {
+    }
+
+    /**
+     * Close connection and free up all the resources, spectrum source couldn't be used after close.
+     */
+    void close();
+
+    /**
+     * Whether the source only appends to a histogram the app supplies via {@link #setInitialHistogram} (audio).
+     * False for sources that own their spectrum on the device (Pro, BluZ).
+     */
+    boolean isAppendSource();
+
+    /**
+     * Replace the source's histogram and recording time; the next acquisition continues from them.
+     * Valid while connected and not collecting, otherwise an error reply.
+     */
+    void setInitialHistogram(long[] histogram, double recordingTimeSec);
+
+    /**
+     * Unique id of this source object, carried by every reply intent.
+     */
+    int instanceId();
+
+    /**
+     * Source input type.
+     */
+    int inputType();
+
+    /**
+     * Device status.
+     */
+    int status();
+
+    /**
+     * The last error reply, null when there is none. Dropped once the source works again
+     * (ready, or a successful return to idle or collecting).
+     */
+    SourceError lastError();
+
+    /** What the source is doing to connect; NONE when it is not connecting. */
+    ConnectionPhase connectionPhase();
+
+    /**
+     * Channel count. Valid and consistent with {@link #calibration()} from the ready reply on, constant afterwards.
+     * The ready reply carries it as {@link #EXTRA_SOURCE_CHANNEL_COUNT}.
+     */
+    int channelCount();
+
+    /**
+     * Device identification for this source.
+     */
+    String deviceId();
+
+    /**
+     * Device calibration coefficients.
+     */
+    double[] calibration();
+
+    /**
+     * The latest device health readings; {@link DeviceTelemetry#EMPTY} when the source has none. Default is none.
+     */
+    default DeviceTelemetry telemetry() {
+        return DeviceTelemetry.EMPTY;
+    }
+
+    /**
+     * The settings the user can edit on this device; empty when there are none. Calibration as a spectrum
+     * requirement is separate, the device's own calibration may still be listed here.
+     */
+    default SettingsSchema settingsSchema() {
+        return SettingsSchema.EMPTY;
+    }
+
+    /**
+     * The latest device settings by schema key, an immutable snapshot readable from any thread.
+     * Null until the hand-shake or the first frame has provided them. There is no change notification:
+     * nothing outside the app changes the settings, so the snapshot is always current.
+     */
+    default Map<String, Object> settings() {
+        return null;
+    }
+
+    /**
+     * Write the changed settings to the device (only the changed keys). Success is {@link #ACTION_SOURCE_SETTINGS_SAVED},
+     * failure is an error reply with {@link #OP_SETTINGS_SAVE}. Default is no-op: a source with an empty schema is never asked.
+     */
+    default void requestSaveSettings(Map<String, Object> changes) {
+    }
+}

@@ -1,5 +1,7 @@
 package org.fe57.atomspectra;
 
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 
 import java.security.InvalidParameterException;
@@ -56,7 +58,14 @@ public class AtomSpectraSpectrogramData {
     private final Object spectrogramSync = new Object();
     private final ArrayList<Segment> segments = new ArrayList<>();
 
+    public static final int SHIFT_SEGMENT_DROPPED = -1;
+    private final ArrayList<Integer> selectionShifts = new ArrayList<>();
+
     private String recordingId = java.util.UUID.randomUUID().toString();
+
+    public static void notifyUpdated(Context context) {
+        context.sendBroadcast(new Intent(Constants.ACTION.ACTION_SPECTROGRAM_UPDATED).setPackage(Constants.PACKAGE_NAME));
+    }
 
     public String getRecordingId() {
         return recordingId;
@@ -104,6 +113,7 @@ public class AtomSpectraSpectrogramData {
             }
 
             segments.clear();
+            selectionShifts.clear();
             segments.addAll(sorted);
         }
     }
@@ -114,7 +124,7 @@ public class AtomSpectraSpectrogramData {
 
     public void addDelta(Spectrum delta) {
         long[] channels = delta.getDataArray();
-        double duration = delta.getRealSpectrumTime();
+        double duration = delta.getSpectrumTime();
         long timestamp = delta.getSpectrumDate();
         this.addDelta(channels, duration, timestamp, delta.getLatitude(), delta.getLongitude());
     }
@@ -135,7 +145,7 @@ public class AtomSpectraSpectrogramData {
         }
 
         float[] binnedCpsData = new float[CHANNEL_COUNT];
-        float totalCps = 0f;
+        long totalCounts = 0;
         for (int i = 0; i < channels.length; i += channelBinning) {
             long summ = 0;
             for (int j = 0; j < channelBinning && (i + j) < channels.length; j++) {
@@ -144,10 +154,10 @@ public class AtomSpectraSpectrogramData {
 
             float binCps = (float) (summ / duration);
             binnedCpsData[i / channelBinning] = binCps;
-            totalCps += binCps;
+            totalCounts += summ;
         }
 
-        MapPoint mapPoint = new MapPoint(latitude, longitude, totalCps, timestamp);
+        MapPoint mapPoint = new MapPoint(latitude, longitude, totalCounts, timestamp, duration);
 
         synchronized (spectrogramSync) {
             Segment current = lastSegment();
@@ -177,8 +187,16 @@ public class AtomSpectraSpectrogramData {
         oldest.mapPoints.remove(0);
         oldest.evictedRowCount++;
 
+        int last = selectionShifts.size() - 1;
+        if (last >= 0 && selectionShifts.get(last) > 0) {
+            selectionShifts.set(last, selectionShifts.get(last) + 1);
+        } else {
+            selectionShifts.add(1);
+        }
+
         if (oldest.rowCount() == 0 && segments.size() > 1) {
             segments.remove(0);
+            selectionShifts.add(SHIFT_SEGMENT_DROPPED);
         }
     }
 
@@ -199,80 +217,290 @@ public class AtomSpectraSpectrogramData {
     public void clear() {
         synchronized (spectrogramSync) {
             segments.clear();
+            selectionShifts.clear();
             this.recordingId = java.util.UUID.randomUUID().toString();
         }
     }
 
-    // read-only snapshot of one segment's data
+    public boolean hasCompletedSegments() {
+        synchronized (spectrogramSync) {
+            return segments.size() > 1;
+        }
+    }
+
+    public void leaveOnlyLastSegment() {
+        synchronized (spectrogramSync) {
+            while (segments.size() > 1) {
+                segments.remove(0);
+                selectionShifts.add(SHIFT_SEGMENT_DROPPED);
+            }
+        }
+    }
+
+    // immutable snapshot of one segment's data; must be created under spectrogramSync
+    // so that spectrogram, timestamps and durations have the same rows
     public static final class SegmentData {
-        private final Segment segment;
+        private final Spectrum baseSpectrum;
+        private final Uri spectrogramFileName;
+        private final int evictedRowCount;
+        private final List<float[]> spectrogram;
+        private final List<Long> timestamps;
+        private final List<Float> durations;
 
         private SegmentData(Segment segment) {
-            this.segment = segment;
+            this.baseSpectrum = segment.baseSpectrum;
+            this.spectrogramFileName = segment.spectrogramFileName;
+            this.evictedRowCount = segment.evictedRowCount;
+            this.spectrogram = Collections.unmodifiableList(new ArrayList<>(segment.spectrogram));
+            this.timestamps = Collections.unmodifiableList(new ArrayList<>(segment.timestamps));
+            this.durations = Collections.unmodifiableList(new ArrayList<>(segment.durations));
         }
 
-        public ArrayList<float[]> getSpectrogram() {
-            return new ArrayList<>(segment.spectrogram);
+        public List<float[]> getSpectrogram() {
+            return spectrogram;
         }
 
-        public ArrayList<Long> getTimestamps() {
-            return new ArrayList<>(segment.timestamps);
+        public List<Long> getTimestamps() {
+            return timestamps;
         }
 
-        public ArrayList<Float> getDurations() {
-            return new ArrayList<>(segment.durations);
-        }
-
-        public ArrayList<MapPoint> getMapPoints() {
-            return new ArrayList<>(segment.mapPoints);
-        }
-
-        public boolean hasValidMapPoints() {
-            for (MapPoint point : segment.mapPoints) {
-                if (MapHelper.isValidLocation(point.latitude, point.longitude)) {
-                    return true;
-                }
-            }
-            return false;
+        public List<Float> getDurations() {
+            return durations;
         }
 
         public Spectrum getBaseSpectrum() {
-            return this.segment.baseSpectrum;
+            return baseSpectrum;
         }
 
         public int getRowCount() {
-            return segment.spectrogram.size();
+            return spectrogram.size();
         }
 
         public long getStartTime() {
-            return this.segment.baseSpectrum.getSpectrumDate();
+            return baseSpectrum.getSpectrumDate();
         }
 
         public long getEndTime() {
-            if (this.segment.timestamps.isEmpty()) {
-                return this.getStartTime();
-            } else {
-                return this.segment.timestamps.get(this.segment.timestamps.size() - 1);
-            }
+            return timestamps.isEmpty() ? getStartTime() : timestamps.get(timestamps.size() - 1);
         }
     }
 
-    public SegmentData baseSegment() {
-        return segments.isEmpty() ? null : new SegmentData(segments.get(0));
-    }
+    // Consistent state of all segments. Selection bounds are segment/row indices into this
+    // snapshot, so everything derived from a selection must be computed from it, not from live data.
+    public static final class Snapshot {
+        private final List<SegmentData> segments;
+        // shifts accumulated before this snapshot, in order of occurrence: SHIFT_SEGMENT_DROPPED,
+        // or a positive count of rows removed from the first segment
+        private final List<Integer> selectionShifts;
 
-    public List<SegmentData> getSegments() {
-        synchronized (spectrogramSync) {
-            List<SegmentData> result = new ArrayList<>();
-            for (Segment segment : segments) {
-                result.add(new SegmentData(segment));
+        private Snapshot(List<SegmentData> segments, List<Integer> selectionShifts) {
+            this.segments = Collections.unmodifiableList(segments);
+            this.selectionShifts = Collections.unmodifiableList(selectionShifts);
+        }
+
+        public List<SegmentData> getSegments() {
+            return segments;
+        }
+
+        public List<Integer> getSelectionShifts() {
+            return selectionShifts;
+        }
+
+        public int rowCount() {
+            int total = 0;
+            for (SegmentData segment : segments) {
+                total += segment.getRowCount();
+            }
+            return total;
+        }
+
+        public Spectrum getFirstBaseSpectrum() {
+            return segments.isEmpty() ? null : segments.get(0).getBaseSpectrum();
+        }
+
+        public double[] averageSpectrum(int bound1Segment, int bound1Row, int bound2Segment, int bound2Row) {
+            int rowCount = rowCount();
+            if (rowCount == 0) {
+                return null;
+            }
+
+            int fromSegment = Math.max(0, Math.min(bound1Segment, bound2Segment));
+            int toSegment = Math.min(segments.size() - 1, Math.max(bound1Segment, bound2Segment));
+            if (fromSegment > toSegment) {
+                // TODO: throw?
+                return null;
+            }
+
+            int fromRow;
+            int toRow;
+            if (fromSegment == toSegment) {
+                SegmentData segment = segments.get(fromSegment);
+                fromRow = Math.max(0, Math.min(bound1Row, bound2Row));
+                toRow = Math.min(segment.getRowCount() - 1, Math.max(bound1Row, bound2Row));
+                if (fromRow > toRow) {
+                    // TODO: throw?
+                    return null;
+                }
+            } else {
+                SegmentData from = segments.get(fromSegment);
+                fromRow = Math.max(0, fromSegment == bound1Segment ? bound1Row : bound2Row);
+                fromRow = Math.min(from.getRowCount() - 1, fromRow);
+
+                SegmentData to = segments.get(toSegment);
+                toRow = Math.max(0, toSegment == bound1Segment ? bound1Row : bound2Row);
+                toRow = Math.min(to.getRowCount() - 1, toRow);
+            }
+
+            double[] result = new double[CHANNEL_COUNT];
+            double totalDuration = 0;
+            for (int s = fromSegment; s <= toSegment; s++) {
+                SegmentData segment = segments.get(s);
+                if (segment.getRowCount() == 0) {
+                    continue;
+                }
+
+                int fromSegmentRow = s == fromSegment
+                        ? fromRow
+                        : 0;
+                fromSegmentRow = Constants.MinMax(fromSegmentRow, 0, segment.getRowCount() - 1);
+
+                int toSegmentRow = s == toSegment
+                        ? toRow
+                        : segment.getRowCount() - 1;
+                toSegmentRow = Constants.MinMax(toSegmentRow, 0, segment.getRowCount() - 1);
+
+                for (int i = fromSegmentRow; i <= toSegmentRow; i++) {
+                    double duration = segment.durations.get(i);
+                    float[] row = segment.spectrogram.get(i);
+                    totalDuration += duration;
+                    for (int k = 0; k < CHANNEL_COUNT; k++) {
+                        result[k] += row[k] * duration;
+                    }
+                }
+            }
+
+            if (totalDuration <= 0) {
+                return null;
+            }
+
+            for (int k = 0; k < CHANNEL_COUNT; k++) {
+                result[k] /= totalDuration;
             }
 
             return result;
         }
+
+        public double channelToEnergy(int segmentIndex, int channel) {
+            if (segmentIndex < 0 || segmentIndex >= segments.size()) {
+                return 0;
+            }
+            Spectrum baseSpectrum = segments.get(segmentIndex).getBaseSpectrum();
+            if (baseSpectrum == null) {
+                return 0;
+            }
+            int channelBinning = baseSpectrum.getDataArray().length / CHANNEL_COUNT;
+            int originalChannel = channel * channelBinning + (channelBinning - 1);
+
+            return baseSpectrum.getSpectrumCalibration().toEnergy(originalChannel);
+        }
+
+        /**
+         * Resolves a selection range into an ordered list of per-segment file ranges, one entry
+         * per segment overlapping it. A selection spanning a gap therefore yields multiple
+         * entries, each pointing at a different segment's own backing file with that segment's
+         * local delta indices. Segments are walked in chronological order, so the returned list
+         * is chronologically ordered. Returns an empty list if there is no data or an
+         * empty/invalid range.
+         */
+        public List<SegmentExportRange> resolveExportRanges(int bound1Segment, int bound1Row, int bound2Segment, int bound2Row) {
+            List<SegmentExportRange> ranges = new ArrayList<>();
+
+            int rowCount = rowCount();
+            if (rowCount == 0) {
+                return ranges;
+            }
+
+            int fromSegment = Math.max(0, Math.min(bound1Segment, bound2Segment));
+            int toSegment = Math.min(segments.size() - 1, Math.max(bound1Segment, bound2Segment));
+            if (fromSegment > toSegment) {
+                // TODO: throw?
+                return ranges;
+            }
+
+            int fromRow;
+            int toRow;
+            if (fromSegment == toSegment) {
+                SegmentData segment = segments.get(fromSegment);
+                fromRow = Math.max(0, Math.min(bound1Row, bound2Row));
+                toRow = Math.min(segment.getRowCount() - 1, Math.max(bound1Row, bound2Row));
+                if (fromRow > toRow) {
+                    // TODO: throw?
+                    return ranges;
+                }
+            } else {
+                SegmentData from = segments.get(fromSegment);
+                fromRow = Math.max(0, fromSegment == bound1Segment ? bound1Row : bound2Row);
+                fromRow = Math.min(from.getRowCount() - 1, fromRow);
+
+                SegmentData to = segments.get(toSegment);
+                toRow = Math.max(0, toSegment == bound1Segment ? bound1Row : bound2Row);
+                toRow = Math.min(to.getRowCount() - 1, toRow);
+            }
+
+            for (int s = fromSegment; s <= toSegment; s++) {
+                SegmentData segment = segments.get(s);
+                int fromSegmentRow = s == fromSegment
+                        ? fromRow
+                        : 0;
+                int toSegmentRow = s == toSegment
+                        ? toRow
+                        : segment.getRowCount() - 1;
+                if (segment.getRowCount() > 0) {
+                    fromSegmentRow = Constants.MinMax(fromSegmentRow, 0, segment.getRowCount() - 1);
+                    toSegmentRow = Constants.MinMax(toSegmentRow, 0, segment.getRowCount() - 1);
+                    // In-memory row 0 of first segment may no longer be file-local delta
+                    // 0 if earlier rows were evicted (MAX_ROWS truncation)
+                    ranges.add(new SegmentExportRange(segment.spectrogramFileName,
+                            fromSegmentRow + (s == fromSegment ? segment.evictedRowCount : 0),
+                            toSegmentRow + (s == fromSegment ? segment.evictedRowCount : 0)));
+                }
+            }
+
+            return ranges;
+        }
     }
 
-    /** True if any retained spectrogram row has usable map coordinates. */
+    // slice of a single segment's own backing file, expressed in file indices
+    public static final class SegmentExportRange {
+        public final Uri spectrogramFileName;
+        public final int fileFromDelta;
+        public final int fileToDelta;
+
+        private SegmentExportRange(Uri spectrogramFileName, int fileFromDelta, int fileToDelta) {
+            this.spectrogramFileName = spectrogramFileName;
+            this.fileFromDelta = fileFromDelta;
+            this.fileToDelta = fileToDelta;
+        }
+    }
+
+    // Takes the selection shifts accumulated since the previous call, so only the owner of the
+    // selection (the spectrogram activity) may call it; the shifts must be applied to the
+    // selection before using it with this snapshot.
+    public Snapshot takeSnapshot() {
+        synchronized (spectrogramSync) {
+            List<SegmentData> segmentsData = new ArrayList<>(segments.size());
+            for (Segment segment : segments) {
+                segmentsData.add(new SegmentData(segment));
+            }
+            List<Integer> shifts = new ArrayList<>(selectionShifts);
+            selectionShifts.clear();
+            return new Snapshot(segmentsData, shifts);
+        }
+    }
+
+    /**
+     * True if any retained spectrogram row has usable map coordinates.
+     */
     public boolean hasLocatedRows() {
         synchronized (spectrogramSync) {
             for (Segment segment : segments) {
@@ -316,10 +544,14 @@ public class AtomSpectraSpectrogramData {
         }
     }
 
-    /** Immutable spectrogram map payload: recording id plus chronological track runs. */
+    /**
+     * Immutable spectrogram map payload: recording id plus chronological track runs.
+     */
     public static final class MapTrackSnapshot {
         public final String recordingId;
-        /** Each inner list is one uninterrupted run of valid {@link MapPoint}s. */
+        /**
+         * Each inner list is one uninterrupted run of valid {@link MapPoint}s.
+         */
         public final List<List<MapPoint>> tracks;
 
         private MapTrackSnapshot(String recordingId, List<List<MapPoint>> tracks) {
@@ -335,173 +567,4 @@ public class AtomSpectraSpectrogramData {
             return tracks.isEmpty();
         }
     }
-
-    public double[] averageSpectrum(int bound1Segment, int bound1Row, int bound2Segment, int bound2Row) {
-        synchronized (spectrogramSync) {
-            int rowCount = rowCountLocked();
-            if (rowCount == 0) {
-                return null;
-            }
-
-            int fromSegment = Math.max(0, Math.min(bound1Segment, bound2Segment));
-            int toSegment = Math.min(segments.size() - 1, Math.max(bound1Segment, bound2Segment));
-            if (fromSegment > toSegment) {
-                // TODO: throw?
-                return null;
-            }
-
-            int fromRow;
-            int toRow;
-            if (fromSegment == toSegment) {
-                Segment segment = segments.get(fromSegment);
-                fromRow = Math.max(0, Math.min(bound1Row, bound2Row));
-                toRow = Math.min(segment.rowCount() - 1, Math.max(bound1Row, bound2Row));
-                if (fromRow > toRow) {
-                    // TODO: throw?
-                    return null;
-                }
-            } else {
-                Segment from = segments.get(fromSegment);
-                fromRow = Math.max(0, fromSegment == bound1Segment ? bound1Row : bound2Row);
-                fromRow = Math.min(from.rowCount() - 1, fromRow);
-
-                Segment to = segments.get(toSegment);
-                toRow = Math.max(0, toSegment == bound1Segment ? bound1Row : bound2Row);
-                toRow = Math.min(to.rowCount() - 1, toRow);
-            }
-
-            double[] result = new double[CHANNEL_COUNT];
-            double totalDuration = 0;
-            for (int s = fromSegment; s <= toSegment; s++) {
-                Segment segment = segments.get(s);
-                if (segment.rowCount() == 0) {
-                    continue;
-                }
-
-                int fromSegmentRow = s == fromSegment
-                        ? fromRow
-                        : 0;
-                fromSegmentRow = Constants.MinMax(fromSegmentRow, 0, segment.rowCount() - 1);
-
-                int toSegmentRow = s == toSegment
-                        ? toRow
-                        : segment.rowCount() - 1;
-                toSegmentRow = Constants.MinMax(toSegmentRow, 0, segment.rowCount() - 1);
-
-                for (int i = fromSegmentRow; i <= toSegmentRow; i++) {
-                    double duration = segment.durations.get(i);
-                    float[] row = segment.spectrogram.get(i);
-                    totalDuration += duration;
-                    for (int k = 0; k < CHANNEL_COUNT; k++) {
-                        result[k] += row[k] * duration;
-                    }
-                }
-            }
-
-            if (totalDuration <= 0) {
-                return null;
-            }
-
-            for (int k = 0; k < CHANNEL_COUNT; k++) {
-                result[k] /= totalDuration;
-            }
-
-            return result;
-        }
-    }
-
-    public double channelToEnergy(int channel) {
-        synchronized (spectrogramSync) {
-            Segment last = lastSegment();
-            if (last == null || last.baseSpectrum == null) {
-                return 0;
-            }
-            int channelBinning = last.baseSpectrum.getDataArray().length / CHANNEL_COUNT;
-            int originalChannel = channel * channelBinning + (channelBinning - 1);
-
-            return last.baseSpectrum.getSpectrumCalibration().toEnergy(originalChannel);
-        }
-    }
-
-    // slice of a single segment's own backing file, expressed in file indices
-    public static final class SegmentExportRange {
-        public final Uri spectrogramFileName;
-        public final int fileFromDelta;
-        public final int fileToDelta;
-
-        private SegmentExportRange(Uri spectrogramFileName, int fileFromDelta, int fileToDelta) {
-            this.spectrogramFileName = spectrogramFileName;
-            this.fileFromDelta = fileFromDelta;
-            this.fileToDelta = fileToDelta;
-        }
-    }
-
-    /**
-     * Resolves a global (flat, cross-segment) row-selection range into an ordered list of
-     * per-segment file ranges, one entry per segment overlapping [globalFrom, globalTo].
-     * A selection spanning a gap therefore yields multiple entries, each pointing at a
-     * different segment's own backing file with that segment's local delta indices.
-     * Segments are walked in list (chronological) order, so the returned list is
-     * chronologically ordered. Returns an empty list if there is no data or an
-     * empty/invalid range.
-     */
-    public List<SegmentExportRange> resolveExportRanges(int bound1Segment, int bound1Row, int bound2Segment, int bound2Row) {
-        synchronized (spectrogramSync) {
-            List<SegmentExportRange> ranges = new ArrayList<>();
-
-            int rowCount = rowCountLocked();
-            if (rowCount == 0) {
-                return ranges;
-            }
-
-            int fromSegment = Math.max(0, Math.min(bound1Segment, bound2Segment));
-            int toSegment = Math.min(segments.size() - 1, Math.max(bound1Segment, bound2Segment));
-            if (fromSegment > toSegment) {
-                // TODO: throw?
-                return ranges;
-            }
-
-            int fromRow;
-            int toRow;
-            if (fromSegment == toSegment) {
-                Segment segment = segments.get(fromSegment);
-                fromRow = Math.max(0, Math.min(bound1Row, bound2Row));
-                toRow = Math.min(segment.rowCount() - 1, Math.max(bound1Row, bound2Row));
-                if (fromRow > toRow) {
-                    // TODO: throw?
-                    return ranges;
-                }
-            } else {
-                Segment from = segments.get(fromSegment);
-                fromRow = Math.max(0, fromSegment == bound1Segment ? bound1Row : bound2Row);
-                fromRow = Math.min(from.rowCount() - 1, fromRow);
-
-                Segment to = segments.get(toSegment);
-                toRow = Math.max(0, toSegment == bound1Segment ? bound1Row : bound2Row);
-                toRow = Math.min(to.rowCount() - 1, toRow);
-            }
-
-            for (int s = fromSegment; s <= toSegment; s++) {
-                Segment segment = segments.get(s);
-                int fromSegmentRow = s == fromSegment
-                        ? fromRow
-                        : 0;
-                int toSegmentRow = s == toSegment
-                        ? toRow
-                        : segment.rowCount() - 1;
-                if (segment.rowCount() > 0) {
-                    fromSegmentRow = Constants.MinMax(fromSegmentRow, 0, segment.rowCount() - 1);
-                    toSegmentRow = Constants.MinMax(toSegmentRow, 0, segment.rowCount() - 1);
-                    // In-memory row 0 of first segment may no longer be file-local delta
-                    // 0 if earlier rows were evicted (MAX_ROWS truncation)
-                    ranges.add(new SegmentExportRange(segment.spectrogramFileName,
-                            fromSegmentRow + (s == fromSegment ? segment.evictedRowCount : 0),
-                            toSegmentRow + (s == fromSegment ? segment.evictedRowCount : 0)));
-                }
-            }
-
-            return ranges;
-        }
-    }
 }
-

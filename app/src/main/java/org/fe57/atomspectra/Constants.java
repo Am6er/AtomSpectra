@@ -9,22 +9,25 @@ public class Constants {
 
     public static final String ATOMSPECTRA_PREFERENCES = "AtomSpectra Preferences";
     public static final String PACKAGE_NAME = "org.fe57.atomspectra";
+    public static final String TEST_DISPLAY_SUFFIX = "";
     public static final int SEARCH_FAST_DEFAULT = 100, SEARCH_MEDIUM_DEFAULT = 500, SEARCH_SLOW_DEFAULT = 2000;          //dose rate impulse count
-    public static final int ADC_EFF_BITS = 13;                                                                          //number of usable ADC high bits (8192 channels)
-    public static final int NUM_HIST_POINTS = 1 << ADC_EFF_BITS;                                                        //size of histogram
+    public static final int MIN_CHANNEL_COUNT = 1024;
+    public static final int DEFAULT_CHANNEL_COUNT = 8192;
     public static final int VIEW_CHANNELS_DEFAULT = 1024;                                                                //number of channels to view on graph (128, 256, 512, 1024)
     public static final int EXPORT_COMPRESSION_DEFAULT = 1;                                                              //number of channels in one export channel
-    public static final int MIN_FRONT_POINTS_DEFAULT = 4;                                                                //low level of peak front
-    public static final int MAX_FRONT_POINTS_DEFAULT = 12;                                                               //high level of peak front
-    public static final int NOISE_DISCRIMINATOR_DEFAULT = 512 >> (16 - ADC_EFF_BITS);                                   //noise discriminator
     public static final int WINDOW_OUTPUT_SIZE = 512;                                                                    //minimum number of points on the screen
-    public static final boolean INVERSE_DEFAULT = false;                                                                 //inverse signal
-    public static final boolean PILE_UP_DEFAULT = false;                                                                  //detect pile-up
     public static final boolean LOG_SCALE_DEFAULT = false;
     // !!! WARNING: all scale constants are fragile to change, code changes will be required
-    public static final int SCALE_MIN = 16 - ADC_EFF_BITS;                                                               //minimum scale factor
-    public static final int SCALE_DEFAULT = SCALE_MIN;                                                                    //default scale: all channels
-    public static final int SCALE_MAX = SCALE_MIN + 4;                                                                    //maximum scale factor (32X)
+    public static final int SCALE_MAX = 16 - Integer.numberOfTrailingZeros(WINDOW_OUTPUT_SIZE);                         //maximum scale factor (32X)
+
+    public static int scaleMinFor(int channelCount) {
+        return SCALE_MAX - (Integer.numberOfTrailingZeros(channelCount) - Integer.numberOfTrailingZeros(WINDOW_OUTPUT_SIZE));
+    }
+
+    public static boolean isValidChannelCount(int channelCount) {
+        return channelCount >= MIN_CHANNEL_COUNT && (channelCount & (channelCount - 1)) == 0;
+    }
+
     public static final int DISPLAY_MODE_SPECTRUM = 0;
     public static final int DISPLAY_MODE_SPECTRUM_CHANGE = 1;
     public static final int DISPLAY_MODE_SEARCH = 2;
@@ -33,21 +36,17 @@ public class Constants {
     public static final int UPDATE_DOSE_DEFAULT = 1;                                                                     //dose rate update per second
     public static final int MAX_POLI_SIZE = 4;                                                                           //maximum polynom size of y=a+bx+cx^2+... To add higher size you need to add more menu items to menu and its checks
     public static final int MAX_CALIBRATION_POINTS = 10;                                                                 //maximum new calibration points
-    // lowest channel the calibration may end at: not a hard limit of the math (which needs only 2
-    // channels), a guard rail so the spectrum cannot be stretched below the 1024-point display grid
-    public static final int MIN_LAST_CALIBRATION_CHANNEL = 1024;
-    // where a calibration is loaded from or stored to; add a value per new device kind
-    public static final int CALIBRATION_STORAGE_MEMORY = 0;                                                              //application preferences
-    public static final int CALIBRATION_STORAGE_USB = 1;                                                                 //attached USB device
+    // lowest channel the calibration may end at: the energy scale is spanned by channels 0 and lastChannel - 1
+    public static final int MIN_LAST_CALIBRATION_CHANNEL = 2;
     public static final double DOSE_SCALE = 0.001;                                                                       //scale input data to draw
     public static final double DOSE_OVERHEAD = 1.05;                                                                     //maximum to be shown
     public static final int CURSOR_TIMEOUT = 7000;                                                                       //timeout of buttons in ms
-    public static final int WINDOW_SEARCH_DEFAULT = 60;                                                                  //window search size
-    public static final long SEARCH_HISTORY_TIME_GAP_THRESHOLD_MS = 3000L;                                               //search history pause/resume gap threshold
+    public static final float RESOLUTION_DEFAULT = 7.0f;                                                                 //Cs-137 resolution default, %
+    public static final int SEARCH_CHANNELS_DEFAULT = 1024;                                                              //channels to compress to for the search
+    public static final int SEARCH_MIN_CHANNELS = 1024;                                                                  //minimum channels to compress to for the search
+    public static final long SEARCH_HISTORY_TIME_GAP_THRESHOLD_MS = 10000L;                                               //search history pause/resume gap threshold
     public static final float TOLERANCE_DEFAULT = 5.0f;                                                                  //tolerance default
-    public static final float THRESHOLD_DEFAULT = 0.5f;                                                                  //threshold default
-    public static final int ORDER_DEFAULT = 5;                                                                           //order size
-    public static final int ORDER_MAX = 5;                                                                               //maximum order size
+    public static final float THRESHOLD_DEFAULT = 4.0f;                                                                  //threshold default, sigma
     public static final int COMPRESS_GRAPH_SUM = 0;                                                                      //show sum values
     public static final int COMPRESS_GRAPH_AVERAGE = 1;                                                                  //show average values
     public static final int COMPRESS_GRAPH_MAX = 2;                                                                      //show max values
@@ -57,17 +56,17 @@ public class Constants {
     public static final boolean OUTPUT_FILE_NAME_ADD_DATE_DEFAULT = true;                                                    //add date to output file name
     public static final boolean OUTPUT_FILE_NAME_ADD_TIME_DEFAULT = true;                                                    //add date to output file name
     public static final int DEFAULT_DELTA_TIME = 1;                                                                      //default delta time in seconds between output
-    public static final int UPDATE_PERIOD = 100; //in ms DO NOT CHANGE - a lot of code relies on exact 100 ms
+    public static final boolean SPECTRUM_CHANGE_ENABLED_DEFAULT = false;
     public static String[] LOCALES = {"Default", "Russian", "English"};
     public static String[] LOCALES_ID = {"", "ru", "en"};
-    public static final int USB_DEVICE_MINIMAL_VERSION = 11;                                                             //minimal firmware version for AtomSpectra Pro to operate correctly
     public static final int SPG_DELTA_DURATION_MIN = 5;                                                                          //minimal delta between auto saves
     public static final int SPG_DELTA_DURATION_MAX = 60;                                                                     //maximum delta between auto saves
     public static final int SPG_INTERVAL_DEFAULT = 0;
     public static final boolean SPG_MIDNIGHT_RESET_DEFAULT = false;
     public static final boolean ADD_GPS_TO_FILES_DEFAULT = true;                                                        //add GPS coordinates to files by default
     public static final boolean SEND_DATA_TO_ATOMSWIFT_DEFAULT = false;
-    public static final boolean USB_ALLOW_PARTIAL_HISTOGRAM_DEFAULT = false;
+    public static final boolean ALLOW_PARTIAL_HISTOGRAM_DEFAULT = false;
+    public static final boolean BLUZ_DNL_CORRECTION_DEFAULT = false;
     public static final String ATOMSWIFT_DR_COMPENSATED = "compensated";
     public static final String ATOMSWIFT_DR_NON_COMPENSATED = "non-compensated";
     public static final String ATOMSWIFT_DR_INTERVAL = "interval";
@@ -81,9 +80,7 @@ public class Constants {
     public static final int ALARM_BASELINE_MAX_DURATION = 30;
     public static final int ALARM_DETECTION_LEVEL_DEFAULT = 4;
     public static final int ALARM_VOLUME_DEFAULT = 50; // %
-    public static final int AUDIO_SOURCE_RAW = 2;
-    public static final int AUDIO_SOURCE_VOICE = 1;
-    public static final int AUDIO_SOURCE_DEFAULT = AUDIO_SOURCE_VOICE;
+
 
     public interface CONFIG {
         String CONF_REDUCED_TO = "Reduced to:";
@@ -99,6 +96,10 @@ public class Constants {
         String CONF_CAL_POLI_COEFFICIENT = "CalCoeff";
         String CONF_CAL_CHANNEL = "Cal";
         String CONF_CAL_ENERGY = "CalE";
+        // followed by the device id; semicolon-separated polynomial coefficients
+        String CONF_CAL_DEVICE = "DeviceCal:";
+        // followed by the device id, a colon and the setting key
+        String CONF_DEVICE_SETTINGS = "DeviceSettings:";
         String CONF_FIRST_CHANNEL = "FirstChannel:";
         String CONF_CHECK_POWER = "CheckPower:";
         String CONF_CHECK_AUDIO = "Check audio:";
@@ -117,7 +118,7 @@ public class Constants {
         String CONF_SEARCH_NONCOMP_FAST = "search_noncomp_fast";
         String CONF_SEARCH_NONCOMP_MEDIUM = "search_noncomp_medium";
         String CONF_SEARCH_NONCOMP_SLOW = "search_noncomp_slow";
-        
+
         String CONF_DOSE_UPDATE = "doserate_update_freq";
         String CONF_SENS_TABLE_SIZE = "CalSize";
         String CONF_SENS_TABLE_VALUE = "CalSense";
@@ -133,36 +134,54 @@ public class Constants {
         String CONF_OUTPUT_SOUND_DEVICE_NAME = "Sound device name";
         String CONF_SEARCH_ALARM_VOLUME = "Interval Search Alarm Volume";
         String CONF_SEARCH_DETECTION_LEVEL = "Interval Search Detection Level";
-        String CONF_INPUT_SOUND = "Input sound";
-        String CONF_INPUT_SOUND_DEVICE_ID = "Input sound device ID";
-        String CONF_INPUT_SOUND_DEVICE_NAME = "Input sound device name";
         String CONF_COMPRESS_GRAPH = "Compress graph";
-        String CONF_LAST_CHANNEL = "Last calibration channel";
+        String CONF_IGNORED_TOP_CHANNELS = "Ignored top channels";
         String CONF_MAX_POLI_FACTOR = "Polinom factor";
         String CONF_GOLAY_WINDOW = "Golay window";
         String CONF_AUTO_UPDATE_ISOTOPES = "Auto update isotopes";
+        String CONF_SPECTRUM_CHANGE_ENABLED = "Spectrum change enabled";
         String CONF_SPECTRUM_CHANGE_DIFF_TIME = "Delta time";
         String CONF_LOCALE_ID = "Locale";
+        // the device choice restored on the next launch, see DeviceChoice
+        String CONF_DEVICE_MODE = "Device mode";
+        String CONF_DEVICE_TYPE = "Device type";
+        String CONF_DEVICE_IDENTITY = "Device identity";
+        String CONF_DEVICE_NAME = "Device name";
+        String CONF_DEVICE_REMEMBER = "Remember device choice";
         String CONF_SPG_DELTA_DURATION = "File autosave";
         String CONF_SPG_MIDNIGHT_RESET = "Reset spectrogram at midnight";
+        String CONF_SPG_PALETTE = "spg_palette";
+        String CONF_SPG_SCALE = "spg_scale";
+        String CONF_SPG_SBIN = "spg_sbin";
+        String CONF_SPG_CBIN_PORTRAIT = "spg_cbin_portrait";
+        String CONF_SPG_CBIN_LANDSCAPE = "spg_cbin_landscape";
+        String CONF_SPG_PREVIEW_VISIBLE = "spg_preview_visible";
+        String CONF_SPG_BACKGROUND_VISIBLE = "spg_background_visible";
+        String CONF_SPG_COMPACT_GAPS = "spg_compact_gaps";
         String CONF_SEND_DATA_TO_ATOMSWIFT = "Send data to AtomSwift app";
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
-        String CONF_USB_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
+        String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
+        String CONF_BLUZ_DNL_CORRECTION = "bluz_dnl_correction";
         String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
-        /** Map basemap provider id: {@code none}, {@code osm}, or {@code custom}. */
+        /**
+         * Map basemap provider id: {@code none}, {@code osm}, or {@code custom}.
+         */
         String CONF_MAP_TILE_PROVIDER = "map_tile_provider";
-        /** Custom tile URL template with {z}/{x}/{y} when provider is {@code custom}. */
+        /**
+         * Custom tile URL template with {z}/{x}/{y} when provider is {@code custom}.
+         */
         String CONF_MAP_TILE_CUSTOM_URL = "map_tile_custom_url";
-        /** Optional HTML attribution for the custom tile provider. */
+        /**
+         * Optional HTML attribution for the custom tile provider.
+         */
         String CONF_MAP_TILE_CUSTOM_ATTRIBUTION = "map_tile_custom_attribution";
     }
 
     public interface SEARCH {
-        String PREF_COMPRESSION = "Compression:";
-        String PREF_WINDOW_SIZE = "Window size:";
+        String PREF_CHANNELS = "Search channels:";
+        String PREF_RESOLUTION = "Cs-137 resolution:";
         String PREF_TOLERANCE = "Tolerance:";
-        String PREF_THRESHOLD = "Threshold:";
-        String PREF_ORDER = "Order:";
+        String PREF_THRESHOLD = "Threshold sigma:";
         String PREF_LIBRARY = "Library:";
     }
 
@@ -178,66 +197,75 @@ public class Constants {
         String ACTION_LOG_UPDATED = "org.fe57.atomspectra.ACTION_LOG_UPDATED";
         String ACTION_CLOSE_SPECTROGRAM = "org.fe57.atomspectra.ACTION_CLOSE_SPECTROGRAM";
         String ACTION_SPECTROGRAM_UPDATED = "org.fe57.atomspectra.ACTION_SPECTROGRAM_UPDATED";
+        // spectrum export from spectrogram started or finished; the activity may have been recreated meanwhile
+        String ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED = "org.fe57.atomspectra.ACTION_SPECTROGRAM_EXPORT_STATE_CHANGED";
 
         // attach/detach USB
         // sent by AtomSpectraSerial on errors
         // sent by AtomSpectra on system events
         // read by AtomSpectraService
-        String ACTION_USB_ATTACHED = "org.fe57.atomspectra.ACTION_USD_ATTACHED";
-        String ACTION_USB_DETACHED = "org.fe57.atomspectra.ACTION_USD_DETACHED";
 
-        // Added or removed audio input, sent by AtomSpectraService
-        String ACTION_AUDIO_CHANGED = "org.fe57.atomspectra.ACTION_AUDIO_CHANGED";
         String ACTION_UPDATE_NOTIFICATION = "org.fe57.atomspectra.ACTION_UPDATE_NOTIFICATION";
 
-        // sent to atom spectra service when data is needed immediately
-        String ACTION_UPDATE_GRAPH = "org.fe57.atomspectra.ACTION_UPDATE_GRAPH";
-
-        // produced by AtomSpectraSerial (usb) and read by AtomSpectraService to recalculate all data
-        String ACTION_USB_HAS_DATA = "org.fe57.atomspectra.ACTION_USB_HAS_DATA";
-
-        // produced by AtomSpectraSerial (usb) when command executed
-        String ACTION_USB_HAS_ANSWER = "org.fe57.atomspectra.ACTION_USB_HAS_ANSWER";
+        // shared data changed, consumers re-read what they need
+        String ACTION_DATA_AVAILABLE = "org.fe57.atomspectra.ACTION_DATA_AVAILABLE";
+        // payload-less: MeasurementData.telemetry changed
+        String ACTION_TELEMETRY_UPDATED = "org.fe57.atomspectra.ACTION_TELEMETRY_UPDATED";
+        // payload-less: AudioScopeData has a new raw audio snapshot, sent by the audio source
+        String ACTION_RAW_AUDIO_SNAPSHOT = "org.fe57.atomspectra.ACTION_RAW_AUDIO_SNAPSHOT";
 
         // produced when start/stop of data collection is needed
-        String ACTION_FREEZE_DATA = "org.fe57.atomspectra.ACTION_FREEZE_DATA";
+        String ACTION_START_RECORDING = "org.fe57.atomspectra.ACTION_START_RECORDING";
+        String ACTION_STOP_RECORDING = "org.fe57.atomspectra.ACTION_STOP_RECORDING";
+        // sent by the service when the device chosen with selectDevice() has connected
+        String ACTION_DEVICE_SELECTED = "org.fe57.atomspectra.ACTION_DEVICE_SELECTED";
+        // sent by the service when the chosen device cannot be used and the user has to choose again; ACTION_PARAMETERS.SELECTION_ERROR_TEXT when known
+        String ACTION_DEVICE_SELECTION_REQUIRED = "org.fe57.atomspectra.ACTION_DEVICE_SELECTION_REQUIRED";
+        // sent by the service when a connected device waits for the user to decide what happens to the unsaved screen spectrum
+        String ACTION_DEVICE_CONNECT_DECISION = "org.fe57.atomspectra.ACTION_DEVICE_CONNECT_DECISION";
+        String ACTION_DEVICE_STATE_CHANGED = "org.fe57.atomspectra.ACTION_DEVICE_STATE_CHANGED";
+        // sent by the service when the device confirmed a settings save
+        String ACTION_DEVICE_SETTINGS_SAVED = "org.fe57.atomspectra.ACTION_DEVICE_SETTINGS_SAVED";
+        // sent by the service when the device did not accept a settings save
+        String ACTION_DEVICE_SETTINGS_FAILED = "org.fe57.atomspectra.ACTION_DEVICE_SETTINGS_FAILED";
         String ACTION_CLEAR_SPECTRUM = "org.fe57.atomspectra.ACTION_CLEAR_SPECTRUM";
-        String ACTION_CLEAR_IMPULSE = "org.fe57.atomspectra.ACTION_CLEAR_IMPULSE";
+        // zeroes the histogram and search of the connected device
+        String ACTION_RESET_SPECTRUM = "org.fe57.atomspectra.ACTION_RESET_SPECTRUM";
+        // ends the running spectrogram segment and drops all spectrogram segments; the next frame starts a new one
+        String ACTION_RESTART_SPECTROGRAM = "org.fe57.atomspectra.ACTION_RESTART_SPECTROGRAM";
 
         // read by AtomSpectra to actualize menu status after capturing status change
         String ACTION_UPDATE_MENU = "org.fe57.atomspectra.ACTION_UPDATE_MENU";
 
         // calibration is owned by AtomSpectraService:
-        // sent by the service after the active calibration changed, read by the UI to refresh
-        String ACTION_CALIBRATION_CHANGED = "org.fe57.atomspectra.ACTION_CALIBRATION_CHANGED";
         // sent to the service to (re)load the calibration from preferences or from the USB device
         String ACTION_LOAD_CALIBRATION = "org.fe57.atomspectra.ACTION_LOAD_CALIBRATION";
         // sent to the service to store the active calibration into preferences or into the USB device
         String ACTION_STORE_CALIBRATION = "org.fe57.atomspectra.ACTION_STORE_CALIBRATION";
-        // sent by the service when a calibration read from the device failed its checksum,
-        // so the UI can ask the user whether to use it anyway
-        String ACTION_CALIBRATION_CHECKSUM_MISMATCH = "org.fe57.atomspectra.ACTION_CALIBRATION_CHECKSUM_MISMATCH";
         String ACTION_CHECK_GPS_AVAILABILITY = "org.fe57.atomspectra.ACTION_CHECK_GPS";
         String ACTION_UPDATE_SETTINGS = "org.fe57.atomspectra.ACTION_UPDATE_SETTINGS";
         String ACTION_CLOSE_SENSITIVITY = "org.fe57.atomspectra.ACTION_CLOSE_SENSITIVITY";
+        String ACTION_CLOSE_INTERVAL_SETTINGS = "org.fe57.atomspectra.ACTION_CLOSE_INTERVAL_SETTINGS";
         String ACTION_UPDATE_ISOTOPE_LIST = "org.fe57.atomspectra.ACTION_UPDATE_ISOTOPE_LIST";
-        String ACTION_GET_USB_PERMISSION = "org.fe57.atomspectra.GET_USB_PERMISSION";
-        String ACTION_SEND_USB_COMMAND = "org.fe57.atomspectra.SEND_USB_COMMAND";
         String ACTION_UPDATE_GPS = "org.fe57.atomspectra.SEND_GPS_COMMAND";
-        /** Map-facing device position snapshot (immutable extras). */
+        /**
+         * Map-facing device position snapshot (immutable extras).
+         */
         String ACTION_DEVICE_LOCATION_UPDATED = "org.fe57.atomspectra.ACTION_DEVICE_LOCATION_UPDATED";
     }
 
     public interface ACTION_PARAMETERS {
         String USB_COMMAND_ID = "ID";
         String USB_COMMAND_DATA = "Data";
-        // CALIBRATION_STORAGE_* value telling where to load the calibration from / store it to
-        String CALIBRATION_STORAGE = "CalibrationStorage";
-        // double[] carried by ACTION_CALIBRATION_CHECKSUM_MISMATCH
-        String CALIBRATION_COEFFICIENTS = "CalibrationCoefficients";
         String GPS_STATUS = "Status";
         // foreground-service type bitmask computed by the activity and passed to the service
         String FGS_TYPE = "fgs_type";
+        String SELECTION_ERROR_TEXT = "selection_error_text";
+        // what ACTION_START_RECORDING does with a screen spectrum the device did not produce
+        String START_FOREIGN_SPECTRUM = "start_foreign_spectrum";
+        int FOREIGN_SPECTRUM_UNDECIDED = 0;     // the start is refused when the user has to decide first
+        int FOREIGN_SPECTRUM_CONTINUE = 1;      // the screen spectrum is handed to the device, which continues it
+        int FOREIGN_SPECTRUM_REPLACE = 2;       // the screen spectrum is discarded
         String DEVICE_LOCATION_AVAILABLE = "device_location_available";
         String DEVICE_LOCATION_LATITUDE = "device_location_latitude";
         String DEVICE_LOCATION_LONGITUDE = "device_location_longitude";
@@ -257,10 +285,6 @@ public class Constants {
         int BUTTON_INTENSE_ID_ALIGN = 3400;
         int FILE_SELECTION_GROUP = 4400;
     }
-
-    public static final String USB_DEVICE = "USB device";
-    public static final String FREEZE_STATE = "Freeze state";
-    public static final String SCALE_FACTOR = "Scale factor";
 
     public static int MinMax(int val, int min, int max) {
         return val >= max ? max : (Math.max(val, min));
