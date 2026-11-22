@@ -233,7 +233,7 @@ Unspecified bytes are reserved or not interpreted by the reviewed clients.
 | 94 | 2 | Dosimeter averaging window, uint16 |
 | 96 | 1 | Spectrum format, 0 raw / 1 compressed |
 | 97 | 1 | ADC sample time in bits 0-2; overload flag in bit 3 |
-| 98-99 | 2 | Reserved/not interpreted |
+| 98-99 | 2 | HV temperature coefficient, int16 little-endian, 0.001 DAC code per deg C |
 | 100 | 1024 | Dosimeter ring: 512 little-endian uint16 values |
 | 1124 | 300 | Log: 50 entries, each uint32 time + uint16 event type |
 | 1424 | Up to 4 times channel count | Spectrum or history, present only for types 1-6 |
@@ -368,6 +368,7 @@ parsing/reformatting them, preserving their bit patterns.
 | 39 / 43 / 47 | Floats big-endian | Firmware 2048 A / B / C; v2 D/E occupy 43/47 | 62 / 66 / 70 |
 | 51 / 55 / 59 | Floats big-endian | Firmware 4096 A / B / C | 74 / 78 / 82 |
 | 63 | uint16 little-endian | Dosimeter averaging window | 94 |
+| 65 | int16 little-endian | HV temperature coefficient | 98 |
 
 Command byte 38 uses bit 0 for autostart, bits 1-3 for sample time, bit 4 for
 sound divided by 10 and bit 5 for LED divided by 10. Header byte 61 bits 0/1/2

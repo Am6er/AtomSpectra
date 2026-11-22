@@ -70,6 +70,7 @@ Everything goes through command 0, a read-modify-write on the latest retained 10
 | Spectrometer | Autostart | bool | basic | byte 61 bit 0 |
 | Spectrometer | ADC sample time | int 0–7, raw | expert | `destructive`: clears live spectrum and time |
 | Spectrometer | HV | int 0–1023, raw | expert | 10-bit |
+| Spectrometer | HV temperature coefficient | int −32768–32767, raw | expert | 0.001 DAC code per °C, header bytes 98-99 |
 | Spectrometer | Comparator | int 0–1023, raw | expert | 10-bit |
 
 Not exposed: resolution (the app is fixed at 4096 and sets it itself), the unused raw calibration slots, battery calibration (command 7) and `VibroEnable`. All unexposed raw bytes and floats are preserved bit-for-bit.

@@ -936,6 +936,8 @@
     <string name="bluz_setting_adc_sample_help">Код 0–7. Изменение стирает спектр и время набора на устройстве.</string>
     <string name="bluz_setting_hv">Высокое напряжение</string>
     <string name="bluz_setting_hv_help">Код 10 бит, 0–1023.</string>
+    <string name="bluz_setting_hv_temp_coef">Температурный коэффициент высокого напряжения</string>
+    <string name="bluz_setting_hv_temp_coef_help">Со знаком, 0,001 кода ЦАП на °C. Код растёт при падении температуры, напряжение снижается. 0 выключает.</string>
     <string name="bluz_setting_comparator">Порог компаратора</string>
     <string name="bluz_setting_comparator_help">Код 10 бит, 0–1023.</string>
     <string name="bluz_setting_level1">Порог 1</string>

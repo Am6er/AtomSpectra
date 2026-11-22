@@ -19,6 +19,7 @@ final class BluZSettings {
     static final String AUTOSTART = "autostart";
     static final String ADC_SAMPLE = "adc_sample";
     static final String HV = "hv";
+    static final String HV_TEMP_COEF = "hv_temp_coef";
     static final String COMPARATOR = "comparator";
     static final String SENSITIVITY = "sensitivity";
     static final String[] LEVEL = {"level1", "level2", "level3"};
@@ -34,6 +35,7 @@ final class BluZSettings {
     // header offsets of the calibration floats {E0, D, C, B, A} in the 4096 mode, see docs/bluz-device-protocol.md
     private static final int[] CALIBRATION_OFFSETS = {70, 66, 82, 78, 74};
     private static final int HV_OFFSET = 50;
+    private static final int HV_TEMP_COEF_OFFSET = 98;
     private static final int COMPARATOR_OFFSET = 52;
     private static final int SENSITIVITY_OFFSET = 46;
     private static final int[] LEVEL_OFFSETS = {54, 56, 58};
@@ -59,6 +61,8 @@ final class BluZSettings {
                             .expert().destructive().help(R.string.bluz_setting_adc_sample_help),
                     SettingDescriptor.integer(HV, R.string.bluz_setting_hv, 0, 1023)
                             .expert().help(R.string.bluz_setting_hv_help),
+                    SettingDescriptor.integer(HV_TEMP_COEF, R.string.bluz_setting_hv_temp_coef, -32768, 32767)
+                            .expert().help(R.string.bluz_setting_hv_temp_coef_help),
                     SettingDescriptor.integer(COMPARATOR, R.string.bluz_setting_comparator, 0, 1023)
                             .expert().help(R.string.bluz_setting_comparator_help))
             .category(R.string.bluz_settings_alarm,
@@ -124,6 +128,7 @@ final class BluZSettings {
         values.put(LED_DIV10, (autostart & 4) != 0);
         values.put(ADC_SAMPLE, header[ADC_FLAGS] & 7);
         values.put(HV, bytes.getShort(HV_OFFSET) & 1023);
+        values.put(HV_TEMP_COEF, (int) bytes.getShort(HV_TEMP_COEF_OFFSET));
         values.put(COMPARATOR, bytes.getShort(COMPARATOR_OFFSET) & 1023);
         values.put(SENSITIVITY, (double) bytes.getFloat(SENSITIVITY_OFFSET) / UR_PER_USV);
         for (int index = 0; index < LEVEL.length; index++) {

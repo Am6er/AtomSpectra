@@ -55,6 +55,7 @@ final class BluZCommandCodec {
         packet[38] = (byte) ((flags & 1) | ((snapshot[97] & 7) << 1)
                 | ((flags & 2) << 3) | ((flags & 4) << 3));
         System.arraycopy(snapshot, 94, packet, 63, 2);
+        System.arraycopy(snapshot, 98, packet, 65, 2);
         checksum(packet);
         return packet;
     }
@@ -139,6 +140,9 @@ final class BluZCommandCodec {
                 case BluZSettings.COMPARATOR:
                     putUint16(packet, 35, integer(value, 1023));
                     break;
+                case BluZSettings.HV_TEMP_COEF:
+                    putUint16(packet, 65, integer(value, -32768, 32767));
+                    break;
                 default:
                     throw new IllegalArgumentException("Unknown BluZ setting " + key);
             }
@@ -153,8 +157,12 @@ final class BluZCommandCodec {
     }
 
     private static int integer(Object value, int max) {
+        return integer(value, 0, max);
+    }
+
+    private static int integer(Object value, int min, int max) {
         double number = BluZSettings.number(value);
-        if (number != Math.rint(number) || number < 0 || number > max) {
+        if (number != Math.rint(number) || number < min || number > max) {
             throw new IllegalArgumentException("BluZ setting is out of range");
         }
         return (int) number;
