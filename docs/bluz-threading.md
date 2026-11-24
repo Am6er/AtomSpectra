@@ -126,6 +126,13 @@ at one second and doubles to a 30-second cap.
 A scan that produces no result for two minutes is stopped and started again. Any
 scan result, failure or `stopScan()` cancels that restart timer.
 
+The first attempt after `requestConnect` skips the scan and calls `connectGatt` on
+the saved address directly, because a connection started right after a scan hit
+can wait several advertising intervals for the initiator to catch the device. If
+that attempt gets no physical connection (disconnect, failure status or the
+`connectionDeadline`), the GATT is released and the scan above takes over. Recovery
+and ordinary retries always scan.
+
 Connection setup proceeds through physical connection, service discovery, MTU
 251, notification/indication enablement and the CCCD write. Subscription is
 transport readiness, not proof of acquisition state.
