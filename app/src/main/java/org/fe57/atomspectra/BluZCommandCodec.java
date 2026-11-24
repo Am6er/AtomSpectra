@@ -134,7 +134,7 @@ final class BluZCommandCodec {
                     int sample = integer(value, 7);
                     packet[38] = (byte) ((packet[38] & ~0x0E) | (sample << 1));
                     break;
-                case BluZSettings.HV:
+                case BluZSettings.HV0:
                     putUint16(packet, 33, integer(value, 1023));
                     break;
                 case BluZSettings.COMPARATOR:

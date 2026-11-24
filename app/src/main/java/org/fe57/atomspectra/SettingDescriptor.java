@@ -35,6 +35,7 @@ public final class SettingDescriptor {
     private Level level = Level.BASIC;
     private Scope scope = Scope.HARDWARE;
     private boolean destructive = false;
+    private boolean readOnly = false;
 
     private SettingDescriptor(String key, Type type, int labelRes) {
         this.key = key;
@@ -63,6 +64,15 @@ public final class SettingDescriptor {
     public static SettingDescriptor select(String key, @StringRes int labelRes, @StringRes int... optionRes) {
         SettingDescriptor descriptor = new SettingDescriptor(key, Type.SELECT, labelRes);
         descriptor.optionRes = optionRes.clone();
+        return descriptor;
+    }
+
+    /**
+     * A value the device reports and the user cannot change; the value is a String.
+     */
+    public static SettingDescriptor readOnlyText(String key, @StringRes int labelRes) {
+        SettingDescriptor descriptor = new SettingDescriptor(key, Type.TEXT, labelRes);
+        descriptor.readOnly = true;
         return descriptor;
     }
 
@@ -150,6 +160,10 @@ public final class SettingDescriptor {
 
     public boolean isDestructive() {
         return destructive;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
     }
 
     /**

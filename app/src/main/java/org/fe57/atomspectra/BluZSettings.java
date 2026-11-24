@@ -18,7 +18,8 @@ final class BluZSettings {
     static final String LED_DIV10 = "led_div10";
     static final String AUTOSTART = "autostart";
     static final String ADC_SAMPLE = "adc_sample";
-    static final String HV = "hv";
+    static final String HV0 = "hv0";
+    static final String HV_ACTUAL = "hv_actual";
     static final String HV_TEMP_COEF = "hv_temp_coef";
     static final String COMPARATOR = "comparator";
     static final String SENSITIVITY = "sensitivity";
@@ -34,7 +35,9 @@ final class BluZSettings {
 
     // header offsets of the calibration floats {E0, D, C, B, A} in the 4096 mode, see docs/bluz-device-protocol.md
     private static final int[] CALIBRATION_OFFSETS = {70, 66, 82, 78, 74};
+    private static final int TEMPERATURE_OFFSET = 26;
     private static final int HV_OFFSET = 50;
+    private static final int HV_REFERENCE_TEMPERATURE = 20;
     private static final int HV_TEMP_COEF_OFFSET = 98;
     private static final int COMPARATOR_OFFSET = 52;
     private static final int SENSITIVITY_OFFSET = 46;
@@ -59,7 +62,9 @@ final class BluZSettings {
                     SettingDescriptor.bool(AUTOSTART, R.string.bluz_setting_autostart),
                     SettingDescriptor.integer(ADC_SAMPLE, R.string.bluz_setting_adc_sample, 0, 7)
                             .expert().destructive().help(R.string.bluz_setting_adc_sample_help),
-                    SettingDescriptor.integer(HV, R.string.bluz_setting_hv, 0, 1023)
+                    SettingDescriptor.readOnlyText(HV_ACTUAL, R.string.bluz_setting_hv_actual)
+                            .expert().help(R.string.bluz_setting_hv_actual_help),
+                    SettingDescriptor.integer(HV0, R.string.bluz_setting_hv, 0, 1023)
                             .expert().help(R.string.bluz_setting_hv_help),
                     SettingDescriptor.integer(HV_TEMP_COEF, R.string.bluz_setting_hv_temp_coef, -32768, 32767)
                             .expert().help(R.string.bluz_setting_hv_temp_coef_help),
@@ -83,6 +88,17 @@ final class BluZSettings {
             .build();
 
     private BluZSettings() {
+    }
+
+    /**
+     * The DAC code the device applies: the base code corrected for temperature, as in its hvCompensate().
+     * Same float arithmetic and rounding as the firmware; a dash when the frame holds no valid temperature.
+     */
+    private static String hvActual(int hv0, int hvTempCoef, float temperature) {
+        if (!Float.isFinite(temperature)) return "—";
+        float level = hv0 + hvTempCoef / 1000.0f * (HV_REFERENCE_TEMPERATURE - temperature);
+        level = Math.max(0.0f, Math.min(1023.0f, level));
+        return String.valueOf((int) (level + 0.5f));
     }
 
     private static SettingDescriptor calibration(int index, int labelRes) {
@@ -127,8 +143,11 @@ final class BluZSettings {
         values.put(SOUND_DIV10, (autostart & 2) != 0);
         values.put(LED_DIV10, (autostart & 4) != 0);
         values.put(ADC_SAMPLE, header[ADC_FLAGS] & 7);
-        values.put(HV, bytes.getShort(HV_OFFSET) & 1023);
-        values.put(HV_TEMP_COEF, (int) bytes.getShort(HV_TEMP_COEF_OFFSET));
+        int hv0 = bytes.getShort(HV_OFFSET) & 1023;
+        int hvTempCoef = bytes.getShort(HV_TEMP_COEF_OFFSET);
+        values.put(HV0, hv0);
+        values.put(HV_ACTUAL, hvActual(hv0, hvTempCoef, bytes.getFloat(TEMPERATURE_OFFSET)));
+        values.put(HV_TEMP_COEF, hvTempCoef);
         values.put(COMPARATOR, bytes.getShort(COMPARATOR_OFFSET) & 1023);
         values.put(SENSITIVITY, (double) bytes.getFloat(SENSITIVITY_OFFSET) / UR_PER_USV);
         for (int index = 0; index < LEVEL.length; index++) {

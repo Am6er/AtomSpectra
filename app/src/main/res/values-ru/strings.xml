@@ -934,8 +934,10 @@
     <string name="bluz_setting_autostart">Начинать набор спектра при включении</string>
     <string name="bluz_setting_adc_sample">Время выборки АЦП</string>
     <string name="bluz_setting_adc_sample_help">Код 0–7. Изменение стирает спектр и время набора на устройстве.</string>
-    <string name="bluz_setting_hv">Высокое напряжение</string>
-    <string name="bluz_setting_hv_help">Код 10 бит, 0–1023.</string>
+    <string name="bluz_setting_hv_actual">HV</string>
+    <string name="bluz_setting_hv_actual_help">Фактическое, с учётом температуры (код ЦАП). Обновляется после сохранения.</string>
+    <string name="bluz_setting_hv">HV0</string>
+    <string name="bluz_setting_hv_help">Базовое, при 20 °C (код ЦАП), 0–1023.</string>
     <string name="bluz_setting_hv_temp_coef">Температурный коэффициент высокого напряжения</string>
     <string name="bluz_setting_hv_temp_coef_help">Со знаком, 0,001 кода ЦАП на °C. Код растёт при падении температуры, напряжение снижается. 0 выключает.</string>
     <string name="bluz_setting_comparator">Порог компаратора</string>

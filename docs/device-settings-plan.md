@@ -69,7 +69,8 @@ Everything goes through command 0, a read-modify-write on the latest retained 10
 | Indication | LED ÷10 | bool | basic | byte 61 bit 2 |
 | Spectrometer | Autostart | bool | basic | byte 61 bit 0 |
 | Spectrometer | ADC sample time | int 0–7, raw | expert | `destructive`: clears live spectrum and time |
-| Spectrometer | HV | int 0–1023, raw | expert | 10-bit |
+| Spectrometer | HV (actual) | read-only text | expert | HV0 + HVTC/1000 · (20 − T) in float, clamped to 0–1023, rounded like the firmware; temperature from header bytes 26-29 |
+| Spectrometer | HV0 | int 0–1023, raw | expert | 10-bit base code at 20 °C |
 | Spectrometer | HV temperature coefficient | int −32768–32767, raw | expert | 0.001 DAC code per °C, header bytes 98-99 |
 | Spectrometer | Comparator | int 0–1023, raw | expert | 10-bit |
 

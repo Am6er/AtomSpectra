@@ -288,6 +288,12 @@ public class AtomSpectraDeviceSettings extends Activity {
             rawText.put(key, descriptor.format(fresh.get(key)));
             invalid.remove(key);
         }
+        // read-only values follow the frame that confirmed the save
+        for (SettingDescriptor descriptor : schema.all()) {
+            if (!descriptor.isReadOnly()) continue;
+            current.put(descriptor.key, fresh.get(descriptor.key));
+            rawText.put(descriptor.key, descriptor.format(fresh.get(descriptor.key)));
+        }
         submitted.clear();
         saving = false;
         loaded = fresh;
@@ -428,7 +434,9 @@ public class AtomSpectraDeviceSettings extends Activity {
 
             check.setVisibility(descriptor.type == SettingDescriptor.Type.BOOL ? View.VISIBLE : View.GONE);
             valueRow.setVisibility(descriptor.type == SettingDescriptor.Type.INT
-                    || descriptor.type == SettingDescriptor.Type.DECIMAL ? View.VISIBLE : View.GONE);
+                    || descriptor.type == SettingDescriptor.Type.DECIMAL
+                    || descriptor.isReadOnly() ? View.VISIBLE : View.GONE);
+            edit.setEnabled(!descriptor.isReadOnly());
             select.setVisibility(descriptor.type == SettingDescriptor.Type.SELECT ? View.VISIBLE : View.GONE);
 
             switch (descriptor.type) {
@@ -445,6 +453,13 @@ public class AtomSpectraDeviceSettings extends Activity {
                     break;
                 case SELECT:
                     bindSelect(descriptor);
+                    break;
+                case TEXT:
+                    if (descriptor.isReadOnly()) {
+                        edit.setText(rawText.get(key));
+                        edit.setError(null);
+                        unit.setVisibility(View.GONE);
+                    }
                     break;
                 default:
                     break;

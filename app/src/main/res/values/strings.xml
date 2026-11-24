@@ -929,8 +929,10 @@
     <string name="bluz_setting_autostart">Start spectrum collection at power-up</string>
     <string name="bluz_setting_adc_sample">ADC sample time</string>
     <string name="bluz_setting_adc_sample_help">Raw value 0–7. Changing it clears the spectrum and time on the device.</string>
-    <string name="bluz_setting_hv">High voltage</string>
-    <string name="bluz_setting_hv_help">Raw 10-bit value, 0–1023.</string>
+    <string name="bluz_setting_hv_actual">HV</string>
+    <string name="bluz_setting_hv_actual_help">Actual, with temperature correction (DAC code). Updated after saving.</string>
+    <string name="bluz_setting_hv">HV0</string>
+    <string name="bluz_setting_hv_help">Base, at 20 °C (DAC code), 0–1023.</string>
     <string name="bluz_setting_hv_temp_coef">High voltage temperature coefficient</string>
     <string name="bluz_setting_hv_temp_coef_help">Signed, 0.001 DAC code per °C. The code grows as the temperature falls, so the voltage drops. 0 turns it off.</string>
     <string name="bluz_setting_comparator">Comparator threshold</string>
