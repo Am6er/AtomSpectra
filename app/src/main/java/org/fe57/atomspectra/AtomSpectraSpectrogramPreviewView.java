@@ -22,7 +22,7 @@ import java.util.Locale;
  * horizontal pan. Y is auto-scaled within the visible window using the current
  * lin/sqrt/log scale.
  */
-@SuppressLint({ "DefaultLocale", "DrawAllocation" })
+@SuppressLint({"DefaultLocale", "DrawAllocation"})
 public class AtomSpectraSpectrogramPreviewView extends View {
     private static final int COLOR_BACKGROUND = 0xFF44E044; // green
     private static final int COLOR_SOURCE = Color.WHITE;

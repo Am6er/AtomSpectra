@@ -19,7 +19,6 @@ import android.text.style.ForegroundColorSpan;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
@@ -63,7 +62,7 @@ public class AtomSpectraHelp extends Activity {
             VersionInfo versionInfo = getVersionInfo(this);
             ((TextView) findViewById(R.id.helpTextVersion)).setText(getString(R.string.help_version, versionInfo.version, versionInfo.verCode));
         } catch (Exception e) {
-            Toast.makeText(this, "Help rendering error for version section: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            ToastHelper.showErrorAndLog(this, LogTag.HELP_ACTIVITY, "Help rendering error for version section: " + e.getMessage());
             // throw e;
         }
         final IntentFilter intentFilter = new IntentFilter();
@@ -79,7 +78,7 @@ public class AtomSpectraHelp extends Activity {
         try {
             ((TextView) findViewById(viewId)).setText(prepareString(textId));
         } catch (Exception e) {
-            Toast.makeText(this, "Help rendering error for section " + sectionIndex + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+            ToastHelper.showErrorAndLog(this, LogTag.HELP_ACTIVITY, "Help rendering error for section " + sectionIndex + ": " + e.getMessage());
             // throw e;
         }
     }

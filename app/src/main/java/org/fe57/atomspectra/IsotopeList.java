@@ -13,7 +13,7 @@ public class IsotopeList {
 
     //add in sorted order, add energy if already exists
     public IsotopeList add(@NonNull Isotope isotope) {
-        for (Isotope i: isotopeArrayList) {
+        for (Isotope i : isotopeArrayList) {
             if (isotope.equals(i)) {
                 i.addEnergy(isotope);
                 return this;
@@ -32,7 +32,7 @@ public class IsotopeList {
 
     public ArrayList<Isotope> getNamesList() {
         ArrayList<Isotope> newList = new ArrayList<>();
-        for (Isotope i: isotopeArrayList) {
+        for (Isotope i : isotopeArrayList) {
             if (i.getLinesNumber() > 0)
                 newList.add(new Isotope(i.getName(), i.getHalfLife()));
         }
@@ -42,7 +42,7 @@ public class IsotopeList {
     public ArrayList<Isotope> getLinesList() {
         ArrayList<Isotope> newList = new ArrayList<>();
         int pos;
-        for (Isotope i: isotopeArrayList) {
+        for (Isotope i : isotopeArrayList) {
             for (int j = 0; j < i.getLinesNumber(); j++) {
                 pos = newList.size();
                 for (int k = 0; k < newList.size(); k++) {
@@ -68,8 +68,8 @@ public class IsotopeList {
     }
 
     public Isotope find(@NonNull String name) {
-        for(Isotope isotope: isotopeArrayList) {
-            if(isotope.getName().equals(name)) {
+        for (Isotope isotope : isotopeArrayList) {
+            if (isotope.getName().equals(name)) {
                 return new Isotope(isotope);
             }
         }

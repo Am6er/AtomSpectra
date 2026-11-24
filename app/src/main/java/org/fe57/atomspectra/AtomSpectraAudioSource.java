@@ -1,0 +1,1069 @@
+package org.fe57.atomspectra;
+
+import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
+import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.SystemClock;
+
+import androidx.annotation.NonNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+
+public class AtomSpectraAudioSource implements SpectrumSource {
+    private static final int ADC_EFF_BITS = 13;
+    static final int HIST_POINTS = 8192;
+    static final int MIN_FRONT_POINTS_DEFAULT = 4;
+    static final int MAX_FRONT_POINTS_DEFAULT = 12;
+    static final int NOISE_DISCRIMINATOR_DEFAULT = 64;
+    static final int NOISE_DISCRIMINATOR_MAX = HIST_POINTS;
+    static final boolean INVERSE_DEFAULT = false;
+    static final boolean PILE_UP_DEFAULT = false;
+    static final int AUDIO_SOURCE_SETTING_RAW = 2;
+    static final int AUDIO_SOURCE_SETTING_VOICE = 1;
+    static final int AUDIO_SOURCE_SETTING_DEFAULT = AUDIO_SOURCE_SETTING_RAW;
+    static final double OSCILLOSCOPE_SAMPLE_CENTER = HIST_POINTS / 2.0;
+    private static final int REFERENCE_PULSE_POINTS = 256;
+    private static final int SAMPLE_RATE = 44100;
+    private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
+    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int AUDIO_SOURCE_VOICE = MediaRecorder.AudioSource.VOICE_RECOGNITION;
+    private static final int AUDIO_SOURCE_RAW = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+            ? MediaRecorder.AudioSource.UNPROCESSED
+            : MediaRecorder.AudioSource.VOICE_RECOGNITION;
+
+    private static final int AUDIO_ZERO_DATA_MAX_COUNT = 5;
+
+    // count rate is a sliding one-second window of CPS_BIN_MS bins
+    private static final int CPS_BIN_MS = 100;
+    private static final int CPS_BIN_SAMPLES = SAMPLE_RATE * CPS_BIN_MS / 1000;
+    // raw audio snapshots are independent of the report interval: fast enough for a scope view
+    private static final int SCOPE_SNAPSHOT_PERIOD_MS = 200;
+    private static final int SCOPE_SNAPSHOT_PERIOD_SAMPLES = SAMPLE_RATE * SCOPE_SNAPSHOT_PERIOD_MS / 1000;
+    private static final long DEVICE_RECOVERY_WINDOW_MS = 5000;
+    private static final long CAPTURE_START_WINDOW_MS = 5000;
+    private static final long RECOVERY_WAKE_LOCK_MS = DEVICE_RECOVERY_WINDOW_MS + CAPTURE_START_WINDOW_MS + 10000;
+
+
+    private static void log(Context ctx, String message) {
+        AtomSpectraLog.add(ctx, AtomSpectraLog.Type.EVENT, AtomSpectraLog.Severity.WARNING, LogTag.AUDIO, message);
+    }
+
+    private static String audioSourceName(int source) {
+        switch (source) {
+            case MediaRecorder.AudioSource.DEFAULT:
+                return "DEFAULT";
+            case MediaRecorder.AudioSource.MIC:
+                return "MIC";
+            case MediaRecorder.AudioSource.CAMCORDER:
+                return "CAMCORDER";
+            case MediaRecorder.AudioSource.VOICE_RECOGNITION:
+                return "VOICE_RECOGNITION";
+            case MediaRecorder.AudioSource.VOICE_COMMUNICATION:
+                return "VOICE_COMMUNICATION";
+            case MediaRecorder.AudioSource.UNPROCESSED:
+                return "UNPROCESSED";
+            default:
+                return "unknown";
+        }
+    }
+
+    private volatile Context context;
+    private final int instanceId = SourceInstanceId.next();
+    // replaced with a fresh token when the same device returns after re-enumeration
+    private volatile AudioDeviceInfo device;
+    private final String identity;
+    private volatile int status = SpectrumSource.STATUS_DISCONNECTED;
+    private volatile ConnectionPhase connectionPhase = ConnectionPhase.NONE;
+    private volatile SourceError lastError = null;
+    private volatile String deviceId = "default";
+    private AudioDeviceCallback deviceLossCallback = null;
+    private final HandlerThread sourceThread;
+    private final Handler sourceHandler;
+    private final Runnable recoveryTimeout = this::onDeviceRecoveryTimeout;
+    private final Runnable recoveryCaptureRetry = this::retryRecoveryCapture;
+    private final Runnable captureStartTimeout = this::onCaptureStartTimeout;
+    private final RecoveryWakeLock recoveryWakeLock;
+
+    // pulse-detection tuning, read in requestConnect() and on every application preferences change
+    private volatile int frontCountsMin = MIN_FRONT_POINTS_DEFAULT;
+    private volatile int frontCountsMax = MAX_FRONT_POINTS_DEFAULT;
+    private volatile int histogramMinChannel = NOISE_DISCRIMINATOR_DEFAULT;
+    private volatile boolean inversion = INVERSE_DEFAULT;
+    private volatile boolean pileup = PILE_UP_DEFAULT;
+    private volatile int reportIntervalMs = 1000 / Constants.UPDATE_DOSE_DEFAULT;
+
+    private int audioSourceMode = AUDIO_SOURCE_VOICE;
+
+    private boolean capturing = false;
+    private boolean captureConfirmed = false;
+    private boolean recoveryCapture = false;
+    private long recoveryCaptureDeadline;
+    private volatile long captureGeneration;
+    private HandlerThread captureThread;
+    private AudioRecord audioRecord = null;
+    private int bufferSize = 0;
+    private byte[] audioBytes = null;
+    private int[] audioData = null;
+    private int audioBytesRead = 0;
+    private int audioZeroDataCount = 0;
+
+    private final long[] histogram;
+    private long totalSamplesProcessed = 0;
+    private final int[] cp1sArray = new int[1000 / CPS_BIN_MS];
+    private int cp1sPos = 0;
+    private int countsThisBin = 0;
+    // sum of the 256 samples around the peak of every pulse counted into the histogram (128 before, 127 after); only the shape matters, so it is never normalised
+    // grows while collecting; cleared by requestReset() and when a setting that changes which pulses are accepted or how they look changes
+    private final long[] referencePulse = new long[REFERENCE_PULSE_POINTS];
+    private double[] lastCapturedSamples = new double[0];
+
+    private long captureTaskIntervalMs = 0;
+    // all boundaries are positions on the captureElapsedSamples axis: audio time, not wall-clock time
+    private long captureElapsedSamples = 0;
+    private long nextReportSamples = 0;
+    private long nextCpsSamples = 0;
+    private long nextBoundarySamples = 0;
+    private long nextScopeSnapshotSamples = 0;
+    private final ArrayList<DataSnapshot> pendingSnapshots = new ArrayList<>();
+
+    private static final class DataSnapshot {
+        final long[] histogram;
+        final int cp1s;
+        final double recordingTime;
+
+        DataSnapshot(long[] histogram, int cp1s, double recordingTime) {
+            this.histogram = histogram;
+            this.cp1s = cp1s;
+            this.recordingTime = recordingTime;
+        }
+    }
+
+    public AtomSpectraAudioSource(Context context, AudioDeviceInfo device) {
+        this(context, device, DeviceIdentity.audio(device));
+    }
+
+    /**
+     * Waits for this identity if the token is not on the system yet.
+     */
+    public AtomSpectraAudioSource(Context context, String identity) {
+        this(context, findAudioDevice(context, identity), identity);
+    }
+
+    private AtomSpectraAudioSource(Context context, AudioDeviceInfo device, String identity) {
+        this.context = context;
+        this.device = device;
+        this.identity = identity != null ? identity : DeviceIdentity.AUDIO_DEFAULT;
+        this.histogram = new long[HIST_POINTS];
+        this.sourceThread = new HandlerThread("AtomSpectraAudioSource");
+        this.sourceThread.start();
+        this.sourceHandler = new Handler(this.sourceThread.getLooper());
+        this.recoveryWakeLock = new RecoveryWakeLock(context, "AudioRecovery");
+    }
+
+    private boolean deferToSourceThread(Runnable task) {
+        if (this.context == null) return true;
+        if (Looper.myLooper() == this.sourceHandler.getLooper()) return false;
+        this.sourceHandler.post(() -> {
+            if (this.context != null) task.run();
+        });
+        return true;
+    }
+
+    @Override
+    public boolean isAppendSource() {
+        return true;
+    }
+
+    @Override
+    public void setInitialHistogram(long[] initialHistogram, double recordingTimeSec) {
+        if (Looper.myLooper() != this.sourceHandler.getLooper()) {
+            long[] snapshot = initialHistogram == null ? null : Arrays.copyOf(initialHistogram, initialHistogram.length);
+            this.deferToSourceThread(() -> this.setInitialHistogram(snapshot, recordingTimeSec));
+            return;
+        }
+        if (this.rejectIfDisconnected(SpectrumSource.OP_START)) return;
+        if (this.capturing) {
+            this.emitError(SpectrumSource.OP_START, SpectrumSource.REASON_ERROR, "Initial histogram can't be set while collecting");
+            return;
+        }
+
+        Arrays.fill(this.histogram, 0);
+        if (initialHistogram != null) {
+            System.arraycopy(initialHistogram, 0, this.histogram, 0, Math.min(initialHistogram.length, HIST_POINTS));
+        }
+        this.totalSamplesProcessed = Math.round(Math.max(0, recordingTimeSec) * SAMPLE_RATE);
+        this.clearCountRate();
+    }
+
+    @Override
+    public int instanceId() {
+        return this.instanceId;
+    }
+
+    @Override
+    public void requestConnect(boolean userInitiated) {
+        if (this.deferToSourceThread(() -> this.requestConnect(userInitiated))) return;
+        if (this.rejectIfClosed(SpectrumSource.OP_CONNECT)) return;
+
+        if (this.status != SpectrumSource.STATUS_DISCONNECTED) {
+            return;
+        }
+
+        final Context ctx = this.context;
+        if (ctx == null || !AppPermissions.isMicGranted(ctx)) {
+            this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_PERMISSION, "Microphone permission not granted");
+            return;
+        }
+
+        if (this.device == null && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
+            this.device = findAudioDevice(ctx, this.identity);
+            // the user is waiting for this connect: report the absent input instead of waiting for it
+            if (this.device == null && userInitiated) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    this.unregisterDeviceLossCallback();
+                }
+                this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_ERROR, "Selected audio input is not available");
+                return;
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
+            this.registerDeviceLossCallback(ctx);
+        }
+
+        if (this.device == null && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
+            return;
+        }
+
+        this.completeConnect(ctx);
+    }
+
+    private void completeConnect(Context ctx) {
+        this.setConnectionPhase(ConnectionPhase.CONNECTING);
+        this.loadAppPreferences(ctx);
+
+        this.deviceId = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && this.device != null)
+                ? this.device.getProductName().toString()
+                : "default";
+
+        this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
+        this.emitReady();
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private static AudioDeviceInfo findAudioDevice(Context ctx, String identity) {
+        if (ctx == null || identity == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+            return null;
+        AudioManager manager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+        if (manager == null) return null;
+        AudioDeviceInfo[] devices = manager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+        if (devices == null) return null;
+        for (AudioDeviceInfo device : devices) {
+            if (device.isSource() && identity.equals(DeviceIdentity.audio(device))) return device;
+        }
+        return null;
+    }
+
+    private void loadAppPreferences(Context ctx) {
+        SharedPreferences sp = PrefHelper.getASSharedPreferences(ctx);
+        this.frontCountsMin = sp.getInt(Constants.CONFIG.CONF_MIN_POINTS, MIN_FRONT_POINTS_DEFAULT);
+        this.frontCountsMax = sp.getInt(Constants.CONFIG.CONF_MAX_POINTS, MAX_FRONT_POINTS_DEFAULT);
+        this.histogramMinChannel = sp.getInt(Constants.CONFIG.CONF_NOISE, NOISE_DISCRIMINATOR_DEFAULT);
+        this.inversion = sp.getBoolean(Constants.CONFIG.CONF_INVERSION, INVERSE_DEFAULT);
+        this.pileup = sp.getBoolean(Constants.CONFIG.CONF_PILE_UP, PILE_UP_DEFAULT);
+        // at most 1000 reports per second keeps the report interval at least 1 ms
+        this.reportIntervalMs = 1000 / Math.max(1, Math.min(1000, sp.getInt(Constants.CONFIG.CONF_DOSE_UPDATE, Constants.UPDATE_DOSE_DEFAULT)));
+    }
+
+    // raw (unprocessed) capture is used only when requested in preferences and supported by the device
+    private int resolveAudioSourceMode(Context ctx) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return AUDIO_SOURCE_VOICE;
+
+        SharedPreferences sp = PrefHelper.getASSharedPreferences(ctx);
+        if (sp.getInt(Constants.CONFIG.CONF_AUDIO_SOURCE, AUDIO_SOURCE_SETTING_DEFAULT) != AUDIO_SOURCE_SETTING_RAW) {
+            return AUDIO_SOURCE_VOICE;
+        }
+
+        AudioManager manager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+        if (manager != null && manager.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) != null) {
+            return AUDIO_SOURCE_RAW;
+        }
+        log(ctx, "Raw (unprocessed) audio source requested but not supported by this device; using voice-recognition source");
+        return AUDIO_SOURCE_VOICE;
+    }
+
+    @Override
+    public void onAppPreferencesChanged() {
+        if (this.deferToSourceThread(this::onAppPreferencesChanged)) return;
+        final Context ctx = this.context;
+        if (ctx == null || this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+            return;
+
+        final int oldFrontMin = this.frontCountsMin;
+        final int oldFrontMax = this.frontCountsMax;
+        final int oldNoise = this.histogramMinChannel;
+        final boolean oldInversion = this.inversion;
+        final boolean oldPileup = this.pileup;
+        final int oldReportIntervalSamples = this.reportIntervalSamples();
+        this.loadAppPreferences(ctx);
+        if (this.capturing) {
+            // keep the last report as the origin of the new interval, but never schedule behind the processed audio
+            this.nextReportSamples = Math.max(
+                    this.nextReportSamples - oldReportIntervalSamples + this.reportIntervalSamples(),
+                    this.captureElapsedSamples);
+            this.updateNextBoundary();
+        }
+
+        // the pulse sums only pulses accepted under the current settings, so pulses accepted under the previous ones must go
+        boolean pulseSelectionChanged = oldFrontMin != this.frontCountsMin || oldFrontMax != this.frontCountsMax
+                || oldNoise != this.histogramMinChannel || oldInversion != this.inversion || oldPileup != this.pileup;
+
+        int newMode = this.resolveAudioSourceMode(ctx);
+        if (pulseSelectionChanged || newMode != this.audioSourceMode) {
+            Arrays.fill(this.referencePulse, 0);
+        }
+        if (newMode != this.audioSourceMode && this.capturing) {
+            this.startCapture(this.recoveryCapture);
+        }
+        this.audioSourceMode = newMode;
+    }
+
+    // watches the AudioManager device list for the specific selected device disappearing; armed for the whole
+    // connected lifetime (idle and collecting alike), not just while requestStart()/requestStop() bracket capture
+    @TargetApi(Build.VERSION_CODES.M)
+    private void registerDeviceLossCallback(Context ctx) {
+        if (this.deviceLossCallback != null) return;
+        AudioManager manager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+        if (manager == null) return;
+
+        this.deviceLossCallback = new AudioDeviceCallback() {
+            @Override
+            public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+                final AudioDeviceInfo current = AtomSpectraAudioSource.this.device;
+                for (AudioDeviceInfo removed : removedDevices) {
+                    if (removed.isSource() && current != null && removed.getId() == current.getId()) {
+                        AtomSpectraAudioSource.this.onSelectedDeviceLost();
+                        return;
+                    }
+                }
+            }
+
+            @Override
+            public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+                for (AudioDeviceInfo added : addedDevices) {
+                    if (added.isSource() && identity.equals(DeviceIdentity.audio(added))) {
+                        AtomSpectraAudioSource.this.onSelectedDeviceReturned(added);
+                        return;
+                    }
+                }
+            }
+        };
+        manager.registerAudioDeviceCallback(this.deviceLossCallback, this.sourceHandler);
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private void unregisterDeviceLossCallback() {
+        if (this.deviceLossCallback == null) return;
+
+        final Context ctx = this.context;
+        if (ctx != null) {
+            AudioManager manager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+            if (manager != null) {
+                manager.unregisterAudioDeviceCallback(this.deviceLossCallback);
+            }
+        }
+        this.deviceLossCallback = null;
+    }
+
+    private void onSelectedDeviceLost() {
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CLOSED)
+            return;
+        if (this.status == SpectrumSource.STATUS_RECOVERING && !this.capturing && !this.recoveryCapture)
+            return;
+
+        boolean wasCollecting = this.status == SpectrumSource.STATUS_CONNECTED_COLLECTING || this.recoveryCapture;
+        this.stopCapture();
+        // the removed token is never valid again; requestConnect() or the device-add callback supplies a fresh one
+        this.device = null;
+        if (!wasCollecting) {
+            this.status = SpectrumSource.STATUS_DISCONNECTED;
+            this.emitDisconnected("Audio device removed");
+            return;
+        }
+        log(this.context, "Audio device removed during capture, waiting up to "
+                + DEVICE_RECOVERY_WINDOW_MS / 1000 + " s for it to return");
+        this.recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
+        this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
+        this.sourceHandler.removeCallbacks(this.recoveryTimeout);
+        this.sourceHandler.postDelayed(this.recoveryTimeout, DEVICE_RECOVERY_WINDOW_MS);
+    }
+
+    private void onSelectedDeviceReturned(AudioDeviceInfo returned) {
+        boolean recovering = this.status == SpectrumSource.STATUS_RECOVERING;
+        if (this.capturing || (!recovering && this.status != SpectrumSource.STATUS_DISCONNECTED))
+            return;
+
+        final Context ctx = this.context;
+        if (ctx == null) return;
+        if (!AppPermissions.isMicGranted(ctx)) {
+            if (recovering) {
+                this.recoveryWakeLock.release();
+                this.status = SpectrumSource.STATUS_DISCONNECTED;
+                this.emitDisconnected("Audio recovery permission denied");
+            }
+            this.emitError(SpectrumSource.OP_CONNECT, SpectrumSource.REASON_PERMISSION, "Microphone permission was lost");
+            return;
+        }
+
+        this.sourceHandler.removeCallbacks(this.recoveryTimeout);
+        this.device = returned;
+        if (recovering) {
+            this.loadAppPreferences(ctx);
+            this.deviceId = returned.getProductName().toString();
+            this.startRecoveryCapture();
+        } else {
+            this.completeConnect(ctx);
+        }
+    }
+
+    private void onDeviceRecoveryTimeout() {
+        if (this.status != SpectrumSource.STATUS_RECOVERING || this.capturing) return;
+
+        this.recoveryWakeLock.release();
+        this.status = SpectrumSource.STATUS_DISCONNECTED;
+        this.emitDisconnected("Audio recovery timed out after " + DEVICE_RECOVERY_WINDOW_MS / 1000
+                + " s: the device did not return");
+    }
+
+    @Override
+    public void requestShowData() {
+        if (this.deferToSourceThread(this::requestShowData)) return;
+        if (this.rejectIfDisconnected(SpectrumSource.OP_SHOW)) return;
+        this.broadcastData();
+    }
+
+    @Override
+    public void requestStart() {
+        if (this.deferToSourceThread(this::requestStart)) return;
+        if (this.rejectIfDisconnected(SpectrumSource.OP_START) || this.capturing) return;
+        this.startCapture(false);
+    }
+
+    private void startCapture(boolean recovering) {
+        this.stopCapture();
+        final Context ctx = this.context;
+        if (ctx == null) return;
+        this.recoveryCapture = recovering;
+        if (recovering) this.setConnectionPhase(ConnectionPhase.CONNECTING);
+        this.capturing = true;
+        this.captureConfirmed = false;
+        this.setAndEmitStatus(recovering ? SpectrumSource.STATUS_RECOVERING
+                : SpectrumSource.STATUS_CONNECTED_EXECUTING_COMMAND);
+        try {
+            this.audioSourceMode = this.resolveAudioSourceMode(ctx);
+            int minimumBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
+            if (minimumBufferSize <= 0)
+                throw new IllegalStateException("Audio buffer configuration is unsupported");
+            this.bufferSize = minimumBufferSize * 2;
+            // the recorder holds two read intervals and a non-blocking read drains all of it, so a read delayed by
+            // up to one interval loses no samples; a blocking read waits for a full buffer, so it stays one interval long
+            // and reads back-to-back
+            final int recorderBufferSize = this.bufferSize * 2;
+            final int readSize = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? recorderBufferSize : this.bufferSize;
+            this.audioData = new int[readSize / 2];
+            this.audioZeroDataCount = 0;
+            this.captureTaskIntervalMs = Math.max(1, 1000L * this.bufferSize / 2 / SAMPLE_RATE);
+            this.captureElapsedSamples = 0;
+            this.clearCountRate();
+            this.resetBoundaries();
+            this.nextScopeSnapshotSamples = SCOPE_SNAPSHOT_PERIOD_SAMPLES;
+            this.audioRecord = new AudioRecord(this.audioSourceMode, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, recorderBufferSize);
+            if (this.audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+                throw new IllegalStateException("Audio recorder could not initialize");
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
+                if (this.device == null || !this.audioRecord.setPreferredDevice(this.device)) {
+                    throw new IllegalStateException("Selected audio input could not be preferred");
+                }
+            }
+            this.audioRecord.startRecording();
+            if (this.audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+                throw new IllegalStateException("Audio recording did not start");
+            }
+            AtomSpectraLog.detail(ctx, LogTag.AUDIO, "Audio capture configured: sampleRate=" + SAMPLE_RATE
+                    + ", bufferSize=" + this.bufferSize + ", recorderBufferSize=" + recorderBufferSize
+                    + ", source=" + this.audioSourceMode
+                    + " (" + audioSourceName(this.audioSourceMode) + ")");
+            final long generation = this.captureGeneration;
+            final AudioRecord record = this.audioRecord;
+            final byte[] readBuffer = new byte[readSize];
+            final long intervalMs = this.captureTaskIntervalMs;
+            this.captureThread = new HandlerThread("AtomSpectra-Audio-Capture");
+            this.captureThread.start();
+            final Handler handler = new Handler(this.captureThread.getLooper());
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (generation != AtomSpectraAudioSource.this.captureGeneration) return;
+                    final long readStarted = SystemClock.elapsedRealtime();
+                    try {
+                        int bytesRead = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                ? record.read(readBuffer, 0, readBuffer.length, AudioRecord.READ_NON_BLOCKING)
+                                : record.read(readBuffer, 0, readBuffer.length);
+                        byte[] samples = bytesRead > 0 ? Arrays.copyOf(readBuffer, bytesRead) : new byte[0];
+                        AtomSpectraAudioSource.this.sourceHandler.post(() -> {
+                            if (generation != AtomSpectraAudioSource.this.captureGeneration) return;
+                            try {
+                                AtomSpectraAudioSource.this.onAudioRead(generation, record, samples, bytesRead);
+                            } catch (RuntimeException error) {
+                                AtomSpectraAudioSource.this.failCapture("Audio processing failed: " + error);
+                            }
+                            if (generation == AtomSpectraAudioSource.this.captureGeneration) {
+                                long delay = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                        ? Math.max(0, intervalMs - (SystemClock.elapsedRealtime() - readStarted)) : 0;
+                                handler.postDelayed(this, delay);
+                            }
+                        });
+                    } catch (RuntimeException error) {
+                        AtomSpectraAudioSource.this.sourceHandler.post(() -> {
+                            if (generation != AtomSpectraAudioSource.this.captureGeneration) return;
+                            if (error instanceof SecurityException) {
+                                AtomSpectraAudioSource.this.failCapture("Audio read failed: " + error, SpectrumSource.REASON_PERMISSION);
+                            } else {
+                                AtomSpectraAudioSource.this.failReadOrRecover("Audio read failed: " + error);
+                            }
+                        });
+                        return;
+                    }
+                }
+            });
+            long remaining = recovering ? Math.max(0, this.recoveryCaptureDeadline - SystemClock.elapsedRealtime())
+                    : CAPTURE_START_WINDOW_MS;
+            this.sourceHandler.postDelayed(this.captureStartTimeout, remaining);
+        } catch (RuntimeException error) {
+            this.failCapture("Audio capture could not start: " + error,
+                    error instanceof SecurityException ? SpectrumSource.REASON_PERMISSION : SpectrumSource.REASON_ERROR);
+        }
+    }
+
+    private void onCaptureStartTimeout() {
+        if ((this.capturing || this.recoveryCapture) && !this.captureConfirmed) {
+            this.failCapture("No samples from the selected audio input before the capture deadline", SpectrumSource.REASON_TIMEOUT);
+        }
+    }
+
+    private void failCapture(String reason) {
+        this.failCapture(reason, SpectrumSource.REASON_ERROR);
+    }
+
+    private void failCapture(String reason, int errorReason) {
+        boolean recovering = this.recoveryCapture;
+        this.stopCapture();
+        if (recovering) {
+            long remaining = this.recoveryCaptureDeadline - SystemClock.elapsedRealtime();
+            if (errorReason != SpectrumSource.REASON_PERMISSION && remaining > 0) {
+                this.recoveryCapture = true;
+                this.setAndEmitStatus(SpectrumSource.STATUS_RECOVERING);
+                this.sourceHandler.postDelayed(this.captureStartTimeout, remaining);
+                this.sourceHandler.postDelayed(this.recoveryCaptureRetry, Math.min(250, remaining));
+                return;
+            }
+            this.recoveryWakeLock.release();
+            this.status = SpectrumSource.STATUS_DISCONNECTED;
+            this.emitDisconnected(reason);
+            if (errorReason == SpectrumSource.REASON_PERMISSION) {
+                this.emitError(SpectrumSource.OP_CONNECT, errorReason, reason);
+            }
+        } else {
+            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COMMAND_FAILED);
+            this.emitError(errorReason == SpectrumSource.REASON_PERMISSION ? SpectrumSource.OP_CONNECT : SpectrumSource.OP_START,
+                    errorReason, reason);
+        }
+    }
+
+    // a failing read can be the first sign of the selected device removal, ahead of the device callback
+    private void failReadOrRecover(String reason) {
+        if (this.captureConfirmed && this.isSelectedDeviceGone()) {
+            this.onSelectedDeviceLost();
+        } else {
+            this.failCapture(reason);
+        }
+    }
+
+    private void restartStalledCapture(String reason) {
+        if (this.isSelectedDeviceGone()) {
+            this.onSelectedDeviceLost();
+            return;
+        }
+        log(this.context, reason + ", restarting capture");
+        this.recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
+        this.startRecoveryCapture();
+    }
+
+    private void startRecoveryCapture() {
+        this.recoveryCaptureDeadline = SystemClock.elapsedRealtime() + CAPTURE_START_WINDOW_MS;
+        this.startCapture(true);
+    }
+
+    private boolean isSelectedDeviceGone() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)
+                && findAudioDevice(this.context, this.identity) == null;
+    }
+
+    private void retryRecoveryCapture() {
+        if (this.context == null || !this.recoveryCapture || this.capturing
+                || this.status != SpectrumSource.STATUS_RECOVERING) return;
+        if (!AppPermissions.isMicGranted(this.context)) {
+            this.failCapture("Microphone permission was lost", SpectrumSource.REASON_PERMISSION);
+            return;
+        }
+        this.startCapture(true);
+    }
+
+    private void onAudioRead(long generation, AudioRecord record, byte[] samples, int bytesRead) {
+        if (this.context == null || !this.capturing || generation != this.captureGeneration) return;
+        if (bytesRead == AudioRecord.ERROR_DEAD_OBJECT && this.captureConfirmed) {
+            this.restartStalledCapture("Audio recorder died");
+            return;
+        }
+        if (bytesRead < 0) {
+            this.failReadOrRecover("Audio read returned error " + bytesRead);
+            return;
+        }
+        if (bytesRead == 0) {
+            if (++this.audioZeroDataCount >= AUDIO_ZERO_DATA_MAX_COUNT && this.captureConfirmed) {
+                this.restartStalledCapture("Audio input stopped delivering samples");
+            }
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !DeviceIdentity.AUDIO_DEFAULT.equals(this.identity)) {
+            AudioDeviceInfo routed = record.getRoutedDevice();
+            if (routed == null || this.device == null || routed.getId() != this.device.getId()) {
+                if (this.captureConfirmed)
+                    this.failReadOrRecover("Audio input no longer routes to the selected device");
+                return;
+            }
+        }
+        this.audioZeroDataCount = 0;
+        if (!this.captureConfirmed) {
+            this.captureConfirmed = true;
+            this.recoveryCapture = false;
+            this.sourceHandler.removeCallbacks(this.captureStartTimeout);
+            this.recoveryWakeLock.release();
+            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_COLLECTING);
+            this.setConnectionPhase(ConnectionPhase.NONE);
+            AtomSpectraLog.detail(this.context, LogTag.AUDIO, "Audio capture started, device=" + this.deviceId);
+        }
+        this.audioBytes = samples;
+        this.audioBytesRead = samples.length;
+        this.captureAudioChunk();
+    }
+
+    @Override
+    public void requestStop() {
+        if (this.deferToSourceThread(this::requestStop)) return;
+        if (this.context == null || this.status == SpectrumSource.STATUS_CLOSED
+                || this.status == SpectrumSource.STATUS_DISCONNECTED) return;
+        this.sourceHandler.removeCallbacks(this.recoveryTimeout);
+        this.recoveryWakeLock.release();
+        this.stopCapture();
+        if (this.status == SpectrumSource.STATUS_RECOVERING) {
+            this.status = SpectrumSource.STATUS_DISCONNECTED;
+            this.emitDisconnected("Audio recovery cancelled by stop");
+            AudioDeviceInfo available = findAudioDevice(this.context, this.identity);
+            if (available != null && AppPermissions.isMicGranted(this.context)) {
+                this.device = available;
+                this.completeConnect(this.context);
+            }
+        } else {
+            this.setAndEmitStatus(SpectrumSource.STATUS_CONNECTED_IDLE);
+        }
+    }
+
+    @Override
+    public void requestReset() {
+        if (this.deferToSourceThread(this::requestReset)) return;
+        if (this.rejectIfDisconnected(SpectrumSource.OP_RESET)) return;
+        Arrays.fill(this.histogram, 0);
+        this.totalSamplesProcessed = 0;
+        this.clearCountRate();
+        this.resetBoundaries();
+        Arrays.fill(this.referencePulse, 0);
+        AudioScopeData.instance.reset();
+    }
+
+    @Override
+    public void requestSaveCalibration(double[] coeffs) {
+        if (Looper.myLooper() != this.sourceHandler.getLooper()) {
+            double[] snapshot = Arrays.copyOf(coeffs, coeffs.length);
+            this.deferToSourceThread(() -> this.requestSaveCalibration(snapshot));
+            return;
+        }
+        if (this.rejectIfDisconnected(SpectrumSource.OP_CALIBRATION_SAVE)) return;
+        final Context ctx = this.context;
+        if (ctx == null) return;
+        PrefHelper.setDeviceCalibration(ctx, this.deviceId, coeffs);
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_CALIBRATION_SAVED));
+    }
+
+    @Override
+    public void close() {
+        if (this.context == null) return;
+        if (Looper.myLooper() != this.sourceHandler.getLooper()) {
+            CountDownLatch closed = new CountDownLatch(1);
+            if (!this.sourceHandler.post(() -> {
+                try {
+                    this.close();
+                } finally {
+                    closed.countDown();
+                }
+            })) return;
+            boolean interrupted = false;
+            while (true) {
+                try {
+                    closed.await();
+                    break;
+                } catch (InterruptedException ignored) {
+                    interrupted = true;
+                }
+            }
+            if (interrupted) Thread.currentThread().interrupt();
+            return;
+        }
+        this.sourceHandler.removeCallbacks(this.recoveryTimeout);
+        this.recoveryWakeLock.release();
+        this.stopCapture();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.unregisterDeviceLossCallback();
+        }
+        AudioScopeData.instance.reset();
+        this.setAndEmitStatus(SpectrumSource.STATUS_CLOSED);
+        this.context = null;
+        this.sourceThread.quitSafely();
+    }
+
+    @Override
+    public int inputType() {
+        return SpectrumSource.TYPE_AUDIO;
+    }
+
+    @Override
+    public int status() {
+        return this.status;
+    }
+
+    @Override
+    public SourceError lastError() {
+        return this.lastError;
+    }
+
+    @Override
+    public ConnectionPhase connectionPhase() {
+        return this.connectionPhase;
+    }
+
+    @Override
+    public int channelCount() {
+        return HIST_POINTS;
+    }
+
+    @Override
+    public String deviceId() {
+        return this.deviceId;
+    }
+
+    @Override
+    public double[] calibration() {
+        final Context ctx = this.context;
+        if (ctx == null) return null;
+        double[] coeffs = PrefHelper.getDeviceCalibration(ctx, this.deviceId);
+        if (coeffs != null) return coeffs;
+        // until the user stores one for this device, the calibration shared by all devices in older versions applies
+        Calibration legacy = PrefHelper.getLegacyCalibration(ctx, HIST_POINTS);
+        return legacy == null ? null : legacy.getCoeffArray(legacy.getFactor() + 1);
+    }
+
+    /**
+     * Publish the latest captured samples and the averaged reference pulse for the raw audio views.
+     */
+    private void publishScopeSnapshot() {
+        if (!AudioScopeData.instance.wanted) return;
+
+        final Context ctx = this.context;
+        if (ctx == null) return;
+
+        double[] samples;
+        double[] pulse = new double[REFERENCE_PULSE_POINTS];
+        samples = Arrays.copyOf(this.lastCapturedSamples, this.lastCapturedSamples.length);
+        for (int i = 0; i < pulse.length; i++) pulse[i] = this.referencePulse[i];
+        AudioScopeData.instance.set(samples, pulse);
+        ctx.sendBroadcast(new Intent(Constants.ACTION.ACTION_RAW_AUDIO_SNAPSHOT).setPackage(Constants.PACKAGE_NAME));
+    }
+
+    private void stopCapture() {
+        this.captureGeneration++;
+        this.capturing = false;
+        this.captureConfirmed = false;
+        this.recoveryCapture = false;
+        this.sourceHandler.removeCallbacks(this.captureStartTimeout);
+        this.sourceHandler.removeCallbacks(this.recoveryCaptureRetry);
+        if (this.audioRecord != null) {
+            try {
+                if (this.audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                    this.audioRecord.stop();
+                }
+            } catch (RuntimeException error) {
+                if (this.context != null) AtomSpectraLog.error(this.context, LogTag.AUDIO, "Audio stop failed", error);
+            }
+        }
+        if (this.captureThread != null) {
+            this.captureThread.quitSafely();
+            this.captureThread.interrupt();
+            boolean interrupted = false;
+            while (true) {
+                try {
+                    this.captureThread.join();
+                    break;
+                } catch (InterruptedException ignored) {
+                    interrupted = true;
+                }
+            }
+            this.captureThread = null;
+            if (interrupted) Thread.currentThread().interrupt();
+        }
+        if (this.audioRecord != null) {
+            try {
+                this.audioRecord.release();
+            } catch (RuntimeException error) {
+                if (this.context != null) AtomSpectraLog.error(this.context, LogTag.AUDIO, "Audio release failed", error);
+            } finally {
+                this.audioRecord = null;
+            }
+        }
+    }
+
+    private void captureAudioChunk() {
+        // First pass the 2 bytes into one sample - an extra loop, but avoids repeating the same sum many times during the filter below
+        int highBitsShift = Math.max(0, 15 - ADC_EFF_BITS);
+        for (int i = 0, r = 0; i + 1 < this.audioBytesRead; i += 2, r++) {
+            if (this.audioBytes[i] < 0)
+                this.audioData[r] = this.audioBytes[i] + 256;
+            else
+                this.audioData[r] = this.audioBytes[i];
+            this.audioData[r] = this.audioData[r] + 256 * this.audioBytes[i + 1];
+
+            if (this.inversion)
+                this.audioData[r] = -this.audioData[r];
+            this.audioData[r] = (this.audioData[r] >> highBitsShift);
+        }
+
+        int sampleCount = this.audioBytesRead / 2;
+        if (this.lastCapturedSamples.length != sampleCount) {
+            this.lastCapturedSamples = new double[sampleCount];
+        }
+        for (int i = 0; i < sampleCount; i++) {
+            this.lastCapturedSamples[i] = this.audioData[i];
+        }
+
+        final long chunkStartSamples = this.captureElapsedSamples;
+
+        //-----------------DPP started--------------------------------------------------
+        int initialAmp = 0, initialTime = 0;
+        float corrector;
+        for (int i = 1; i < this.audioBytesRead / 2 - 2; i++) {
+            // pulses are counted at their peak, so the state at a boundary holds exactly the peaks before it
+            if (chunkStartSamples + i >= this.nextBoundarySamples) {
+                this.closeBoundaries(chunkStartSamples + i);
+            }
+            if (((this.audioData[i] - this.audioData[i - 1]) <= 0) && ((this.audioData[i + 1] - this.audioData[i]) > 0)) {
+                initialAmp = this.audioData[i];
+                initialTime = i;
+            }
+            if (((this.audioData[i] - this.audioData[i - 1]) >= 0) && ((this.audioData[i + 1] - this.audioData[i]) < 0)) {
+                if (((i - initialTime) >= this.frontCountsMin) && ((i - initialTime) <= this.frontCountsMax)) {
+                    if (i > this.frontCountsMax * 2)
+                        corrector = this.audioData[initialTime - (i - initialTime)] - this.audioData[initialTime];
+                    else corrector = 0;
+                    if (!this.pileup) corrector = 0;
+                    int channel = (this.audioData[i] - initialAmp + (int) corrector);
+                    if ((channel >= this.histogramMinChannel) && (channel < HIST_POINTS)) {
+                        //-----------------DPP finished-------------------------------------------------
+                        this.histogram[channel]++;
+                        this.countsThisBin++;
+
+                        if ((i >= 128) && (i + 127 < sampleCount))
+                            for (int j = -128; j < 128; j++)
+                                this.referencePulse[j + 128] += this.audioData[i + j];
+                    }
+                }
+            }
+        }
+
+        this.closeBoundaries(chunkStartSamples + sampleCount);
+        this.captureElapsedSamples += sampleCount;
+        this.totalSamplesProcessed += sampleCount;
+
+        for (DataSnapshot snapshot : this.pendingSnapshots) {
+            this.sendData(snapshot.histogram, snapshot.cp1s, snapshot.recordingTime);
+        }
+        this.pendingSnapshots.clear();
+
+        if (this.captureElapsedSamples >= this.nextScopeSnapshotSamples) {
+            while (this.nextScopeSnapshotSamples <= this.captureElapsedSamples) {
+                this.nextScopeSnapshotSamples += SCOPE_SNAPSHOT_PERIOD_SAMPLES;
+            }
+            this.publishScopeSnapshot();
+        }
+    }
+
+    private int reportIntervalSamples() {
+        return (int) ((long) this.reportIntervalMs * SAMPLE_RATE / 1000);
+    }
+
+    private void resetBoundaries() {
+        this.nextReportSamples = this.captureElapsedSamples + this.reportIntervalSamples();
+        this.nextCpsSamples = this.captureElapsedSamples + CPS_BIN_SAMPLES;
+        this.updateNextBoundary();
+    }
+
+    private void clearCountRate() {
+        Arrays.fill(this.cp1sArray, 0);
+        this.cp1sPos = 0;
+        this.countsThisBin = 0;
+    }
+
+    private int countRate() {
+        int sum = 0;
+        for (int value : this.cp1sArray) sum += value;
+        return sum;
+    }
+
+    private void updateNextBoundary() {
+        this.nextBoundarySamples = Math.min(this.nextReportSamples, this.nextCpsSamples);
+    }
+
+    // closes the count-rate second and snapshots the report for every boundary up to the processed audio position;
+    // the snapshot is queued and sent once the chunk is processed, but timestamped at the boundary itself
+    private void closeBoundaries(long processedSamples) {
+        while (this.nextBoundarySamples <= processedSamples) {
+            if (this.nextCpsSamples <= this.nextReportSamples) {
+                this.cp1sPos = this.cp1sPos < (this.cp1sArray.length - 1) ? (this.cp1sPos + 1) : 0;
+                this.cp1sArray[this.cp1sPos] = this.countsThisBin;
+                this.countsThisBin = 0;
+                this.nextCpsSamples += CPS_BIN_SAMPLES;
+            } else {
+                long recordedSamples = this.totalSamplesProcessed + this.nextReportSamples - this.captureElapsedSamples;
+                this.pendingSnapshots.add(new DataSnapshot(Arrays.copyOf(this.histogram, this.histogram.length),
+                        this.countRate(), (double) recordedSamples / SAMPLE_RATE));
+                this.nextReportSamples += this.reportIntervalSamples();
+            }
+            this.updateNextBoundary();
+        }
+    }
+
+    private void broadcastData() {
+        this.sendData(Arrays.copyOf(this.histogram, this.histogram.length), this.countRate(),
+                (double) this.totalSamplesProcessed / SAMPLE_RATE);
+    }
+
+    private void sendData(long[] histogramCopy, int cp1s, double recordingTime) {
+        final Context ctx = this.context;
+        if (ctx == null) return;
+
+        Intent intent = new Intent(SpectrumSource.ACTION_SOURCE_DATA).setPackage(Constants.PACKAGE_NAME);
+        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_HISTOGRAM, histogramCopy);
+        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_CP1S, cp1s);
+        intent.putExtra(SpectrumSource.EXTRA_SOURCE_DATA_RECORDING_TIME, recordingTime);
+        intent.putExtra(SpectrumSource.EXTRA_SOURCE_INPUT_TYPE, this.inputType());
+        intent.putExtra(SpectrumSource.EXTRA_SOURCE_INSTANCE_ID, this.instanceId);
+        ctx.sendBroadcast(intent);
+    }
+
+    private boolean rejectIfClosed(int op) {
+        if (this.status == SpectrumSource.STATUS_CLOSED) {
+            this.emitError(op, SpectrumSource.REASON_ERROR, "Request to an already closed source");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean rejectIfDisconnected(int op) {
+        if (this.rejectIfClosed(op)) return true;
+        if (this.status == SpectrumSource.STATUS_DISCONNECTED || this.status == SpectrumSource.STATUS_CONNECTING
+                || this.status == SpectrumSource.STATUS_RECOVERING) {
+            this.emitError(op, SpectrumSource.REASON_ERROR, "Request to a disconnected source");
+            return true;
+        }
+        return false;
+    }
+
+    private void broadcastReply(@NonNull Intent intent) {
+        final Context ctx = this.context;
+        if (ctx == null) {
+            return;
+        }
+
+        ctx.sendBroadcast(intent
+                .setPackage(Constants.PACKAGE_NAME)
+                .putExtra(EXTRA_SOURCE_INPUT_TYPE, this.inputType())
+                .putExtra(EXTRA_SOURCE_INSTANCE_ID, this.instanceId));
+    }
+
+    private void emitDisconnected(String reason) {
+        this.setConnectionPhase(ConnectionPhase.NONE);
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_DISCONNECTED)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_DISCONNECT_REASON, reason));
+    }
+
+    private void emitError(int op, int reason, String text) {
+        if (op == SpectrumSource.OP_CONNECT) this.setConnectionPhase(ConnectionPhase.NONE);
+        this.lastError = new SourceError(op, reason, text);
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_ERROR)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_OP, op)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_REASON, reason)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_ERROR_TEXT, text));
+    }
+
+    private void setAndEmitStatus(int status) {
+        if (status == SpectrumSource.STATUS_CLOSED) this.setConnectionPhase(ConnectionPhase.NONE);
+        if (status == SpectrumSource.STATUS_CONNECTED_IDLE || status == SpectrumSource.STATUS_CONNECTED_COLLECTING) {
+            this.lastError = null;
+        }
+        if (this.status != status) {
+            this.status = status;
+            this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_STATUS)
+                    .putExtra(SpectrumSource.EXTRA_SOURCE_STATUS, this.status));
+        }
+    }
+
+    private void setConnectionPhase(ConnectionPhase next) {
+        if (this.connectionPhase == next) return;
+        this.connectionPhase = next;
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_CONNECTION_PHASE));
+    }
+
+    private void emitReady() {
+        this.lastError = null;
+        this.broadcastReply(new Intent(SpectrumSource.ACTION_SOURCE_READY)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_CHANNEL_COUNT, this.channelCount())
+                .putExtra(SpectrumSource.EXTRA_SOURCE_STATUS, this.status)
+                .putExtra(SpectrumSource.EXTRA_SOURCE_DEVICE_ID, this.deviceId));
+        // after the ready reply: the service must not see an unready device without a phase
+        this.setConnectionPhase(ConnectionPhase.NONE);
+    }
+}

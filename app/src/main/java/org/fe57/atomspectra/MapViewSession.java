@@ -213,7 +213,9 @@ final class MapViewSession {
         return v;
     }
 
-    /** JSON for {@code /map-data/view-state.json}, or {@code {"valid":false}}. */
+    /**
+     * JSON for {@code /map-data/view-state.json}, or {@code {"valid":false}}.
+     */
     @NonNull
     synchronized byte[] toJsonBytes() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(512);

@@ -4,34 +4,116 @@
     <string name="app_name">Atom Spectra</string>
     <string name="app_bar_audio_action">Читаю аудио-данные</string>
     <string name="app_bar_usb_action">Читаю данные с USB</string>
+    <string name="app_bar_bluetooth_action">Читаю данные по Bluetooth</string>
     <string name="app_bar_spectrum_update">(обновляю спектр)</string>
     <string name="app_bar_pause">Чтение данных остановлено</string>
     <string name="app_channel">Сервис Atom Spectra</string>
 
     <string name="settings">Atom Spectra Параметры</string>
     <string name="settings_audio_processing">Обработка аудио</string>
-    <string name="settings_usb_processing">Обработка USB</string>
+    <string name="settings_spectra_pro">Spectra Pro</string>
+    <string name="settings_bluz">BluZ</string>
     <string name="settings_spectrum">Спектр</string>
     <string name="settings_spectrum_change">Изменение спектра</string>
-    <string name="settings_spectrogram">Спектрограмма</string>
-    <string name="settings_interval_search">Поиск в интервале</string>
     <string name="settings_atomswift_integration">AtomSwift интеграция</string>
     <string name="settings_search_isotopes">Поиск изотопов</string>
     <string name="settings_files">Файлы</string>
     <string name="settings_maps">Карты</string>
     <string name="settings_miscellaneous">Прочее</string>
-    <string name="settings_spg_midnight_reset">Создавать новый файл спектрограммы в полночь</string>
+    <string name="settings_spg_midnight_reset">Новый файл спектрограммы в полночь</string>
 
     <string name="isotope_search">Atom Spectra Поиск изотопов</string>
     <string name="action_settings">Параметры</string>
-    <string name="action_select_interval">Выбрать интервал…</string>
     <string name="action_restart">Сброс спектра</string>
     <string name="action_save_options">Сохранить параметры</string>
     <string name="action_buy_spectrometer">Купить спектрометр</string>
     <string name="action_exit">Завершить программу</string>
-    <string name="action_usb_attached">USB подключён</string>
-    <string name="action_usb_detached">USB отключён</string>
+    <string name="spectra_pro_available">Устройство Spectra Pro доступно к подключению</string>
     <string name="action_usb_no_access">Не могу открыть устройство USB</string>
+    <string name="device_default_microphone">Микрофон по умолчанию</string>
+    <string name="device_spectra_pro">Spectra Pro</string>
+    <string name="device_bluz">BluZ (Bluetooth)</string>
+    <string name="device_type_audio">Аудиоустройство</string>
+    <string name="device_type_spectra_pro">Spectra Pro</string>
+    <string name="device_type_bluz">BluZ</string>
+    <string name="log_source_operation_failed">Не удалось выполнить операцию устройства (<xliff:g id="details">%1$s</xliff:g>)</string>
+    <string name="log_source_operation_timeout">Время ожидания операции устройства истекло (<xliff:g id="details">%1$s</xliff:g>)</string>
+    <string name="device_op_connect">подключение</string>
+    <string name="device_op_start">запуск записи</string>
+    <string name="device_op_stop">остановка записи</string>
+    <string name="device_op_show">чтение спектра</string>
+    <string name="device_op_reset">сброс счёта</string>
+    <string name="device_op_calibration_save">сохранение калибровки</string>
+    <string name="device_op_settings_save">сохранение настроек</string>
+    <string name="device_op_telemetry">чтение телеметрии</string>
+    <string name="device_op_unknown">неизвестная операция</string>
+    <string name="bluetooth_off">Bluetooth выключен</string>
+    <string name="bluetooth_allow">Разрешить доступ к Bluetooth</string>
+    <string name="bluetooth_enable">Включить Bluetooth</string>
+    <string name="bluetooth_scan">Поиск устройств Bluetooth</string>
+    <string name="bluetooth_location_off">Геолокация выключена; поиск устройств Bluetooth недоступен</string>
+    <string name="bluetooth_location_enable">Включить геолокацию</string>
+    <string name="bluetooth_scan_failed">Не удалось найти устройства Bluetooth</string>
+    <string name="bluetooth_scanning">Поиск Bluetooth…</string>
+    <string name="device_waiting_notification">Ожидание выбранного устройства</string>
+    <string name="device_none_selected_notification">Устройство не выбрано</string>
+    <string name="device_name_audio">Аудио</string>
+    <string name="device_name_spectra_pro">Spectra Pro</string>
+    <string name="device_name_bluz">BluZ</string>
+    <string name="device_name_generic">Устройство</string>
+    <string name="device_recovering_notification">Восстановление соединения: %1$s</string>
+    <string name="device_waiting_description">%1$s - ожидание устройства</string>
+    <string name="action_switch_device">Сменить устройство</string>
+    <string name="device_select_title">Выбор устройства</string>
+    <string name="device_select_offline">Работа c файлами</string>
+    <string name="device_select_remember">Запомнить мой выбор</string>
+    <string name="device_select_connecting">Подключение…</string>
+    <string name="device_select_permission_needed">Нужно разрешение — нажмите, чтобы выдать</string>
+    <string name="device_select_none">Устройства не найдены</string>
+    <string name="device_select_available">Доступно</string>
+    <string name="device_select_unavailable">Не найдено</string>
+    <string name="device_select_connect_device">Подключите устройство.</string>
+    <string name="device_select_searching">Поиск устройства...</string>
+    <string name="device_select_waiting_data">Подключено. Ожидание данных устройства...</string>
+    <string name="device_select_connected">Подключено</string>
+    <string name="device_select_recording">Запись</string>
+    <string name="device_select_busy">Выполнение команды...</string>
+    <string name="device_select_reconnecting">Ожидание повторного подключения...</string>
+    <string name="device_select_status_timed">%1$s %2$d с</string>
+    <string name="device_connection_description">%1$s - %2$s</string>
+    <string name="device_select_selected_description">%1$s, выбрано</string>
+    <string name="device_connect_decision_title">Устройство подключено</string>
+    <string name="device_connect_decision_text">Подключено устройство %1$s. Спектр на экране не сохранён и будет заменён спектром устройства.</string>
+    <string name="device_decision_replace">Заменить спектром устройства</string>
+    <string name="device_decision_disconnect">Отключить устройство</string>
+    <string name="start_dialog_title">Начать запись</string>
+    <string name="start_continue_or_new_text">Спектр на экране записан другим устройством.</string>
+    <string name="start_unsaved_text">Спектр на экране не сохранён. Новый спектр заменит его.</string>
+    <string name="start_continue_button">Продолжить этот спектр</string>
+    <string name="start_new_button">Начать новый спектр</string>
+    <string name="start_discard_button">Не сохранять и начать</string>
+    <string name="device_error_notification">Ошибка устройства</string>
+    <string name="device_permission_lost">Нет разрешения на выбранное устройство. Выберите устройство.</string>
+    <string name="device_protocol_unsupported">Устройство использует более новую версию протокола. Обновите приложение.</string>
+    <string name="toast_device_spectra_pro">Устройство Spectra Pro</string>
+    <string name="toast_device_bluz">Устройство BluZ</string>
+    <string name="toast_device_audio">Аудиоустройство</string>
+    <string name="device_connected">%1$s подключено, показано состояние устройства</string>
+    <string name="device_connected_replaced">%1$s подключено, спектр на экране заменён</string>
+    <string name="device_disconnected">%1$s отключено</string>
+    <string name="device_reconnected">%1$s подключено повторно</string>
+    <string name="device_connection_lost">%1$s: соединение потеряно, идёт восстановление</string>
+    <string name="device_connection_recovered">%1$s: соединение восстановлено</string>
+    <string name="start_screen_replaced">Спектр на экране заменён спектром устройства</string>
+    <string name="device_status_title">Состояние устройства</string>
+    <string name="device_status_select_other">Выбрать устройство</string>
+    <string name="device_status_retry">Повторить</string>
+    <string name="device_idle_description">%1$s - ожидание команды</string>
+    <string name="device_recording_description">%1$s - идёт запись</string>
+    <string name="device_busy_description">%1$s - выполняется команда</string>
+    <string name="device_recovering_description">%1$s - восстановление соединения</string>
+    <string name="device_recovering_action_refused">Идёт восстановление соединения, действие недоступно. Подождите или смените устройство.</string>
+    <string name="device_error_description">%1$s - ошибка</string>
 
     <string name="nav_bar_spectrum">Спектр</string>
     <string name="nav_bar_spectrum_change">Изменение</string>
@@ -48,11 +130,16 @@
     <string name="hist_export_to_N42">Export to N42…</string>
     <string name="hist_export_csv">Экспорт в CSV…</string>
     <string name="hist_export_with_energy">Экспорт (с энергией)…</string>
-    <string name="hist_share_export">Поделиться</string>
-    <string name="hist_freeze_update">Пауза</string>
+    <string name="hist_pause_update">Пауза</string>
     <string name="hist_continue_update">Продолжить</string>
     <string name="hist_ask_delete_title">Очистить спектр</string>
-    <string name="hist_ask_delete_text">Вы действительно хотите очистить данные спектра?</string>
+    <string name="hist_ask_reset_text">Сброс счёта обнуляет гистограмму и поиск. Очистить всё — полный сброс.</string>
+    <string name="hist_ask_reset_device">Спектр устройства будет сброшен.</string>
+    <string name="hist_ask_unsaved">Спектр на экране не сохранён.</string>
+    <string name="hist_clear_button">Очистить всё</string>
+    <string name="hist_stop_clear_all_button">Остановить и очистить всё</string>
+    <string name="hist_reset_button">Сбросить счёт</string>
+    <string name="hist_add_mismatch_button">Всё равно объединить</string>
     <string name="hist_smooth">Сгладить</string>
     <string name="hist_unsmooth">Восстановить</string>
     <string name="hist_delta">Изменение спектра</string>
@@ -74,6 +161,8 @@
 
     <string name="enable_pileup">Включить анализ наложения импульсов</string>
     <string name="allow_partial_histogram_data">Разрешить обработку спектров с частичными данными</string>
+    <string name="bluz_dnl_correction">Корректировать неравномерность каналов АЦП (DNL)</string>
+    <string name="bluz_notification_interval_format">Интервал обновления: <xliff:g id="interval">%1$d</xliff:g> с</string>
     <string name="invert">Инвертировать вход</string>
     <string name="add_gps">Добавлять координаты GPS в файлы</string>
     <string name="update_isotopes">Автоматический поиск изотопов</string>
@@ -81,8 +170,6 @@
     <string name="atom_swift_app_dr_non_compensated">AtomSwift МД: Некомпенсированная</string>
     <string name="atom_swift_app_dr_compensated">AtomSwift МД: Компенсированная</string>
     <string name="atom_swift_app_dr_interval">AtomSwift МД: Интервал</string>
-    <string name="input_sound">Вход:</string>
-    <string name="input_sound_absent">Нет выбранного аудио источника! Использую по-умолчанию.</string>
     <string name="interval_search_sound_disabled_label">сигнал выкл.</string>
     <string name="interval_search_output_sound_enabled">Включить звуковой сигнал</string>
     <string name="interval_search_energy_range_full">Диапазон энергий: Полный</string>
@@ -126,7 +213,7 @@
     <string name="mode_search_button">Поиск</string>
     <string name="mode_axis_kev_button">кэВ</string>
     <string name="mode_axis_ch_button">к.</string>
-    <string name="doserateUpdatePeriod">Частота обновл. графика, с⁻¹:</string>
+    <string name="doserateUpdatePeriod">Частота обновл. графика, с⁻¹: %1$d</string>
     <string name="max_factor">Макс. степень: 1</string>
     <string name="smoothness">Сглаживание: 1</string>
     <string name="delta_spectrum">Дельта-время: 1 с</string>
@@ -141,22 +228,23 @@
     <string name="calibration_calculate">Рассчитать</string>
     <string name="calibration_load_from_file">Загрузить из…</string>
     <string name="calibration_store_device">Запомнить в устройство</string>
-    <string name="calibration_store_memory">Запомнить в программу</string>
-    <string name="calibration_revert_device">Восстановить из устройства</string>
-    <string name="calibration_revert_memory">Восстановить из программы</string>
+    <string name="calibration_revert_device">Взять из устройства</string>
     <string name="none_cal_data">──────────</string>
     <string name="calibration_device">Устройство</string>
     <string name="calibration_load_device_energy">Загрузить с калибровкой…</string>
-    <string name="calibration_sensivity">Чувствительность…</string>
+    <string name="dose_rate_settings_menu">Настройки МЭД</string>
+    <string name="device_settings_menu">Настройки</string>
+    <string name="device_settings_title">Настройки устройства</string>
+    <string name="menu_search">Поиск</string>
+    <string name="interval_settings">Настройки интервала</string>
     <string name="calibration_channel">Поcледний: 8192</string>
     <string name="calibration_channel_format">Поcледний: <xliff:g id="channel">%1$d</xliff:g></string>
     <string name="calibration_add_nuclid_title">Добавить точку калибровки</string>
     <string name="calibration_add_nuclid_text">Добавить точку калибровки для канала %1$d с %2$s (%3$.2f кэВ)?</string>
     <string name="calibration_add_nuclid2_text">Введите энергию (в кэВ) для канала %1$d (сейчас %2$s, %3$.2f кэВ):</string>
-    <string name="calibration_stop_before_save_device_text">Для сохранения калибровки в устройство запись спектра будет остановлена</string>
     <string name="calibration_stop_before_load_device_text">Для чтения калибровки из устройства запись спектра будет остановлена</string>
 
-    <string name="detector_sensitivity">Чувствительность прибора</string>
+    <string name="dose_rate_settings">Настройки МЭД</string>
     <string name="sens_energy_kev">E, кэВ</string>
     <string name="sens_sensitivity">Чувствит.</string>
     <string name="sens_add_row_dialog_title">Добавить строку</string>
@@ -201,12 +289,13 @@
     <string name="noise_discriminator_format">Дискриминатор шума: <xliff:g id="minimum_channel">%1$d</xliff:g></string>
     <string name="max_factor_format">Макс. степень: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="smoothness_format">Сглаживание: <xliff:g id="channels_as_one">%1$d</xliff:g></string>
+    <string name="enable_spectrum_change_mode">Включить режим изменения спектра</string>
     <string name="spectrum_change_delta_duration_format">Дельта-время: <xliff:g id="delta_time">%1$d</xliff:g> с</string>
     <string name="channel_compression_format">Сжатие каналов (экспорт): <xliff:g id="channels_as_one">%1$d</xliff:g></string>
     <string name="total_time_format">время: <xliff:g id="total_time">%1$s</xliff:g></string>
     <string name="spectrum_time_hms_format"><xliff:g id="hours">%1$02d</xliff:g>:<xliff:g id="minutes">%2$02d</xliff:g>:<xliff:g id="seconds">%3$02d</xliff:g></string>
     <string name="spectrum_time_days_hms_format"><xliff:g id="days">%1$d</xliff:g>д <xliff:g id="hours">%2$02d</xliff:g>:<xliff:g id="minutes">%3$02d</xliff:g>:<xliff:g id="seconds">%4$02d</xliff:g></string>
-    <string name="delta_time_format">время: <xliff:g id="delta_time">%1$d</xliff:g>/<xliff:g id="delta_back_time">%2$d</xliff:g> с</string>
+    <string name="delta_time_format">время: <xliff:g id="delta_time">%1$.0f</xliff:g>/<xliff:g id="delta_back_time">%2$.0f</xliff:g> с</string>
     <string name="dose_rate_interval_prefix">инт.: <xliff:g id="interval_cps">%1$s</xliff:g></string>
     <string name="dose_rate_compensated_prefix">мд(к): <xliff:g id="dose_rate">%1$s</xliff:g></string>
     <string name="dose_rate_noncompensated_prefix">мд(н): <xliff:g id="dose_rate">%1$s</xliff:g></string>
@@ -227,6 +316,10 @@
     <string name="cursor_format">Курсор:\nканал <xliff:g id="channel_number">%1$d</xliff:g>\nE = <xliff:g id="energy">%2$1.2f</xliff:g> кэВ\n<xliff:g id="count">%3$d</xliff:g> имп</string>
     <string name="cps_show">cps: <xliff:g id="cps_show">%1$d</xliff:g> (<xliff:g id="cps_interval">%2$d</xliff:g>)</string>
     <string name="cps_average_show">~cps: <xliff:g id="cps_average_show">%1$.3f</xliff:g></string>
+    <string name="telemetry_rssi"><xliff:g id="rssi">%1$d</xliff:g>㏈m</string>
+    <string name="telemetry_temperature"><xliff:g id="temperature">%1$d</xliff:g>°</string>
+    <string name="telemetry_battery_percent"><xliff:g id="battery_percent">%1$d</xliff:g>%%</string>
+    <string name="telemetry_battery_volts"><xliff:g id="battery_volts">%1$.2f</xliff:g>V</string>
     <string name="cps_delta_show">~cps: <xliff:g id="delta_cps">%1$.1f</xliff:g>/<xliff:g id="delta_back_cps">%2$.1f</xliff:g></string>
     <string name="cps_alarm_baseline">≈cps: <xliff:g id="cps">%1$.1f</xliff:g> ±<xliff:g id="cps_error">%2$d</xliff:g>%%</string>
     <string name="cps_alarm_baseline_timer">≈cps: [<xliff:g id="time">%1$d</xliff:g> s] <xliff:g id="cps">%2$.1f</xliff:g> ±<xliff:g id="cps_error">%3$d</xliff:g>%%</string>
@@ -300,16 +393,14 @@
     <string name="perm_no_write_N42">No permission to export a spectrum to a N42 file</string>
     <string name="perm_no_write_export">Нет разрешения на экспорт спектра в СSV</string>
     <string name="perm_no_write_export_energy">Нет разрешения на экспорт спектра с энергией в CSV</string>
-    <string name="perm_no_share">Нет разрешения на чтение файла для отправки</string>
-    <string name="perm_no_outside">Файл вне моего доступа</string>
 
     <string name="error_working_dir_not_set">Рабочая директория не установлена. Установите рабочую директорию в настройках.</string>
-    <string name="error_working_dir_not_valid">Рабочая директория \'$1%s\' некорректна. Установите рабочую директорию в настройках.</string>
-    <string name="error_unable_to_delete_existing_file">Не удалось удалить существующий файл \'$1%s\'.</string>
-    <string name="error_unable_to_create_file">Не удалось создать файл \'$1%s\'.</string>
-    <string name="error_unable_to_create_file_ex">Не удалось создать файл \'$1%s\'. $2%s</string>
-    <string name="error_unable_to_save_spectrum">Не удалось сохранить спектр. $1%s</string>
-    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить дельта-спектр. $1%s</string>
+    <string name="error_working_dir_not_valid">Рабочая директория \'%1$s\' некорректна. Установите рабочую директорию в настройках.</string>
+    <string name="error_unable_to_delete_existing_file">Не удалось удалить существующий файл \'%1$s\'.</string>
+    <string name="error_unable_to_create_file">Не удалось создать файл \'%1$s\'.</string>
+    <string name="error_unable_to_create_file_ex">Не удалось создать файл \'%1$s\'. %2$s</string>
+    <string name="error_unable_to_save_spectrum">Не удалось сохранить спектр. %1$s</string>
+    <string name="error_unable_to_save_delta_spectrum">Не удалось сохранить данные спектрограммы</string>
 
     <string name="file_atomspectra_spectrum_prefix">Spectrum</string>
     <string name="file_atomspectra_spectrogram_prefix">Spectrogram</string>
@@ -317,21 +408,18 @@
     <string name="ask_select_histogram">Выбрать спектр</string>
     <string name="ask_select_spectrogram">Выбрать спектрограмму</string>
     <string name="ask_select_calibration">Выбрать файл калибровки</string>
-    <string name="ask_select_device_file">Выбрать файл устройства</string>
     <string name="ask_spectrum_suffix">Выберите суффикс для спектра</string>
     <string name="ask_export_bqmoni">Суффикс для экспорта в Becquerel Monitor</string>
     <string name="ask_export_spe">Суффикс для экспорта в SPE</string>
     <string name="ask_export_N42">Суффикс для экспорта в N42</string>
     <string name="ask_export_suffix">Суффикс для экспорта в CSV</string>
     <string name="ask_suffix_text">Введите суффикс файла:</string>
-    <string name="ask_share">Отправить файл</string>
-    <string name="ask_share_text">Файл спектра <xliff:g id="file_share">%1$s</xliff:g></string>
     <string name="ask_noise_title">Уровень дискриминатора шума</string>
     <string name="ask_noise_text">Введите новое значение:</string>
     <string name="ask_channel_title">Выбрать канал курсора</string>
     <string name="ask_channel_text">Новый канал (<xliff:g id="old_channel">%1$d</xliff:g>): </string>
-    <string name="ask_last_channel_title">Введите номер канала</string>
-    <string name="ask_last_channel_text">Новый канал (1024-<xliff:g id="last_channel">%1$d</xliff:g>): </string>
+    <string name="ask_last_channel_title">Не учитывать последние каналы</string>
+    <string name="ask_last_channel_text">Сколько каналов в конце спектра не учитывать:</string>
     <string name="ask_delete_calibration_line_title">Удалить линию</string>
     <string name="ask_delete_calibration_line_text">Удалить канал %1$d (%2$.2f кэВ) из списка?</string>
     <string name="ask_select_interval_title">Выбрать интервал для поиска</string>
@@ -357,6 +445,7 @@
     <string name="hist_load_error">Загрузка спектра НЕУДАЧНА!</string>
     <string name="hist_add_success">Спектры успешно объединены</string>
     <string name="hist_add_error">Объединение спектров НЕУДАЧНО!</string>
+    <string name="hist_add_title">Объединение спектров</string>
     <string name="hist_add_mismatch_confirm">Выбранный спектр имеет другой детектор или энергетическую калибровку. Поканальное сложение может быть некорректным. Объединить?</string>
     <string name="hist_add_channel_mismatch">Нельзя объединить спектры с разным числом каналов</string>
     <string name="hist_recording_in_progress">Сначала остановите запись</string>
@@ -366,8 +455,13 @@
     <string name="storage_required">Требуется носитель</string>
     <string name="hist_save_success"><xliff:g id="file_save">%1$s</xliff:g> успешно сохранён</string>
     <string name="hist_save_error">Сохранение <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
+    <string name="hist_autosave_error">Не удалось сохранить спектр</string>
     <string name="background_load_success">Фон успешно загружен</string>
     <string name="background_load_error">Загрузка фона НЕУДАЧНА!</string>
+    <string name="background_channel_mismatch">Нельзя загрузить фон с другим числом каналов, чем в спектре</string>
+    <string name="hist_load_title">Открыть файл</string>
+    <string name="hist_load_unsaved_text">Спектр на экране не сохранён. Открытие файла заменит его.</string>
+    <string name="hist_load_discard_button">Не сохранять и открыть</string>
     <string name="background_delete_error">Не могу удалить файл фона</string>
     <string name="background_no_data">Нет данных фона</string>
     <string name="background_save_success">Фон успешно сохранён</string>
@@ -376,23 +470,24 @@
     <string name="export_save_error">Экспортирование <xliff:g id="file_save">%1$s</xliff:g> НЕУДАЧНО!</string>
     <string name="something_wrong">Что-то пошло не так!</string>
     <string name="unknown_code">Получен неизвестный код от устройства: <xliff:g id="code">%1$d</xliff:g></string>
-    <string name="cal_store_usb_wait">Подождите для сохранения калибровки в устройстве USB</string>
-    <string name="cal_apply_usb">Калибровка принята из устройства USB</string>
-    <string name="cal_wrong_usb">Неверная калибровка в устройстве USB</string>
-    <string name="cal_wrong_checksum">Неверная контрольная сумма в устройстве USB</string>
-    <string name="cal_store_usb">Калибровка сохранена в устройстве USB</string>
-    <string name="cal_wrong_store_usb">Не могу сохранить калибровку в устройстве USB</string>
-    <string name="cal_load_anyway">Загрузить калибровку в любом случае?</string>
+    <string name="cal_store_wait">Сохранение калибровки в устройство…</string>
+    <string name="cal_apply_device">Калибровка принята из устройства</string>
+    <string name="cal_wrong_device">Калибровка устройства неверна, применена калибровка по умолчанию</string>
+    <string name="cal_none_stored">Для этого устройства калибровка не сохранена</string>
+    <string name="device_not_available">Устройство недоступно</string>
+    <string name="cal_wrong_checksum">Spectra Pro: неверная контрольная сумма калибровки</string>
+    <string name="cal_stored">Калибровка сохранена в устройстве</string>
+    <string name="cal_wrong_store_device">Не могу сохранить калибровку в устройстве</string>
     <string name="usb_below_minimal_version">Обновите версию прошивки до <xliff:g id="version">%1$d</xliff:g> или выше</string>
     <string name="usb_version_read_error">Ошибка чтения версии прошивки</string>
     <string name="usb_version_unknown">Неизвестная версия прошивки</string>
-    <string name="usb_attached_while_recording_audio">USB устройство проигнорировано: идет чтение данных с микрофона.\nОстановите чтение данных и переподключите USB устройство.</string>
 
     <string name="recording_suspended_dialog_title">Чтение данных приостановлено!</string>
-    <string name="recording_suspended_dialog_usb_disconnected">USB устройство отключено в процессе чтения данных, подключите устройство для возобновления.</string>
-    <string name="recording_suspended_dialog_audio_added">Внешний микрофон подключен в процессе чтения данных, отключите внешний микрофон для возобновления.</string>
-    <string name="recording_suspended_dialog_audio_removed">Внешний микрофон отключен в процессе чтения данных, подключите внешний микрофон для возобновления.</string>
-    <string name="recording_suspended_dialog_dismiss">Проигнорировать и остановить чтение данных</string>
+    <string name="recording_suspended_dialog_message">Устройство отключено во время записи. После восстановления соединения запись возобновится, а спектр на экране будет заменён спектром устройства.</string>
+    <string name="recording_suspended_dialog_message_continue">Устройство отключено во время записи. После восстановления соединения запись возобновится и продолжит спектр на экране.</string>
+    <string name="recording_suspended_dialog_saved">Текущий спектр сохранён в файл.</string>
+    <string name="recording_suspended_dialog_dismiss">Остановить и работать без устройства</string>
+    <string name="recording_suspended_dialog_wait">Ожидать подключение</string>
     <string name="recording_suspended_notification">Чтение данных приостановлено!</string>
     <string name="recording_suspended_notification_suspended_at">Чтение приостановлено: <xliff:g id="time">%1$s</xliff:g></string>
     <string name="recording_suspended_notification_resumed_at">Чтение возобновлено: <xliff:g id="time">%1$s</xliff:g></string>
@@ -402,11 +497,14 @@
     <string name="dialog_no_button">Нет</string>
     <string name="dialog_continue_button">Продолжить</string>
     <string name="dialog_cancel_button">Отмена</string>
-    <string name="dialog_discard_button">Сбросить изменения</string>
+    <string name="dialog_exit_anyway_button">Всё равно выйти</string>
+    <string name="sens_discard_button">Не применять</string>
     <string name="dialog_keep_editing_button">Продолжить редактирование</string>
-    <string name="sens_discard_message">Изменения конфигурации не применены.</string>
+    <string name="sens_discard_title">Изменения не применены</string>
+    <string name="sens_discard_message">Изменения чувствительности не применены.</string>
 
     <string name="dialog_confirm_exit_while_recording_message">Запись спектра в процессе, завершение программы может привести к потере данных.</string>
+    <string name="dialog_confirm_exit_unsaved_message">Текущий спектр не сохранён. Завершение программы приведёт к его потере.</string>
 
     <string name="log_no_records">Нет записей</string>
     <string name="log_recording_suspended">Запись приостановлена</string>
@@ -417,28 +515,29 @@
     <string name="log_audio_zero_buffers_detected">Аудио буфер нулевой длины получен несколько раз подряд (%1$d), перезапуск аудио</string>
     <string name="log_fetching_data_from_audio">Получение данных из аудио входа: %1$s, использовать необработанный звук: %2$b</string>
     <string name="log_wrong_sens_curve_pref">Не удалось прочесть кривую чувствительности из настроек, используется кривая по умолчанию</string>
-    <string name="log_usb_command_failed">Ошибка выполнения USB команды %1$s</string>
-    <string name="log_usb_command_timeout">Превышено время ожидания выполнения USB команды %1$s</string>
-    <string name="log_usb_device_version_error">Ошибка чтения версии USB устройства</string>
+    <string name="log_usb_device_version_error">Spectra Pro: ошибка чтения версии прошивки</string>
     <string name="log_usb_device_version_unknown">Неизвестная версия USB устройства</string>
     <string name="log_usb_answer_unexpected_registers">Неожиданный ответ \"-cal\": %1$d регистров вместо %2$d</string>
     <string name="log_usb_answer_missing">Нет ответа от USB устройства</string>
-    <string name="log_usb_watchdog_no_data_triggered">Контроль USB данных: нет данных из USB в течение %1$d секунд. Попытка переподключения и выполнения команды -sta</string>
-    <string name="log_usb_watchdog_unable_open_device">Контроль USB данных: не удалось открыть USB устройство</string>
-    <string name="log_usb_watchdog_device_no_perm">Контроль USB данных: нет доступа к USB устройству</string>
-    <string name="log_usb_watchdog_device_not_found">Контроль USB данных: USB устройство не найдено</string>
+    <string name="log_usb_answer_malformed_calibration">Некорректный ответ \"-cal\": регистры не являются допустимым hex</string>
+    <string name="log_spectra_pro_watchdog_no_data_triggered">Spectra Pro, контроль данных: нет данных %1$d с, переподключение…</string>
+    <string name="log_spectra_pro_watchdog_unable_open_device">Spectra Pro, контроль данных: не удалось открыть устройство</string>
+    <string name="log_spectra_pro_watchdog_device_no_perm">Spectra Pro, контроль данных: нет доступа к USB</string>
+    <string name="log_spectra_pro_watchdog_device_not_found">Spectra Pro, контроль данных: устройство не найдено</string>
+    <string name="log_spectra_pro_watchdog_reconnect_failed">Spectra Pro, контроль данных: не удалось переподключиться (%1$s)</string>
     <string name="log_serial_packet_error">Ошибка пакета %1$s в %2$s, подсчет ошибок в течение следующих %3$d мин…</string>
     <string name="log_serial_errors_ongoing">Ошибки продолжаются, всего ошибок %1$s с %2$s, подсчет ошибок в течение следующих %3$d мин…</string>
     <string name="log_serial_errors_resolved">Ошибок нет за последние %1$d мин, всего ошибок %2$s с %3$s</string>
-    <string name="histogram_updates_skipped">Пропущено обновлений спектра: %1$d\nРазрешите в настройках обработку спектров с частичными данными если данное сообщение не пропадает</string>
+    <string name="histogram_updates_skipped">Пропущено обновлений спектра: %1$d</string>
     <string name="log_start_recording">Начало записи (%1$s)</string>
     <string name="log_stop_recording">Остановка записи (%1$s)</string>
+    <string name="log_device_recovering">Восстановление соединения с %1$s</string>
     <string name="log_no_perm_to_save_spectrum">Нет разрешения сохранить файл спектра (%1$s)</string>
     <string name="log_spg_no_perm_to_save">Нет разрешения сохранить файл спектрограммы</string>
     <string name="log_spg_midnight_restart">Перезапуск спектрограммы в полночь</string>
     <string name="log_spg_autosave_start">Запись спектрограммы включена</string>
     <string name="log_spg_autosave_completed">Запись спектрограммы завершена</string>
-    <string name="log_spg_autosave_start_error">ОШИБКА: Не удалось включить запись спектрограммы. $1%s</string>
+    <string name="log_spg_autosave_start_error">Не удалось включить запись спектрограммы</string>
     <string name="log_warning_raw_audio_support_not_available">Внимание: поддержка необработанного звука не доступна</string>
 
     <string name="searching_isotopes">Обнаружение изотопов…</string>
@@ -449,15 +548,19 @@
     <string name="find_isotopes">Найти</string>
     <string name="show_isotopes">Показать</string>
     <string name="show_no_isotopes">Скрыть</string>
-    <string name="find_threshold">Порог</string>
-    <string name="find_window_size">Размер окна</string>
-    <string name="find_order">Степень</string>
-    <string name="find_tolerance">Неточность определения</string>
-    <string name="find_sign_bits">Значимые биты</string>
-    <string name="find_isotope_library">Библиотека</string>
-    <string name="find_error_window">Ошибка в размере окна</string>
-    <string name="find_error_bits">Ошибка в значащих битах</string>
-    <string name="find_error_tolerance">Ошибка в величине неточности</string>
+    <string name="find_resolution">Разрешение по Cs-137, %</string>
+    <string name="find_resolution_desc">Ширина пика 662 кэВ (на полувысоте) относительно его энергии для вашего детектора. Определяет ожидаемую ширину пиков: при завышенном значении близкие пики сливаются, при заниженном в шуме находятся ложные пики.</string>
+    <string name="find_channels">Сжать до, каналов</string>
+    <string name="find_channels_desc">Перед поиском спектр объединяется до указанного числа каналов. Чем меньше каналов, тем меньше влияние шума и ложных пиков, но близкие пики могут слиться.</string>
+    <string name="find_threshold">Порог, σ</string>
+    <string name="find_threshold_desc">Минимальная значимость пика над статистическим шумом. Чем больше, тем только сильные пики; чем меньше, тем больше слабых пиков, но и ложных.</string>
+    <string name="find_tolerance">Допуск по энергии, %</string>
+    <string name="find_tolerance_desc">Насколько пик может отличаться от линии библиотеки, чтобы получить название. Чем больше, тем больше совпадений, но и ошибочных названий.</string>
+    <string name="find_isotope_library">Список изотопов</string>
+    <string name="find_isotope_library_desc">Какими изотопами могут называться пики. «Все» показывает и пики без совпадения.</string>
+    <string name="find_warning_window">Ширина пика 662 кэВ вне калиброванного диапазона, используется приблизительное окно поиска</string>
+    <string name="find_error_resolution">Ошибка в разрешении</string>
+    <string name="find_error_tolerance">Ошибка в допуске по энергии</string>
     <string name="find_error_threshold">Ошибка в пороге</string>
     <string name="find_isotopes_all">Все</string>
     <string name="find_isotopes_known">Известные</string>
@@ -481,43 +584,6 @@
         <item>Специальные</item>
         <item>Природные</item>
     </string-array>
-    <string-array name="find_isotopes_order">
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_13">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_14">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_15">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-        <item>15</item>
-    </string-array>
-    <string-array name="find_isotopes_bits_16">
-        <item>10</item>
-        <item>11</item>
-        <item>12</item>
-        <item>13</item>
-        <item>14</item>
-        <item>15</item>
-        <item>16</item>
-    </string-array>
 
     <string name="log_activity_title">Atom Spectra Журнал</string>
 
@@ -530,7 +596,28 @@
     <string name="spectrogram_loading_dialog_message">Дождитесь окончания загрузки. Строк загружено: %1$d…</string>
     <string name="spectrogram_loading_dialog_stop">Остановить и просмотреть загруженное</string>
     <string name="spectrogram_view">Просмотр</string>
+    <string name="spectrogram_settings">Настройки</string>
+    <string name="spectrogram_settings_title">Настройки спектрограммы</string>
     <string name="spectrogram_view_map">Показать на карте</string>
+    <string name="spectrogram_clear">Очистить экран</string>
+    <string name="spectrogram_clear_title">Очистить экран</string>
+    <string name="spectrogram_clear_text">Идёт запись спектрограммы.</string>
+    <string name="spectrogram_clear_completed_button">Очистить только завершенные</string>
+    <string name="spectrogram_clear_restart_button">Очистить все и начать заново</string>
+    <string name="spectrogram_palette">Палитра</string>
+    <string name="spectrogram_palette_iron">Iron</string>
+    <string name="spectrogram_palette_lime">Lime</string>
+    <string name="spectrogram_palette_yellow">Yellow</string>
+    <string name="spectrogram_palette_glow">Glow</string>
+    <string name="spectrogram_palette_gray">Gray</string>
+    <string name="spectrogram_scale">Шкала</string>
+    <string name="spectrogram_scale_lin">Lin</string>
+    <string name="spectrogram_scale_sqrt">Sqrt</string>
+    <string name="spectrogram_scale_log">Log</string>
+    <string name="spectrogram_spectrum_bin">Группировка строк…</string>
+    <string name="spectrogram_spectrum_bin_text">Строк в группе (1-%1$d)</string>
+    <string name="spectrogram_channel_bin">Группировка каналов</string>
+    <string name="spectrogram_channel_bin_value">%1$dx</string>
     <string name="hist_view_map">Показать на карте</string>
     <string name="map_activity_title">Atom Spectra Карта</string>
     <string name="map_center_location">Моё местоположение</string>
@@ -540,7 +627,10 @@
     <string name="map_tile_provider_osm">OpenStreetMap</string>
     <string name="map_tile_provider_custom">Свой URL</string>
     <string name="spectrogram_row_count">Строк: %1$d</string>
+    <string name="spectrogram_delta_off">Дельта: выкл</string>
+    <string name="spectrogram_delta_interval">Дельта: %1$d с</string>
     <string name="spectrogram_gap_label">пропуск: %1$s</string>
+    <string name="spectrogram_compact_gaps">Компактные пропуски</string>
     <string name="spectrogram_gap_duration_days_hours">%1$dд %2$dч</string>
     <string name="spectrogram_gap_duration_days">%1$dд</string>
     <string name="spectrogram_gap_duration_hours_minutes">%1$dч %2$dм</string>
@@ -548,7 +638,9 @@
     <string name="spectrogram_gap_duration_minutes_seconds">%1$dм %2$dс</string>
     <string name="spectrogram_gap_duration_minutes">%1$dм</string>
     <string name="spectrogram_gap_duration_seconds">%1$dс</string>
-    <string name="spectrogram_gap_mismatch_warning">⚠ другой детектор/калибровка</string>
+    <string name="spectrogram_gap_mismatch_device">⚠ другой детектор</string>
+    <string name="spectrogram_gap_mismatch_calibration">⚠ другая калибровка</string>
+    <string name="spectrogram_gap_mismatch_both">⚠ другой детектор/калибровка</string>
     <string name="spectrogram_preview_toggle">Показать или скрыть предпросмотр спектра</string>
     <string name="spectrogram_spectrum_exporting_dialog_title">Экспорт спектра…</string>
     <string name="spectrogram_spectrum_exporting_dialog_default_message">Экспорт…</string>
@@ -572,21 +664,26 @@
     <string name="help_menu">Помощь</string>
     <string name="help">Atom Spectra Краткая помощь</string>
     <string name="help_text_overview"><big><annotation foreground="caption">Общее</annotation></big>\n
-        Данная программа читает сигнал со спектрометра, подключённого к телефону через микрофонный вход (например <u>AtomSpectra 3, 4</u> или похожие), с USB-аудио спектрометра (например <u>AtomSpectra Nano</u> или похожие) или с USB спектрометра <u>AtomSpectra Pro</u>. Если ни один из них не подключён к телефону, то программа работает в демонстрационном режиме, читая внутренний микрофон и выводя его спектр.\n
+        Данная программа читает сигнал со спектрометра, подключённого к телефону через микрофонный вход (например <u>AtomSpectra 3, 4</u> или похожие), с USB-аудио спектрометра (например <u>AtomSpectra Nano</u> или похожие) или с USB спектрометра <u>AtomSpectra Pro</u> или по Bluetooth со спектрометра <u>BluZ</u>.\n
+        \n
+        При запуске программа предлагает выбрать устройство, с которым работать. Включите <annotation foreground="parameter">Запомнить мой выбор</annotation>, чтобы программа подключалась к нему автоматически. Выбор можно изменить в любой момент командой <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Сменить устройство</annotation> или нажатием на значок устройства. Пункт <annotation foreground="parameter">Работа c файлами</annotation> позволяет работать с сохранёнными спектрами без подключения устройства.\n
+        Кратковременные потери связи (кабель, Bluetooth) не останавливают запись: после восстановления соединения программа возобновляет набор спектра.\n
         \n
         ВНИМАНИЕ: Пожалуйста, добавьте программу в список исключения питания для корректной работы программы в фоне или при выключенном экране телефона.\n
         Для полной остановки программы используйте пункт меню <annotation foreground="parameter">Завершить программу</annotation>.\n
         Разрешения, необходимые для работы программы:\n
-        \t- Микрофон: приём сигнала от спектрометров с аудиоинтерфейсом. Без него работают только Atom Spectra Pro USB-спектрометры.\n
+        \t- Микрофон: приём сигнала от спектрометров с аудиоинтерфейсом. Без него работают только USB и Bluetooth спектрометры.\n
+        \t- Bluetooth: поиск и подключение спектрометров с Bluetooth.\n
         \t- Файлы: сохранение и открытие спектров, спектрограмм и настроек.\n
-        \t- Геолокация: добавление GPS-координат в сохраняемые файлы.\n
+        \t- Геолокация: добавление GPS-координат в сохраняемые файлы. На Android 6–11 также нужна для поиска Bluetooth-устройств.\n
         \t- Уведомления: показ уведомления о фоновой записи.\n
         \n
     </string>
     <string name="help_text_part1">
         <big><annotation foreground="caption">1. Управление:</annotation></big>\n
         \tРежим отображения спектра, изменения спектра и режим поиска:\n
-        \t- Навигация <annotation foreground="parameter">Спектр/Изменение/Поиск</annotation> для переключения между отображением спектра, изменения спектра и режимом поиска.\n
+        \t- Кнопки <annotation foreground="parameter">Спектр</annotation> и <annotation foreground="parameter">Поиск</annotation> выбирают основной режим отображения. По умолчанию нажатие <annotation foreground="parameter">Изменение</annotation> открывает спектрограмму. Если в настройках включён параметр <annotation foreground="parameter">Включить режим изменения спектра</annotation>, нажатие «Изменение» выбирает режим изменения спектра.\n
+        \t- Значок устройства открывает выбор устройства.\n
         \t- Горизонтальный щипок для масштабирования шкалы каналов/энергий. Для применения действия уберите пальцы с экрана.\n
         \t- Вертикальный щипок для масштабирования шкалы значений. Для применения действия уберите пальцы с экрана.\n
         \t- Диагональный щипок для масштабирования шкал каналов/энергий и значений одновременно. Для применения действия уберите пальцы с экрана.\n
@@ -595,17 +692,19 @@
         \t- Однократное касание для вывода зелёного курсора. Слайдером можно более точно установить курсор. Коснитесь левее области графика для отключения курсора. Коснитесь описания курсора для ввода значения канала.\n
         \t- Двойное касание для выбора линейного или логарифмического по основанию 10 вывода шкалы значений.\n
         \t- Длительное нажатие для переключения между линейчатым и столбцовым выводами.\n
+        \t- Нажатие на кнопку <annotation foreground="parameter">Спектр</annotation> в режиме спектра при загруженном фоне переключает отображение фона: только спектр, спектр с фоном, спектр с вычитанием фона.\n
+        \t- Длительное нажатие на кнопку <annotation foreground="parameter">Спектр</annotation> в режиме спектра включает и выключает сглаживание.\n
         \t- Кнопка <annotation foreground="parameter">кэВ/к.</annotation> для переключения между отображением энергий и каналов при выводе спектра.\n
         \t- Кнопка <annotation foreground="parameter">Д/И</annotation> для переключения между типами графиков поиска (мощность дозы или скорость счета в интервале).\n
         \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> для переключения между константами поиска (быстрый, средний, медленный).\n
         \n
-        \tРежим отображения спектрограммы:\n
+        \tРежим отображения спектрограммы (открывается нажатием <annotation foreground="parameter">Изменение</annotation>, когда режим изменения спектра выключен; долгое нажатие «Изменение» или команда <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Просмотр</annotation> открывают её независимо от настройки):\n
         \t- Горизонтальный щипок для масштабирования спектрограммы по горизонтали (шкала каналов/энергий). Для применения действия уберите пальцы с экрана.\n
         \t- Вертикальный щипок для масштабирования спектрограммы по вертикали (шкала времени). Для применения действия уберите пальцы с экрана.\n
         \t- Движение влево/вправо по оси энегрий/каналов спектрограммы для смещения спектрограммы влево/вправо.\n
         \t- Движение вверх/вниз по оси времени спектрограммы для смещения спектрограммы вверх/вниз.\n
-        \t- Двойное касание для выбора линейного, квадратичного или логарифмического режима отображения шкалы значений (цвета) спектрограммы.\n
-        \t- Длительное нажатие для смены цветовой палитры спектрограммы.\n
+        \t- Двойное касание для выбора линейного, квадратичного или логарифмического режима отображения шкалы значений (цвета) спектрограммы (также в меню <annotation foreground="parameter">Шкала</annotation>).\n
+        \t- Длительное нажатие для смены цветовой палитры спектрограммы (также в меню <annotation foreground="parameter">Палитра</annotation>).\n
         \n
     </string>
     <string name="help_text_part2">
@@ -617,14 +716,13 @@
         \t- Данные фона в программе можно очистить.\n
         \t- Можно сгладить спектр командой <annotation foreground="parameter">Сгладить</annotation> в подменю <annotation foreground="parameter">Спектр</annotation>.\n
         \t- Можно редактировать и смотреть описания для спектра и фона при выводе курсора. Эти описания используются как суффиксы при сохранении. Для их изменения используется <annotation foreground="parameter">Ввести описание</annotation> в подменю <annotation foreground="parameter">Спектр</annotation> или <annotation foreground="parameter">Фон</annotation>.\n
-        \t- Текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \t- Текстовое поле <annotation foreground="parameter">~cps</annotation> отображает среднее количество импульсов в секунду по всему диапазону энергий за все время набора.\n
         \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает общее время набора спектра в формате чч:мм:сс; при длительности 24 часа и более добавляются дни (например, 2д 03:45:12).\n
         \n
         \tРежим <annotation foreground="parameter">Изменение</annotation> спектра:\n
+        \tЭтот дополнительный режим по умолчанию выключен. Для включения выберите <annotation foreground="parameter">Настройки</annotation> → <annotation foreground="parameter">Изменение спектра</annotation> → <annotation foreground="parameter">Включить режим изменения спектра</annotation>. При выключении активного режима изменения спектра основной экран возвращается к спектру.\n
         \t- В данном режиме отображается изменение состояния спектра в режиме скользящего временного окна. Размер скользящего окна можно выбрать в диапазоне от 1 до 300 с в параметре <annotation foreground="parameter">Дельта-время</annotation> в <annotation foreground="parameter">Настройках</annotation>. В этом режиме отображается два спектра с разной длительностью скользящего окна: n секунд и 4n секунд (например, 30/120). Цвет спектра короткого окна (n) в этом режиме пурпурный, длинного (4n) - зеленый. Строки отображения общего времени набора и скорости счета основного спектра сменяются на отображение размеров окон и скоростей счета в рамках этих окон (короткое/длинное).\n
-        \t- Текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \t- Текстовое поле <annotation foreground="parameter">~cps</annotation> отображает среднее количество импульсов в секунду по всему диапазону энергий в каждом из окон.\n
         \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает текущий размер скользящих окон в секундах.\n
@@ -636,17 +734,17 @@
         \t- ПРИМЕЧАНИЕ: Лучше включить режим отображения каналов перед выполнением калибровки.\n
         \t- Для калибровки спектра сначала расположите курсор в первой точке калибровки, нажмите кнопку <annotation foreground="parameter">1</annotation> над графиком и введите значение. Значение на кнопке изменится с <annotation foreground="parameter">1</annotation> на <annotation foreground="parameter">2</annotation>, показывая на ожидание второй точки калибровки.\n
         \t- Повторите те же шаги для следующих точек калибровки. Кнопка сменится на <annotation foreground="parameter">-</annotation> при отсутствии дополнительных точек.\n
-        \t- Нажмите на кнопку <annotation foreground="parameter">\u221a</annotation> для расчёта калибровки. Используйте <annotation foreground="parameter">Запомнить</annotation> для запоминания данных калибровки при следующем старте программы. Программа запрашивает данные по калибровке при удалении текущего спектра. Используйте <annotation foreground="parameter">Восстановить</annotation> для применения данных калибровки из памяти. <annotation foreground="highlight">ПРИМЕЧАНИЕ</annotation>: если подключен <u>AtomSpectra Pro</u>, то программа будет использовать калибровку из устройства USB или сохранять калибровку на устройство. Внутренная калибровка не изменяется и будет восстановлена после отключения устройства или может быть изменена соответствующими командами меню.\n
+        \t- Нажмите на кнопку <annotation foreground="parameter">\u221a</annotation> для расчёта калибровки. Используйте <annotation foreground="parameter">Запомнить в устройство</annotation>, чтобы сохранить калибровку: в самом устройстве (BluZ, <u>AtomSpectra Pro</u>) или в памяти программы отдельно для каждого аудиовхода (спектрометры с аудиоинтерфейсом). Сохранённая калибровка применяется автоматически при подключении устройства. Используйте <annotation foreground="parameter">Взять из устройства</annotation>, чтобы применить её вручную.\n
         \t- Нажмите на флаг с изотопом на графике из <u>списка изотопов</u>, чтобы задать точку калибровки с энергией изотопа.\n
         \t- Нажмите на флаг с изотопом на графике из <u>списка найденных пиков</u> и введите значение энергии, чтобы задать точку калибровки.\n
-        \t- Нажмите на коэффициенты полинома в подменю <annotation foreground="parameter">Calibration</annotation> для их редактирования.\n
+        \t- Нажмите на коэффициенты полинома в подменю <annotation foreground="parameter">Калибровка</annotation> для их редактирования.\n
         \t- Вы можете указать старшую степень полинома в <annotation foreground="parameter">Настройках</annotation>.\n
         \t- Нажмите на кнопку <annotation foreground="parameter">\u00d7</annotation> для удаления всех введённых точек.\n
         \t- Нажмите в меню на линию новой калибровки для её удаления из списка.\n
         \t- Можно посмотреть текущую функцию калибровки через пункт <annotation foreground="parameter">Показать функцию</annotation> в подменю <annotation foreground="parameter">Калибровка</annotation>.\n
-        \t- Нажмите на <annotation foreground="parameter">Вывести новую</annotation> в подменю <annotation foreground="parameter">Калибровка</annotation> для вывода новой калибровочной функции и калибровочных точек на графике. Новые калибровочные точки отображены зелёным.\n
+        \t- Нажмите на <annotation foreground="parameter">График новой</annotation> в подменю <annotation foreground="parameter">Калибровка</annotation> для вывода новой калибровочной функции и калибровочных точек на графике. Новые калибровочные точки отображены зелёным.\n
         \t- Можно загрузить данные по калибровке из другого спектра.\n
-        \t- Можно указать номер канала для вывода на шкале энергий. Шкала каналов всегда показывает полный спектр.\n
+        \t- Пункт <annotation foreground="parameter">Последний</annotation> в подменю <annotation foreground="parameter">Калибровка</annotation> задаёт, сколько каналов в конце спектра не отображать в режиме спектра, когда по оси X выведены энергии. В расчётах эти каналы учитываются. Шкала каналов всегда показывает полный спектр.\n
         \t- Текущие данные калибровки можно посмотреть в подменю <annotation foreground="parameter">Калибровка</annotation> выше горизонтальной линии.\n
         \t- Введёные точки калибровки можно посмотреть в подменю <annotation foreground="parameter">Калибровка</annotation> ниже горизонтальной линии.\n
         \n
@@ -654,27 +752,31 @@
     <string name="help_text_part4">
         <big><annotation foreground="caption">4. Режим <annotation foreground="parameter">Поиск</annotation> - расчёт и отображение мощности дозы и скорости счета в интервале энергий:</annotation></big>\n
         Программа выполняет расчёт трех значений - некомпенсированная мощность дозы, компенсированная мощность дозы, скорость счета в заданном диапазоне (интервале) энергий. Некомпенсированная - линейный пересчет общей скорости счета в мощность дозы с использованием коэффициента. Компенсированная - расчет мощности дозы с учетом энергии регистриремых гамма квантов, кривой чувствительности детектора и коэффициента.\n
-        \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Окна поиска (в импульсах) для каждого режима задаются в профиле в <annotation foreground="parameter">Устройство</annotation> - <annotation foreground="parameter">Чувствительность</annotation> отдельно для компенсированной и некомпенсированной мощности дозы. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
+        \t- Кнопка <annotation foreground="parameter">Б/С/М</annotation> выбирает режим усреднения мощности дозы и скорости счета в интервале. <annotation foreground="parameter">Б</annotation> означает «быстрый», <annotation foreground="parameter">С</annotation> означает «средний», <annotation foreground="parameter">М</annotation> означает «медленный». Окна поиска (в импульсах) для каждого режима задаются в профиле в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation> отдельно для компенсированной и некомпенсированной мощности дозы. Усреднение производится скользящим окном по количеству импульсов в окне усреднения (не по времени).\n
         \t- Для переключения между типами данных, отображаемыми на графике, нажмите на кнопку <annotation foreground="parameter">Д/И</annotation>. <annotation foreground="parameter">Д</annotation> означает «история мощности дозы». <annotation foreground="parameter">И</annotation> означает «история скорости счета в интервале».\n
-        \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">upd</annotation> отображает местное время (часы:минуты:секунды) последнего обновления данных основного спектра. Значение --:--:-- показывается до поступления первых данных или после очистки спектра.\n
         \t- Для всех типов мощности дозы текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \n
         Некомпенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, зеленый график):\n
         \t- В данном режиме производится линейный пересчет общей скорости счета по всему спектру в мощность дозы без учета энергии регистрируемых квантов и без учета мертвого времени.\n
-        \t- Некомпенсированная <annotation foreground="parameter">Чувствительность</annotation> задаётся одним абсолютным значением в <annotation foreground="parameter">пЗв/имп</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Мощность дозы равна суммарному числу импульсов в окне усреднения, умноженному на это значение, с пересчётом в мкЗв/ч.\n
+        \t- Некомпенсированная <annotation foreground="parameter">Чувствительность</annotation> задаётся одним абсолютным значением в <annotation foreground="parameter">пЗв/имп</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation>. Мощность дозы равна суммарному числу импульсов в окне усреднения, умноженному на это значение, с пересчётом в мкЗв/ч.\n
         \t- Текстовое поле <annotation foreground="parameter">мд(н)</annotation> отображает некомпенсированное значение мощности дозы.\n
         \n
         Компенсированная мощность дозы (режим <annotation foreground="parameter">Д</annotation>, пурпурный график):\n
         \t- В данном режиме производится расчет мощности дозы исходя из индивидуального вклада отдельных энергетических диапазонов спектра.\n
-        \t- Компенсированная <annotation foreground="parameter">кривая чувствительности</annotation> задаёт каждому энергетическому диапазону абсолютное значение в <annotation foreground="parameter">пЗв/имп</annotation> и настраивается в секции <annotation foreground="parameter">Компенсированная</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Число импульсов в каждом диапазоне умножается на значение этого диапазона, суммируется по всем диапазонам и пересчитывается в мкЗв/ч.\n
+        \t- Компенсированная <annotation foreground="parameter">кривая чувствительности</annotation> задаёт каждому энергетическому диапазону абсолютное значение в <annotation foreground="parameter">пЗв/имп</annotation> и настраивается в секции <annotation foreground="parameter">Компенсированная</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation>. Число импульсов в каждом диапазоне умножается на значение этого диапазона, суммируется по всем диапазонам и пересчитывается в мкЗв/ч.\n
         \t- Существуют профили настроек чувствительности: встроенные <u>nano-3</u>, <u>nano-8</u> и <u>nano-15</u> (только для чтения) и редактируемый профиль <u>Пользовательский</u>. Каждый профиль содержит собственные энергетические диапазоны, компенсированную кривую, некомпенсированное значение и окна Б/С/М. Используйте <annotation foreground="parameter">Сбросить к…</annotation>, чтобы скопировать встроенный профиль в пользовательский, либо <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> для сохранения/загрузки пользовательского профиля в/из файла.\n
         \t- Текстовое поле <annotation foreground="parameter">мд(к)</annotation> отображает компенсированное значение мощности дозы.\n
         \n
         Поиск в интервале (режим <annotation foreground="parameter">И</annotation>):\n
         \t- Данный режим предназначен для определения скорости счета в заданном энергетическом диапазоне (по умолчанию - по всему спектру).\n
-        \t- Для установки энергетического диапазона используйте параметр <annotation foreground="parameter">Диапазон энергий</annotation> в <annotation foreground="parameter">Настройках</annotation>.\n
-        \t- Данный режим также позволяет озвучивать события статистически значимого изменения текущего уровня скорости счета относительно опорного уровня. Для включения режима озвучивания установите галочку <annotation foreground="parameter">Включить звуковой сигнал</annotation> в <annotation foreground="parameter">Настройках</annotation>. В <annotation foreground="parameter">Настройках</annotation> также можно установить громкость сигнала и выбрать устройство вывода звука.\n
-        \t- При запуске набора спектра при включенных звуковых оповещениях сперва осуществляется расчет опорного уровня. Расчет опорного уровня производится до достижения погрешности 10% (при 95% доверительном интервале), но не более 30 секунд. После расчета опорного уровня программа определяет два порога срабатывания оповещения: верхий и нижний. При определении порогов учитывается погрешность определения опорного уровня, погрешность текущего значения скрости счета и параметр <annotation foreground="parameter">Уровень обнаружения</annotation>, устанавливаемый в <annotation foreground="parameter">Настройках</annotation>.\n
+        \t- Параметры режима задаются в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки интервала</annotation>:\n
+        \t\t● <annotation foreground="parameter">Диапазон энергий</annotation> - ограничивает диапазон энергий при определении скорости счета. Нажмите на текст для выбора диапазона.\n
+        \t\t● <annotation foreground="parameter">Включить звуковой сигнал</annotation> - включить озвучивание статистически значимого изменения скорости счета относительно опорного уровня.\n
+        \t\t● <annotation foreground="parameter">Звуковое устройство вывода</annotation> - требуемое устройство для вывода звука. Нажмите на текст для выбора другого устройства.\n
+        \t\t● <annotation foreground="parameter">Громкость звука</annotation> - определяет громкость звукового сигнала.\n
+        \t\t● <annotation foreground="parameter">Уровень обнаружения</annotation> - определяет уровень статистически значимого изменения скорости счета относительно опорного уровня.\n
+        \t- Данный режим также позволяет озвучивать события статистически значимого изменения текущего уровня скорости счета относительно опорного уровня (включается параметром <annotation foreground="parameter">Включить звуковой сигнал</annotation>).\n
+        \t- При запуске набора спектра при включенных звуковых оповещениях сперва осуществляется расчет опорного уровня. Расчет опорного уровня производится до достижения погрешности 10% (при 95% доверительном интервале), но не более 30 секунд. После расчета опорного уровня программа определяет два порога срабатывания оповещения: верхий и нижний. При определении порогов учитывается погрешность определения опорного уровня, погрешность текущего значения скрости счета и параметр <annotation foreground="parameter">Уровень обнаружения</annotation>, устанавливаемый в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки интервала</annotation>.\n
         \t- Текстовое поле <annotation foreground="parameter">инт.</annotation> отображает скорость счета в выбранном энергетическом интервале.\n
         \t- Текстовое поле <annotation foreground="parameter">≈cps</annotation> отображает значение опорного уровня в процессе его расчета.\n
         \t- Текстовое поле <annotation foreground="parameter">♪cps</annotation> отображает текущие значения порогов срабатывания сигнализации.\n
@@ -696,7 +798,7 @@
         \n
     </string>
     <string name="help_text_part5"><big><annotation foreground="caption">5. Отображение изотопов:</annotation></big>\n
-        \t- Зелёная линия курсора показывает изотоп с погрешностью 3% с предпочтительным отображением более важных изотопов. Для точного отображения линий изотопов используйте диалог <annotation foreground="parameter">Выбрать изотопы</annotation>.\n
+        \t- Зелёная линия курсора показывает изотоп с погрешностью 3% с предпочтительным отображением более важных изотопов. Для точного отображения линий изотопов используйте диалог <annotation foreground="parameter">Показать изотопы</annotation>.\n
         \t- Программа показывает информацию об изотопе в зависимости от выбора режима отображения горизонтальной оси (канал/энергия). В режиме отображения каналов программа показывает имена изотопов. В режиме отображения энергий программа показывает энергии изотопов.\n
         \t- Можно выбрать линии изотопов. Примечание: некоторые изотопы в списке отображены разными цветами в соответствии с их относительным квантовым выходом на данной линии. С увеличением квантового выхода: тёмно-зелёный, светло-зелёный, тёмно-жёлтый, светло-жёлтый, красный. Светло-голубой цвет используется для радиоактивных рядов и групп линий по изотопам.\n
         \t- Можно выбрать все линии, относящиеся к конкретному радиоактивному ряду, все линии, принадлежащие конкретному изотопу или отдельные линии изотопов.\n
@@ -706,20 +808,20 @@
         \t- Выбор индивидуальных линий изотопов не влияет на выбор радиактивных рядов или изотопов.\n
         \t- Линии изотопов из списка на графике показаны линиями своего цвета.\n
         \t- Для каждой линии изотопа в списке показано его имя, энергия линии и количество фотонов на 100 распадов.\n
+        \t- Кнопка <annotation foreground="parameter">Очистить выбор</annotation> снимает весь текущий выбор рядов, изотопов и линий.\n
         \n
     </string>
     <string name="help_text_part6">
         <big><annotation foreground="caption">6. Поиск изотопов:</annotation></big>\n
-        \t- Можно выполнить поиск изотопов. Алгоритм чувствителен к входным параметрам, поэтому попробуйте их изменить для получения наилучших результатов. Полученный список может быть отображён на графике или скрыт. Сменить видимость линий можно с помощью кнопки <annotation foreground="parameter">Показать</annotation> (кнопка сменится на <annotation foreground="parameter">Скрыть</annotation>). Все линии выведены светло-фиолетовым цветом. Энергии линий расчётные, а не взяты из внутренней базы данных. Имена изотопов рассчитываются с учётом параметра «<i>Неточность определения</i>».\n
-        \t- Отображение линий на графике выключается при стирании спектра или загрузке его из файла.\n
-        \t- Для активации функции автоматического поиска изотопов при наборе спектра сначала необходимо её активировать в разеделе <annotation foreground="parameter">Параметры</annotation>. Затем открыть <annotation foreground="parameter">Найти изотопы</annotation> и нажать <annotation foreground="parameter">Показать</annotation>. Функция автоматического поиска не работает во время паузы или когда вывод найденных изотопов выключен. Список обновляется каждую секунду.\n
-        \t- Входные параметры:\n
-        \t\t\u25cf «Порог» - уровень срабатывания для добавления изотопа к списку (0,00-10 000,00).\n
-        \t\t\u25cf «Размер окна» - число каналов для оценки (1-200).\n
-        \t\t\u25cf «Степень» - степень полинома (1-5).\n
-        \t\t\u25cf «Неточность определения» - насколько далеко может быть линия от эталона при определении изотопа, в процентах от энергии (1,00-50,00)\n
-        \t\t\u25cf «Значимые биты» - число значимых бит в номере канала. 13 означает «как есть». 12 означет объединить 2 канала в один, 11 означает объединить 4 канала в один и так далее.\n
-        \t\t\u25cf «Библиотека» - библиотека используемых изотопов. «<i>Все</i>» означает «показать даже неопределившиеся», «<i>Известные</i>» означает «показать только определившиеся», остальные варианты соответствуют требованиями МАГАТЭ.\n
+        \t- Можно выполнить поиск изотопов. Алгоритм чувствителен к входным параметрам, поэтому попробуйте их изменить для получения наилучших результатов. Полученный список может быть отображён на графике или скрыт. Сменить видимость линий можно с помощью кнопки <annotation foreground="parameter">Показать</annotation> (кнопка сменится на <annotation foreground="parameter">Скрыть</annotation>). Все линии выведены светло-фиолетовым цветом. Энергии линий расчётные, а не взяты из внутренней базы данных. Имена изотопов рассчитываются с учётом параметра «<i>Допуск по энергии</i>».\n
+        \t- Отображение линий на графике выключается при стирании спектра, загрузке его из файла или новом поиске.\n
+        \t- Для включения автоматического поиска изотопов при наборе спектра сначала включите <annotation foreground="parameter">Автоматический поиск изотопов</annotation> в <annotation foreground="parameter">Параметры</annotation> → <annotation foreground="parameter">Поиск изотопов</annotation>. Затем откройте <annotation foreground="parameter">Найти изотопы</annotation> и нажмите <annotation foreground="parameter">Показать</annotation>. Автоматический поиск не работает во время паузы или когда вывод найденных изотопов выключен. Список обновляется каждую секунду.\n
+        \t- Входные параметры (подсказки к ним показаны на экране поиска):\n
+        \t\t● «Порог, σ» - минимальная значимость пика над статистическим шумом (1,0-20,0).\n
+        \t\t● «Разрешение по Cs-137, %» - ширина пика 662 кэВ (на полувысоте) относительно его энергии для вашего детектора, определяет ожидаемую ширину пиков (1,0-30,0).\n
+        \t\t● «Сжать до, каналов» - перед поиском спектр объединяется до указанного числа каналов (не менее 1024). Чем меньше каналов, тем меньше влияние шума, но близкие пики могут слиться.\n
+        \t\t● «Допуск по энергии, %» - насколько пик может отличаться от линии библиотеки, чтобы получить название, в процентах от энергии (0,01-50,00).\n
+        \t\t● «Список изотопов» - какими изотопами могут называться пики. «<i>Все</i>» означает «показать даже неопределившиеся», «<i>Известные</i>» означает «показать только определившиеся», остальные варианты соответствуют типам изотопов МАГАТЭ.\n
         \n
     </string>
     <string name="help_text_part7">
@@ -733,62 +835,61 @@
         \t- Основной спектр может быть экспортирован в формате «<i>.csv</i>» с разделением полей при помощи «;» без столбца энергий в формате, совместимым с программой «<i>Microsoft Excel</i>». Файлы именуются в виде «<i>Export-date.csv</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
         \t- Основной спектр может быть экспортирован в формате «<i>.csv</i>» с разделением полей при помощи «;» со столбцом энергий в формате, совместимым с программой «<i>Microsoft Excel</i>». Файлы именуются в виде «<i>Export-date.csv</i>», где «date» - это текущая дата. После даты можно вставить суффикс как заметку.\n
         \t- Выходные имена файлов могут быть изменены параметром <annotation foreground="parameter">Имя</annotation> в разделе <annotation foreground="parameter">Параметры</annotation>. Можно независимо убрать префикс, дату или время.\n
-        \t- Фон сохраняется в файле с именем «<i>Background</i>» и загружается только из него. Для использования другого фона сначала загрузите его как основной, а потом отправьте его в фон. Примечание: сохранить фон можно только при наличии данных фона, в противном случае команда будет отключена.\n
-        \t- Обновление спектра может быть остановлено при выборе <annotation foreground="parameter">Пауза</annotation> в основном меню или в разделе иконок. После выбора пункт меняется на <annotation foreground="parameter">Продолжить</annotation>. Все импульсы, полученные из аудио потока во время паузы, будут утеряны.\n
-        \t- Любой сохранённый файл может быть отправлен в другую программу, другому человеку или через интернет посредством другой программы при помощи пункта меню <annotation foreground="parameter">Поделиться</annotation>.\n
-        \t- Редактируемый профиль чувствительности <annotation foreground="parameter">Пользовательский</annotation> можно сохранить в файл профиля и загрузить из него кнопками <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> в <annotation foreground="parameter">Устройство</annotation> → <annotation foreground="parameter">Чувствительность</annotation>. Файл профиля содержит один профиль: его кривую чувствительности, некомпенсированный коэффициент и значения Б/С/М.\n
+        \t- Если в спектр записаны координаты GPS (<annotation foreground="parameter">Параметры</annotation> → <annotation foreground="parameter">Добавить координаты GPS в файлы</annotation>), его можно показать на карте командой <annotation foreground="parameter">Показать на карте</annotation> в подменю <annotation foreground="parameter">Спектр</annotation>.\n
+        \t- Фон сохраняется в файле с именем «<i>Background</i>» и загружается из него или из любого другого файла (<annotation foreground="parameter">Загрузить из…</annotation> в подменю <annotation foreground="parameter">Фон</annotation>). Также основной спектр можно скопировать в фон командой <annotation foreground="parameter">Спектр в фон</annotation>. Примечание: сохранить фон можно только при наличии данных фона, в противном случае команда будет отключена.\n
+        \t- Обновление спектра может быть остановлено при выборе <annotation foreground="parameter">Пауза</annotation> в основном меню или в разделе иконок. После выбора пункт меняется на <annotation foreground="parameter">Продолжить</annotation>. Все импульсы, полученные от детектора во время паузы, будут утеряны.\n
+        \t- Команда <annotation foreground="parameter">Сброс спектра</annotation> предлагает <annotation foreground="parameter">Сбросить счёт</annotation> (обнуляет гистограмму и поиск без остановки набора, имя спектра и калибровка сохраняются) или <annotation foreground="parameter">Очистить всё</annotation> (полный сброс; во время записи - <annotation foreground="parameter">Остановить и очистить всё</annotation>).\n
+        \t- Если на экране есть несохранённый спектр, перед его заменой (загрузка из файла, очистка) и при завершении программы запрашивается подтверждение.\n
+        \t- Редактируемый профиль чувствительности <annotation foreground="parameter">Пользовательский</annotation> можно сохранить в файл профиля и загрузить из него кнопками <annotation foreground="parameter">Сохранить</annotation>/<annotation foreground="parameter">Загрузить</annotation> в <annotation foreground="parameter">Поиск</annotation> → <annotation foreground="parameter">Настройки МЭД</annotation>. Файл профиля содержит один профиль: его кривую чувствительности, некомпенсированный коэффициент и значения Б/С/М.\n
+        \t- Журнал работы программы открывается нажатием на строку версии в главном меню и может быть сохранён в файл командой <annotation foreground="parameter">Сохранить журнал</annotation>.\n
         \n
     </string>
     <string name="help_text_part8"><big><annotation foreground="caption">8. Сохранение и отображение спектрограмм:</annotation></big>\n
         \tДельта - разница между двумя последовательными состояниями набираемого спектра. Спектрограмма - список, состоящий из последовательности дельт набираемого спектра. Таким образом, спектрограмма позволяет изучать динамику изменения спектра во времени.\n
-        \t- Для сохранения спектрограммы с заданным интервалом времени (длительностью дельты) необходимо установить интервал записи более нуля в параметре <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation>. Запись новой спектрограммы начинается каждый раз при начале записи спектра. Имя файла спектрограммы имеет шаблон Spectrogram-«описание-спектра»-«дата_время-начала-записи».txt\n
+        \t- Для сохранения спектрограммы с заданным интервалом времени (длительностью дельты) необходимо установить интервал записи более нуля в параметре <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation> в <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Настройки</annotation>. Запись новой спектрограммы начинается каждый раз при начале записи спектра. Имя файла спектрограммы имеет шаблон Spectrogram-«описание-спектра»-«дата_время-начала-записи».txt\n
         \t- Просмотреть записываемую в данный момент спектрограмму можно командой <annotation foreground="parameter">Просмотр</annotation> в подменю <annotation foreground="parameter">Спектрограмма</annotation>. Первая строка спектрограммы отображается по истечении первого интервала записи.\n
         \t- Просмотреть ранее записанную спектрограмму можно командой <annotation foreground="parameter">Загрузить из…</annotation> в подменю <annotation foreground="parameter">Спектрограмма</annotation>.\n
-        \t- Для записи спектрограмм 24/7 предусмотрена опция <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation>, которая позволяет ограничить размер записываемых файлов.\n
-        \t- При сохранении спектрограмм записываются полные данные о всех 8192 каналах спектра. При отображении данные спектрограммы сжимаются до 1024 каналов.\n
+        \t- В окне спектрограммы в меню можно выбрать цветовую палитру, шкалу значений (цвета) и показ фонового спектра. Эти настройки сохраняются при перезапуске программы.\n
+        \t- Команда <annotation foreground="parameter">Очистить экран</annotation> очищает спектрограмму. Во время записи можно очистить только завершённые сегменты (<annotation foreground="parameter">Очистить только завершённые</annotation>) или всё и начать запись заново (<annotation foreground="parameter">Очистить все и начать заново</annotation>).\n
+        \t- Если в спектрограмму записаны координаты GPS, её можно показать на карте командой <annotation foreground="parameter">Показать на карте</annotation>.\n
+        \t- Для записи спектрограмм 24/7 предусмотрена опция <annotation foreground="parameter">Новый файл спектрограммы в полночь</annotation> в <annotation foreground="parameter">Спектрограмма</annotation> → <annotation foreground="parameter">Настройки</annotation>, которая позволяет ограничить размер записываемых файлов.\n
+        \t- При сохранении спектрограмм записываются все каналы спектра без сжатия. В памяти и при просмотре данные спектрограммы сжимаются до 1024 каналов.\n
         \tПРИМЕЧАНИЕ: Использование режима записи спектрограмм приводит к увеличенному потреблению оперативной памяти.
         \n
     </string>
     <string name="help_text_part9"><big><annotation foreground="caption">9. Параметры:</annotation></big>\n
+        \tПараметры поиска в интервале, поиска изотопов и спектрограмм описаны в разделах 4, 6 и 8.\n
+        \n
         \tОбработка аудио:\n
         \t- График: показывает входной сигнал как он принят или в режиме вывода импульса. Выбор режимов отображения путём движения влево/вправо. Используйте движение вверх/вниз для масштабирования значений.\n
         \t- <annotation foreground="parameter">Включить анализ импульсов</annotation> - включить отслеживание наложения импульсов. Данный параметр пытается компенсировать форму импульса, если он оказался слишком близко к предыдущему.\n
         \t- <annotation foreground="parameter">Использовать необработанный звук</annotation> - постараться использовать необработанный звук на Android 7 или выше. Данный выбор недоступен в системах до Android 7 или если система сообщает о невозможности использовать необработанный звук.\n
         \t- <annotation foreground="parameter">Инвертировать вход</annotation> - выберите, если импульсы имеют отрицательную полярность.\n
-        \t- <annotation foreground="parameter">Вход:</annotation> - выбор требуемого аудиовхода (Не работает с истинными USB-спектрометрами, например «<u>AtomSpectra Nano Pro</u>»). нажмите на текст для изменения источника звука.\n
-        \t- <annotation foreground="parameter">Мин точек фронта</annotation> and <annotation foreground="parameter">Макс точек фронта</annotation> - минимальная и максимальная длина переднего фронта в отсчётах для регистрации импульса. Жёлтые точки на графике показывают требуемую минимальную ширину переднего фронта, зелёные точки показывают приемлемую ширину переднего фронта импульса между минимальным и максимальным значениями. Параметры по умолчанию подходят для всех приборов серии <u>AtomSpectra</u>.\n
+        \t- <annotation foreground="parameter">Мин точек фронта</annotation> и <annotation foreground="parameter">Макс точек фронта</annotation> - минимальная и максимальная длина переднего фронта в отсчётах для регистрации импульса. Жёлтые точки на графике показывают требуемую минимальную ширину переднего фронта, зелёные точки показывают приемлемую ширину переднего фронта импульса между минимальным и максимальным значениями. Параметры по умолчанию подходят для всех приборов серии <u>AtomSpectra</u>.\n
+        \t- <annotation foreground="parameter">Дискриминатор шума</annotation> - не регистрировать импульсы ниже заданного канала для исключения зашумлённых каналов.\n
         \t- <annotation foreground="parameter">Частота обновл. графика, с⁻¹</annotation> - сколько раз в секунду программа обновляет показания мощности дозы и спектр.\n
         \n
-        \tОбработка USB:\n
+        \tSpectra Pro:\n
         \t- <annotation foreground="parameter">Разрешить обработку спектров с частичными данными</annotation> - разрешить обработку спектров из PRO устройства с частичной потерей пакетов. Используйте при проблемах с передачей данных. Техническая информация: в процессе набора спектра USB PRO спектрометр постоянно передает данные по последовательному порту. Данные передаются пакетами и включают в себя разбитый на большое количество фрагментов спектр (по N каналов) и информацию о времени набора, скорости счета и т.д. При длительной работе в зависимости от загрузки Android устройства и других факторов может происходить потеря некоторых пакетов. Это приводит к тому, что в некоторый момент времени t мы видим спектр, часть фрагментов которого не была принята из спектрометра. Как правило, в момент времени t+1 потерянная часть спектра принимается из прибора и корректно отображается. В большинстве случаев несущественная потеря фрагментов незаметна для пользователя. Данная опция разрешает обработку спектров с потерей фрагментов, если опция выключена - спектры с потерянными фрагментами игнорируются (с отображением сообщения о количестве проигнорированных спектров) до тех пор, пока в очередной сеанс передачи данных не будет передан весь спектр без потерь.\n
+        \n
+        \tBluZ:\n
+        \t- <annotation foreground="parameter">Корректировать неравномерность каналов АЦП (DNL)</annotation> - исправлять неравномерную ширину каналов АЦП BluZ, видимую как регулярная «гребёнка» в спектре. Коррекция начинается после набора достаточного числа отсчётов и применяется также к сохраняемым файлам. Изменение параметра во время записи спектрограммы искажает запись.\n
+        \t- <annotation foreground="parameter">Сигнализация</annotation> и <annotation foreground="parameter">Дозиметр</annotation> (настройки устройства) - пороги сигнализации и чувствительность хранятся в самом BluZ и работают на нём. Мощность дозы в режиме поиска приложение считает по своим профилям чувствительности (см. раздел 4).\n
+
         \n
         \tСпектр:\n
         \t- <annotation foreground="parameter">Вывод</annotation> - сжать спектр и отображать в виде такого количества точек. Программа уменьшает 1024 канала спектра или мощности дозы до указанного количества точек и отображает на графике для ускорения вывода.\n
-        \t- <annotation foreground="parameter">Дискриминатор шума</annotation> - не регистрировать импульсы ниже заданного канала для исключения зашумлённых каналов.\n
         \t- <annotation foreground="parameter">Макс. степень</annotation> - максимальная степень полинома функции калибровки\n
         \t- <annotation foreground="parameter">Сглаживание</annotation> - выбор окна сглаживания в реальном времени.\n
         \t- <annotation foreground="parameter">Спектр</annotation> - выбрать суммарное, среднее или пиковое значение на графике спектра при сжатии графика. Пиковые значения позволяют не потерять слабые пики, средние показывают корректный график, суммы представляют прибор с меньшим количеством каналов.\n
         \n
         \tИзменение спектра:\n
+        \t- <annotation foreground="parameter">Включить режим изменения спектра</annotation> - когда параметр выключен, кнопка «Изменение» открывает спектрограмму, расчёт изменения спектра прекращается, а его история очищается. После повторного включения окна заполняются заново по поступающим данным. Запись, поиск и обработка спектрограммы продолжают работать независимо от этого параметра.\n
         \t- <annotation foreground="parameter">Дельта-время</annotation> - выбор длительности скользящего окна в режиме изменение спектра.\n
-        \n
-        \tСпектрограмма:\n
-        \t- <annotation foreground="parameter">Создавать новый файл спектрограммы в полночь</annotation> - при включенной записи спектрограммы каждый день в полночь будет создаваться новый файл спектрограммы.\n
-        \t- <annotation foreground="parameter">Сохр. дельту кажд. N с</annotation> - включает запись спектрограммы во время набора спектра, значение определяет длительность дельты спектра в секундах.\n
-        \n
-        \tПоиск в интервале:\n
-        \t- <annotation foreground="parameter">Включить звуковой сигнал</annotation> - включить озвучивание статистически значимого изменения скорости счета относительно опорного уровня.\n
-        \t- <annotation foreground="parameter">Диапазон энергий</annotation> - ограничивает диапазон энергий при определения скорости счета. Нажмите на текст для выбора диапазона.\n
-        \t- <annotation foreground="parameter">Звуковое устройство вывода:</annotation> - требуемое устройство для вывода звука. Нажмите на текст для выбора другого устройства.\n
-        \t- <annotation foreground="parameter">Громкость звука:</annotation> - определяет громкость звукового сигнала.\n
-        \t- <annotation foreground="parameter">Уровень обнаружения:</annotation> - определяет уровень статистически значимого изменения скорости счета относительно опорного уровня.\n
         \n
         \tAtomSwift интеграция:\n
         \t- <annotation foreground="parameter">Отправлять данные в приложение AtomSwift</annotation> - отправлять значения мощности дозы и скорости счета в приложение AtomSwift (что позволяет строить карты используя ваш спектрометр). Использование: подключите спектрометр, нажмите кнопку старт, включите опцию, запустите приложение AtomSwift, выберите AtomSpectraApp в списке устройств. Минимальная поддерживаемая версия AtomSwift 1.4.250.\n
         \t- <annotation foreground="parameter">AtomSwift МД</annotation> - выбор значения мощности дозы, отправляемой в приложение AtomSwift. Нескомпенсированное значение рекомендуется по умолчанию для поиска и карт если вам явно не требуется компенсированная и вы знаете как настроить кривую чувствительности.\n
-        \n
-        \tПоиск изотопов:\n
-        \t- <annotation foreground="parameter">Автоматический поиск изотопов</annotation> - автоматически искать и показывать изотопы на спектре.\n
         \n
         \tФайлы:\n
         \t- <annotation foreground="parameter">Рабочая директория:</annotation> - выбрать конечный каталог для всех файлов. Если он отображает <u>...</u> на Android 8 и выше, там Вам будет задан вопрос о выборе месте сохранения. Или Вы можете нажать на <u>...</u> (или на отображаемое имя) для выбора вручную места сохранения. На Android до 8 данный параметр нельзя сменить. Если он всё ещё показывает <u>...</u>, пожалуйста создайте папку <u>AtomSpectra</u> в корне первого накопителя (обычно накопителя телефона) самостоятельно и перезапустите программу.\n
@@ -801,4 +902,62 @@
         \n
     </string>
     <string name="help_version">Версия: <xliff:g id="version">%1$s</xliff:g>, сборка: <xliff:g id="build">%2$d</xliff:g>.</string>
+    <string name="log_capture_diagnostics">Записывать диагностику</string>
+    <string name="log_show_details">Показать подробности</string>
+    <string name="log_save">Сохранить журнал</string>
+    <string name="log_capture_enabled">Запись диагностики включена</string>
+    <string name="log_capture_disabled">Запись диагностики выключена</string>
+    <string name="device_settings_saved">Настройки устройства сохранены</string>
+    <string name="device_settings_saving">Сохранение…</string>
+    <string name="device_settings_save">Сохранить</string>
+    <string name="device_settings_dont_save">Не сохранять</string>
+    <string name="device_settings_unsaved_title">Есть несохранённые изменения</string>
+    <string name="device_settings_unsaved_text">Сохранить изменения настроек устройства?</string>
+    <string name="device_settings_destructive_title">Внимание</string>
+    <string name="device_settings_destructive_text">Сохранение этих настроек сотрёт данные, набранные устройством:\n%1$s</string>
+    <string name="device_settings_expert">Для экспертов</string>
+    <string name="device_settings_calibration">Калибровка</string>
+    <string name="bluz_settings_indication">Индикация</string>
+    <string name="bluz_settings_spectrometer">Спектрометр</string>
+    <string name="bluz_settings_alarm">Сигнализация</string>
+    <string name="bluz_settings_dosimeter">Дозиметр</string>
+    <string name="device_setting_cal0">Коэффициент 0 (смещение)</string>
+    <string name="device_setting_cal1">Коэффициент 1 (x)</string>
+    <string name="device_setting_cal2">Коэффициент 2 (x²)</string>
+    <string name="device_setting_cal3">Коэффициент 3 (x³)</string>
+    <string name="device_setting_cal4">Коэффициент 4 (x⁴)</string>
+    <string name="device_setting_cal_help">Энергия в кэВ как полином номера канала x, 4096 каналов.</string>
+    <string name="bluz_setting_pulse_led">Вспышка на импульс вкл</string>
+    <string name="bluz_setting_led_div10">Режим вспышек 1/10</string>
+    <string name="bluz_setting_pulse_sound">Щелчок на импульс вкл</string>
+    <string name="bluz_setting_sound_div10">Режим щелчков 1/10</string>
+    <string name="bluz_setting_autostart">Начинать набор спектра при включении</string>
+    <string name="bluz_setting_adc_sample">Время выборки АЦП</string>
+    <string name="bluz_setting_adc_sample_help">Код 0–7. Изменение стирает спектр и время набора на устройстве.</string>
+    <string name="bluz_setting_hv_actual">HV</string>
+    <string name="bluz_setting_hv_actual_help">Фактическое, с учётом температуры (код ЦАП). Обновляется после сохранения.</string>
+    <string name="bluz_setting_hv">HV0</string>
+    <string name="bluz_setting_hv_help">Базовое, при 20 °C (код ЦАП), 0–1023.</string>
+    <string name="bluz_setting_hv_temp_coef">Температурный коэффициент высокого напряжения</string>
+    <string name="bluz_setting_hv_temp_coef_help">Со знаком, 0,001 кода ЦАП на °C. Код растёт при падении температуры, напряжение снижается. 0 выключает.</string>
+    <string name="bluz_setting_comparator">Порог компаратора</string>
+    <string name="bluz_setting_comparator_help">Код 10 бит, 0–1023.</string>
+    <string name="bluz_setting_level1">Порог 1</string>
+    <string name="bluz_setting_level2">Порог 2</string>
+    <string name="bluz_setting_level3">Порог 3</string>
+    <string name="bluz_setting_level_help">0 отключает порог. Шаг 0,01 мкЗв/ч. Пороги не складываются: решает наивысший превышенный, звук и вибрация низших игнорируются.</string>
+    <string name="bluz_setting_level1_sound">Порог 1: звук</string>
+    <string name="bluz_setting_level2_sound">Порог 2: звук</string>
+    <string name="bluz_setting_level3_sound">Порог 3: звук</string>
+    <string name="bluz_setting_level1_vibro">Порог 1: вибрация</string>
+    <string name="bluz_setting_level2_vibro">Порог 2: вибрация</string>
+    <string name="bluz_setting_level3_vibro">Порог 3: вибрация</string>
+    <string name="bluz_setting_sensitivity">Чувствительность</string>
+    <string name="bluz_setting_sensitivity_help">Мощность дозы, соответствующая одному импульсу в секунду. Используется только устройством и не влияет на мощность дозы, которую считает приложение в режиме поиска.</string>
+    <string name="bluz_unit_usv_h_per_cps">мкЗв/ч на имп/с</string>
+    <string name="spectra_pro_settings_device">Устройство</string>
+    <string name="spectra_pro_setting_noise">Порог шума (NOS)</string>
+    <string name="spectra_pro_setting_noise_help">Значение 0–4095.</string>
+    <string name="device_settings_number">Введите число</string>
+    <string name="device_settings_range">Введите значение от %1$s до %2$s</string>
 </resources>

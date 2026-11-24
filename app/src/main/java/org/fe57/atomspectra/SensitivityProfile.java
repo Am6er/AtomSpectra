@@ -90,7 +90,9 @@ public class SensitivityProfile {
         return false;
     }
 
-    /** Returns a deep copy of the built-in with the given id, or a copy of the default when unknown. */
+    /**
+     * Returns a deep copy of the built-in with the given id, or a copy of the default when unknown.
+     */
     public static SensitivityProfile builtInById(String id) {
         for (SensitivityProfile p : BUILTINS) {
             if (p.name.equals(id)) {
@@ -130,9 +132,9 @@ public class SensitivityProfile {
     }
 
     public SensitivityProfile(String name, boolean readOnly,
-                             float[] binEdges, double[] compPsvPerCount, double nonCompPsvPerCount,
-                             int compFast, int compMedium, int compSlow,
-                             int nonCompFast, int nonCompMedium, int nonCompSlow) {
+                              float[] binEdges, double[] compPsvPerCount, double nonCompPsvPerCount,
+                              int compFast, int compMedium, int compSlow,
+                              int nonCompFast, int nonCompMedium, int nonCompSlow) {
         this.name = name;
         this.readOnly = readOnly;
         this.binEdges = binEdges.clone();
@@ -146,7 +148,9 @@ public class SensitivityProfile {
         this.nonCompSlow = nonCompSlow;
     }
 
-    /** Deep copy preserving all fields, including {@link #readOnly}. */
+    /**
+     * Deep copy preserving all fields, including {@link #readOnly}.
+     */
     public SensitivityProfile copy() {
         return new SensitivityProfile(name, readOnly,
                 binEdges, compPsvPerCount, nonCompPsvPerCount,
@@ -154,7 +158,9 @@ public class SensitivityProfile {
                 nonCompFast, nonCompMedium, nonCompSlow);
     }
 
-    /** Deep, editable copy. The copy is never read-only regardless of the source. */
+    /**
+     * Deep, editable copy. The copy is never read-only regardless of the source.
+     */
     public SensitivityProfile editableCopy(String newName) {
         return new SensitivityProfile(newName, false,
                 binEdges, compPsvPerCount, nonCompPsvPerCount,
@@ -162,7 +168,9 @@ public class SensitivityProfile {
                 nonCompFast, nonCompMedium, nonCompSlow);
     }
 
-    /** Compensated curve as an ordered {@code edge -> pSv/count} map (for the table editor). */
+    /**
+     * Compensated curve as an ordered {@code edge -> pSv/count} map (for the table editor).
+     */
     public TreeMap<Float, Double> compCurveAsMap() {
         TreeMap<Float, Double> map = new TreeMap<>();
         for (int i = 0; i < binEdges.length; i++) {
@@ -171,7 +179,9 @@ public class SensitivityProfile {
         return map;
     }
 
-    /** Replace the compensated curve from an ordered {@code edge -> pSv/count} map. */
+    /**
+     * Replace the compensated curve from an ordered {@code edge -> pSv/count} map.
+     */
     public void setCompCurveFromMap(@NonNull TreeMap<Float, Double> map) {
         List<Float> edges = new ArrayList<>(map.keySet());
         binEdges = new float[edges.size()];
@@ -184,17 +194,23 @@ public class SensitivityProfile {
 
     public int searchTargetComp(int fsmMode) {
         switch (fsmMode) {
-            case 1: return compMedium;
-            case 2: return compSlow;
-            default: return compFast;
+            case 1:
+                return compMedium;
+            case 2:
+                return compSlow;
+            default:
+                return compFast;
         }
     }
 
     public int searchTargetNonComp(int fsmMode) {
         switch (fsmMode) {
-            case 1: return nonCompMedium;
-            case 2: return nonCompSlow;
-            default: return nonCompFast;
+            case 1:
+                return nonCompMedium;
+            case 2:
+                return nonCompSlow;
+            default:
+                return nonCompFast;
         }
     }
 }

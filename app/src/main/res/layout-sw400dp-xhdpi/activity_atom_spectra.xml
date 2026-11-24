@@ -68,21 +68,23 @@
         android:foregroundGravity="center"
         android:onClick="onClickDeleteSpc"
         android:scaleType="fitCenter"
-        android:src="@drawable/menu_clear_spectrum" />
+        android:src="@drawable/ic_menu_delete" />
 
-    <Button
+    <ImageButton
         android:id="@+id/inputTypeButton"
-        style="?android:attr/buttonStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_gravity="top|right"
         android:layout_marginTop="50dp"
-        android:background="@drawable/input_none"
+        android:adjustViewBounds="true"
         android:clickable="false"
+        android:contentDescription="@string/action_switch_device"
         android:enabled="false"
         android:focusable="false"
-        android:textColor="#FFFFFFFF"
-        android:textSize="12dp" />
+        android:foregroundGravity="center"
+        android:padding="0dp"
+        android:scaleType="center"
+        android:src="@drawable/input_none" />
 
     <Button
         android:id="@+id/keVOrChannelButton"
@@ -219,13 +221,14 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="50dp"
         android:layout_gravity="bottom"
         android:background="#333333"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/displayModeSpectrumButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -239,6 +242,7 @@
 
         <TextView
             android:id="@+id/displayModeSpectrumChangeButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -251,6 +255,7 @@
 
         <TextView
             android:id="@+id/displayModeSearchButton"
+            android:background="@drawable/navigation_button_background"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -261,17 +266,17 @@
             android:textColor="#FFFFFFFF"
             android:textSize="18dp" />
 
-<!--        <TextView-->
-<!--            android:id="@+id/displayModeSpectrogramButton"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="1"-->
-<!--            android:clickable="true"-->
-<!--            android:gravity="center"-->
-<!--            android:onClick="onClick_renderModeSpectrogram"-->
-<!--            android:text="@string/nav_bar_spectrogram"-->
-<!--            android:textColor="#FFFFFFFF"-->
-<!--            android:textSize="16dp" />-->
+        <!--        <TextView-->
+        <!--            android:id="@+id/displayModeSpectrogramButton"-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="match_parent"-->
+        <!--            android:layout_weight="1"-->
+        <!--            android:clickable="true"-->
+        <!--            android:gravity="center"-->
+        <!--            android:onClick="onClick_renderModeSpectrogram"-->
+        <!--            android:text="@string/nav_bar_spectrogram"-->
+        <!--            android:textColor="#FFFFFFFF"-->
+        <!--            android:textSize="16dp" />-->
     </LinearLayout>
 
     <LinearLayout

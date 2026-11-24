@@ -27,7 +27,6 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -94,6 +93,7 @@ public class AtomSpectraSensitivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_atom_spectra_sensivity);
+        KeyboardHelper.consumeEnterIn(findViewById(android.R.id.content));
 
         ActionBar bar = getActionBar();
         if (bar != null) {
@@ -150,17 +150,21 @@ public class AtomSpectraSensitivity extends Activity {
         confirmDiscardOrFinish();
     }
 
-    /** Warn about unsaved edits before leaving via an implicit exit (back / up); apply happens on OK. */
+    /**
+     * Warn about unsaved edits before leaving via an implicit exit (back / up); apply happens on OK.
+     */
     private void confirmDiscardOrFinish() {
         if (!isDirty()) {
             finish();
             return;
         }
-        DialogHelper.showActionConfirmationDialog(this,
+        DialogHelper.showStackedActions(this,
+                getString(R.string.sens_discard_title),
                 getString(R.string.sens_discard_message),
-                getString(R.string.dialog_discard_button),
-                getString(R.string.dialog_keep_editing_button),
-                this::finish);
+                true,
+                new DialogHelper.StackedAction(getString(R.string.sensitivity_apply), () -> onOkButton(null)),
+                new DialogHelper.StackedAction(getString(R.string.dialog_keep_editing_button), null),
+                new DialogHelper.StackedAction(getString(R.string.sens_discard_button), this::finish));
     }
 
     private boolean isDirty() {
@@ -240,7 +244,9 @@ public class AtomSpectraSensitivity extends Activity {
         return CUSTOM_INDEX;
     }
 
-    /** Point {@link #workingProfile} at the built-in copy or the in-memory custom for {@code id}. */
+    /**
+     * Point {@link #workingProfile} at the built-in copy or the in-memory custom for {@code id}.
+     */
     private void selectWorkingFor(String id) {
         selectedId = id;
         if (SensitivityProfile.ID_CUSTOM.equals(id)) {
@@ -289,7 +295,9 @@ public class AtomSpectraSensitivity extends Activity {
         e.setFocusableInTouchMode(enabled);
     }
 
-    /** Read the inline fields into {@link #workingProfile} (best-effort; keeps prior value on error). */
+    /**
+     * Read the inline fields into {@link #workingProfile} (best-effort; keeps prior value on error).
+     */
     private void flushScalars() {
         if (!editable) {
             return;
@@ -343,7 +351,9 @@ public class AtomSpectraSensitivity extends Activity {
         finish();
     }
 
-    /** Custom mode: reset the custom profile to a chosen built-in's values. */
+    /**
+     * Custom mode: reset the custom profile to a chosen built-in's values.
+     */
     public void onResetToButton(View v) {
         final String[] names = {SensitivityProfile.ID_NANO3, SensitivityProfile.ID_NANO8, SensitivityProfile.ID_NANO15};
         new AlertDialog.Builder(this)
@@ -354,7 +364,9 @@ public class AtomSpectraSensitivity extends Activity {
                 .show();
     }
 
-    /** Clone {@code source} into the custom slot (in memory) and show it in editable mode. */
+    /**
+     * Clone {@code source} into the custom slot (in memory) and show it in editable mode.
+     */
     private void cloneIntoCustom(SensitivityProfile source) {
         customWorking = source.editableCopy(getString(R.string.profile_custom_name_default));
         rebuildSpinnerLabels();
@@ -379,6 +391,7 @@ public class AtomSpectraSensitivity extends Activity {
         try {
             startActivityForResult(intent, REQUEST_SAVE_PROFILE);
         } catch (Exception e) {
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot start sensitivity profile save", e);
             toast(getString(R.string.profile_save_error));
         }
     }
@@ -390,12 +403,25 @@ public class AtomSpectraSensitivity extends Activity {
         try {
             startActivityForResult(Intent.createChooser(intent, getString(R.string.ask_select_profile_file)), REQUEST_LOAD_PROFILE);
         } catch (Exception e) {
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot start sensitivity profile load", e);
             toast(getString(R.string.profile_load_error, ""));
         }
     }
 
     @Override
+    public void startActivityForResult(Intent intent, int requestCode, Bundle options) {
+        if (requestCode >= 0) AtomSpectraApplication.externalUiStarted(this);
+        try {
+            super.startActivityForResult(intent, requestCode, options);
+        } catch (RuntimeException error) {
+            AtomSpectraApplication.externalUiFinished(this);
+            throw error;
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        AtomSpectraApplication.externalUiFinished(this);
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != RESULT_OK || data == null || data.getData() == null) {
             return;
@@ -413,8 +439,9 @@ public class AtomSpectraSensitivity extends Activity {
              OutputStreamWriter writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
             SensitivityProfileFile.write(writer, customWorking);
             toast(getString(R.string.profile_saved));
+            AtomSpectraLog.action(this, LogTag.SENSITIVITY_ACT, "Saved sensitivity profile");
         } catch (Exception e) {
-            AtomSpectraLog.addMessage(this, android.util.Log.getStackTraceString(e));
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot save sensitivity profile", e);
             toast(getString(R.string.profile_save_error));
         }
     }
@@ -425,14 +452,16 @@ public class AtomSpectraSensitivity extends Activity {
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             loaded = SensitivityProfileFile.read(reader);
         } catch (SensitivityProfileFile.FormatException e) {
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot parse sensitivity profile", e);
             toast(getString(R.string.profile_load_error, e.getMessage()));
             return;
         } catch (Exception e) {
-            AtomSpectraLog.addMessage(this, android.util.Log.getStackTraceString(e));
+            AtomSpectraLog.error(this, LogTag.SENSITIVITY_ACT, "Cannot load sensitivity profile", e);
             toast(getString(R.string.profile_load_error, ""));
             return;
         }
         customWorking = loaded;
+        AtomSpectraLog.action(this, LogTag.SENSITIVITY_ACT, "Loaded sensitivity profile");
         rebuildSpinnerLabels();
         if (SensitivityProfile.ID_CUSTOM.equals(selectedId)) {
             selectWorkingFor(SensitivityProfile.ID_CUSTOM);
@@ -455,19 +484,18 @@ public class AtomSpectraSensitivity extends Activity {
             return;
         }
         int rowIndex = getRowIndexById(v.getId());
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.sens_delete_row_dialog_title)
-                .setMessage(getString(R.string.sens_delete_row_dialog_message, rowIndex + 1))
-                .setPositiveButton(R.string.sens_delete_row_dialog_delete_btn, (dialog, whichButton) -> {
+        DialogHelper.showStackedActions(this,
+                getString(R.string.sens_delete_row_dialog_title),
+                getString(R.string.sens_delete_row_dialog_message, rowIndex + 1),
+                true,
+                new DialogHelper.StackedAction(getString(R.string.sens_delete_row_dialog_delete_btn), () -> {
                     ArrayList<Float> energies = new ArrayList<>(curve.keySet());
                     curve.remove(energies.get(rowIndex));
                     workingProfile.setCompCurveFromMap(curve);
                     renderSensitivityTable();
                     applyEditableState();
-                })
-                .setNegativeButton(android.R.string.cancel, (d, b) -> {
-                })
-                .show();
+                }),
+                new DialogHelper.StackedAction(getString(android.R.string.cancel), null));
     }
 
     public void onEditButton(View v) {
@@ -683,7 +711,7 @@ public class AtomSpectraSensitivity extends Activity {
     }
 
     private void toast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        ToastHelper.showToastOnly(this, message);
     }
 
     private int getEnergyBinTextId(int rowIndex) {

@@ -11,7 +11,9 @@ import java.util.Locale;
 import java.util.TreeMap;
 
 public class PrefHelper {
-    /** Sentinel for "no coefficient stored"; a real c0 never takes this value. */
+    /**
+     * Sentinel for "no coefficient stored"; a real c0 never takes this value.
+     */
     private static final float NO_COEFFICIENT = -1000;
 
     public static String configCalibrationChannel(int i) {
@@ -38,26 +40,66 @@ public class PrefHelper {
         return context.getSharedPreferences(Constants.ATOMSPECTRA_PREFERENCES, Context.MODE_PRIVATE);
     }
 
+    public static boolean isLogDiagnosticsEnabled(@NonNull Context context) {
+        return getASSharedPreferences(context).getBoolean("log_capture_diagnostics", false);
+    }
+
+    public static void setLogDiagnosticsEnabled(@NonNull Context context, boolean enabled) {
+        getASSharedPreferences(context).edit().putBoolean("log_capture_diagnostics", enabled).apply();
+    }
+
+    public static boolean isLogDetailsVisible(@NonNull Context context) {
+        return getASSharedPreferences(context).getBoolean("log_show_details", false);
+    }
+
+    public static void setLogDetailsVisible(@NonNull Context context, boolean visible) {
+        getASSharedPreferences(context).edit().putBoolean("log_show_details", visible).apply();
+    }
+
     // --- Energy calibration -------------------------------------------------------------------
 
     /**
-     * The stored energy calibration. Falls back to the default linear 0..3000 keV curve when
-     * nothing is stored, and converts a legacy install (calibration points instead of polynomial
+     * Coefficients stored for one device, or null when the device has none.
+     */
+    public static double[] getDeviceCalibration(@NonNull Context context, @NonNull String deviceId) {
+        String stored = getASSharedPreferences(context).getString(Constants.CONFIG.CONF_CAL_DEVICE + deviceId, null);
+        if (stored == null || stored.isEmpty())
+            return null;
+        String[] parts = stored.split(";");
+        double[] coeffs = new double[parts.length];
+        try {
+            for (int i = 0; i < parts.length; i++)
+                coeffs[i] = Double.parseDouble(parts[i]);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return coeffs;
+    }
+
+    public static void setDeviceCalibration(@NonNull Context context, @NonNull String deviceId, @NonNull double[] coeffs) {
+        StringBuilder stored = new StringBuilder();
+        for (int i = 0; i < coeffs.length; i++) {
+            if (i > 0)
+                stored.append(';');
+            stored.append(coeffs[i]);
+        }
+        getASSharedPreferences(context).edit()
+                .putString(Constants.CONFIG.CONF_CAL_DEVICE + deviceId, stored.toString())
+                .apply();
+    }
+
+    /**
+     * The calibration that used to be shared by all devices ("program" calibration), or null when
+     * nothing is stored. Converts an older install (calibration points instead of polynomial
      * coefficients) into coefficients on first access.
      */
-    public static Calibration getCalibration(@NonNull Context context) {
+    public static Calibration getLegacyCalibration(@NonNull Context context, int channelCount) {
         SharedPreferences sp = getASSharedPreferences(context);
         int poliSize = sp.getInt(Constants.CONFIG.CONF_CAL_POLI_SIZE, -1);
-        if (poliSize == -1) {
-            // nothing stored yet: linear 0..3000 keV over the whole histogram
-            Calibration calibration = new Calibration()
-                    .addPoint(0, 0.0)
-                    .addPoint(Constants.NUM_HIST_POINTS - 1, 3000.0);
-            calibration.Calculate();
-            return calibration;
-        }
+        if (poliSize == -1)
+            return null;
 
-        Calibration calibration = new Calibration();
+        Calibration calibration = new Calibration(channelCount);
         double firstCoefficient = sp.getFloat(configCalibrationCoefficient(0), NO_COEFFICIENT);
         boolean hasLegacyPoints = sp.getInt(configCalibrationChannel(1), -1) != -1;
         if (firstCoefficient != NO_COEFFICIENT || !hasLegacyPoints) {
@@ -66,27 +108,19 @@ public class PrefHelper {
                 coeffs[i] = sp.getFloat(configCalibrationCoefficient(i), 1);
             calibration.Calculate(coeffs);
         } else {
-            migrateLegacyCalibrationPoints(sp, poliSize, calibration);
+            migrateLegacyCalibrationPoints(sp, poliSize, channelCount, calibration);
         }
         return calibration;
     }
 
-    public static int getLastCalibrationChannel(@NonNull Context context) {
-        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_LAST_CHANNEL, Constants.NUM_HIST_POINTS);
+    public static int getIgnoredTopChannels(@NonNull Context context) {
+        return getASSharedPreferences(context).getInt(Constants.CONFIG.CONF_IGNORED_TOP_CHANNELS, 0);
     }
 
-    public static void setLastCalibrationChannel(@NonNull Context context, int channel) {
+    public static void setIgnoredTopChannels(@NonNull Context context, int count) {
         getASSharedPreferences(context).edit()
-                .putInt(Constants.CONFIG.CONF_LAST_CHANNEL, channel)
+                .putInt(Constants.CONFIG.CONF_IGNORED_TOP_CHANNELS, count)
                 .apply();
-    }
-
-    /** Store both the calibration and the last calibration channel in one edit. */
-    public static void setCalibrationAndLastChannel(@NonNull Context context, @NonNull Calibration calibration, int lastChannel) {
-        SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
-        writeCalibration(editor, calibration);
-        editor.putInt(Constants.CONFIG.CONF_LAST_CHANNEL, lastChannel);
-        editor.apply();
     }
 
     private static void writeCalibration(@NonNull SharedPreferences.Editor editor, @NonNull Calibration calibration) {
@@ -101,9 +135,9 @@ public class PrefHelper {
      * Pre-coefficient installs stored the calibration as a list of (channel, energy) points. Fit
      * them once, then replace the points in preferences with the resulting coefficients.
      */
-    private static void migrateLegacyCalibrationPoints(@NonNull SharedPreferences sp, int poliSize, @NonNull Calibration calibration) {
+    private static void migrateLegacyCalibrationPoints(@NonNull SharedPreferences sp, int poliSize, int channelCount, @NonNull Calibration calibration) {
         for (int i = 1; i <= poliSize + 1; i++) {
-            int channel = sp.getInt(configCalibrationChannel(i), (Constants.NUM_HIST_POINTS - 1) * (i - 1) / poliSize);
+            int channel = sp.getInt(configCalibrationChannel(i), (channelCount - 1) * (i - 1) / poliSize);
             double energy = sp.getFloat(configCalibrationEnergy(i), (float) 3000.0 * (i - 1) / poliSize);
             calibration.addPoint(channel, energy);
         }
@@ -129,16 +163,84 @@ public class PrefHelper {
         return lang;
     }
 
+    // --- Device choice ------------------------------------------------------------------------
+
+    static synchronized boolean shouldRememberDeviceChoice(@NonNull Context context) {
+        return getASSharedPreferences(context).getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false);
+    }
+
+    static synchronized void setRememberDeviceChoice(@NonNull Context context, boolean remember) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        boolean previous = sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false);
+        SharedPreferences.Editor editor = sp.edit();
+        if (!remember || !sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
+            clearDeviceChoice(editor);
+        }
+        editor.putBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, remember).apply();
+        if (previous != remember) {
+            AtomSpectraLog.action(context, LogTag.PREF_HELPER, "Remember device choice: " + remember);
+        }
+    }
+
+    private static void clearDeviceChoice(@NonNull SharedPreferences.Editor editor) {
+        editor.remove(Constants.CONFIG.CONF_DEVICE_MODE)
+                .remove(Constants.CONFIG.CONF_DEVICE_TYPE)
+                .remove(Constants.CONFIG.CONF_DEVICE_IDENTITY)
+                .remove(Constants.CONFIG.CONF_DEVICE_NAME);
+    }
+
+    static synchronized DeviceChoice getDeviceChoice(@NonNull Context context) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        if (!sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
+            SharedPreferences.Editor editor = sp.edit();
+            clearDeviceChoice(editor);
+            editor.apply();
+            return DeviceChoice.none();
+        }
+        switch (sp.getInt(Constants.CONFIG.CONF_DEVICE_MODE, DeviceChoice.MODE_NONE)) {
+            case DeviceChoice.MODE_OFFLINE:
+                return DeviceChoice.offline();
+            case DeviceChoice.MODE_DEVICE:
+                int type = sp.getInt(Constants.CONFIG.CONF_DEVICE_TYPE, SpectrumSource.TYPE_NONE);
+                String identity = sp.getString(Constants.CONFIG.CONF_DEVICE_IDENTITY, null);
+                if (type != SpectrumSource.TYPE_NONE && identity != null) {
+                    return DeviceChoice.device(type, identity, sp.getString(Constants.CONFIG.CONF_DEVICE_NAME, identity));
+                }
+                return DeviceChoice.none();
+            default:
+                return DeviceChoice.none();
+        }
+    }
+
+    static synchronized void setDeviceChoice(@NonNull Context context, @NonNull DeviceChoice choice) {
+        SharedPreferences sp = getASSharedPreferences(context);
+        SharedPreferences.Editor editor = sp.edit();
+        if (!sp.getBoolean(Constants.CONFIG.CONF_DEVICE_REMEMBER, false)) {
+            clearDeviceChoice(editor);
+            editor.apply();
+            return;
+        }
+        editor.putInt(Constants.CONFIG.CONF_DEVICE_MODE, choice.mode)
+                .putInt(Constants.CONFIG.CONF_DEVICE_TYPE, choice.type)
+                .putString(Constants.CONFIG.CONF_DEVICE_IDENTITY, choice.identity)
+                .putString(Constants.CONFIG.CONF_DEVICE_NAME, choice.name)
+                .apply();
+    }
+
     // --- Sensitivity profiles -----------------------------------------------------------------
 
-    /** Active sensitivity profile id, migrating a legacy install to a custom profile on first access. */
+    /**
+     * Active sensitivity profile id, migrating a legacy install to a custom profile on first access.
+     */
     public static String getActiveSensitivityProfileId(@NonNull Context context) {
         SharedPreferences sp = getASSharedPreferences(context);
         maybeMigrateLegacySensitivityPrefs(context);
         return sp.getString(Constants.CONFIG.CONF_SENSITIVITY_PROFILE, SensitivityProfile.ID_DEFAULT);
     }
 
-    /** The active sensitivity profile (a copy - safe to mutate). */
+    /**
+     * The active sensitivity profile (a copy - safe to mutate).
+     */
     public static SensitivityProfile getActiveSensitivityProfile(@NonNull Context context) {
         String id = getActiveSensitivityProfileId(context);
         if (SensitivityProfile.ID_CUSTOM.equals(id)) {
@@ -153,14 +255,18 @@ public class PrefHelper {
                 .apply();
     }
 
-    /** All custom sensitivity profiles. Single slot for now; list-shaped so it can grow later. */
+    /**
+     * All custom sensitivity profiles. Single slot for now; list-shaped so it can grow later.
+     */
     public static List<SensitivityProfile> getCustomSensitivityProfiles(@NonNull Context context) {
         List<SensitivityProfile> profiles = new ArrayList<>();
         profiles.add(getCustomSensitivityProfile(context));
         return profiles;
     }
 
-    /** The (single) custom sensitivity profile assembled from preferences. */
+    /**
+     * The (single) custom sensitivity profile assembled from preferences.
+     */
     public static SensitivityProfile getCustomSensitivityProfile(@NonNull Context context) {
         SharedPreferences sp = getASSharedPreferences(context);
         SensitivityProfile profile = new SensitivityProfile();
@@ -178,7 +284,9 @@ public class PrefHelper {
         return profile;
     }
 
-    /** Persist the custom sensitivity profile (does not change the active profile). */
+    /**
+     * Persist the custom sensitivity profile (does not change the active profile).
+     */
     public static void setCustomSensitivityProfile(@NonNull Context context, @NonNull SensitivityProfile profile) {
         SharedPreferences.Editor editor = getASSharedPreferences(context).edit();
         editor.putString(Constants.CONFIG.CONF_CUSTOM_PROFILE_NAME, profile.name);
@@ -193,7 +301,9 @@ public class PrefHelper {
         editor.apply();
     }
 
-    /** Clone any profile into the custom slot and make it active. */
+    /**
+     * Clone any profile into the custom slot and make it active.
+     */
     public static void cloneToCustomSensitivityProfile(@NonNull Context context, @NonNull SensitivityProfile source, String newName) {
         setCustomSensitivityProfile(context, source.editableCopy(newName));
         setActiveSensitivityProfile(context, SensitivityProfile.ID_CUSTOM);
@@ -314,13 +424,13 @@ public class PrefHelper {
     public static String getWorkingDir(@NonNull Context context, boolean notifyUserIfNotSet) {
         SharedPreferences sharedPreferences = getASSharedPreferences(context);
         if (sharedPreferences == null) {
-            ToastHelper.showToast(context, "ERROR: Unable to get working dir, sharedPreferences instance is null.");
+            ToastHelper.showErrorAndLog(context, LogTag.PREF_HELPER, "Unable to get working dir, sharedPreferences instance is null");
             return null;
         }
 
         String workingDir = sharedPreferences.getString(Constants.CONFIG.CONF_DIRECTORY_SELECTED, null);
         if (workingDir == null && notifyUserIfNotSet) {
-            ToastHelper.showToast(context, context.getString(R.string.error_working_dir_not_set));
+            ToastHelper.showErrorAndLog(context, LogTag.PREF_HELPER, context.getString(R.string.error_working_dir_not_set));
         }
 
         return workingDir;
