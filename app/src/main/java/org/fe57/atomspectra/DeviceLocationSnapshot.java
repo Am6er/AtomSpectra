@@ -17,8 +17,6 @@ import java.nio.charset.StandardCharsets;
  * Immutable read-only device position for the map. Separate from measurement GPS tagging.
  */
 public final class DeviceLocationSnapshot {
-    public static final long STALE_THRESHOLD_MS = 5L * 60L * 1000L;
-
     public static final DeviceLocationSnapshot UNAVAILABLE =
             new DeviceLocationSnapshot(false, 0, 0, 0, Float.NaN, "");
 
@@ -61,16 +59,12 @@ public final class DeviceLocationSnapshot {
             return UNAVAILABLE;
         }
         long fixTime = location.getTime();
-        if (fixTime <= 0 || isStale(fixTime, System.currentTimeMillis())) {
+        if (fixTime <= 0) {
             return UNAVAILABLE;
         }
         float accuracy = location.hasAccuracy() ? location.getAccuracy() : Float.NaN;
         String provider = location.getProvider() != null ? location.getProvider() : "";
         return new DeviceLocationSnapshot(true, lat, lon, fixTime, accuracy, provider);
-    }
-
-    public static boolean isStale(long fixTimestampMs, long nowMs) {
-        return nowMs - fixTimestampMs > STALE_THRESHOLD_MS;
     }
 
     @NonNull

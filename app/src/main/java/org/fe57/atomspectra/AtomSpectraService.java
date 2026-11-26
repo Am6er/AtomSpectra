@@ -1817,7 +1817,11 @@ public class AtomSpectraService extends Service {
             }
             if (Constants.ACTION.ACTION_UPDATE_GPS.equals(action)) {
                 if (is_recording) {
-                    SpectrumData.instance.foreground.setLocation(Locator.getLocation()).updateComments();
+                    if (shouldAddGpsToFiles()) {
+                        Locator.applyTo(SpectrumData.instance.foreground);
+                    } else {
+                        SpectrumData.instance.foreground.setLocation(null).updateComments();
+                    }
                 }
                 publishDeviceLocationSnapshot();
             }
