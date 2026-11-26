@@ -10,8 +10,6 @@ final class DeviceConnectionStatus {
         if (state == AtomSpectraService.DeviceState.ERROR) return R.string.device_error_notification;
         if (state == AtomSpectraService.DeviceState.RECOVERING) return R.string.device_select_reconnecting;
         switch (phase) {
-            case SEARCHING:
-                return R.string.device_select_searching;
             case CONNECTING:
                 return R.string.device_select_connecting;
             case WAITING_FOR_DATA:

@@ -10,10 +10,6 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,7 +23,6 @@ import androidx.core.content.ContextCompat;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -51,16 +46,8 @@ final class BluZBleSource implements SpectrumSource {
     private static final long RECOVERY_MAX_WINDOW_MS = 60000;
     // The recovery wake lock expires on its own after this long, in case it is not released.
     private static final long RECOVERY_WAKE_LOCK_MS = RECOVERY_MAX_WINDOW_MS + 10000;
-    // Fixed delay between attempts during recovery.
-    private static final long RECOVERY_RETRY_MS = 2000;
-    // First retry delay outside recovery; it doubles after each attempt.
-    private static final long MIN_RETRY_MS = 1000;
-    // Upper bound of the doubling retry delay outside recovery.
-    private static final long MAX_RETRY_MS = 30000;
-    // A scan that produced no results for this long is restarted.
-    private static final long SCAN_RESTART_MS = 120000;
-    // A user-initiated connect gives up if the device is not found within this time.
-    private static final long USER_SCAN_TIMEOUT_MS = 30000;
+    // Fixed delay between direct connection attempts.
+    private static final long RETRY_MS = 2000;
     // The link strength is read from a frame at most this often.
     private static final long RSSI_INTERVAL_MS = 2500;
     // A link strength read that has not been answered for this long is considered lost.
@@ -165,7 +152,6 @@ final class BluZBleSource implements SpectrumSource {
     private BluetoothGatt gatt;
     private BluetoothGattCharacteristic writeCharacteristic;
     private BluetoothGattCharacteristic notifyCharacteristic;
-    private ScanCallback scanCallback;
     private BroadcastReceiver adapterReceiver;
     private boolean closed;
     private boolean terminal;
@@ -176,18 +162,12 @@ final class BluZBleSource implements SpectrumSource {
     // the device answered the hardware info request with a supported protocol version
     private boolean hardwareInfo;
     private boolean writing;
-    private long retryDelay = MIN_RETRY_MS;
     private boolean userInitiated;
-    private boolean isFirstScan = true;
-    // the next connection attempt skips the scan and connects to the saved address directly
-    private boolean directPending;
-    // the current GATT was started without a scan
-    private boolean directAttempt;
     private boolean recoveryActive;
     private String recoveryReason;
     private long recoveryStartedAt;
+    private int recoveryAttempts;
     private final RecoveryWakeLock recoveryWakeLock;
-    private long scanStartedAt;
     private long connectStartedAt;
     private BluZFrameDecoder.Frame latest;
     private boolean stopOnReturn;
@@ -276,7 +256,7 @@ final class BluZBleSource implements SpectrumSource {
                             try {
                                 if (!adapter.isEnabled()) connectionLostNow("Bluetooth is off");
                                 else if (recoveryActive) return;
-                                else waitForDevice();
+                                else connectToDevice();
                             } catch (SecurityException error) {
                                 permissionLost();
                             }
@@ -287,24 +267,16 @@ final class BluZBleSource implements SpectrumSource {
                         new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED),
                         ContextCompat.RECEIVER_EXPORTED);
             }
-            handler.removeCallbacks(scanTimeout);
-            if (userInitiated && !hasBeenReady) handler.postDelayed(scanTimeout, USER_SCAN_TIMEOUT_MS);
-            // armed only if waitForDevice() will start an attempt now, otherwise it would stay set until a later retry
-            directPending = gatt == null && scanCallback == null;
-            waitForDevice();
+            connectToDevice();
         });
     }
 
-    private final Runnable retry = this::waitForDevice;
+    private final Runnable retry = this::connectToDevice;
 
-    private final Runnable scanTimeout = () -> {
-        if (closed || terminal || ready || hasBeenReady || physicalConnection || recoveryActive || gatt != null) return;
-        failHandshake(REASON_TIMEOUT, "BluZ not found");
-    };
-
-    private void waitForDevice() {
+    // Connects to the saved address directly; a failed or timed out attempt is repeated by scheduleRetry().
+    private void connectToDevice() {
         handler.removeCallbacks(retry);
-        if (closed || terminal || gatt != null || scanCallback != null) return;
+        if (closed || terminal || gatt != null) return;
         if (!AppPermissions.isBluetoothGranted(context)) {
             permissionLost();
             return;
@@ -314,109 +286,25 @@ final class BluZBleSource implements SpectrumSource {
                 setConnectionPhase(ConnectionPhase.NONE);
                 return;
             }
-            if (directPending) {
-                directPending = false;
-                handler.removeCallbacks(scanTimeout);
-                connect(adapter.getRemoteDevice(address), true);
-                return;
-            }
-            if (adapter.getBluetoothLeScanner() == null) {
-                scheduleRetry();
-                return;
-            }
-            ScanCallback callback = new ScanCallback() {
-                @Override
-                public void onScanResult(int callbackType, ScanResult result) {
-                    dispatch(() -> {
-                        if (closed || terminal || scanCallback != this) return;
-                        debug("Scan hit");
-                        handler.removeCallbacks(scanTimeout);
-                        stopScan();
-                        connect(result.getDevice(), false);
-                    });
-                }
-
-                @Override
-                public void onScanFailed(int errorCode) {
-                    dispatch(() -> {
-                        if (scanCallback != this) return;
-                        stopScan();
-                        if (recoveryActive && errorCode == SCAN_FAILED_FEATURE_UNSUPPORTED)
-                            connectionLostNow("BLE scanning is not supported");
-                        else scheduleRetry();
-                    });
-                }
-            };
-            scanCallback = callback;
-            scanStartedAt = SystemClock.elapsedRealtime();
-            debug("Scan started");
-            adapter.getBluetoothLeScanner().startScan(
-                    Collections.singletonList(new ScanFilter.Builder().setDeviceAddress(address).build()),
-                    new ScanSettings.Builder().setScanMode(recoveryActive || userInitiated || isFirstScan
-                            ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_LOW_POWER).build(), callback);
-            setConnectionPhase(ConnectionPhase.SEARCHING);
-            handler.postDelayed(scanRestart, SCAN_RESTART_MS);
+            connect(adapter.getRemoteDevice(address));
         } catch (SecurityException error) {
             permissionLost();
-        } catch (IllegalStateException error) {
-            stopScan();
-            scheduleRetry();
         }
     }
 
     private void scheduleRetry() {
         if (closed || terminal) return;
-        // nothing is searched for while Bluetooth is off, waitForDevice() keeps the phase NONE then
-        setConnectionPhase(adapter != null && adapter.isEnabled() ? ConnectionPhase.SEARCHING : ConnectionPhase.NONE);
+        // nothing is connected to while Bluetooth is off, connectToDevice() keeps the phase NONE then
+        setConnectionPhase(adapter != null && adapter.isEnabled() ? ConnectionPhase.CONNECTING : ConnectionPhase.NONE);
         handler.removeCallbacks(retry);
-        if (recoveryActive) {
-            handler.postDelayed(retry, RECOVERY_RETRY_MS);
-            return;
-        }
-        handler.postDelayed(retry, retryDelay);
-        retryDelay = Math.min(MAX_RETRY_MS, retryDelay * 2);
+        handler.postDelayed(retry, RETRY_MS);
     }
 
-    // A scan that produced no events for SCAN_RESTART_MS is restarted.
-    private final Runnable scanRestart = () -> {
-        if (scanCallback == null) return;
-        debug("Scan restart, no scan events for " + (SystemClock.elapsedRealtime() - scanStartedAt) / 1000 + " s");
-        stopScan();
-        waitForDevice();
-    };
-
-    private void stopScan() {
-        isFirstScan = false;
-        handler.removeCallbacks(scanRestart);
-        ScanCallback callback = scanCallback;
-        scanCallback = null;
-        if (callback == null || adapter == null) return;
-        debug("Scan stopped after " + (SystemClock.elapsedRealtime() - scanStartedAt) + " ms");
-        try {
-            if (adapter.getBluetoothLeScanner() != null)
-                adapter.getBluetoothLeScanner().stopScan(callback);
-        } catch (SecurityException | IllegalStateException ignored) {
-        }
-    }
-
-    // The direct attempt did not reach a physical connection: look for the device with a scan instead.
-    private boolean fallBackToScan(String why) {
-        if (!directAttempt || physicalConnection) return false;
-        debug("Direct connect failed (" + why + "), falling back to scan");
-        releaseGatt();
-        if (userInitiated && !hasBeenReady) {
-            handler.removeCallbacks(scanTimeout);
-            handler.postDelayed(scanTimeout, USER_SCAN_TIMEOUT_MS);
-        }
-        waitForDevice();
-        return true;
-    }
-
-    private void connect(BluetoothDevice device, boolean direct) {
+    private void connect(BluetoothDevice device) {
         if (closed || terminal || gatt != null) return;
         try {
-            debug(direct ? "Connecting directly" : "Connecting");
-            directAttempt = direct;
+            if (recoveryActive) recoveryAttempts++;
+            debug(recoveryActive ? "Connecting directly, attempt " + recoveryAttempts : "Connecting directly");
             connectStartedAt = SystemClock.elapsedRealtime();
             gatt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                     ? device.connectGatt(context, false, callbacks, BluetoothDevice.TRANSPORT_LE)
@@ -436,7 +324,6 @@ final class BluZBleSource implements SpectrumSource {
     private final Runnable connectionDeadline = () -> {
         debug("Connection deadline reached, " + (SystemClock.elapsedRealtime() - connectStartedAt)
                 + " ms after connect, physical=" + physicalConnection);
-        if (fallBackToScan("timeout")) return;
         if (recoveryActive) recoveryAttemptFailed();
         else if (!physicalConnection) {
             if (userInitiated && !hasBeenReady) failHandshake(REASON_TIMEOUT, "BluZ connection timed out");
@@ -465,7 +352,6 @@ final class BluZBleSource implements SpectrumSource {
                 }
                 debug(state);
                 if (newState == BluetoothProfile.STATE_DISCONNECTED || result != BluetoothGatt.GATT_SUCCESS) {
-                    if (fallBackToScan("status " + gattStatus(result))) return;
                     if (recoveryActive) recoveryAttemptFailed();
                     else if (!physicalConnection && userInitiated && !hasBeenReady)
                         failHandshake(REASON_ERROR, "BluZ connection failed, status " + gattStatus(result));
@@ -693,13 +579,15 @@ final class BluZBleSource implements SpectrumSource {
                 ready = true;
                 hasBeenReady = true;
                 userInitiated = false;
-                retryDelay = MIN_RETRY_MS;
                 handler.removeCallbacks(connectionDeadline);
                 coefficients = frame.calibration();
                 lastError = null;
                 boolean recovering = recoveryActive;
                 debug("First frame");
                 if (recovering) {
+                    AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: succeeded after "
+                            + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s, "
+                            + recoveryAttempts + " attempts");
                     cancelRecovery();
                     if (!frame.isCollecting() || stopOnReturn) {
                         status = STATUS_DISCONNECTED;
@@ -891,7 +779,7 @@ final class BluZBleSource implements SpectrumSource {
                     setStatus(STATUS_DISCONNECTED);
                     reply(new Intent(ACTION_SOURCE_DISCONNECTED)
                             .putExtra(EXTRA_SOURCE_DISCONNECT_REASON, "BluZ recovery cancelled by stop"));
-                    if (gatt == null) waitForDevice();
+                    if (gatt == null) connectToDevice();
                 }
                 return;
             }
@@ -1107,10 +995,10 @@ final class BluZBleSource implements SpectrumSource {
         setStatus(STATUS_RECOVERING);
         recoveryReason = reason;
         recoveryStartedAt = SystemClock.elapsedRealtime();
+        recoveryAttempts = 0;
         recoveryWakeLock.acquire(RECOVERY_WAKE_LOCK_MS);
         AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: started after " + reason + ", window "
                 + RECOVERY_MAX_WINDOW_MS / 1000 + " s");
-        stopScan();
         releaseGatt();
         handler.removeCallbacks(recoveryWindowEnd);
         handler.postDelayed(recoveryWindowEnd, RECOVERY_MAX_WINDOW_MS);
@@ -1120,7 +1008,6 @@ final class BluZBleSource implements SpectrumSource {
     private void connectionLostNow(String reason) {
         boolean wasActive = ready || recoveryActive;
         cancelRecovery();
-        stopScan();
         releaseGatt();
         setStatus(STATUS_DISCONNECTED);
         if (wasActive)
@@ -1130,7 +1017,7 @@ final class BluZBleSource implements SpectrumSource {
 
     private void recoveryAttemptFailed() {
         if (!recoveryActive) return;
-        AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: attempt failed after "
+        AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: attempt " + recoveryAttempts + " failed after "
                 + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000 + " s of recovery");
         releaseGatt();
         scheduleRetry();
@@ -1141,7 +1028,6 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(recoveryWindowEnd);
         recoveryStartedAt = 0;
         recoveryWakeLock.release();
-        stopScan();
     }
 
     private final Runnable recoveryWindowEnd = this::endRecoveryByTimeout;
@@ -1150,11 +1036,12 @@ final class BluZBleSource implements SpectrumSource {
     private void endRecoveryByTimeout() {
         if (!recoveryActive) return;
         String reason = "Recovery timed out after " + (SystemClock.elapsedRealtime() - recoveryStartedAt) / 1000
-                + " s; cause: " + recoveryReason;
+                + " s, " + recoveryAttempts + " attempts; cause: " + recoveryReason;
+        AtomSpectraLog.warning(context, LogTag.BLUZ, "Recovery: failed, " + reason);
         cancelRecovery();
         setStatus(STATUS_DISCONNECTED);
         reply(new Intent(ACTION_SOURCE_DISCONNECTED).putExtra(EXTRA_SOURCE_DISCONNECT_REASON, reason));
-        if (gatt == null) waitForDevice();
+        if (gatt == null) connectToDevice();
         debug("Recovery ended, still connecting in background");
     }
 
@@ -1177,7 +1064,6 @@ final class BluZBleSource implements SpectrumSource {
         userInitiated = false;
         cancelRecovery();
         releaseGatt();
-        stopScan();
         setConnectionPhase(ConnectionPhase.NONE);
         handler.removeCallbacks(retry);
         if (recovering) {
@@ -1198,7 +1084,6 @@ final class BluZBleSource implements SpectrumSource {
         handler.removeCallbacks(settingsDeadline);
         BluetoothGatt previous = gatt;
         gatt = null;
-        directAttempt = false;
         ready = false;
         physicalConnection = false;
         subscribed = false;
@@ -1245,9 +1130,7 @@ final class BluZBleSource implements SpectrumSource {
         dispatch(() -> {
             if (closed) return;
             closed = true;
-            handler.removeCallbacks(scanTimeout);
             cancelRecovery();
-            stopScan();
             releaseGatt();
             handler.removeCallbacks(retry);
             setConnectionPhase(ConnectionPhase.NONE);
