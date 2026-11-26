@@ -42,6 +42,11 @@ public class GPSLocator implements LocationListener {
         context = a;
     }
 
+    // callers check this first so the message is not built while diagnostics are off
+    private boolean logging() {
+        return AtomSpectraLog.isDiagnosticsEnabled(context);
+    }
+
     private void log(String message) {
         AtomSpectraLog.detail(context, LogTag.GPS, message);
     }
@@ -60,7 +65,7 @@ public class GPSLocator implements LocationListener {
             locationManager.requestLocationUpdates(provider, MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
             return true;
         } catch (IllegalArgumentException | SecurityException e) {
-            log("cannot register " + provider + ": " + e.getClass().getSimpleName());
+            if (logging()) log("cannot register " + provider + ": " + e.getClass().getSimpleName());
             return false;
         }
     }
@@ -73,7 +78,7 @@ public class GPSLocator implements LocationListener {
             isGPSEnabled = gpsRegistered && locationManager
                     .isProviderEnabled(LocationManager.GPS_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
-            log("enableGPS: provider enabled=" + isGPSEnabled + ", " + state());
+            if (logging()) log("enableGPS: provider enabled=" + isGPSEnabled + ", " + state());
             if (isGPSEnabled) {
                 if (locationGPS == null) {
                     locationGPS = locationManager
@@ -96,7 +101,7 @@ public class GPSLocator implements LocationListener {
         hasGPS = isNetworkEnabled;
         locationGPS = null;
         location = locationNetwork;
-        log("disableGPS: " + state());
+        if (logging()) log("disableGPS: " + state());
     }
 
     private void enableNetwork () {
@@ -107,7 +112,7 @@ public class GPSLocator implements LocationListener {
             isNetworkEnabled = networkRegistered && locationManager
                     .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
-            log("enableNetwork: provider enabled=" + isNetworkEnabled + ", " + state());
+            if (logging()) log("enableNetwork: provider enabled=" + isNetworkEnabled + ", " + state());
             if (isNetworkEnabled) {
                 if (locationNetwork == null) {
                     locationNetwork = locationManager
@@ -134,7 +139,7 @@ public class GPSLocator implements LocationListener {
         hasGPS = isGPSEnabled;
         locationNetwork = null;
         location = locationGPS;
-        log("disableNetwork: " + state());
+        if (logging()) log("disableNetwork: " + state());
     }
 
     //for Android 7.0 not to drop
@@ -152,7 +157,7 @@ public class GPSLocator implements LocationListener {
     public synchronized void onLocationChanged(@NonNull Location location) {
         long now = SystemClock.elapsedRealtime();
         if (lastFixElapsed == 0 || now - lastFixElapsed > FIX_GAP_LOG_MS || now - lastFixLoggedElapsed > FIX_HEARTBEAT_LOG_MS) {
-            log("fix: provider=" + location.getProvider() + ", accuracy=" + location.getAccuracy()
+            if (logging()) log("fix: provider=" + location.getProvider() + ", accuracy=" + location.getAccuracy()
                     + " m, " + (lastFixElapsed == 0 ? "first fix" : ((now - lastFixElapsed) / 1000) + " s since previous fix")
                     + ", hasGPS=" + hasGPS);
             lastFixLoggedElapsed = now;
@@ -184,7 +189,7 @@ public class GPSLocator implements LocationListener {
 
     @Override
     public synchronized void onProviderEnabled(@NonNull String provider) {
-        log("onProviderEnabled: " + provider + ", " + state());
+        if (logging()) log("onProviderEnabled: " + provider + ", " + state());
         if (LocationManager.GPS_PROVIDER.equals(provider)) {
             enableGPS();
         }
@@ -201,7 +206,7 @@ public class GPSLocator implements LocationListener {
 
     @Override
     public synchronized void onProviderDisabled(@NonNull String provider) {
-        log("onProviderDisabled: " + provider + ", " + state());
+        if (logging()) log("onProviderDisabled: " + provider + ", " + state());
         if (LocationManager.GPS_PROVIDER.equals(provider)) {
             disableGPS();
         }
@@ -215,15 +220,18 @@ public class GPSLocator implements LocationListener {
     }
 
     public double getLatitude() {
-        return hasGPS && location != null ? location.getLatitude() : 0;
+        Location l = location;
+        return hasGPS && l != null ? l.getLatitude() : 0;
     }
 
     public double getLongitude() {
-        return hasGPS && location != null ? location.getLongitude() : 0;
+        Location l = location;
+        return hasGPS && l != null ? l.getLongitude() : 0;
     }
 
     public long getTime () {
-        return hasGPS  && location != null ? location.getTime() : 0;
+        Location l = location;
+        return hasGPS && l != null ? l.getTime() : 0;
     }
 
     public synchronized boolean isRegistered() {
@@ -235,7 +243,7 @@ public class GPSLocator implements LocationListener {
     }
 
     public synchronized void stopUsingGPS(){
-        log("stopUsingGPS, " + state());
+        if (logging()) log("stopUsingGPS, " + state());
         if(locationManager != null){
             locationManager.removeUpdates(this);
         }
@@ -251,14 +259,15 @@ public class GPSLocator implements LocationListener {
     }
 
     public synchronized void startUsingGPS(){
-        log("startUsingGPS, " + state());
+        if (logging()) log("startUsingGPS, " + state());
         enableGPS();
         enableNetwork();
-        log("startUsingGPS done, " + state());
+        if (logging()) log("startUsingGPS done, " + state());
     }
 
     public String getFormattedLatitude () {
-        double latitude = location != null ? location.getLatitude() : 0;
+        Location l = location;
+        double latitude = l != null ? l.getLatitude() : 0;
         try {
             long latSeconds = Math.round(getLatitude() * 3600000);
             long latDegrees = latSeconds / 3600000;
@@ -289,7 +298,8 @@ public class GPSLocator implements LocationListener {
     }
 
     public String getFormattedLongitude () {
-        double longitude = location != null ? location.getLongitude() : 0;
+        Location l = location;
+        double longitude = l != null ? l.getLongitude() : 0;
         try {
             long longSeconds = Math.round(getLongitude() * 3600000);
             long longDegrees = longSeconds / 3600000;
