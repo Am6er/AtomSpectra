@@ -363,6 +363,11 @@ public class AtomSpectraService extends Service {
         AtomSpectraLog.event(this, LogTag.SERVICE, "Service stopped");
         super.onDestroy();
         Stop();
+        synchronized (gpsConfigLock) {
+            if (Locator != null) {
+                Locator.stopUsingGPS();
+            }
+        }
         DeleteSpc();
         service_context = null;
         SpectrumData.instance.reset(Constants.DEFAULT_CHANNEL_COUNT);
