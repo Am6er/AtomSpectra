@@ -16,6 +16,8 @@ public class GPSLocator implements LocationListener {
     protected LocationManager locationManager;
     private boolean isGPSEnabled = false;
     private boolean isNetworkEnabled = false;
+    private boolean gpsRegistered = false;
+    private boolean networkRegistered = false;
     public boolean hasGPS = false;
     private Location location = null; // Location
     private Location locationGPS = null;
@@ -52,18 +54,27 @@ public class GPSLocator implements LocationListener {
         return "gpsFlag=" + isGPSEnabled + ", networkFlag=" + isNetworkEnabled + ", hasGPS=" + hasGPS + ", " + fixAge();
     }
 
+    // the listener stays registered while a provider is off, so onProviderEnabled can reach it
+    private boolean registerProvider(String provider) {
+        try {
+            locationManager.requestLocationUpdates(provider, MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+            return true;
+        } catch (IllegalArgumentException | SecurityException e) {
+            log("cannot register " + provider + ": " + e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
     private void enableGPS () {
         if (locationManager != null && !isGPSEnabled) {
-            isGPSEnabled = locationManager
+            if (!gpsRegistered) {
+                gpsRegistered = registerProvider(LocationManager.GPS_PROVIDER);
+            }
+            isGPSEnabled = gpsRegistered && locationManager
                     .isProviderEnabled(LocationManager.GPS_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
             log("enableGPS: provider enabled=" + isGPSEnabled + ", " + state());
             if (isGPSEnabled) {
-                locationManager.requestLocationUpdates(
-                        LocationManager.GPS_PROVIDER,
-                        MIN_TIME_BW_UPDATES,
-                        MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-//                Log.d("Network", "Network");
                 if (locationGPS == null) {
                     locationGPS = locationManager
                             .getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -83,25 +94,21 @@ public class GPSLocator implements LocationListener {
     private void disableGPS () {
         isGPSEnabled = false;
         hasGPS = isNetworkEnabled;
-        locationManager.removeUpdates(this);
         locationGPS = null;
-        log("disableGPS: removed all updates (GPS and network), " + state());
-        if (isNetworkEnabled)
-            enableNetwork();
+        location = locationNetwork;
+        log("disableGPS: " + state());
     }
 
     private void enableNetwork () {
         if (locationManager != null && !isNetworkEnabled) {
-            isNetworkEnabled = locationManager
+            if (!networkRegistered) {
+                networkRegistered = registerProvider(LocationManager.NETWORK_PROVIDER);
+            }
+            isNetworkEnabled = networkRegistered && locationManager
                     .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
             log("enableNetwork: provider enabled=" + isNetworkEnabled + ", " + state());
             if (isNetworkEnabled) {
-                locationManager.requestLocationUpdates(
-                        LocationManager.NETWORK_PROVIDER,
-                        MIN_TIME_BW_UPDATES,
-                        MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
-//                    Log.d("GPS Enabled", "GPS Enabled");
                 if (locationNetwork == null) {
                     locationNetwork = locationManager
                             .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -125,11 +132,9 @@ public class GPSLocator implements LocationListener {
     private void disableNetwork () {
         isNetworkEnabled = false;
         hasGPS = isGPSEnabled;
-        locationManager.removeUpdates(this);
         locationNetwork = null;
-        log("disableNetwork: removed all updates (GPS and network), " + state());
-        if (isGPSEnabled)
-            enableGPS();
+        location = locationGPS;
+        log("disableNetwork: " + state());
     }
 
     //for Android 7.0 not to drop
@@ -232,6 +237,8 @@ public class GPSLocator implements LocationListener {
         }
         isNetworkEnabled = false;
         isGPSEnabled = false;
+        gpsRegistered = false;
+        networkRegistered = false;
         hasGPS = false;
         location = null;
         locationGPS = null;
