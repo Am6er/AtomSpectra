@@ -17,9 +17,9 @@ public interface SpectrumSource {
     int TYPE_SPECTRA_PRO = 2;
     int TYPE_BLUZ = 3;
 
-    // Limitation: SEARCHING and WAITING_FOR_DATA are reported by BluZ only; other sources use CONNECTING and NONE
+    // Limitation: WAITING_FOR_DATA is reported by BluZ only; other sources use CONNECTING and NONE
     enum ConnectionPhase {
-        NONE, SEARCHING, CONNECTING, WAITING_FOR_DATA
+        NONE, CONNECTING, WAITING_FOR_DATA
     }
 
     // status codes

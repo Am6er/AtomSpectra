@@ -22,7 +22,6 @@ on the indicated handler.
 |---|---|---|
 | Service input thread, named `AtomSpectraInput` | `AtomSpectraService` | Run the handler supplied to BluZ; own source lifecycle, decoder, command state, deadlines and broadcast consumption |
 | Android GATT callback context | Android Bluetooth stack | Deliver connection, service discovery, MTU, descriptor, notification and write callbacks |
-| Android scan callback context | Android Bluetooth scanning | Deliver scan results/failures for the currently installed source scan |
 | Adapter broadcast receiver context | Android broadcast delivery | Forward Bluetooth on/off changes through `dispatch()` |
 | Public-method caller | Service/UI or another caller | Issue source operations and read published metadata |
 
@@ -40,7 +39,7 @@ sequenceDiagram
     Service->>Source: Construct with service inputHandler
     Caller-->>Service: Post source request through dispatch
     Service->>Source: Execute request
-    Source->>Android: Scan or initiate GATT operation
+    Source->>Android: Initiate GATT operation
     Android-->>Service: Dispatch callback with its originating token
     Service->>Source: Validate token and handle event
     Source-->>Service: Send source broadcast for later service processing
@@ -53,16 +52,16 @@ reply asynchronously through Android.
 ## 2. Dispatch and state ownership
 
 `dispatch()` executes directly if already on `handler.getLooper()`; otherwise
-it posts the action. Requests, GATT callbacks, scan callbacks and adapter changes
+it posts the action. Requests, GATT callbacks and adapter changes
 all enter through this boundary. Delayed tasks are scheduled on that handler.
 
 | State | Owner / visibility |
 |---|---|
 | `gatt`, characteristics, `physicalConnection`, `subscribed`, `ready` | Input handler only |
-| `scanCallback`, adapter receiver and retry scheduling | Input handler only |
+| Adapter receiver and retry scheduling | Input handler only |
 | Decoder, `latest`, `latestSettings` | Input handler only |
 | `writes`, `writing`, toggle/reset/settings confirmation state | Input handler only |
-| Recovery state, deadline and scanned-device attempt bookkeeping | Input handler only |
+| Recovery state and deadline bookkeeping | Input handler only |
 | `stopOnReturn` | Input handler only; survives GATT replacement |
 | `closed`, `terminal`, `hasBeenReady` | Input handler only |
 | `status`, `lastError`, `coefficients` | Input-handler writes; volatile publication for getters |
@@ -87,10 +86,6 @@ not closed AND not terminal AND candidate == gatt
 This compares the actual GATT object, not merely its address. A callback from a
 released connection cannot affect another GATT connection to the same device.
 
-Scan results similarly require that their callback object equals the currently
-installed `scanCallback`. `stopScan()` clears that reference before asking Android
-to stop scanning, making subsequently delivered callbacks obsolete.
-
 Notification byte arrays are cloned before dispatch. The owner never reads a
 characteristic value that Android may replace while the handler message waits.
 
@@ -111,27 +106,21 @@ sequenceDiagram
     Owner->>Owner: Current connection; feed copied bytes to decoder
 ```
 
-There is no numeric connection generation in this source. GATT and scan object
-identity serve as connection/scan lifetime tokens. Handler-owned deadlines are
+There is no numeric connection generation in this source. GATT object
+identity serves as the connection lifetime token. Handler-owned deadlines are
 removed when their operation or connection is cleared.
 
 ## 4. Discovery, connection and readiness
 
-Source waiting is separate from picker discovery. The source scans for its
-locked MAC address using low-power scan mode, or low-latency scan mode during
-recovery; it does not choose a new device.
-If Bluetooth is off, it waits for an adapter-state change. Retry backoff starts
-at one second and doubles to a 30-second cap.
+Source connection is separate from picker discovery. The source never scans
+(scanning needs location access): it calls `connectGatt` directly on its locked
+MAC address and does not choose a new device. If Bluetooth is off, it waits for
+an adapter-state change.
 
-A scan that produces no result for two minutes is stopped and started again. Any
-scan result, failure or `stopScan()` cancels that restart timer.
-
-The first attempt after `requestConnect` skips the scan and calls `connectGatt` on
-the saved address directly, because a connection started right after a scan hit
-can wait several advertising intervals for the initiator to catch the device. If
-that attempt gets no physical connection (disconnect, failure status or the
-`connectionDeadline`), the GATT is released and the scan above takes over. Recovery
-and ordinary retries always scan.
+An attempt that gets no physical connection (disconnect, failure status or the
+`connectionDeadline`) releases the GATT. A user-initiated first connect then
+reports the failure. A background connect or recovery repeats the direct attempt
+after a fixed 2-second delay.
 
 Connection setup proceeds through physical connection, service discovery, MTU
 251, notification/indication enablement and the CCCD write. Subscription is
@@ -143,9 +132,7 @@ sequenceDiagram
     participant Android as Android BLE stack
     participant Device as BluZ device
     participant Service as Service receiver
-    Owner->>Android: Start locked-MAC scan
-    Android-->>Owner: Current scan callback reports matching device
-    Owner->>Android: Stop scan and connectGatt
+    Owner->>Android: connectGatt to locked MAC
     Android-->>Owner: Current GATT physically connected
     Owner->>Android: Discover services and request high priority
     Android-->>Owner: Services discovered
@@ -282,8 +269,7 @@ end-to-end bound for every public request.
 | `writeDeadline` | 15 seconds per write chunk | Bound GATT transport completion |
 | Toggle/reset/resolution/calibration deadlines | 15 seconds after logical command is sent | Require confirmation from a normal frame |
 | `recoveryWindowEnd` | Initial 20 seconds, progress extension capped at 60 seconds from loss | Bound recovery as a whole |
-| `retry` | Backoff up to 30 seconds | Continue ordinary device waiting |
-| `scanRestart` | 2 minutes after scan start | Restart a scan that produced no events |
+| `retry` | Fixed 2 seconds | Repeat the direct connection attempt |
 
 Callbacks run on the same owner as frame processing and teardown. Connection
 release removes its setup, assembly, write and command-confirmation callbacks.
@@ -302,10 +288,8 @@ Recovery requires a ready source whose latest frame is collecting and
 has no pending acquisition, reset or settings command. Other losses report the
 regular disconnect/error flow.
 
-The source releases GATT and starts a low-latency scan for the locked address;
-there is no direct reconnect attempt. A scan result provides a fresh
-`BluetoothDevice` token, the scan stops and the source connects to that device.
-Failed scanned attempts discard their token and resume scanning.
+The source releases GATT and repeats direct `connectGatt` attempts, 2 seconds
+apart, until one reaches a valid normal frame or the recovery window ends.
 
 ```mermaid
 sequenceDiagram
@@ -316,13 +300,11 @@ sequenceDiagram
     Owner->>Owner: Verify no pending command
     Owner-->>Service: STATUS_RECOVERING
     Owner->>Owner: Record 20-second recovery deadline
-    Owner->>Android: Release GATT and start scan
-    Android-->>Owner: Current scan finds selected device
-    Owner->>Owner: Retain fresh device token, extend deadline, connect
+    Owner->>Android: Release GATT and connectGatt directly
     Android-->>Owner: Current GATT physically connects
     Owner->>Owner: Extend deadline and run setup
     Android-->>Owner: First valid returned normal frame
-    Owner->>Owner: Cancel recovery and scan
+    Owner->>Owner: Cancel recovery
     alt Device is collecting
         Owner-->>Service: STATUS_CONNECTED_COLLECTING without READY
     else Device is idle
@@ -333,7 +315,7 @@ sequenceDiagram
 
 Recovery times (start, deadline, logged durations) use `SystemClock.elapsedRealtime()`,
 which keeps counting in deep sleep. The window is the 20-second handshake budget,
-extended on a scan hit, on the start of a scanned attempt and on physical connection:
+extended on physical connection:
 
 ```text
 maximum deadline = loss time + 60 seconds
@@ -343,11 +325,11 @@ extended deadline = min(maximum deadline, current time + 20 seconds)
 Only a later deadline replaces the existing one. `onRecoveryWindowEnd()` rechecks
 the stored deadline and reschedules when time remains. Handler delays use uptime, so
 after deep sleep the callback can fire later than the deadline; the deadline check and
-the logged durations still use elapsed real time. A scan hit or physical connection
+the logged durations still use elapsed real time. Physical connection
 does not remove the requirement for a valid normal frame.
 
-When recovery expires, the source reports disconnected, sets the retry delay to
-its 30-second maximum and continues background waiting with a slow scan.
+When recovery expires, the source reports disconnected and continues
+background direct connection attempts.
 Collecting confirmation preserves the service's recording
 without suspension; an idle return reports disconnect first so the service can
 take its normal resume path.
@@ -409,7 +391,7 @@ sequenceDiagram
     participant Android as Android BLE stack
     Caller-->>Owner: Dispatch close if off-handler
     Owner->>Owner: Set closed true
-    Owner->>Owner: Cancel recovery, scanning and retry
+    Owner->>Owner: Cancel recovery and retry
     Owner->>Owner: Remove deadlines and set current GATT null
     Owner->>Owner: Clear queues, decoder and pending operations
     Owner->>Android: Disconnect and close released GATT
