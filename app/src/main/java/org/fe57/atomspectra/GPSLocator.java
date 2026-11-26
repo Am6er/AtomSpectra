@@ -18,12 +18,17 @@ public class GPSLocator implements LocationListener {
     private boolean isNetworkEnabled = false;
     private boolean gpsRegistered = false;
     private boolean networkRegistered = false;
-    public boolean hasGPS = false;
-    private Location location = null; // Location
-    private Location locationGPS = null;
-    private Location locationNetwork = null;
+    public volatile boolean hasGPS = false;
+    private volatile Location locationGPS = null;
+    private volatile Location locationNetwork = null;
+    // the last position that was fresh and accurate when it arrived
+    private volatile Location lastUsable = null;
     private final Context context;
     private final long TIME_DELTA = 5000;
+
+    // a fix older or less accurate than this is not reported as the position
+    private static final long MAX_FIX_AGE_MS = 60 * 1000;
+    private static final float MAX_FIX_ACCURACY_M = 100;
 
     // The minimum distance to change Updates in meters
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 0; // 0 meters
@@ -79,19 +84,9 @@ public class GPSLocator implements LocationListener {
                     .isProviderEnabled(LocationManager.GPS_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
             if (logging()) log("enableGPS: provider enabled=" + isGPSEnabled + ", " + state());
-            if (isGPSEnabled) {
-                if (locationGPS == null) {
-                    locationGPS = locationManager
-                            .getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                }
-                if (locationGPS != null) {
-                    if (locationNetwork != null && locationNetwork.getAccuracy() < locationGPS.getAccuracy() && locationNetwork.getTime() > locationGPS.getTime() + TIME_DELTA)
-                        location = locationNetwork;
-                    else
-                        location = locationGPS;
-                } else {
-                    location = locationNetwork;
-                }
+            if (isGPSEnabled && locationGPS == null) {
+                locationGPS = locationManager
+                        .getLastKnownLocation(LocationManager.GPS_PROVIDER);
             }
         }
     }
@@ -100,7 +95,6 @@ public class GPSLocator implements LocationListener {
         isGPSEnabled = false;
         hasGPS = isNetworkEnabled;
         locationGPS = null;
-        location = locationNetwork;
         if (logging()) log("disableGPS: " + state());
     }
 
@@ -113,23 +107,9 @@ public class GPSLocator implements LocationListener {
                     .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
             if (logging()) log("enableNetwork: provider enabled=" + isNetworkEnabled + ", " + state());
-            if (isNetworkEnabled) {
-                if (locationNetwork == null) {
-                    locationNetwork = locationManager
-                            .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                    if (locationNetwork != null) {
-                        if (locationGPS != null) {
-                            if ((locationNetwork.getAccuracy() < locationGPS.getAccuracy() && locationNetwork.getTime() > locationGPS.getTime() + TIME_DELTA))
-                                location = locationNetwork;
-                            else
-                                location = locationGPS;
-                        }
-                        else
-                            location = locationNetwork;
-                    } else {
-                        location = locationGPS;
-                    }
-                }
+            if (isNetworkEnabled && locationNetwork == null) {
+                locationNetwork = locationManager
+                        .getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             }
         }
     }
@@ -138,7 +118,6 @@ public class GPSLocator implements LocationListener {
         isNetworkEnabled = false;
         hasGPS = isGPSEnabled;
         locationNetwork = null;
-        location = locationGPS;
         if (logging()) log("disableNetwork: " + state());
     }
 
@@ -169,20 +148,10 @@ public class GPSLocator implements LocationListener {
             } else if (LocationManager.NETWORK_PROVIDER.equals(location.getProvider())) {
                 locationNetwork = new Location(location);
             }
-            if (locationGPS == null) {
-                this.location = locationNetwork;
-            } else {
-                if (locationNetwork == null) {
-                    this.location = locationGPS;
-                } else {
-                    if(locationNetwork.getAccuracy() < locationGPS.getAccuracy() && locationNetwork.getTime() > locationGPS.getTime() + TIME_DELTA)
-                    this.location = locationNetwork;
-                    else
-                        this.location = locationGPS;
-                }
+            Location usable = current();
+            if (usable != null) {
+                lastUsable = usable;
             }
-        } else {
-            this.location = null;
         }
         context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
@@ -199,7 +168,6 @@ public class GPSLocator implements LocationListener {
         if (!hasGPS) {
             locationNetwork = null;
             locationGPS = null;
-            location = null;
         }
         context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
@@ -213,33 +181,54 @@ public class GPSLocator implements LocationListener {
         if (LocationManager.NETWORK_PROVIDER.equals(provider)) {
             disableNetwork();
         }
-        if (!hasGPS) {
-            location = null;
-        }
         context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
 
-    public double getLatitude() {
-        Location l = location;
-        return hasGPS && l != null ? l.getLatitude() : 0;
+    private static boolean isUsable(Location l) {
+        if (l == null || !l.hasAccuracy() || l.getAccuracy() > MAX_FIX_ACCURACY_M) {
+            return false;
+        }
+        long ageMs = (SystemClock.elapsedRealtimeNanos() - l.getElapsedRealtimeNanos()) / 1000000L;
+        return ageMs <= MAX_FIX_AGE_MS;
     }
 
-    public double getLongitude() {
-        Location l = location;
-        return hasGPS && l != null ? l.getLongitude() : 0;
-    }
-
-    public long getTime () {
-        Location l = location;
-        return hasGPS && l != null ? l.getTime() : 0;
+    // the fresh and accurate position, or null; evaluated on every call so a fix expires by itself
+    private Location current() {
+        if (!hasGPS) {
+            return null;
+        }
+        Location gps = locationGPS;
+        Location network = locationNetwork;
+        if (!isUsable(gps)) {
+            gps = null;
+        }
+        if (!isUsable(network)) {
+            network = null;
+        }
+        if (gps == null) {
+            return network;
+        }
+        if (network != null && network.getAccuracy() < gps.getAccuracy() && network.getElapsedRealtimeNanos() > gps.getElapsedRealtimeNanos() + TIME_DELTA * 1000000L) {
+            return network;
+        }
+        return gps;
     }
 
     public synchronized boolean isRegistered() {
         return gpsRegistered || networkRegistered;
     }
 
+    // the last usable position, kept when later fixes are unusable
     public Location getLocation() {
-        return location;
+        return lastUsable;
+    }
+
+    // without a usable position the spectrum keeps the one it has
+    public void applyTo(@NonNull Spectrum spectrum) {
+        Location l = current();
+        if (l != null) {
+            spectrum.setLocation(l).updateComments();
+        }
     }
 
     public synchronized void stopUsingGPS(){
@@ -252,9 +241,9 @@ public class GPSLocator implements LocationListener {
         gpsRegistered = false;
         networkRegistered = false;
         hasGPS = false;
-        location = null;
         locationGPS = null;
         locationNetwork = null;
+        lastUsable = null;
         context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
 
@@ -263,23 +252,6 @@ public class GPSLocator implements LocationListener {
         enableGPS();
         enableNetwork();
         if (logging()) log("startUsingGPS done, " + state());
-    }
-
-    public String getFormattedLatitude () {
-        Location l = location;
-        double latitude = l != null ? l.getLatitude() : 0;
-        try {
-            long latSeconds = Math.round(getLatitude() * 3600000);
-            long latDegrees = latSeconds / 3600000;
-            latSeconds = Math.abs(latSeconds % 3600000);
-            long latMinutes = latSeconds / 60000;
-            latSeconds %= 60000;
-            String latDegree = latDegrees >= 0 ? "N" : "S";
-
-            return  String.format(Locale.US, "%02d°%02d'%06.3f\" %s", Math.abs(latDegrees), latMinutes, latSeconds / 1000.0, latDegree);
-        } catch (Exception ignored) {
-            return String.format(Locale.US, "%8.5f", latitude);
-        }
     }
 
     public static String getFormattedLatitude (double latitude) {
@@ -294,23 +266,6 @@ public class GPSLocator implements LocationListener {
             return  String.format(Locale.US, "%02d°%02d'%06.3f\" %s", Math.abs(latDegrees), latMinutes, latSeconds / 1000.0, latDegree);
         } catch (Exception ignored) {
             return String.format(Locale.US, "%8.5f", latitude);
-        }
-    }
-
-    public String getFormattedLongitude () {
-        Location l = location;
-        double longitude = l != null ? l.getLongitude() : 0;
-        try {
-            long longSeconds = Math.round(getLongitude() * 3600000);
-            long longDegrees = longSeconds / 3600000;
-            longSeconds = Math.abs(longSeconds % 3600000);
-            long longMinutes = longSeconds / 60000;
-            longSeconds %= 60000;
-            String longDegree = longDegrees >= 0 ? "E" : "W";
-
-            return  String.format(Locale.US, "%02d°%02d'%06.3f\" %s", Math.abs(longDegrees), longMinutes, longSeconds / 1000.0, longDegree);
-        } catch (Exception e) {
-            return String.format(Locale.US, "%8.5f", longitude) ;
         }
     }
 
