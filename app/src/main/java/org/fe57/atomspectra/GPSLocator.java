@@ -149,7 +149,7 @@ public class GPSLocator implements LocationListener {
     }
 
     @Override
-    public void onLocationChanged(@NonNull Location location) {
+    public synchronized void onLocationChanged(@NonNull Location location) {
         long now = SystemClock.elapsedRealtime();
         if (lastFixElapsed == 0 || now - lastFixElapsed > FIX_GAP_LOG_MS || now - lastFixLoggedElapsed > FIX_HEARTBEAT_LOG_MS) {
             log("fix: provider=" + location.getProvider() + ", accuracy=" + location.getAccuracy()
@@ -183,7 +183,7 @@ public class GPSLocator implements LocationListener {
     }
 
     @Override
-    public void onProviderEnabled(@NonNull String provider) {
+    public synchronized void onProviderEnabled(@NonNull String provider) {
         log("onProviderEnabled: " + provider + ", " + state());
         if (LocationManager.GPS_PROVIDER.equals(provider)) {
             enableGPS();
@@ -200,7 +200,7 @@ public class GPSLocator implements LocationListener {
     }
 
     @Override
-    public void onProviderDisabled(@NonNull String provider) {
+    public synchronized void onProviderDisabled(@NonNull String provider) {
         log("onProviderDisabled: " + provider + ", " + state());
         if (LocationManager.GPS_PROVIDER.equals(provider)) {
             disableGPS();
@@ -226,11 +226,15 @@ public class GPSLocator implements LocationListener {
         return hasGPS  && location != null ? location.getTime() : 0;
     }
 
+    public synchronized boolean isRegistered() {
+        return gpsRegistered || networkRegistered;
+    }
+
     public Location getLocation() {
         return location;
     }
 
-    public void stopUsingGPS(){
+    public synchronized void stopUsingGPS(){
         log("stopUsingGPS, " + state());
         if(locationManager != null){
             locationManager.removeUpdates(this);
@@ -246,7 +250,7 @@ public class GPSLocator implements LocationListener {
         context.sendBroadcast(new Intent(Constants.ACTION.ACTION_UPDATE_GPS).setPackage(Constants.PACKAGE_NAME));
     }
 
-    public void startUsingGPS(){
+    public synchronized void startUsingGPS(){
         log("startUsingGPS, " + state());
         enableGPS();
         enableNetwork();

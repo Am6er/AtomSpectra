@@ -76,7 +76,7 @@ public class AtomSpectraService extends Service {
     private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
 
 
-    private boolean addGPS = false;
+    private boolean addGpsToFilesSetting = false;
 
 
     private static int delta_time = Constants.DEFAULT_DELTA_TIME;
@@ -325,6 +325,8 @@ public class AtomSpectraService extends Service {
     private volatile SpectrumSource activeSource = null;
 
     private GPSLocator Locator = null;
+    private static final long GPS_CHECK_INTERVAL_MS = 30 * 1000;
+    private long lastGpsCheckElapsed = 0;
 
     private static volatile DeviceLocationSnapshot deviceLocationSnapshot =
             DeviceLocationSnapshot.UNAVAILABLE;
@@ -515,7 +517,8 @@ public class AtomSpectraService extends Service {
         intervalSearchAlarmDetectionLevel = sp.getInt(Constants.CONFIG.CONF_SEARCH_DETECTION_LEVEL, Constants.ALARM_DETECTION_LEVEL_DEFAULT);
         // --- end interval search
 
-        addGPS = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
+        addGpsToFilesSetting = sp.getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
+        ensureGPSConfigured();
         sendDataToAtomSwiftAppEnabled = sp.getBoolean(Constants.CONFIG.CONF_SEND_DATA_TO_ATOMSWIFT, Constants.SEND_DATA_TO_ATOMSWIFT_DEFAULT);
         atomSwiftDRType = sp.getString(Constants.CONFIG.CONF_ATOMSWIFT_DOSE_RATE, Constants.ATOMSWIFT_DR_DEFAULT);
 
@@ -1495,24 +1498,11 @@ public class AtomSpectraService extends Service {
         setLocaleFromPreferences(context);
         this.service_context = context;
 
-        boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
-        boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
         if (Locator == null) {
             Locator = new GPSLocator(getApplicationContext());
         }
-        if ((hasFeatureGPS || hasFeatureNetwork) && PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT)) {
-            if (!AppPermissions.isLocationGranted(this)) {
-                Locator.stopUsingGPS();
-                addGPS = false;
-            } else {
-                Locator.startUsingGPS();
-                if (!Locator.hasGPS) {
-                    Locator.stopUsingGPS();
-                    addGPS = false;
-                }
-            }
-        }
-        publishDeviceLocationSnapshot();
+        addGpsToFilesSetting = PrefHelper.getASSharedPreferences(this).getBoolean(Constants.CONFIG.CONF_ADD_GPS_TO_FILES, Constants.ADD_GPS_TO_FILES_DEFAULT);
+        ensureGPSConfigured();
 
         SpectrumData.instance.foreground.setSuffix(getStringOrDefaultLocale(R.string.hist_suffix));
         SpectrumData.instance.background.setSuffix(getStringOrDefaultLocale(R.string.background_suffix));
@@ -1846,6 +1836,7 @@ public class AtomSpectraService extends Service {
         if (!isDeviceConnected() || connectDecisionPending) {
             return;
         }
+        checkGPSPeriodically();
         if (!is_recording) {
             showIdleSnapshot(intent);
             return;
@@ -2513,7 +2504,7 @@ public class AtomSpectraService extends Service {
             Pair<OutputStreamWriter, Uri> streamInfo = SpectrumFile.prepareOutputFileStream(this, getStringOrDefaultLocale(R.string.file_atomspectra_spectrum_prefix), SpectrumData.instance.foreground.getSpectrumDate(), suffix, ".txt", "text/plain", false);
             OutputStreamWriter docStream = streamInfo.first;
             Spectrum spectrum = new Spectrum(SpectrumData.instance.foreground);
-            if (!addGPS) {
+            if (!shouldAddGpsToFiles()) {
                 spectrum.setLocation(null).updateComments();
             }
 
@@ -2605,7 +2596,7 @@ public class AtomSpectraService extends Service {
             // baseline are only advanced if the write succeeds, so a failed write
             // leaves the baseline intact and the missed interval is folded into the
             // next delta instead of being permanently lost from the file.
-            if (!addGPS) {
+            if (!shouldAddGpsToFiles()) {
                 deltaSpectrum.setLocation(null);
             }
             deltaSpectrum.updateComments();
@@ -2642,23 +2633,42 @@ public class AtomSpectraService extends Service {
         }
     }
 
-    private void ensureGPSConfigured() {
+    // hardware and permission; says nothing about the user's setting or whether a provider is on
+    private boolean isGpsAvailable() {
         boolean hasFeatureGPS = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
         boolean hasFeatureNetwork = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+        return (hasFeatureGPS || hasFeatureNetwork) && AppPermissions.isLocationGranted(this);
+    }
 
-        if ((hasFeatureGPS || hasFeatureNetwork) && addGPS && AppPermissions.isLocationGranted(this)) {
-            Locator.startUsingGPS();
-            addGPS = Locator.hasGPS; // only stamp coordinates once a provider is actually available
-            if (!Locator.hasGPS) {
-                Locator.stopUsingGPS();
-            }
-        } else {
-            // setting off, permission missing, or no hardware: write no coordinates, but keep the
-            // user's "add GPS" intent so startup can ask for the permission again
-            Locator.stopUsingGPS();
-            addGPS = false;
+    private boolean shouldAddGpsToFiles() {
+        return addGpsToFilesSetting && isGpsAvailable();
+    }
+
+    private void ensureGPSConfigured() {
+        if (Locator == null) {
+            return;
         }
-        publishDeviceLocationSnapshot();
+        boolean changed = false;
+        if (shouldAddGpsToFiles()) {
+            if (!Locator.hasGPS) {
+                Locator.startUsingGPS();
+                changed = Locator.hasGPS;
+            }
+        } else if (Locator.isRegistered()) {
+            Locator.stopUsingGPS();
+            changed = true;
+        }
+        if (changed || lastGpsCheckElapsed == 0) {
+            publishDeviceLocationSnapshot();
+        }
+    }
+
+    private void checkGPSPeriodically() {
+        long now = SystemClock.elapsedRealtime();
+        if (lastGpsCheckElapsed == 0 || now - lastGpsCheckElapsed >= GPS_CHECK_INTERVAL_MS) {
+            ensureGPSConfigured();
+            lastGpsCheckElapsed = now;
+        }
     }
 
     // sends intent with dose/count rate etc. to AtomSwift app
