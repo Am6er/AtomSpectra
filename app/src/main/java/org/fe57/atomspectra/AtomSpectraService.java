@@ -76,7 +76,7 @@ public class AtomSpectraService extends Service {
     private static final AlarmBaseline intervalSearchAlarmBaseline = new AlarmBaseline();
 
 
-    private boolean addGpsToFilesSetting = false;
+    private volatile boolean addGpsToFilesSetting = false;
 
 
     private static int delta_time = Constants.DEFAULT_DELTA_TIME;
@@ -326,6 +326,7 @@ public class AtomSpectraService extends Service {
 
     private GPSLocator Locator = null;
     private static final long GPS_CHECK_INTERVAL_MS = 30 * 1000;
+    private final Object gpsConfigLock = new Object();
     private long lastGpsCheckElapsed = 0;
 
     private static volatile DeviceLocationSnapshot deviceLocationSnapshot =
@@ -2644,30 +2645,35 @@ public class AtomSpectraService extends Service {
         return addGpsToFilesSetting && isGpsAvailable();
     }
 
+    // serialized: called from the main thread (settings) and the input thread (periodic check)
     private void ensureGPSConfigured() {
-        if (Locator == null) {
-            return;
-        }
-        boolean changed = false;
-        if (shouldAddGpsToFiles()) {
-            if (!Locator.hasGPS) {
-                Locator.startUsingGPS();
-                changed = Locator.hasGPS;
+        synchronized (gpsConfigLock) {
+            if (Locator == null) {
+                return;
             }
-        } else if (Locator.isRegistered()) {
-            Locator.stopUsingGPS();
-            changed = true;
-        }
-        if (changed || lastGpsCheckElapsed == 0) {
-            publishDeviceLocationSnapshot();
+            boolean changed = false;
+            if (shouldAddGpsToFiles()) {
+                if (!Locator.hasGPS) {
+                    Locator.startUsingGPS();
+                    changed = Locator.hasGPS;
+                }
+            } else if (Locator.isRegistered()) {
+                Locator.stopUsingGPS();
+                changed = true;
+            }
+            if (changed || lastGpsCheckElapsed == 0) {
+                publishDeviceLocationSnapshot();
+            }
         }
     }
 
     private void checkGPSPeriodically() {
-        long now = SystemClock.elapsedRealtime();
-        if (lastGpsCheckElapsed == 0 || now - lastGpsCheckElapsed >= GPS_CHECK_INTERVAL_MS) {
-            ensureGPSConfigured();
-            lastGpsCheckElapsed = now;
+        synchronized (gpsConfigLock) {
+            long now = SystemClock.elapsedRealtime();
+            if (lastGpsCheckElapsed == 0 || now - lastGpsCheckElapsed >= GPS_CHECK_INTERVAL_MS) {
+                ensureGPSConfigured();
+                lastGpsCheckElapsed = now;
+            }
         }
     }
 
