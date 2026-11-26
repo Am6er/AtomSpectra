@@ -27,6 +27,7 @@ public final class LogTag {
     public static final String DEVICE_SETTINGS_ACT = "DeviceSettingsAct";
     public static final String FIND_ISOTOPE_ACT = "FindIsotopeAct";
     public static final String SPECTRUM_FILE_AS = "SpectrumFileAS";
+    public static final String GPS = "GPS";
 
     private LogTag() {
     }

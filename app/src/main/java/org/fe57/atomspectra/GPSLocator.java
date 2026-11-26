@@ -6,6 +6,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
 
@@ -28,9 +29,27 @@ public class GPSLocator implements LocationListener {
     // The minimum time between updates in milliseconds
     private static final long MIN_TIME_BW_UPDATES = 1000 * 5; // 5 seconds
 
+    // fixes are logged only after a gap this long, or at this interval, to keep the log small
+    private static final long FIX_GAP_LOG_MS = 2 * 60 * 1000;
+    private static final long FIX_HEARTBEAT_LOG_MS = 10 * 60 * 1000;
+    private long lastFixElapsed = 0;
+    private long lastFixLoggedElapsed = 0;
+
     GPSLocator (@NonNull Context a) {
         locationManager = (LocationManager) a.getSystemService(Context.LOCATION_SERVICE);
         context = a;
+    }
+
+    private void log(String message) {
+        AtomSpectraLog.detail(context, LogTag.GPS, message);
+    }
+
+    private String fixAge() {
+        return lastFixElapsed == 0 ? "no fix yet" : ((SystemClock.elapsedRealtime() - lastFixElapsed) / 1000) + " s since last fix";
+    }
+
+    private String state() {
+        return "gpsFlag=" + isGPSEnabled + ", networkFlag=" + isNetworkEnabled + ", hasGPS=" + hasGPS + ", " + fixAge();
     }
 
     private void enableGPS () {
@@ -38,6 +57,7 @@ public class GPSLocator implements LocationListener {
             isGPSEnabled = locationManager
                     .isProviderEnabled(LocationManager.GPS_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
+            log("enableGPS: provider enabled=" + isGPSEnabled + ", " + state());
             if (isGPSEnabled) {
                 locationManager.requestLocationUpdates(
                         LocationManager.GPS_PROVIDER,
@@ -65,6 +85,7 @@ public class GPSLocator implements LocationListener {
         hasGPS = isNetworkEnabled;
         locationManager.removeUpdates(this);
         locationGPS = null;
+        log("disableGPS: removed all updates (GPS and network), " + state());
         if (isNetworkEnabled)
             enableNetwork();
     }
@@ -74,6 +95,7 @@ public class GPSLocator implements LocationListener {
             isNetworkEnabled = locationManager
                     .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
             hasGPS = isGPSEnabled || isNetworkEnabled;
+            log("enableNetwork: provider enabled=" + isNetworkEnabled + ", " + state());
             if (isNetworkEnabled) {
                 locationManager.requestLocationUpdates(
                         LocationManager.NETWORK_PROVIDER,
@@ -105,6 +127,7 @@ public class GPSLocator implements LocationListener {
         hasGPS = isGPSEnabled;
         locationManager.removeUpdates(this);
         locationNetwork = null;
+        log("disableNetwork: removed all updates (GPS and network), " + state());
         if (isGPSEnabled)
             enableGPS();
     }
@@ -122,6 +145,14 @@ public class GPSLocator implements LocationListener {
 
     @Override
     public void onLocationChanged(@NonNull Location location) {
+        long now = SystemClock.elapsedRealtime();
+        if (lastFixElapsed == 0 || now - lastFixElapsed > FIX_GAP_LOG_MS || now - lastFixLoggedElapsed > FIX_HEARTBEAT_LOG_MS) {
+            log("fix: provider=" + location.getProvider() + ", accuracy=" + location.getAccuracy()
+                    + " m, " + (lastFixElapsed == 0 ? "first fix" : ((now - lastFixElapsed) / 1000) + " s since previous fix")
+                    + ", hasGPS=" + hasGPS);
+            lastFixLoggedElapsed = now;
+        }
+        lastFixElapsed = now;
         if (hasGPS) {
             if (LocationManager.GPS_PROVIDER.equals(location.getProvider())) {
                 locationGPS = new Location(location);
@@ -148,6 +179,7 @@ public class GPSLocator implements LocationListener {
 
     @Override
     public void onProviderEnabled(@NonNull String provider) {
+        log("onProviderEnabled: " + provider + ", " + state());
         if (LocationManager.GPS_PROVIDER.equals(provider)) {
             enableGPS();
         }
@@ -164,6 +196,7 @@ public class GPSLocator implements LocationListener {
 
     @Override
     public void onProviderDisabled(@NonNull String provider) {
+        log("onProviderDisabled: " + provider + ", " + state());
         if (LocationManager.GPS_PROVIDER.equals(provider)) {
             disableGPS();
         }
@@ -193,6 +226,7 @@ public class GPSLocator implements LocationListener {
     }
 
     public void stopUsingGPS(){
+        log("stopUsingGPS, " + state());
         if(locationManager != null){
             locationManager.removeUpdates(this);
         }
@@ -206,8 +240,10 @@ public class GPSLocator implements LocationListener {
     }
 
     public void startUsingGPS(){
+        log("startUsingGPS, " + state());
         enableGPS();
         enableNetwork();
+        log("startUsingGPS done, " + state());
     }
 
     public String getFormattedLatitude () {
