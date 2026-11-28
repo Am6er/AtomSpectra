@@ -1,14 +1,35 @@
 package org.fe57.atomspectra;
 
+import android.content.SharedPreferences;
+
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Corrects the differential nonlinearity of a 4096-channel ADC whose channel widths repeat every
  * {@link #PERIOD} channels. The width table is fitted from the raw cumulative spectrum on every call;
- * raw counts added since the previous call are divided by the current table and accumulated, so the
+ * raw counts added since the previous call are corrected with the current table and accumulated, so the
  * corrected spectrum never decreases while the device keeps collecting.
  */
 final class DnlCorrector {
+    enum Mode {
+        OFF,
+        /** each channel's added counts are divided by its relative width */
+        SCALING,
+        /** added counts are split between the uniform bins their channel overlaps, in proportion to the overlap */
+        REBINNING,
+        /** each added count is placed in one of the overlapped bins at random, with the overlap as probability */
+        JITTER;
+
+        static Mode load(SharedPreferences prefs) {
+            if (prefs.contains(Constants.CONFIG.CONF_BLUZ_DNL_MODE)) {
+                int id = prefs.getInt(Constants.CONFIG.CONF_BLUZ_DNL_MODE, 0);
+                return values()[Math.max(0, Math.min(values().length - 1, id))];
+            }
+            return prefs.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT) ? SCALING : OFF;
+        }
+    }
+
     static final int CHANNEL_COUNT = 4096;
     private static final int PERIOD = 64;
     // half-width of the local quadratic fit that stands in for the DNL-free spectrum
@@ -19,7 +40,10 @@ final class DnlCorrector {
     // folded chi-square (PERIOD - 1 degrees of freedom, Poisson noise) below which the pattern is not told from noise;
     private static final double MIN_CHI2 = 150;
     private static final int ITERATIONS = 3;
+    private static final int NORMAL_MIN_EXPECTED = 2000;
 
+    private final Random random = new Random();
+    private Mode mode;
     private long[] lastRaw;
     private double[] accumulated;
 
@@ -28,7 +52,11 @@ final class DnlCorrector {
         accumulated = null;
     }
 
-    long[] apply(long[] raw) {
+    long[] apply(long[] raw, Mode mode) {
+        if (mode != this.mode) {
+            reset();
+            this.mode = mode;
+        }
         if (raw.length != CHANNEL_COUNT) {
             reset();
             return raw.clone();
@@ -39,14 +67,87 @@ final class DnlCorrector {
             if (raw[i] < lastRaw[i]) anchor = true;
         }
         if (anchor) accumulated = new double[raw.length];
-        long[] corrected = new long[raw.length];
+        Layout layout = table == null || mode == Mode.SCALING ? null : new Layout(table);
         for (int i = 0; i < raw.length; i++) {
             long added = anchor ? raw[i] : raw[i] - lastRaw[i];
-            accumulated[i] += table == null ? added : added / table[i % PERIOD];
-            corrected[i] = Math.round(accumulated[i]);
+            if (added == 0) continue;
+            if (layout != null) spread(i, added, layout);
+            else accumulated[i] += table == null ? added : added / table[i % PERIOD];
         }
+        long[] corrected = new long[raw.length];
+        for (int i = 0; i < raw.length; i++) corrected[i] = Math.round(accumulated[i]);
         lastRaw = raw.clone();
         return corrected;
+    }
+
+    private void spread(int channel, long added, Layout layout) {
+        int phase = channel % PERIOD;
+        int base = channel - phase + layout.first[phase];
+        double[] share = layout.share[phase];
+        if (mode == Mode.REBINNING) {
+            for (int k = 0; k < share.length; k++) accumulated[base + k] += added * share[k];
+            return;
+        }
+        long left = added;
+        double rest = 1;
+        for (int k = 0; k < share.length - 1; k++) {
+            long taken = binomial(left, Math.min(1, share[k] / rest));
+            accumulated[base + k] += taken;
+            left -= taken;
+            rest -= share[k];
+        }
+        accumulated[base + share.length - 1] += left;
+    }
+
+    // binomial sample: exact by drawing the gaps between successes of the less likely outcome, normal approximation
+    // once that outcome is expected so often that the approximation is indistinguishable from the exact distribution
+    private long binomial(long trials, double probability) {
+        if (probability <= 0) return 0;
+        if (probability >= 1) return trials;
+        boolean complement = probability > 0.5;
+        double rare = complement ? 1 - probability : probability;
+        if (trials * rare >= NORMAL_MIN_EXPECTED) {
+            double mean = trials * probability;
+            double sample = Math.rint(mean + Math.sqrt(mean * (1 - probability)) * random.nextGaussian());
+            return (long) Math.min(trials, Math.max(0, sample));
+        }
+        double logMiss = Math.log1p(-rare);
+        long hits = 0;
+        long position = 0;
+        while (true) {
+            position += (long) Math.floor(Math.log(1 - random.nextDouble()) / logMiss) + 1;
+            if (position > trials) break;
+            hits++;
+        }
+        return complement ? trials - hits : hits;
+    }
+
+    /**
+     * Where the channels of one period lie on the uniform axis, the widths scaled to add up to PERIOD:
+     * the first uniform bin each phase overlaps and the share of its counts that falls into each bin from there.
+     */
+    private static final class Layout {
+        final int[] first = new int[PERIOD];
+        final double[][] share = new double[PERIOD][];
+
+        Layout(double[] table) {
+            double total = 0;
+            for (double width : table) total += width;
+            double scale = PERIOD / total;
+            double start = 0;
+            for (int phase = 0; phase < PERIOD; phase++) {
+                double end = phase == PERIOD - 1 ? PERIOD : start + table[phase] * scale;
+                double width = end - start;
+                first[phase] = (int) start;
+                int last = (int) Math.ceil(end) - 1;
+                share[phase] = new double[last - first[phase] + 1];
+                for (int k = 0; k < share[phase].length; k++) {
+                    int bin = first[phase] + k;
+                    share[phase][k] = (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
+                }
+                start = end;
+            }
+        }
     }
 
     /**
