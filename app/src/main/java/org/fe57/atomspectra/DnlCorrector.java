@@ -21,7 +21,8 @@ final class DnlCorrector {
     private static final double MIN_CHI2 = 150;
     private static final int ITERATIONS = 3;
     private static final double EDGE_SIGMA = 3;
-    private static final double MIN_EDGE = 0.25;
+    private static final double MIN_EDGE_RATIO = 0.5;
+    private static final double MAX_EDGE_RATIO = 2;
     private static final double MIN_SPREAD_WIDTH = 1e-9;
 
     private long[] lastRaw;
@@ -65,7 +66,7 @@ final class DnlCorrector {
             accumulated[base + Math.min(PERIOD - 1, (int) start)] += added;
             return;
         }
-        int last = (int) Math.ceil(end) - 1;
+        int last = Math.min(PERIOD - 1, (int) Math.ceil(end) - 1);
         for (int bin = (int) start; bin <= last; bin++) {
             accumulated[base + bin] += added * (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
         }
@@ -128,7 +129,9 @@ final class DnlCorrector {
         double[] counts = new double[PERIOD];
         double[] expected = new double[PERIOD];
         for (int iteration = 0; iteration < ITERATIONS; iteration++) {
-            for (int i = 0; i < raw.length; i++) corrected[i] = raw[i] / table[i % PERIOD];
+            for (int i = 0; i < raw.length; i++) {
+                corrected[i] = raw[i] / (i % PERIOD == 0 ? edge[i / PERIOD] : table[i % PERIOD]);
+            }
             double[] baseline = baseline(corrected);
             Arrays.fill(counts, 0);
             Arrays.fill(expected, 0);
@@ -157,12 +160,14 @@ final class DnlCorrector {
                 int channel = block * PERIOD;
                 edge[block] = table[0];
                 if (channel < FIRST_CHANNEL || channel >= LAST_CHANNEL || baseline[channel] <= MIN_BASELINE) continue;
-                double expectedCounts = mean * baseline[channel];
+                double unitCounts = mean * baseline[channel];
+                double expectedCounts = table[0] * unitCounts;
                 double deviation = raw[channel] - expectedCounts;
                 double chi2Channel = deviation * deviation / expectedCounts;
                 if (chi2Channel > EDGE_SIGMA * EDGE_SIGMA) {
                     double edgeStrength = 1 - EDGE_SIGMA * EDGE_SIGMA / chi2Channel;
-                    edge[block] = Math.max(MIN_EDGE, table[0] + edgeStrength * (raw[channel] / expectedCounts - table[0]));
+                    double width = table[0] + edgeStrength * (raw[channel] / unitCounts - table[0]);
+                    edge[block] = Math.max(MIN_EDGE_RATIO * table[0], Math.min(MAX_EDGE_RATIO * table[0], width));
                 }
             }
         }
