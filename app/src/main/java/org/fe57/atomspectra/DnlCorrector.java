@@ -38,6 +38,8 @@ final class DnlCorrector {
     // folded chi-square (PERIOD - 1 degrees of freedom, Poisson noise) below which the pattern is not told from noise;
     private static final double MIN_CHI2 = 150;
     private static final int ITERATIONS = 3;
+    private static final double EDGE_SIGMA = 3;
+    private static final double MIN_EDGE = 0.25;
     private static final int NORMAL_MIN_EXPECTED = 2000;
 
     private final Random random = new Random();
@@ -59,13 +61,13 @@ final class DnlCorrector {
             reset();
             return raw.clone();
         }
-        double[] table = fit(raw);
+        Widths widths = fit(raw);
         boolean anchor = lastRaw == null;
         for (int i = 0; !anchor && i < raw.length; i++) {
             if (raw[i] < lastRaw[i]) anchor = true;
         }
         if (anchor) accumulated = new double[raw.length];
-        Layout layout = table == null ? null : new Layout(table);
+        Layout layout = widths == null ? null : new Layout(widths);
         for (int i = 0; i < raw.length; i++) {
             long added = anchor ? raw[i] : raw[i] - lastRaw[i];
             if (added == 0) continue;
@@ -79,22 +81,28 @@ final class DnlCorrector {
     }
 
     private void spread(int channel, long added, Layout layout) {
-        int phase = channel % PERIOD;
-        int base = channel - phase + layout.first[phase];
-        double[] share = layout.share[phase];
+        double start = layout.start(channel);
+        double end = layout.end(channel);
+        double width = end - start;
+        int base = channel - channel % PERIOD;
+        int first = (int) start;
+        int last = (int) Math.ceil(end) - 1;
         if (mode == Mode.REBINNING) {
-            for (int k = 0; k < share.length; k++) accumulated[base + k] += added * share[k];
+            for (int bin = first; bin <= last; bin++) {
+                accumulated[base + bin] += added * (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
+            }
             return;
         }
         long left = added;
         double rest = 1;
-        for (int k = 0; k < share.length - 1; k++) {
-            long taken = binomial(left, Math.min(1, share[k] / rest));
-            accumulated[base + k] += taken;
+        for (int bin = first; bin < last; bin++) {
+            double share = (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
+            long taken = binomial(left, Math.min(1, share / rest));
+            accumulated[base + bin] += taken;
             left -= taken;
-            rest -= share[k];
+            rest -= share;
         }
-        accumulated[base + share.length - 1] += left;
+        accumulated[base + last] += left;
     }
 
     // binomial sample: exact by drawing the gaps between successes of the less likely outcome, normal approximation
@@ -120,41 +128,59 @@ final class DnlCorrector {
         return complement ? trials - hits : hits;
     }
 
+    /** Channel widths: by channel % PERIOD, and for the first channel of each period by the period itself. */
+    private static final class Widths {
+        final double[] table;
+        final double[] edge;
+
+        Widths(double[] table, double[] edge) {
+            this.table = table;
+            this.edge = edge;
+        }
+    }
+
     /**
-     * Where the channels of one period lie on the uniform axis, the widths scaled to add up to PERIOD:
-     * the first uniform bin each phase overlaps and the share of its counts that falls into each bin from there.
+     * Where the channels lie on the uniform axis, the widths of each period scaled to add up to PERIOD;
+     * positions are in uniform bins counted from the start of the channel's period.
      */
     private static final class Layout {
-        final int[] first = new int[PERIOD];
-        final double[][] share = new double[PERIOD][];
+        private final Widths widths;
+        private final double[] before = new double[PERIOD];
+        private final double[] scale = new double[CHANNEL_COUNT / PERIOD];
 
-        Layout(double[] table) {
-            double total = 0;
-            for (double width : table) total += width;
-            double scale = PERIOD / total;
-            double start = 0;
-            for (int phase = 0; phase < PERIOD; phase++) {
-                double end = phase == PERIOD - 1 ? PERIOD : start + table[phase] * scale;
-                double width = end - start;
-                first[phase] = (int) start;
-                int last = (int) Math.ceil(end) - 1;
-                share[phase] = new double[last - first[phase] + 1];
-                for (int k = 0; k < share[phase].length; k++) {
-                    int bin = first[phase] + k;
-                    share[phase][k] = (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
-                }
-                start = end;
+        Layout(Widths widths) {
+            this.widths = widths;
+            double sum = 0;
+            for (int phase = 1; phase < PERIOD; phase++) {
+                before[phase] = sum;
+                sum += widths.table[phase];
             }
+            for (int block = 0; block < scale.length; block++) scale[block] = PERIOD / (sum + widths.edge[block]);
+        }
+
+        double start(int channel) {
+            int phase = channel % PERIOD;
+            return phase == 0 ? 0 : (widths.edge[channel / PERIOD] + before[phase]) * scale[channel / PERIOD];
+        }
+
+        double end(int channel) {
+            int phase = channel % PERIOD;
+            if (phase == PERIOD - 1) return PERIOD;
+            double width = phase == 0 ? widths.edge[channel / PERIOD] : widths.table[phase];
+            return start(channel) + width * scale[channel / PERIOD];
         }
     }
 
     /**
      * Relative channel widths by channel % PERIOD, pulled toward 1 by how far the pattern stands out
-     * of the counting noise; null while it does not stand out.
+     * of the counting noise; null while it does not stand out. The first channel of a period takes its own
+     * width where it differs from the average first channel by more than EDGE_SIGMA counting errors.
      */
-    private static double[] fit(long[] raw) {
+    private static Widths fit(long[] raw) {
         double[] table = new double[PERIOD];
         Arrays.fill(table, 1);
+        double[] edge = new double[CHANNEL_COUNT / PERIOD];
+        Arrays.fill(edge, 1);
         double[] corrected = new double[raw.length];
         double[] counts = new double[PERIOD];
         double[] expected = new double[PERIOD];
@@ -184,8 +210,18 @@ final class DnlCorrector {
             for (int phase = 0; phase < PERIOD; phase++) {
                 table[phase] = 1 + strength * (counts[phase] / expected[phase] / mean - 1);
             }
+            for (int block = 0; block < edge.length; block++) {
+                int channel = block * PERIOD;
+                edge[block] = table[0];
+                if (channel < FIRST_CHANNEL || channel >= LAST_CHANNEL || baseline[channel] <= MIN_BASELINE) continue;
+                double expectedCounts = mean * baseline[channel];
+                double deviation = raw[channel] - expectedCounts;
+                if (deviation * deviation > EDGE_SIGMA * EDGE_SIGMA * expectedCounts) {
+                    edge[block] = Math.max(MIN_EDGE, raw[channel] / expectedCounts);
+                }
+            }
         }
-        return table;
+        return new Widths(table, edge);
     }
 
     // value at each channel of a quadratic fitted to its neighbours, the channel itself left out
