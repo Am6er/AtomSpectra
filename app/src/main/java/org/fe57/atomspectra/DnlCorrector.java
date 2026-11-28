@@ -14,8 +14,6 @@ import java.util.Random;
 final class DnlCorrector {
     enum Mode {
         OFF,
-        /** each channel's added counts are divided by its relative width */
-        SCALING,
         /** added counts are split between the uniform bins their channel overlaps, in proportion to the overlap */
         REBINNING,
         /** each added count is placed in one of the overlapped bins at random, with the overlap as probability */
@@ -26,7 +24,7 @@ final class DnlCorrector {
                 int id = prefs.getInt(Constants.CONFIG.CONF_BLUZ_DNL_MODE, 0);
                 return values()[Math.max(0, Math.min(values().length - 1, id))];
             }
-            return prefs.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT) ? SCALING : OFF;
+            return prefs.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT) ? REBINNING : OFF;
         }
     }
 
@@ -67,12 +65,12 @@ final class DnlCorrector {
             if (raw[i] < lastRaw[i]) anchor = true;
         }
         if (anchor) accumulated = new double[raw.length];
-        Layout layout = table == null || mode == Mode.SCALING ? null : new Layout(table);
+        Layout layout = table == null ? null : new Layout(table);
         for (int i = 0; i < raw.length; i++) {
             long added = anchor ? raw[i] : raw[i] - lastRaw[i];
             if (added == 0) continue;
             if (layout != null) spread(i, added, layout);
-            else accumulated[i] += table == null ? added : added / table[i % PERIOD];
+            else accumulated[i] += added;
         }
         long[] corrected = new long[raw.length];
         for (int i = 0; i < raw.length; i++) corrected[i] = Math.round(accumulated[i]);

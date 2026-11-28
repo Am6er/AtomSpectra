@@ -163,7 +163,6 @@
     <string name="bluz_dnl_mode_format">DNL: <xliff:g id="mode">%1$s</xliff:g></string>
     <string-array name="bluz_dnl_modes">
         <item>Выкл.</item>
-        <item>Масштаб</item>
         <item>Ребиннинг</item>
         <item>Дизеринг</item>
     </string-array>
