@@ -1,33 +1,15 @@
 package org.fe57.atomspectra;
 
-import android.content.SharedPreferences;
-
 import java.util.Arrays;
-import java.util.Random;
 
 /**
  * Corrects the differential nonlinearity of a 4096-channel ADC whose channel widths repeat every
  * {@link #PERIOD} channels. The width table is fitted from the raw cumulative spectrum on every call;
- * raw counts added since the previous call are corrected with the current table and accumulated, so the
- * corrected spectrum never decreases while the device keeps collecting.
+ * raw counts added since the previous call are split between the uniform bins their channel overlaps, in
+ * proportion to the overlap, and accumulated, so the corrected spectrum never decreases while the device
+ * keeps collecting.
  */
 final class DnlCorrector {
-    enum Mode {
-        OFF,
-        /** added counts are split between the uniform bins their channel overlaps, in proportion to the overlap */
-        REBINNING,
-        /** each added count is placed in one of the overlapped bins at random, with the overlap as probability */
-        JITTER;
-
-        static Mode load(SharedPreferences prefs) {
-            if (prefs.contains(Constants.CONFIG.CONF_BLUZ_DNL_MODE)) {
-                int id = prefs.getInt(Constants.CONFIG.CONF_BLUZ_DNL_MODE, 0);
-                return values()[Math.max(0, Math.min(values().length - 1, id))];
-            }
-            return prefs.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT) ? REBINNING : OFF;
-        }
-    }
-
     static final int CHANNEL_COUNT = 4096;
     private static final int PERIOD = 64;
     // half-width of the local quadratic fit that stands in for the DNL-free spectrum
@@ -41,10 +23,7 @@ final class DnlCorrector {
     private static final double EDGE_SIGMA = 3;
     private static final double MIN_EDGE = 0.25;
     private static final double MIN_SPREAD_WIDTH = 1e-9;
-    private static final int NORMAL_MIN_EXPECTED = 2000;
 
-    private final Random random = new Random();
-    private Mode mode;
     private long[] lastRaw;
     private double[] accumulated;
 
@@ -53,11 +32,7 @@ final class DnlCorrector {
         accumulated = null;
     }
 
-    long[] apply(long[] raw, Mode mode) {
-        if (mode != this.mode) {
-            reset();
-            this.mode = mode;
-        }
+    long[] apply(long[] raw) {
         if (raw.length != CHANNEL_COUNT) {
             reset();
             return raw.clone();
@@ -90,47 +65,10 @@ final class DnlCorrector {
             accumulated[base + Math.min(PERIOD - 1, (int) start)] += added;
             return;
         }
-        int first = (int) start;
         int last = (int) Math.ceil(end) - 1;
-        if (mode == Mode.REBINNING) {
-            for (int bin = first; bin <= last; bin++) {
-                accumulated[base + bin] += added * (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
-            }
-            return;
+        for (int bin = (int) start; bin <= last; bin++) {
+            accumulated[base + bin] += added * (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
         }
-        long left = added;
-        double rest = 1;
-        for (int bin = first; bin < last; bin++) {
-            double share = (Math.min(end, bin + 1) - Math.max(start, bin)) / width;
-            long taken = binomial(left, Math.min(1, share / rest));
-            accumulated[base + bin] += taken;
-            left -= taken;
-            rest -= share;
-        }
-        accumulated[base + last] += left;
-    }
-
-    // binomial sample: exact by drawing the gaps between successes of the less likely outcome, normal approximation
-    // once that outcome is expected so often that the approximation is indistinguishable from the exact distribution
-    private long binomial(long trials, double probability) {
-        if (probability <= 0) return 0;
-        if (probability >= 1) return trials;
-        boolean complement = probability > 0.5;
-        double rare = complement ? 1 - probability : probability;
-        if (trials * rare >= NORMAL_MIN_EXPECTED) {
-            double mean = trials * probability;
-            double sample = Math.rint(mean + Math.sqrt(mean * (1 - probability)) * random.nextGaussian());
-            return (long) Math.min(trials, Math.max(0, sample));
-        }
-        double logMiss = Math.log1p(-rare);
-        long hits = 0;
-        long position = 0;
-        while (true) {
-            position += (long) Math.floor(Math.log(1 - random.nextDouble()) / logMiss) + 1;
-            if (position > trials) break;
-            hits++;
-        }
-        return complement ? trials - hits : hits;
     }
 
     /** Channel widths: by channel % PERIOD, and for the first channel of each period by the period itself. */

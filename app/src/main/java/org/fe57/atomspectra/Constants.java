@@ -165,7 +165,6 @@ public class Constants {
         String CONF_ATOMSWIFT_DOSE_RATE = "AtomSwift dose rate";
         String CONF_ALLOW_PARTIAL_HISTOGRAM = "usb_allow_partial_histogram";
         String CONF_BLUZ_DNL_CORRECTION = "bluz_dnl_correction";
-        String CONF_BLUZ_DNL_MODE = "bluz_dnl_mode";
         String CONF_BLUZ_NOTIFICATION_INTERVAL = "bluz_notification_interval";
         String CONF_PERMISSIONS_REQUESTED = "permissions_requested";
         /**
