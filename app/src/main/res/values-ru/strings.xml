@@ -142,7 +142,7 @@
     <string name="hist_smooth">Сгладить</string>
     <string name="hist_unsmooth">Восстановить</string>
     <string name="hist_delta">Изменение спектра</string>
-    <string name="hist_set_suffix">Ввести описание (суффикс файла)</string>
+    <string name="hist_set_suffix">Ввести суффикс файла</string>
     <string name="hist_suffix">Спектр</string>
 
     <string name="background">Фон</string>
@@ -153,7 +153,7 @@
     <string name="background_clear">Очистить фон</string>
     <string name="background_show">Показать фон</string>
     <string name="background_subtract">Вычесть из спектра</string>
-    <string name="background_set_suffix">Ввести описание</string>
+    <string name="background_set_suffix">Ввести суффикс файла</string>
     <string name="background_suffix">Фон</string>
 
     <string name="notify_close">Закрыть</string>
@@ -714,7 +714,7 @@
         \t- В линейчатом выводе основной спектр выводится белым, фон зелёным, а разница голубым. Все цвета яркие.\n
         \t- Данные фона в программе можно очистить.\n
         \t- Можно сгладить спектр командой <annotation foreground="parameter">Сгладить</annotation> в подменю <annotation foreground="parameter">Спектр</annotation>.\n
-        \t- Можно редактировать и смотреть описания для спектра и фона при выводе курсора. Эти описания используются как суффиксы при сохранении. Для их изменения используется <annotation foreground="parameter">Ввести описание</annotation> в подменю <annotation foreground="parameter">Спектр</annotation> или <annotation foreground="parameter">Фон</annotation>.\n
+        \t- Можно редактировать и смотреть описания для спектра и фона при выводе курсора. Эти описания используются как суффиксы при сохранении. Для их изменения используется <annotation foreground="parameter">Ввести суффикс файла</annotation> в подменю <annotation foreground="parameter">Спектр</annotation> или <annotation foreground="parameter">Фон</annotation>.\n
         \t- Текстовое поле <annotation foreground="parameter">cps</annotation> отображает количество импульсов за последнюю секунду по всему диапазону энергий, значение в скобках - по энергетическому интервалу (см. описание поиска в интервале).\n
         \t- Текстовое поле <annotation foreground="parameter">~cps</annotation> отображает среднее количество импульсов в секунду по всему диапазону энергий за все время набора.\n
         \t- Текстовое поле <annotation foreground="parameter">время</annotation> отображает общее время набора спектра в формате чч:мм:сс; при длительности 24 часа и более добавляются дни (например, 2д 03:45:12).\n

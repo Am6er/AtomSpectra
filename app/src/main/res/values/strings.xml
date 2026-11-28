@@ -142,7 +142,7 @@
     <string name="hist_smooth">Smooth</string>
     <string name="hist_unsmooth">Unsmooth</string>
     <string name="hist_delta">Spectrum change</string>
-    <string name="hist_set_suffix">Set description (file suffix)</string>
+    <string name="hist_set_suffix">Set file suffix</string>
     <string name="hist_suffix">Spectrum</string>
 
     <string name="background">Background</string>
@@ -153,7 +153,7 @@
     <string name="background_clear">Clear background</string>
     <string name="background_show">Show background</string>
     <string name="background_subtract">Subtract from spectrum</string>
-    <string name="background_set_suffix">Set description</string>
+    <string name="background_set_suffix">Set file suffix</string>
     <string name="background_suffix">Background</string>
 
     <string name="notify_close">Close</string>
@@ -713,7 +713,7 @@
         \t- In the line view mode the main spectrum is shown white, the background is shown green, and the difference between them is shown cyan. The colours are bright.\n
         \t- You can clear background data in the program.\n
         \t- You may smooth spectra or revert it by using <annotation foreground="parameter">Smooth</annotation> in a <annotation foreground="parameter">Spectrum</annotation> submenu.\n
-        \t- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use <annotation foreground="parameter">Set description</annotation> in a <annotation foreground="parameter">Spectrum</annotation> or <annotation foreground="parameter">Background</annotation> submenu.\n
+        \t- You may edit and see descriptions for spectrum and background during cursor output. These descriptions are used as suffix during saving. To change them use <annotation foreground="parameter">Set file suffix</annotation> in a <annotation foreground="parameter">Spectrum</annotation> or <annotation foreground="parameter">Background</annotation> submenu.\n
         \t- The text field <annotation foreground="parameter">cps</annotation> displays the number of counts during the last second across the entire energy range; the value in brackets is for the energy interval (see the description of searching in the interval).\n
         \t- The text field <annotation foreground="parameter">~cps</annotation> displays the average count rate across the entire energy range for the entire acquisition time.\n
         \t- The text field <annotation foreground="parameter">time</annotation> displays the total time of spectrum acquisition as hh:mm:ss, with days added when the duration is 24 hours or longer (for example, 2d 03:45:12).\n
