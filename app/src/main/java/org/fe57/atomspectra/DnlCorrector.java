@@ -40,6 +40,7 @@ final class DnlCorrector {
     private static final int ITERATIONS = 3;
     private static final double EDGE_SIGMA = 3;
     private static final double MIN_EDGE = 0.25;
+    private static final double MIN_SPREAD_WIDTH = 1e-9;
     private static final int NORMAL_MIN_EXPECTED = 2000;
 
     private final Random random = new Random();
@@ -85,6 +86,10 @@ final class DnlCorrector {
         double end = layout.end(channel);
         double width = end - start;
         int base = channel - channel % PERIOD;
+        if (!(width > MIN_SPREAD_WIDTH)) {
+            accumulated[base + Math.min(PERIOD - 1, (int) start)] += added;
+            return;
+        }
         int first = (int) start;
         int last = (int) Math.ceil(end) - 1;
         if (mode == Mode.REBINNING) {
@@ -216,8 +221,10 @@ final class DnlCorrector {
                 if (channel < FIRST_CHANNEL || channel >= LAST_CHANNEL || baseline[channel] <= MIN_BASELINE) continue;
                 double expectedCounts = mean * baseline[channel];
                 double deviation = raw[channel] - expectedCounts;
-                if (deviation * deviation > EDGE_SIGMA * EDGE_SIGMA * expectedCounts) {
-                    edge[block] = Math.max(MIN_EDGE, raw[channel] / expectedCounts);
+                double chi2Channel = deviation * deviation / expectedCounts;
+                if (chi2Channel > EDGE_SIGMA * EDGE_SIGMA) {
+                    double edgeStrength = 1 - EDGE_SIGMA * EDGE_SIGMA / chi2Channel;
+                    edge[block] = Math.max(MIN_EDGE, table[0] + edgeStrength * (raw[channel] / expectedCounts - table[0]));
                 }
             }
         }
