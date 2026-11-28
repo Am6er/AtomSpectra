@@ -136,7 +136,7 @@ final class BluZBleSource implements SpectrumSource {
     private final int instanceId = SourceInstanceId.next();
     private final BluZFrameDecoder decoder = new BluZFrameDecoder();
     private final DnlCorrector dnlCorrector = new DnlCorrector();
-    private boolean dnlCorrection;
+    private DnlCorrector.Mode dnlMode = DnlCorrector.Mode.OFF;
     private int notificationInterval = Constants.BLUZ_NOTIFICATION_INTERVAL_DEFAULT;
     private int sentNotificationInterval;
     private final ArrayDeque<PendingWrite> writes = new ArrayDeque<>();
@@ -208,8 +208,7 @@ final class BluZBleSource implements SpectrumSource {
     }
 
     private void loadAppPreferences() {
-        dnlCorrection = PrefHelper.getASSharedPreferences(context)
-                .getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT);
+        dnlMode = DnlCorrector.Mode.load(PrefHelper.getASSharedPreferences(context));
         notificationInterval = PrefHelper.getASSharedPreferences(context)
                 .getInt(Constants.CONFIG.CONF_BLUZ_NOTIFICATION_INTERVAL, Constants.BLUZ_NOTIFICATION_INTERVAL_DEFAULT);
     }
@@ -739,8 +738,8 @@ final class BluZBleSource implements SpectrumSource {
 
     private void broadcastData(BluZFrameDecoder.Frame frame) {
         long[] histogram;
-        if (dnlCorrection && frame.channels == DnlCorrector.CHANNEL_COUNT) {
-            histogram = dnlCorrector.apply(frame.histogram);
+        if (dnlMode != DnlCorrector.Mode.OFF && frame.channels == DnlCorrector.CHANNEL_COUNT) {
+            histogram = dnlCorrector.apply(frame.histogram, dnlMode);
         } else {
             dnlCorrector.reset();
             histogram = frame.histogram.clone();

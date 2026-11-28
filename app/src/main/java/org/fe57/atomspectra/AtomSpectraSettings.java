@@ -102,7 +102,7 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         // --- end usb processing
 
         // --- bluz processing
-        setupBluZDnlCorrectionCheckbox();
+        updateBluZDnlModeText();
         updateBluZIntervalText();
         // --- end bluz processing
 
@@ -185,12 +185,25 @@ public class AtomSpectraSettings extends Activity implements OnGestureListener {
         });
     }
 
-    private void setupBluZDnlCorrectionCheckbox() {
-        CheckBox checkDnlCorrection = findViewById(R.id.CheckBluZDnlCorrection);
-        checkDnlCorrection.setChecked(sp.getBoolean(Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION, Constants.BLUZ_DNL_CORRECTION_DEFAULT));
-        checkDnlCorrection.setOnClickListener(v -> {
-            saveBooleanPref(checkDnlCorrection.isChecked(), Constants.CONFIG.CONF_BLUZ_DNL_CORRECTION);
-        });
+    private void updateBluZDnlModeText() {
+        TextView text = findViewById(R.id.bluzDnlModeText);
+        String[] names = getResources().getStringArray(R.array.bluz_dnl_modes);
+        text.setText(getString(R.string.bluz_dnl_mode_format, names[DnlCorrector.Mode.load(sp).ordinal()]));
+    }
+
+    public void onClick_BluZDnlMode_minus(View v) {
+        cycleBluZDnlMode(-1);
+    }
+
+    public void onClick_BluZDnlMode_plus(View v) {
+        cycleBluZDnlMode(1);
+    }
+
+    private void cycleBluZDnlMode(int delta) {
+        int count = DnlCorrector.Mode.values().length;
+        int index = (DnlCorrector.Mode.load(sp).ordinal() + delta + count) % count;
+        saveIntPref(index, Constants.CONFIG.CONF_BLUZ_DNL_MODE);
+        updateBluZDnlModeText();
     }
 
     private int bluzInterval() {
